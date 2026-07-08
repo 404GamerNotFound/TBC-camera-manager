@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">{{ camera.host }}:{{ camera.onvif_port }}</p>
+    <h1>{{ camera.name }}</h1>
+  </div>
+  {% if role == 'admin' %}
+  <div class="button-row">
+    <form method="post" action="/cameras/{{ camera.id }}/refresh">
+      <button class="primary-button" type="submit">Aktualisieren</button>
+    </form>
+    <form method="post" action="/cameras/{{ camera.id }}/delete">
+      <button class="danger-button" type="submit">Löschen</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+
+<section class="details-strip" aria-label="Kameradaten">
+  <div>
+    <span>Hersteller</span>
+    <strong>{{ camera.manufacturer or 'offen' }}</strong>
+  </div>
+  <div>
+    <span>Modell</span>
+    <strong>{{ camera.model or 'offen' }}</strong>
+  </div>
+  <div>
+    <span>Firmware</span>
+    <strong>{{ camera.firmware or 'offen' }}</strong>
+  </div>
+  <div>
+    <span>Status</span>
+    <strong>{{ camera.last_probe_status or 'neu' }}</strong>
+  </div>
+</section>
+
+{% if camera.stream_uri %}
+<section class="stream-line">
+  <span>Stream</span>
+  <code>{{ camera.stream_uri }}</code>
+  <form method="post" action="/live/camera/{{ camera.id }}/start">
+    <button class="secondary-button" type="submit">Live</button>
+  </form>
+</section>
+{% endif %}
+
+{% if channels %}
+<section class="table-section">
+  <div class="section-title">
+    <h2>NVR-Kanäle</h2>
+    <span>{{ channels | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Kanal</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Stream</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for channel in channels %}
+        <tr>
+          <td>{{ channel.channel_index + 1 }}</td>
+          <td>
+            {% if role == 'admin' %}
+            <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/channels/{{ channel.id }}">
+              <input name="name" value="{{ channel.name }}" required>
+              <label class="check-row">
+                <input name="enabled" type="checkbox" {% if channel.enabled %}checked{% endif %}>
+                <span>aktiv</span>
+              </label>
+              <button class="secondary-button" type="submit">OK</button>
+            </form>
+            {% else %}
+            {{ channel.name }}
+            {% endif %}
+          </td>
+          <td>{{ 'aktiv' if channel.enabled else 'aus' }}</td>
+          <td>{{ 'ja' if channel.stream_uri else 'offen' }}</td>
+          <td>
+            {% if channel.stream_uri %}
+            <form method="post" action="/live/channel/{{ channel.id }}/start">
+              <button class="secondary-button" type="submit">Live</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if role == 'admin' %}
+<section class="settings-layout">
+  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/recording">
+    <div class="section-title">
+      <h2>Aufnahme bei Bewegung</h2>
+      {% if camera.recording_enabled %}
+      <span class="status-pill status-active">aktiv</span>
+      {% else %}
+      <span class="status-pill status-idle">aus</span>
+      {% endif %}
+    </div>
+    <label class="check-row">
+      <input name="recording_enabled" type="checkbox" {% if camera.recording_enabled %}checked{% endif %}>
+      <span>Motion-Aufnahmen speichern</span>
+    </label>
+    <div class="form-grid">
+      <label>
+        <span>Mindestdauer in Sekunden</span>
+        <input name="recording_duration_seconds" type="number" min="5" max="3600" value="{{ camera.recording_duration_seconds or 30 }}" required>
+      </label>
+      <label>
+        <span>Vorlauf in Sekunden</span>
+        <input name="recording_pre_seconds" type="number" min="0" max="120" value="{{ camera.recording_pre_seconds or 0 }}" required>
+      </label>
+      <label>
+        <span>Nachlauf in Sekunden</span>
+        <input name="recording_post_seconds" type="number" min="0" max="600" value="{{ camera.recording_post_seconds or 10 }}" required>
+      </label>
+      <label>
+        <span>Pause zwischen Clips</span>
+        <input name="recording_cooldown_seconds" type="number" min="0" max="86400" value="{{ camera.recording_cooldown_seconds or 90 }}" required>
+      </label>
+      <label class="check-row span-2">
+        <input name="snapshot_enabled" type="checkbox" {% if camera.snapshot_enabled %}checked{% endif %}>
+        <span>Snapshot/Thumbnail zusätzlich speichern</span>
+      </label>
+      <label class="span-2">
+        <span>Speicherziel</span>
+        <select name="recording_storage_id">
+          <option value="">Erstes verfügbares Ziel</option>
+          {% for target in storage_targets %}
+          <option value="{{ target.id }}" {% if camera.recording_storage_id == target.id %}selected{% endif %}>
+            {{ target.name }} · {{ target.kind }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <fieldset class="span-2 checkbox-field">
+        <legend>Ereignistypen aufnehmen</legend>
+        <div class="checkbox-grid">
+          {% for trigger in available_triggers %}
+          <label class="check-row">
+            <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %}>
+            <span>{{ trigger.label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </div>
+    <div class="form-actions">
+      <a class="secondary-button" href="/storage">Speicher verwalten</a>
+      <button class="primary-button" type="submit">Speichern</button>
+    </div>
+  </form>
+
+  <section class="event-panel">
+    <div class="section-title">
+      <h2>Letzte Ereignisse</h2>
+      <span>{{ events | length }}</span>
+    </div>
+    {% if events %}
+    <ol class="event-list">
+      {% for event in events %}
+      <li>
+        <strong>{{ event.event_type }}</strong>
+        <span>{{ event.created_at }}</span>
+        {% if event.payload %}
+        <p>{{ event.payload }}</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <div class="quiet-box">Noch keine Ereignisse</div>
+    {% endif %}
+  </section>
+</section>
+{% else %}
+<section class="stream-line">
+  <span>Aufnahmen</span>
+  <a class="text-button" href="/recordings?camera_id={{ camera.id }}">Clips öffnen</a>
+</section>
+{% endif %}
+
+<section class="table-section">
+  <div class="section-title">
+    <h2>Erkennungen</h2>
+    <span>{{ detections | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Funktion</th>
+          <th>Kategorie</th>
+          <th>Quelle</th>
+          <th>Unterstützt</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for detection in detections %}
+        <tr>
+          <td>{{ detection.label }}</td>
+          <td>{{ detection.category }}</td>
+          <td>{{ detection.source }}</td>
+          <td>
+            {% if detection.supported %}
+            <span class="state-dot state-on"></span> ja
+            {% else %}
+            <span class="state-dot"></span> nein
+            {% endif %}
+          </td>
+          <td>
+            {% if detection.active %}
+            <span class="status-pill status-active">aktiv</span>
+            {% else %}
+            <span class="status-pill status-idle">inaktiv</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

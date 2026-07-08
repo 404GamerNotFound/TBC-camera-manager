@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Speicheranalyse</p>
+    <h1>Explorer</h1>
+  </div>
+  <form method="post" action="/storage/cleanup">
+    <button class="danger-button" type="submit">Cleanup ausführen</button>
+  </form>
+</section>
+
+<section class="camera-grid">
+  {% for target in storage_targets %}
+  <article class="camera-card">
+    <h2>{{ target.name }}</h2>
+    <dl class="metric-row">
+      <div>
+        <dt>Clips</dt>
+        <dd>{{ (target.used_bytes or 0) // (1024 * 1024) }} MB</dd>
+      </div>
+      <div>
+        <dt>Frei</dt>
+        <dd>{% if target.free_bytes is not none %}{{ target.free_bytes // (1024 * 1024 * 1024) }} GB{% else %}-{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Typ</dt>
+        <dd>{{ target.kind }}</dd>
+      </div>
+    </dl>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2>Belegung pro Kamera/Ereignis</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Kamera</th><th>Ereignis</th><th>Clips</th><th>Größe</th></tr></thead>
+      <tbody>
+        {% for row in by_camera_event %}
+        <tr><td>{{ row.camera_name }}</td><td>{{ row.detection_key }}</td><td>{{ row.clip_count }}</td><td>{{ row.size_bytes // (1024 * 1024) }} MB</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2>Cleanup-Vorschau</h2>
+    <span>{{ cleanup_items | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Kamera</th><th>Ereignis</th><th>Datum</th><th>Grund</th><th>Größe</th></tr></thead>
+      <tbody>
+        {% for item in cleanup_items %}
+        <tr><td>{{ item.camera_name }}</td><td>{{ item.detection_key }}</td><td>{{ item.started_at }}</td><td>{{ item.cleanup_reason }}</td><td>{{ (item.size_bytes or 0) // (1024 * 1024) }} MB</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+

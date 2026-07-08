@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-panel">
+  <div>
+    <p class="eyebrow">TB Camera</p>
+    <h1>TBC</h1>
+  </div>
+  <form class="login-form" method="post" action="/login">
+    {% if error %}
+    <div class="inline-error">{{ error }}</div>
+    {% endif %}
+    <label>
+      <span>Benutzer</span>
+      <input name="username" autocomplete="username" required autofocus>
+    </label>
+    <label>
+      <span>Passwort</span>
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button class="primary-button" type="submit">Anmelden</button>
+  </form>
+</section>
+{% endblock %}
+

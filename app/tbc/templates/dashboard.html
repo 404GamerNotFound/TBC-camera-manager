@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Kamera-Manager</p>
+    <h1>Kameras</h1>
+  </div>
+  {% if role == 'admin' %}
+  <a class="primary-button" href="/cameras/new">+ Kamera</a>
+  {% endif %}
+</section>
+
+{% if cameras %}
+<section class="camera-grid" aria-label="Kameraliste">
+  {% for camera in cameras %}
+  <article class="camera-card">
+    <div class="card-header">
+      <div>
+        <h2><a href="/cameras/{{ camera.id }}">{{ camera.name }}</a></h2>
+        <p>{{ camera.host }}:{{ camera.onvif_port }}</p>
+      </div>
+      <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'neu' }}</span>
+    </div>
+    <dl class="metric-row">
+      <div>
+        <dt>Unterstützt</dt>
+        <dd>{{ camera.supported_count or 0 }}</dd>
+      </div>
+      <div>
+        <dt>Aktiv</dt>
+        <dd>{{ camera.active_count or 0 }}</dd>
+      </div>
+      <div>
+        <dt>Erkannt</dt>
+        <dd>{{ camera.detection_count or 0 }}</dd>
+      </div>
+    </dl>
+    <div class="card-footer">
+      <span>
+        {{ camera.model or 'Modell offen' }}
+        {% if camera.recording_enabled %}
+        · Aufnahme aktiv
+        {% endif %}
+      </span>
+      <a class="text-button" href="/cameras/{{ camera.id }}">Öffnen</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="empty-state">
+  <h2>Noch keine Kamera</h2>
+  {% if role == 'admin' %}
+  <a class="primary-button" href="/cameras/new">+ Kamera</a>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

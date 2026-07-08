@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Archiv</p>
+    <h1>Clips</h1>
+  </div>
+</section>
+
+<form class="filter-bar" method="get" action="/recordings">
+  <label>
+    <span>Kamera</span>
+    <select name="camera_id">
+      <option value="">Alle</option>
+      {% for camera in cameras %}
+      <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    <span>Ereignis</span>
+    <select name="detection_key">
+      <option value="">Alle</option>
+      {% for key in event_keys %}
+      <option value="{{ key }}" {% if filters.detection_key == key %}selected{% endif %}>{{ key }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    <span>Von</span>
+    <input name="date_from" type="date" value="{{ filters.date_from }}">
+  </label>
+  <label>
+    <span>Bis</span>
+    <input name="date_to" type="date" value="{{ filters.date_to }}">
+  </label>
+  <button class="primary-button" type="submit">Filtern</button>
+</form>
+
+{% if recordings %}
+<section class="clip-grid">
+  {% for clip in recordings %}
+  <article class="clip-card">
+    <a class="clip-media" href="/recordings/{{ clip.id }}/media">
+      {% if clip.snapshot_path or clip.snapshot_remote_key %}
+      <img src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}">
+      {% else %}
+      <div class="clip-placeholder">{{ clip.detection_key }}</div>
+      {% endif %}
+    </a>
+    <div class="clip-body">
+      <div class="card-header">
+        <div>
+          <h2>{{ clip.event_label }}</h2>
+          <p>{{ clip.camera_name }} · {{ clip.started_at }}</p>
+        </div>
+        <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
+      </div>
+      {% if clip.status == 'ready' %}
+      <video controls preload="metadata" src="/recordings/{{ clip.id }}/media"></video>
+      {% elif clip.message %}
+      <p class="clip-message">{{ clip.message }}</p>
+      {% endif %}
+      <div class="card-footer">
+        <span>{{ clip.duration_seconds or 0 }}s · {{ clip.storage_kind }}</span>
+        <div class="button-row">
+          <a class="secondary-button" href="/recordings/{{ clip.id }}/download">Download</a>
+          {% if role == 'admin' %}
+          <form method="post" action="/recordings/{{ clip.id }}/delete">
+            <button class="danger-button" type="submit">Löschen</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="empty-state">
+  <h2>Keine Clips gefunden</h2>
+</section>
+{% endif %}
+{% endblock %}
+

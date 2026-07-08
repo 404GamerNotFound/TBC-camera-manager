@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Monitoring</p>
+    <h1>Health</h1>
+  </div>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2>Status</h2>
+    <span>{{ items | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Komponente</th>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Meldung</th>
+          <th>Geprüft</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.component_type }}</td>
+          <td>{{ item.component_id }}</td>
+          <td><span class="status-pill status-{{ item.status }}">{{ item.status }}</span></td>
+          <td>{{ item.message }}</td>
+          <td>{{ item.checked_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2>Events</h2>
+    <span>{{ events | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Zeit</th>
+          <th>Komponente</th>
+          <th>Vorher</th>
+          <th>Status</th>
+          <th>Meldung</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event.created_at }}</td>
+          <td>{{ event.component_type }} {{ event.component_id }}</td>
+          <td>{{ event.previous_status or '-' }}</td>
+          <td><span class="status-pill status-{{ event.status }}">{{ event.status }}</span></td>
+          <td>{{ event.message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

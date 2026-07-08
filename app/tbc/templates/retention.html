@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Cleanup</p>
+    <h1>Retention</h1>
+  </div>
+</section>
+
+<section class="storage-grid">
+  <form class="editor-form" method="post" action="/retention">
+    <div class="section-title"><h2>Neue Regel</h2></div>
+    <div class="form-grid">
+      <label><span>Name</span><input name="name" required></label>
+      <label class="check-row"><input name="enabled" type="checkbox" checked><span>aktiv</span></label>
+      <label><span>Kamera</span><select name="camera_id"><option value="">Alle</option>{% for camera in cameras %}<option value="{{ camera.id }}">{{ camera.name }}</option>{% endfor %}</select></label>
+      <label><span>Ereignis</span><select name="detection_key"><option value="">Alle</option>{% for key in event_keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}</select></label>
+      <label><span>Max. Alter Tage</span><input name="max_age_days" type="number" min="0"></label>
+      <label><span>Max. Größe GB</span><input name="max_size_gb" type="number" min="0" step="0.1"></label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit">Anlegen</button></div>
+  </form>
+  <section class="storage-list">
+    <div class="section-title"><h2>Regeln</h2><span>{{ rules | length }}</span></div>
+    {% for rule in rules %}
+    <article class="storage-item">
+      <form method="post" action="/retention/{{ rule.id }}">
+        <div class="form-grid">
+          <label><span>Name</span><input name="name" value="{{ rule.name }}" required></label>
+          <label class="check-row"><input name="enabled" type="checkbox" {% if rule.enabled %}checked{% endif %}><span>aktiv</span></label>
+          <label><span>Kamera</span><select name="camera_id"><option value="">Alle</option>{% for camera in cameras %}<option value="{{ camera.id }}" {% if rule.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>{% endfor %}</select></label>
+          <label><span>Ereignis</span><select name="detection_key"><option value="">Alle</option>{% for key in event_keys %}<option value="{{ key }}" {% if rule.detection_key == key %}selected{% endif %}>{{ key }}</option>{% endfor %}</select></label>
+          <label><span>Max. Alter Tage</span><input name="max_age_days" type="number" min="0" value="{{ rule.max_age_days or '' }}"></label>
+          <label><span>Max. Größe GB</span><input name="max_size_gb" type="number" min="0" step="0.1" value="{{ rule.max_size_gb or '' }}"></label>
+        </div>
+        <div class="form-actions"><button class="primary-button" type="submit">Speichern</button></div>
+      </form>
+      <form method="post" action="/retention/{{ rule.id }}/delete"><button class="danger-button" type="submit">Löschen</button></form>
+    </article>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
+

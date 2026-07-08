@@ -1,0 +1,24 @@
+services:
+  tbc:
+    build: .
+    container_name: tbc-camera-manager
+    restart: unless-stopped
+    ports:
+      - "${TBC_PORT:-8732}:${TBC_PORT:-8732}"
+    environment:
+      TBC_ADMIN_USERNAME: ${TBC_ADMIN_USERNAME:-admin}
+      TBC_ADMIN_PASSWORD: ${TBC_ADMIN_PASSWORD:-bitte-aendern}
+      TBC_SECRET_KEY: ${TBC_SECRET_KEY:-lokaler-dev-schluessel-bitte-aendern}
+      TBC_DATABASE_PATH: /data/tbc.sqlite3
+      TBC_RECORDINGS_PATH: /recordings
+      TBC_LIVE_PATH: ${TBC_LIVE_PATH:-/tmp/tbc-live}
+      TBC_PUBLIC_BASE_URL: ${TBC_PUBLIC_BASE_URL:-}
+      TBC_PORT: ${TBC_PORT:-8732}
+      TBC_POLL_INTERVAL_SECONDS: ${TBC_POLL_INTERVAL_SECONDS:-60}
+    volumes:
+      - tbc-data:/data
+      - tbc-recordings:/recordings
+
+volumes:
+  tbc-data:
+  tbc-recordings:

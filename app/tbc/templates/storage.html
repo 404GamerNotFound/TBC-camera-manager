@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Aufnahmeziele</p>
+    <h1>Speicher</h1>
+  </div>
+  <a class="secondary-button" href="/cameras">Kameras</a>
+</section>
+
+<section class="storage-grid">
+  <form class="editor-form" method="post" action="/storage">
+    <div class="section-title">
+      <h2>Neues Speicherziel</h2>
+    </div>
+    <div class="form-grid">
+      <label>
+        <span>Name</span>
+        <input name="name" required>
+      </label>
+      <label>
+        <span>Typ</span>
+        <select name="kind">
+          <option value="local">Lokaler oder gemounteter Pfad</option>
+          <option value="s3">S3-kompatibler Cloud-Speicher</option>
+        </select>
+      </label>
+      <label class="span-2">
+        <span>Lokaler Pfad im Container</span>
+        <input name="local_path" value="{{ defaults.local_path }}">
+      </label>
+      <label>
+        <span>S3 Endpoint URL</span>
+        <input name="s3_endpoint_url" placeholder="https://s3.example.com">
+      </label>
+      <label>
+        <span>S3 Region</span>
+        <input name="s3_region" placeholder="eu-central-1">
+      </label>
+      <label>
+        <span>S3 Bucket</span>
+        <input name="s3_bucket">
+      </label>
+      <label>
+        <span>S3 Prefix</span>
+        <input name="s3_prefix" placeholder="tbc/aufnahmen">
+      </label>
+      <label>
+        <span>Access Key</span>
+        <input name="s3_access_key_id" autocomplete="off">
+      </label>
+      <label>
+        <span>Secret Key</span>
+        <input name="s3_secret_access_key" type="password" autocomplete="new-password">
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Anlegen</button>
+    </div>
+  </form>
+
+  <section class="storage-list">
+    <div class="section-title">
+      <h2>Vorhandene Ziele</h2>
+      <span>{{ storage_targets | length }}</span>
+    </div>
+    {% for target in storage_targets %}
+    <article class="storage-item">
+      <form method="post" action="/storage/{{ target.id }}">
+        <div class="form-grid">
+          <label>
+            <span>Name</span>
+            <input name="name" value="{{ target.name }}" required>
+          </label>
+          <label>
+            <span>Typ</span>
+            <select name="kind">
+              <option value="local" {% if target.kind == 'local' %}selected{% endif %}>Lokaler/gemounteter Pfad</option>
+              <option value="s3" {% if target.kind == 's3' %}selected{% endif %}>S3 Cloud</option>
+            </select>
+          </label>
+          <label class="span-2">
+            <span>Lokaler Pfad</span>
+            <input name="local_path" value="{{ target.local_path or '' }}">
+          </label>
+          <label>
+            <span>S3 Endpoint</span>
+            <input name="s3_endpoint_url" value="{{ target.s3_endpoint_url or '' }}">
+          </label>
+          <label>
+            <span>S3 Region</span>
+            <input name="s3_region" value="{{ target.s3_region or '' }}">
+          </label>
+          <label>
+            <span>S3 Bucket</span>
+            <input name="s3_bucket" value="{{ target.s3_bucket or '' }}">
+          </label>
+          <label>
+            <span>S3 Prefix</span>
+            <input name="s3_prefix" value="{{ target.s3_prefix or '' }}">
+          </label>
+          <label>
+            <span>Access Key</span>
+            <input name="s3_access_key_id" value="{{ target.s3_access_key_id or '' }}" autocomplete="off">
+          </label>
+          <label>
+            <span>Secret Key</span>
+            <input name="s3_secret_access_key" type="password" value="{{ target.s3_secret_access_key or '' }}" autocomplete="new-password">
+          </label>
+          <label>
+            <span>Retention Tage</span>
+            <input name="retention_days" type="number" min="0" value="{{ target.retention_days or '' }}">
+          </label>
+          <label>
+            <span>Retention GB</span>
+            <input name="retention_max_gb" type="number" min="0" step="0.1" value="{{ target.retention_max_gb or '' }}">
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="primary-button" type="submit">Aktualisieren</button>
+        </div>
+      </form>
+      <form method="post" action="/storage/{{ target.id }}/delete">
+        <button class="danger-button" type="submit">Löschen</button>
+      </form>
+    </article>
+    {% else %}
+    <div class="quiet-box">Noch kein Speicherziel angelegt</div>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}

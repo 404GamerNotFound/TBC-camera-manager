@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">HLS</p>
+    <h1>Live</h1>
+  </div>
+</section>
+
+<section class="camera-grid">
+  {% for camera in cameras %}
+  <article class="camera-card">
+    <div class="card-header">
+      <div>
+        <h2>{{ camera.name }}</h2>
+        <p>{{ camera.host }}</p>
+      </div>
+      <span class="status-pill status-{{ 'active' if live_status('camera-' ~ camera.id) == 'running' else 'idle' }}">{{ live_status('camera-' ~ camera.id) }}</span>
+    </div>
+    <video controls muted playsinline src="/live/camera-{{ camera.id }}/index.m3u8"></video>
+    <div class="form-actions">
+      <form method="post" action="/live/camera/{{ camera.id }}/start">
+        <button class="primary-button" type="submit">Start</button>
+      </form>
+      <form method="post" action="/live/camera-{{ camera.id }}/stop">
+        <button class="secondary-button" type="submit">Stop</button>
+      </form>
+    </div>
+    {% for channel in channels_by_camera[camera.id] %}
+    {% if channel.enabled %}
+    <div class="stream-line">
+      <span>{{ channel.name }}</span>
+      <form method="post" action="/live/channel/{{ channel.id }}/start">
+        <button class="secondary-button" type="submit">Start</button>
+      </form>
+      <a class="text-button" href="/live/channel-{{ channel.id }}/index.m3u8">HLS</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </article>
+  {% else %}
+  <section class="empty-state">
+    <h2>Keine Kamera verfügbar</h2>
+  </section>
+  {% endfor %}
+</section>
+{% endblock %}
+

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">ONVIF / Reolink</p>
+    <h1>Kamera einbinden</h1>
+  </div>
+</section>
+
+<form class="editor-form" method="post" action="/cameras">
+  {% if error %}
+  <div class="inline-error">{{ error }}</div>
+  {% endif %}
+  <div class="form-grid">
+    <label>
+      <span>Name</span>
+      <input name="name" value="{{ values.name }}" required autofocus>
+    </label>
+    <label>
+      <span>Host / IP</span>
+      <input name="host" value="{{ values.host }}" required>
+    </label>
+    <label>
+      <span>ONVIF-Port</span>
+      <input name="onvif_port" type="number" min="1" max="65535" value="{{ values.onvif_port }}" required>
+    </label>
+    <label>
+      <span>HTTP-Port</span>
+      <input name="http_port" type="number" min="1" max="65535" value="{{ values.http_port }}" required>
+    </label>
+    <label>
+      <span>Benutzer</span>
+      <input name="username" value="{{ values.username }}" autocomplete="username" required>
+    </label>
+    <label>
+      <span>Passwort</span>
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+  </div>
+  <div class="form-actions">
+    <a class="secondary-button" href="/cameras">Abbrechen</a>
+    <button class="primary-button" type="submit">Speichern</button>
+  </div>
+</form>
+{% endblock %}
+

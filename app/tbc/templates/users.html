@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Zugriff</p>
+    <h1>Benutzer</h1>
+  </div>
+</section>
+
+<section class="storage-grid">
+  <form class="editor-form" method="post" action="/users">
+    <div class="section-title">
+      <h2>Neuer Benutzer</h2>
+    </div>
+    <div class="form-grid">
+      <label>
+        <span>Benutzername</span>
+        <input name="username" required>
+      </label>
+      <label>
+        <span>Passwort</span>
+        <input name="password" type="password" required autocomplete="new-password">
+      </label>
+      <label>
+        <span>Rolle</span>
+        <select name="role">
+          <option value="viewer">Viewer</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+      <fieldset class="span-2 checkbox-field">
+        <legend>Kamerazugriff für Viewer</legend>
+        <div class="checkbox-grid">
+          {% for camera in cameras %}
+          <label class="check-row">
+            <input name="camera_ids" type="checkbox" value="{{ camera.id }}">
+            <span>{{ camera.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Anlegen</button>
+    </div>
+  </form>
+
+  <section class="storage-list">
+    <div class="section-title">
+      <h2>Vorhandene Benutzer</h2>
+      <span>{{ users | length }}</span>
+    </div>
+    {% for user in users %}
+    <article class="storage-item">
+      <form method="post" action="/users/{{ user.id }}">
+        <div class="form-grid">
+          <label>
+            <span>Benutzername</span>
+            <input name="username" value="{{ user.username }}" required>
+          </label>
+          <label>
+            <span>Neues Passwort</span>
+            <input name="password" type="password" autocomplete="new-password">
+          </label>
+          <label>
+            <span>Rolle</span>
+            <select name="role">
+              <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %}>Viewer</option>
+              <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+          </label>
+          <fieldset class="span-2 checkbox-field">
+            <legend>Kamerazugriff</legend>
+            <div class="checkbox-grid">
+              {% for camera in cameras %}
+              <label class="check-row">
+                <input name="camera_ids" type="checkbox" value="{{ camera.id }}" {% if camera.id in access_by_user[user.id] %}checked{% endif %}>
+                <span>{{ camera.name }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+        </div>
+        <div class="form-actions">
+          <button class="primary-button" type="submit">Aktualisieren</button>
+        </div>
+      </form>
+      <form method="post" action="/users/{{ user.id }}/delete">
+        <button class="danger-button" type="submit">Löschen</button>
+      </form>
+    </article>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
+

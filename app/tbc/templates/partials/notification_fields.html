@@ -1,0 +1,24 @@
+<div class="form-grid">
+  <label><span>Name</span><input name="name" value="{{ values.name if values is defined else '' }}" required></label>
+  <label><span>Typ</span><select name="kind">
+    {% set kind = values.kind if values is defined else 'webhook' %}
+    <option value="webhook" {% if kind == 'webhook' %}selected{% endif %}>Webhook</option>
+    <option value="telegram" {% if kind == 'telegram' %}selected{% endif %}>Telegram</option>
+    <option value="email" {% if kind == 'email' %}selected{% endif %}>E-Mail</option>
+    <option value="pushover" {% if kind == 'pushover' %}selected{% endif %}>Pushover</option>
+    <option value="home_assistant" {% if kind == 'home_assistant' %}selected{% endif %}>Home Assistant Notify</option>
+  </select></label>
+  <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span>aktiv</span></label>
+  <label class="check-row"><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span>Snapshot anhängen</span></label>
+  <label class="span-2"><span>Event-Filter</span><input name="event_filter" value="{{ values.event_filter if values is defined and values.event_filter else '' }}" placeholder="recording_finished,recording_failed"></label>
+  <label><span>URL / Pushover User / HA URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}"></label>
+  <label><span>Token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+  <label><span>Telegram Chat ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>
+  <label><span>HA Service</span><input name="ha_service" value="{{ values.ha_service if values is defined and values.ha_service else '' }}" placeholder="notify.mobile_app"></label>
+  <label><span>E-Mail an</span><input name="email_to" value="{{ values.email_to if values is defined and values.email_to else '' }}"></label>
+  <label><span>E-Mail von</span><input name="email_from" value="{{ values.email_from if values is defined and values.email_from else '' }}"></label>
+  <label><span>SMTP Host</span><input name="smtp_host" value="{{ values.smtp_host if values is defined and values.smtp_host else '' }}"></label>
+  <label><span>SMTP Port</span><input name="smtp_port" type="number" value="{{ values.smtp_port if values is defined and values.smtp_port else '' }}"></label>
+  <label><span>SMTP Benutzer</span><input name="smtp_username" value="{{ values.smtp_username if values is defined and values.smtp_username else '' }}"></label>
+  <label><span>SMTP Passwort</span><input name="smtp_password" type="password" value="{{ values.smtp_password if values is defined and values.smtp_password else '' }}"></label>
+</div>

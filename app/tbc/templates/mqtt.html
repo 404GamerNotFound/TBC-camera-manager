@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Home Assistant</p>
+    <h1>MQTT</h1>
+  </div>
+</section>
+
+<form class="editor-form" method="post" action="/mqtt">
+  <label class="check-row">
+    <input name="enabled" type="checkbox" {% if config.enabled %}checked{% endif %}>
+    <span>MQTT aktivieren</span>
+  </label>
+  <div class="form-grid">
+    <label>
+      <span>Broker Host</span>
+      <input name="host" value="{{ config.host or '' }}">
+    </label>
+    <label>
+      <span>Port</span>
+      <input name="port" type="number" min="1" max="65535" value="{{ config.port or 1883 }}">
+    </label>
+    <label>
+      <span>Benutzer</span>
+      <input name="username" value="{{ config.username or '' }}" autocomplete="off">
+    </label>
+    <label>
+      <span>Passwort</span>
+      <input name="password" type="password" value="{{ config.password or '' }}" autocomplete="new-password">
+    </label>
+    <label>
+      <span>Topic Prefix</span>
+      <input name="topic_prefix" value="{{ config.topic_prefix or 'tbc' }}">
+    </label>
+    <label>
+      <span>Discovery Prefix</span>
+      <input name="discovery_prefix" value="{{ config.discovery_prefix or 'homeassistant' }}">
+    </label>
+    <label class="check-row span-2">
+      <input name="discovery_enabled" type="checkbox" {% if config.discovery_enabled %}checked{% endif %}>
+      <span>Home-Assistant-Discovery publizieren</span>
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit">Speichern</button>
+  </div>
+</form>
+{% endblock %}
+

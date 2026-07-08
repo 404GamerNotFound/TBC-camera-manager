@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }} - TB Camera</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/cameras" aria-label="TBC Dashboard">
+        <span class="brand-mark">TBC</span>
+        <span class="brand-name">TB Camera</span>
+      </a>
+      {% if username %}
+      <nav class="top-actions" aria-label="Hauptnavigation">
+        <a class="nav-link" href="/cameras">Kameras</a>
+        <a class="nav-link" href="/live">Live</a>
+        <a class="nav-link" href="/recordings">Clips</a>
+        {% if role == 'admin' %}
+        <a class="nav-link" href="/storage">Speicher</a>
+        <a class="nav-link" href="/storage/explorer">Explorer</a>
+        <a class="nav-link" href="/retention">Retention</a>
+        <a class="nav-link" href="/notifications">Notify</a>
+        <a class="nav-link" href="/health">Health</a>
+        <a class="nav-link" href="/users">Benutzer</a>
+        <a class="nav-link" href="/mqtt">MQTT</a>
+        {% endif %}
+        <form method="post" action="/logout">
+          <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
+        </form>
+      </nav>
+      {% endif %}
+    </header>
+
+    <main class="shell">
+      {% if flash %}
+      <div class="flash flash-{{ flash.level }}">{{ flash.message }}</div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
