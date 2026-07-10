@@ -64,7 +64,10 @@ async def list_sd_card_recordings(
         _ensure_stream_channel(host_api, channel)
         _, files = await host_api.request_vod_files(channel=channel, start=start, end=end, stream=_valid_stream(stream))
         return [_vod_file_row(file, channel=channel, stream=_valid_stream(stream)) for file in files]
-    except Exception:
+    except Exception as exc:
+        if _is_no_sd_card_error(exc):
+            LOGGER.info("No SD card recordings available for camera %s: %s", camera.get("id"), exc)
+            return []
         LOGGER.exception("SD card search failed for camera %s", camera.get("id"))
         raise
     finally:
@@ -206,6 +209,11 @@ async def _close_host(host_api: Any) -> None:
 
 def _valid_stream(stream: str) -> str:
     return "sub" if stream == "sub" else "main"
+
+
+def _is_no_sd_card_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "request vod files" in text and "rcv failed" in text and "rspcode" in text and "-17" in text
 
 
 def _download_name(source: str, start_id: str) -> str:

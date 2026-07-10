@@ -49,6 +49,25 @@ class FakeVodFile:
     triggers = 0
 
 
+class NoSdCardHost:
+    stream_channels = [0]
+
+    def __init__(self):
+        self.logged_out = False
+
+    async def get_host_data(self):
+        return None
+
+    async def request_vod_files(self, **_kwargs):
+        raise RuntimeError(
+            "Host: 192.168.1.167:80: Request VOD files: API returned error code 1, "
+            "response: [{'cmd': 'Search', 'code': 1, 'error': {'detail': 'rcv failed', 'rspCode': -17}}]"
+        )
+
+    async def logout(self):
+        self.logged_out = True
+
+
 class SdCardTests(unittest.IsolatedAsyncioTestCase):
     async def test_download_stream_closes_reolink_session_after_read(self):
         host = FakeHost()
@@ -65,6 +84,21 @@ class SdCardTests(unittest.IsolatedAsyncioTestCase):
             chunks = [chunk async for chunk in download.chunks()]
 
         self.assertEqual(chunks, [b"one", b"two"])
+        self.assertTrue(host.logged_out)
+
+    async def test_no_sd_card_search_error_returns_empty_recordings(self):
+        host = NoSdCardHost()
+        camera = {"id": 3, "host": "192.0.2.10", "username": "admin", "password": "secret", "http_port": 80}
+
+        with patch("app.tbc.reolink.sdcard._host", return_value=host):
+            rows = await sdcard.list_sd_card_recordings(
+                camera,
+                channel=0,
+                start=datetime(2026, 7, 10, 0, 0, 0),
+                end=datetime(2026, 7, 10, 23, 59, 59),
+            )
+
+        self.assertEqual(rows, [])
         self.assertTrue(host.logged_out)
 
     def test_vod_file_row_formats_reolink_file(self):
