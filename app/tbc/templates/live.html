@@ -18,7 +18,15 @@
       </div>
       <span class="status-pill status-{{ 'active' if live_status('camera-' ~ camera.id) == 'running' else 'idle' }}">{{ live_status('camera-' ~ camera.id) }}</span>
     </div>
-    <video controls muted playsinline src="/live/camera-{{ camera.id }}/index.m3u8"></video>
+    {% set camera_key = 'camera-' ~ camera.id %}
+    {% if live_status(camera_key) in ['running', 'starting'] %}
+    <video controls muted playsinline autoplay src="/live/{{ camera_key }}/index.m3u8"></video>
+    {% else %}
+    <div class="live-placeholder">Stream gestoppt</div>
+    {% endif %}
+    {% if live_message(camera_key) %}
+    <p class="clip-message">{{ live_message(camera_key) }}</p>
+    {% endif %}
     <div class="form-actions">
       <form method="post" action="/live/camera/{{ camera.id }}/start">
         <button class="primary-button" type="submit">Start</button>
@@ -35,6 +43,9 @@
         <button class="secondary-button" type="submit">Start</button>
       </form>
       <a class="text-button" href="/live/channel-{{ channel.id }}/index.m3u8">HLS</a>
+      {% if live_message('channel-' ~ channel.id) %}
+      <span class="stream-note">{{ live_message('channel-' ~ channel.id) }}</span>
+      {% endif %}
     </div>
     {% endif %}
     {% endfor %}
@@ -46,4 +57,3 @@
   {% endfor %}
 </section>
 {% endblock %}
-

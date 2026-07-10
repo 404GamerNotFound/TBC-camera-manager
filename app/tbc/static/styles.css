@@ -492,6 +492,19 @@ code {
   background: var(--surface);
 }
 
+.sd-filter {
+  grid-template-columns: minmax(180px, 1.2fr) repeat(4, minmax(130px, 1fr)) auto;
+}
+
+.file-cell {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+}
+
+.sd-table {
+  min-width: 940px;
+}
+
 .clip-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -528,6 +541,22 @@ code {
   margin-top: 12px;
   aspect-ratio: 16 / 9;
   background: #111817;
+}
+
+.live-placeholder {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  width: min(520px, 100%);
+  color: white;
+  background: #111817;
+  font-weight: 800;
+}
+
+.stream-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
 }
 
 .clip-placeholder {
@@ -585,6 +614,106 @@ code {
 .section-title span {
   color: var(--muted);
   font-weight: 800;
+}
+
+.debug-settings-actions {
+  margin-top: 14px;
+}
+
+.debug-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 19;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: white;
+  background: var(--brand);
+  box-shadow: var(--shadow);
+}
+
+.debug-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-items: end;
+  background: rgba(30, 37, 34, 0.24);
+}
+
+.debug-drawer[hidden] {
+  display: none;
+}
+
+.debug-drawer-panel {
+  max-height: min(58vh, 620px);
+  padding: 18px;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 -18px 45px rgba(31, 45, 39, 0.16);
+}
+
+.debug-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.debug-drawer-head strong,
+.debug-drawer-head span {
+  display: block;
+}
+
+.debug-drawer-head span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.debug-list {
+  display: grid;
+  gap: 8px;
+  max-height: calc(min(58vh, 620px) - 92px);
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.debug-line {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.debug-line-head {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.debug-line code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.debug-line-error {
+  border-color: rgba(167, 55, 55, 0.32);
+  background: #fff0f0;
+}
+
+.debug-line-warning {
+  border-color: rgba(163, 100, 19, 0.32);
+  background: #fff5e6;
 }
 
 .table-wrap {

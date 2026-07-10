@@ -22,6 +22,29 @@ Standardwerte aus `docker-compose.yml`:
 
 Bitte `TBC_ADMIN_PASSWORD` und `TBC_SECRET_KEY` in `.env` vor einem echten Einsatz aendern. `TBC_PUBLIC_BASE_URL` sollte gesetzt werden, wenn Webhooks oder Home-Assistant-Notify Links zu Clip und Snapshot erhalten sollen.
 
+## Installation mit Portainer
+
+Portainer kann dieses Projekt am zuverlaessigsten als Standalone-Stack aus einem Git-Repository bauen. Der Compose-Stack enthaelt ein lokales `build: .`; wenn der Compose-Text nur in den Web-Editor kopiert wird, fehlen Dockerfile, App-Code und `requirements.txt` im Build-Kontext.
+
+1. In Portainer `Stacks` oeffnen und `Add stack` waehlen.
+2. Als Build-Methode `Repository`/`Git repository` auswaehlen.
+3. Repository-URL und Branch eintragen. Als Compose-Pfad `docker-compose.yml` verwenden.
+4. Environment-Variablen im Portainer-Formular setzen:
+   - `TBC_ADMIN_USERNAME=admin`
+   - `TBC_ADMIN_PASSWORD=<starkes-passwort>`
+   - `TBC_SECRET_KEY=<lange-zufaellige-zeichenkette>`
+   - `TBC_PORT=8732`
+   - optional `TBC_PUBLIC_BASE_URL=https://dein-hostname`
+5. Stack deployen. Portainer baut daraus das Image `tbc-camera-manager:latest` und startet den Container `tbc-camera-manager`.
+6. Die Oberflaeche unter `http://<docker-host>:8732` oeffnen und mit dem gesetzten Admin-Benutzer anmelden.
+
+Hinweise fuer typische Portainer-Probleme:
+
+- Nicht als Swarm-Stack deployen, solange kein bereits gebautes Registry-Image verwendet wird. Docker Swarm ignoriert lokale `build`-Anweisungen.
+- Der Portainer-Agent oder Docker-Host muss das Git-Repository erreichen koennen.
+- Bei NAS-/Host-Aufnahmen zusaetzliche Bind-Mounts in `docker-compose.yml` eintragen und den Zielpfad anschliessend im TBC-Bereich `Speicher` hinterlegen.
+- Wenn Port `8732` schon belegt ist, `TBC_PORT` aendern und denselben Wert fuer Host- und Container-Port verwenden.
+
 ## Kamera einbinden
 
 In der Weboberflaeche eine Kamera mit Host/IP, ONVIF-Port, HTTP-Port und Reolink-Zugangsdaten anlegen. TBC prueft danach:
@@ -52,6 +75,17 @@ Ein Host- oder NAS-Verzeichnis kann in `docker-compose.yml` als zusaetzliches Vo
 ## Clip-Browser
 
 Der Bereich `Clips` zeigt gespeicherte Aufnahmen mit Datum, Kamera, Ereignistyp, Status und Thumbnail. Clips koennen gefiltert, abgespielt, heruntergeladen und als Admin geloescht werden. Lokale Clips werden direkt aus dem Container ausgeliefert; S3-Clips werden ueber temporaere Presigned URLs geoeffnet.
+
+## SD-Karte / Kamera-Archiv
+
+Der Bereich `SD-Karte` liest vorhandene Reolink-Aufnahmen direkt von der Kamera bzw. vom NVR. TBC nutzt dafuer die hinterlegten Kamera-Zugangsdaten und die Reolink-VOD-API aus `reolink-aio`.
+
+- Auswahl nach Kamera, Kanal, Stream und Datum.
+- Anzeige von Start/Ende, Dauer, Ereignistyp, Datei und Groesse.
+- Abspielen und Download ueber authentifizierte TBC-Routen; TBC streamt die Datei von der Kamera zum Browser und schliesst die Reolink-Session danach wieder.
+- Viewer sehen nur SD-Card-Inhalte von Kameras, fuer die sie freigegeben sind.
+
+Die SD-Card-Dateien werden dabei nicht in die TBC-Aufnahmetabelle importiert und unterliegen nicht den Retention-Regeln. Retention gilt weiterhin nur fuer Clips, die TBC selbst aufgenommen und in einem Speicherziel abgelegt hat.
 
 ## Live-Ansicht
 
@@ -130,8 +164,10 @@ Nicht jede Reolink-Kamera liefert alle Funktionen. TBC speichert deshalb pro Kam
 - Login: Cookie-Session mit PBKDF2-SHA256 gehashtem Admin-Passwort.
 - ONVIF: `onvif-zeep` fuer Device-, Media- und Event-Probe.
 - Reolink: `reolink-aio` fuer modellabhaengige AI-/Smart-AI-Zustaende.
+- SD-Karte: `reolink-aio` VOD-Suche ueber `Search`, Wiedergabe ueber `Playback` und Download ueber `Download` bzw. `NvrDownload`.
 - Recording: `ffmpeg` fuer RTSP-Clips, Ringbuffer-Segmente fuer Vorlauf, Nachlaufsteuerung ueber aktive Events, optional `boto3` fuer S3-kompatible Uploads.
 - Live: HLS-Proxy ueber `ffmpeg` mit authentifizierten Playlist- und Segment-Routen.
+- Debug Log: In-Memory-Ringbuffer fuer App- und ffmpeg-Meldungen, abrufbar als Admin-Pull-up auf jeder Seite und unter `Einstellungen`.
 - Retention: `app/tbc/maintenance.py` erzeugt Cleanup-Vorschau aus expliziten Regeln und Speicherziel-Limits und loescht lokale Dateien bzw. S3-Objekte ueber die vorhandene Recording-Abstraktion.
 - Benachrichtigungen: `app/tbc/notifications.py` versendet Recording-, Cleanup- und Health-Statuswechsel an Webhook, Telegram, E-Mail, Pushover oder Home Assistant Notify.
 - Health: `app/tbc/health.py` schreibt Status in `health_status`; `upsert_health_status` protokolliert Statuswechsel in `health_events`.

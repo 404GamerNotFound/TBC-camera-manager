@@ -1,5 +1,6 @@
 services:
   tbc:
+    image: tbc-camera-manager:latest
     build: .
     container_name: tbc-camera-manager
     restart: unless-stopped

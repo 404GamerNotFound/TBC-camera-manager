@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Form, Query, Request, status
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -14,6 +15,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from . import database, mqtt
 from .channels import apply_channel_enabled_filter
 from .config import load_settings
+from .debug_log import clear_entries as clear_debug_log_entries
+from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .health import run_health_checks
 from .live import LiveManager, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
@@ -21,10 +24,12 @@ from .notifications import notify_event
 from .recording import RecordingManager, delete_recording_files, presigned_url
 from .reolink.catalog import definitions
 from .reolink.service import probe_camera
+from .reolink.sdcard import list_sd_card_recordings, open_sd_card_download
 
 LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
 BASE_DIR = Path(__file__).resolve().parent
+DEBUG_LOG = install_debug_log()
 
 app = FastAPI(title="TBC - TB Camera")
 app.add_middleware(
@@ -460,6 +465,125 @@ async def recordings(
     )
 
 
+@app.get("/sd-card", response_class=HTMLResponse)
+async def sd_card(
+    request: Request,
+    camera_id: int | None = Query(None),
+    channel: int | None = Query(None),
+    stream: str = Query("main"),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
+):
+    guard = _require_login(request)
+    if guard:
+        return guard
+    user = _current_user(request)
+    cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    selected_camera_id = camera_id or (int(cameras[0]["id"]) if cameras else None)
+    selected_camera = None
+    channels: list[dict[str, Any]] = []
+    recordings: list[dict[str, Any]] = []
+    error = None
+    today = date.today()
+    start_date = _parse_date(date_from, today)
+    end_date = _parse_date(date_to, start_date)
+    stream_value = "sub" if stream == "sub" else "main"
+    selected_channel = channel or 0
+
+    if selected_camera_id is not None:
+        access_guard = _require_camera_access(request, selected_camera_id)
+        if access_guard:
+            return access_guard
+        selected_camera = database.get_camera(SETTINGS.database_path, selected_camera_id)
+        if selected_camera is None:
+            error = "Kamera wurde nicht gefunden"
+        else:
+            channels = database.list_camera_channels(SETTINGS.database_path, selected_camera_id)
+            if not channels:
+                channels = [
+                    {
+                        "id": None,
+                        "channel_index": 0,
+                        "name": selected_camera["name"],
+                        "enabled": 1,
+                    }
+                ]
+            known_channel_indices = {int(item["channel_index"]) for item in channels}
+            selected_channel = channel if channel in known_channel_indices else int(channels[0]["channel_index"])
+            if start_date > end_date:
+                error = "Das Startdatum darf nicht nach dem Enddatum liegen"
+            else:
+                try:
+                    recordings = await list_sd_card_recordings(
+                        selected_camera,
+                        channel=selected_channel,
+                        start=datetime.combine(start_date, time.min),
+                        end=datetime.combine(end_date, time.max.replace(microsecond=0)),
+                        stream=stream_value,
+                    )
+                except Exception as exc:
+                    error = f"SD-Card-Inhalte konnten nicht gelesen werden: {exc}"
+    return templates.TemplateResponse(
+        request,
+        "sd_card.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": user["role"],
+            "cameras": cameras,
+            "selected_camera": selected_camera,
+            "channels": channels,
+            "recordings": recordings,
+            "error": error,
+            "filters": {
+                "camera_id": selected_camera_id,
+                "channel": selected_channel,
+                "stream": stream_value,
+                "date_from": start_date.isoformat(),
+                "date_to": end_date.isoformat(),
+            },
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/sd-card/{camera_id}/media")
+async def sd_card_media(
+    request: Request,
+    camera_id: int,
+    channel: int = Query(0),
+    source: str = Query(...),
+    start: str = Query(""),
+    end: str = Query(""),
+    stream: str = Query("main"),
+    download: bool = Query(False),
+):
+    guard = _require_camera_access(request, camera_id)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        download_stream = await open_sd_card_download(
+            camera,
+            channel=channel,
+            source=source,
+            start_id=start,
+            end_id=end,
+            stream=stream,
+        )
+    except Exception as exc:
+        _set_flash(request, f"SD-Card-Medium konnte nicht geoeffnet werden: {exc}", "error")
+        return _redirect(f"/sd-card?camera_id={camera_id}&channel={channel}&stream={stream}")
+    disposition = "attachment" if download else "inline"
+    headers = {
+        "Content-Length": str(download_stream.length),
+        "Content-Disposition": f'{disposition}; filename="{_safe_header_filename(download_stream.filename)}"',
+    }
+    return StreamingResponse(download_stream.chunks(), media_type="video/mp4", headers=headers)
+
+
 @app.get("/recordings/{recording_id}/media")
 async def recording_media(request: Request, recording_id: int):
     recording = _authorized_recording(request, recording_id)
@@ -703,6 +827,7 @@ async def live_view(request: Request):
             "cameras": cameras,
             "channels_by_camera": channels_by_camera,
             "live_status": LIVE_MANAGER.status,
+            "live_message": LIVE_MANAGER.message,
             "flash": _pop_flash(request),
         },
     )
@@ -715,12 +840,22 @@ async def start_camera_live(request: Request, camera_id: int):
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     uri = stream_uri_for(camera) if camera else None
+    if camera and not uri:
+        LOGGER.info("Kein Live-Stream fuer Kamera %s bekannt, aktualisiere Kamera-Probe", camera_id)
+        await _refresh_camera(camera_id)
+        camera = database.get_camera(SETTINGS.database_path, camera_id)
+        uri = stream_uri_for(camera) if camera else None
     if not uri:
         _set_flash(request, "Kein Stream für Live-Ansicht bekannt", "error")
         return _redirect("/live")
     try:
-        LIVE_MANAGER.start(f"camera-{camera_id}", uri)
+        live_key = f"camera-{camera_id}"
+        LIVE_MANAGER.start(live_key, uri)
+        ready, message = await asyncio.to_thread(LIVE_MANAGER.wait_until_ready, live_key)
+        if not ready:
+            _set_flash(request, f"Live-Ansicht startet nicht: {message}", "error")
     except Exception as exc:
+        LOGGER.exception("Live-Ansicht konnte fuer Kamera %s nicht gestartet werden", camera_id)
         _set_flash(request, f"Live-Ansicht konnte nicht gestartet werden: {exc}", "error")
     return _redirect("/live")
 
@@ -738,12 +873,23 @@ async def start_channel_live(request: Request, channel_id: int):
         return _redirect("/live")
     camera = database.get_camera(SETTINGS.database_path, int(channel["camera_id"]))
     uri = stream_uri_for(camera, channel)
+    if camera and not uri:
+        LOGGER.info("Kein Live-Stream fuer Kanal %s bekannt, aktualisiere Kamera-Probe", channel_id)
+        await _refresh_camera(int(channel["camera_id"]))
+        channel = database.get_camera_channel(SETTINGS.database_path, channel_id)
+        camera = database.get_camera(SETTINGS.database_path, int(channel["camera_id"])) if channel else None
+        uri = stream_uri_for(camera, channel) if camera and channel else None
     if not uri:
         _set_flash(request, "Kein Stream für diesen Kanal bekannt", "error")
         return _redirect("/live")
     try:
-        LIVE_MANAGER.start(f"channel-{channel_id}", uri)
+        live_key = f"channel-{channel_id}"
+        LIVE_MANAGER.start(live_key, uri)
+        ready, message = await asyncio.to_thread(LIVE_MANAGER.wait_until_ready, live_key)
+        if not ready:
+            _set_flash(request, f"Live-Ansicht startet nicht: {message}", "error")
     except Exception as exc:
+        LOGGER.exception("Live-Ansicht konnte fuer Kanal %s nicht gestartet werden", channel_id)
         _set_flash(request, f"Live-Ansicht konnte nicht gestartet werden: {exc}", "error")
     return _redirect("/live")
 
@@ -765,7 +911,7 @@ async def live_playlist(request: Request, live_key: str):
     path = LIVE_MANAGER.playlist_path(live_key)
     if not path.exists():
         return JSONResponse({"error": "not ready"}, status_code=status.HTTP_404_NOT_FOUND)
-    return FileResponse(path, media_type="application/vnd.apple.mpegurl")
+    return FileResponse(path, media_type="application/vnd.apple.mpegurl", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/live/{live_key}/{segment}")
@@ -778,7 +924,43 @@ async def live_segment(request: Request, live_key: str, segment: str):
     path = LIVE_MANAGER.segment_path(live_key, segment)
     if not path.exists():
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
-    return FileResponse(path, media_type="video/mp2t")
+    return FileResponse(path, media_type="video/mp2t", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "settings.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "debug_count": len(list_debug_log_entries(limit=600)),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/api/debug-log")
+async def debug_log_api(request: Request, limit: int = Query(200)):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    return {"entries": list_debug_log_entries(limit=max(1, min(600, int(limit))))}
+
+
+@app.post("/settings/debug-log/clear")
+async def clear_debug_log(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    clear_debug_log_entries()
+    _set_flash(request, "Debug Log wurde geleert")
+    return _redirect("/settings")
 
 
 @app.get("/health", response_class=HTMLResponse)
@@ -1092,6 +1274,19 @@ def _pop_flash(request: Request) -> dict[str, Any] | None:
 def _none_if_blank(value: str) -> str | None:
     value = value.strip()
     return value or None
+
+
+def _parse_date(value: str | None, fallback: date) -> date:
+    if not value:
+        return fallback
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return fallback
+
+
+def _safe_header_filename(value: str) -> str:
+    return value.replace("\\", "_").replace("/", "_").replace('"', "_") or "clip.mp4"
 
 
 def _validated_storage_kind(kind: str) -> str:

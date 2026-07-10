@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Kamera-Archiv</p>
+    <h1>SD-Karte</h1>
+  </div>
+</section>
+
+<form class="filter-bar sd-filter" method="get" action="/sd-card">
+  <label>
+    <span>Kamera</span>
+    <select name="camera_id">
+      {% for camera in cameras %}
+      <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    <span>Kanal</span>
+    <select name="channel">
+      {% for item in channels %}
+      <option value="{{ item.channel_index }}" {% if filters.channel == item.channel_index %}selected{% endif %}>
+        {{ item.name }} · {{ item.channel_index + 1 }}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    <span>Stream</span>
+    <select name="stream">
+      <option value="main" {% if filters.stream == 'main' %}selected{% endif %}>Main</option>
+      <option value="sub" {% if filters.stream == 'sub' %}selected{% endif %}>Sub</option>
+    </select>
+  </label>
+  <label>
+    <span>Von</span>
+    <input name="date_from" type="date" value="{{ filters.date_from }}">
+  </label>
+  <label>
+    <span>Bis</span>
+    <input name="date_to" type="date" value="{{ filters.date_to }}">
+  </label>
+  <button class="primary-button" type="submit">Suchen</button>
+</form>
+
+{% if error %}
+<div class="inline-error">{{ error }}</div>
+{% endif %}
+
+{% if recordings %}
+<section class="table-section">
+  <div class="section-title">
+    <h2>Aufnahmen auf SD-Karte</h2>
+    <span>{{ recordings | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table class="sd-table">
+      <thead>
+        <tr>
+          <th>Start</th>
+          <th>Ende</th>
+          <th>Dauer</th>
+          <th>Typ</th>
+          <th>Datei</th>
+          <th>Groesse</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for clip in recordings %}
+        {% set query = 'channel=' ~ clip.channel ~ '&stream=' ~ clip.stream ~ '&source=' ~ (clip.source | urlencode) ~ '&start=' ~ clip.start_id ~ '&end=' ~ clip.end_id %}
+        <tr>
+          <td>{{ clip.start_time }}</td>
+          <td>{{ clip.end_time }}</td>
+          <td>{{ clip.duration_seconds }}s</td>
+          <td>{{ clip.trigger_label }}</td>
+          <td class="file-cell">{{ clip.file_name }}</td>
+          <td>{{ (clip.size_bytes / 1048576) | round(1) }} MB</td>
+          <td>
+            <div class="button-row">
+              <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}">Abspielen</a>
+              <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}&download=1">Download</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% elif not error %}
+<section class="empty-state">
+  <h2>Keine SD-Card-Aufnahmen gefunden</h2>
+</section>
+{% endif %}
+{% endblock %}

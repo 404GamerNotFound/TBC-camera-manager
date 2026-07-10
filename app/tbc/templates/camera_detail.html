@@ -44,6 +44,7 @@
   <form method="post" action="/live/camera/{{ camera.id }}/start">
     <button class="secondary-button" type="submit">Live</button>
   </form>
+  <a class="secondary-button" href="/sd-card?camera_id={{ camera.id }}">SD-Karte</a>
 </section>
 {% endif %}
 
@@ -190,6 +191,7 @@
 <section class="stream-line">
   <span>Aufnahmen</span>
   <a class="text-button" href="/recordings?camera_id={{ camera.id }}">Clips öffnen</a>
+  <a class="text-button" href="/sd-card?camera_id={{ camera.id }}">SD-Karte öffnen</a>
 </section>
 {% endif %}
 

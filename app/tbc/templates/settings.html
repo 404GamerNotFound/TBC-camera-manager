@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">System</p>
+    <h1>Einstellungen</h1>
+  </div>
+</section>
+
+<section class="settings-layout">
+  <section class="event-panel">
+    <div class="section-title">
+      <h2>Debug Log</h2>
+      <span>{{ debug_count }}</span>
+    </div>
+    <div class="quiet-box">
+      Das Debug Log sammelt laufende Meldungen der App und ffmpeg-Live-Prozesse. Es ist auf jeder Admin-Seite unten rechts als Pull-up verfuegbar.
+    </div>
+    <div class="form-actions debug-settings-actions">
+      <button class="primary-button" type="button" data-debug-toggle>Debug Log oeffnen</button>
+      <form method="post" action="/settings/debug-log/clear">
+        <button class="secondary-button" type="submit">Leeren</button>
+      </form>
+    </div>
+  </section>
+</section>
+{% endblock %}

@@ -100,10 +100,7 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
 
         channel_rows = []
         for channel in channels:
-            channel_stream_uri = _first_value(
-                _call_value(host_api, "rtsp_url", channel, "main"),
-                _call_value(host_api, "rtsp_url", channel, "sub"),
-            )
+            channel_stream_uri = await _rtsp_stream_uri(host_api, channel)
             channel_rows.append(
                 {
                     "channel_index": channel,
@@ -112,10 +109,7 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
                 }
             )
 
-        stream_uri = _first_value(
-            _call_value(host_api, "rtsp_url", channels[0], "main"),
-            _call_value(host_api, "rtsp_url", channels[0], "sub"),
-        )
+        stream_uri = await _rtsp_stream_uri(host_api, channels[0])
         if stream_uri is not None:
             stream_uri = str(stream_uri)
 
@@ -244,6 +238,18 @@ def _smart_locations(baichuan: Any, channel: int, smart_type: str) -> list[int]:
         return list(locations)
     except TypeError:
         return []
+
+
+async def _rtsp_stream_uri(host_api: Any, channel: int) -> str | None:
+    for stream in ("sub", "main"):
+        uri = await _call_if_available(host_api, "get_rtsp_stream_source", channel, stream, False)
+        if uri:
+            return str(uri)
+    for stream in ("sub", "main"):
+        uri = await _call_if_available(host_api, "get_stream_source", channel, stream, False)
+        if uri and str(uri).startswith("rtsp://"):
+            return str(uri)
+    return None
 
 
 async def _call_if_available(target: Any, method_name: str, *args: Any) -> Any:

@@ -17,6 +17,7 @@
         <a class="nav-link" href="/cameras">Kameras</a>
         <a class="nav-link" href="/live">Live</a>
         <a class="nav-link" href="/recordings">Clips</a>
+        <a class="nav-link" href="/sd-card">SD-Karte</a>
         {% if role == 'admin' %}
         <a class="nav-link" href="/storage">Speicher</a>
         <a class="nav-link" href="/storage/explorer">Explorer</a>
@@ -25,6 +26,8 @@
         <a class="nav-link" href="/health">Health</a>
         <a class="nav-link" href="/users">Benutzer</a>
         <a class="nav-link" href="/mqtt">MQTT</a>
+        <a class="nav-link" href="/settings">Einstellungen</a>
+        <button class="icon-button" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>Log</button>
         {% endif %}
         <form method="post" action="/logout">
           <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
@@ -39,5 +42,24 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    {% if username and role == 'admin' %}
+    <aside class="debug-drawer" data-debug-drawer hidden aria-hidden="true" aria-label="Debug Log">
+      <div class="debug-drawer-panel">
+        <div class="debug-drawer-head">
+          <div>
+            <strong>Debug Log</strong>
+            <span data-debug-meta>0 Eintraege</span>
+          </div>
+          <div class="button-row">
+            <button class="secondary-button" type="button" data-debug-refresh>Aktualisieren</button>
+            <button class="icon-button" type="button" aria-label="Debug Log schliessen" data-debug-close>x</button>
+          </div>
+        </div>
+        <ol class="debug-list" data-debug-list></ol>
+      </div>
+    </aside>
+    <button class="debug-fab" type="button" data-debug-toggle>Log</button>
+    <script src="{{ url_for('static', path='/debug-log.js') }}" defer></script>
+    {% endif %}
   </body>
 </html>
