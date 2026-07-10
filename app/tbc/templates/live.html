@@ -8,26 +8,27 @@
   </div>
 </section>
 
-<section class="camera-grid">
+<section class="live-grid">
   {% for camera in cameras %}
-  <article class="camera-card">
+  {% set camera_key = 'camera-' ~ camera.id %}
+  {% set status = live_status(camera_key) %}
+  <article class="camera-card live-card">
     <div class="card-header">
       <div>
         <h2>{{ camera.name }}</h2>
         <p>{{ camera.host }}</p>
       </div>
-      <span class="status-pill status-{{ 'active' if live_status('camera-' ~ camera.id) == 'running' else 'idle' }}">{{ live_status('camera-' ~ camera.id) }}</span>
+      <span class="status-pill status-{{ 'active' if status == 'running' else 'warning' if status == 'starting' else 'error' if status == 'failed' else 'idle' }}">{{ status }}</span>
     </div>
-    {% set camera_key = 'camera-' ~ camera.id %}
-    {% if live_status(camera_key) in ['running', 'starting'] %}
-    <video controls muted playsinline autoplay src="/live/{{ camera_key }}/index.m3u8"></video>
+    {% if status in ['running', 'starting'] %}
+    <video class="live-video" controls muted playsinline autoplay src="/live/{{ camera_key }}/index.m3u8"></video>
     {% else %}
     <div class="live-placeholder">Stream gestoppt</div>
     {% endif %}
     {% if live_message(camera_key) %}
     <p class="clip-message">{{ live_message(camera_key) }}</p>
     {% endif %}
-    <div class="form-actions">
+    <div class="live-actions">
       <form method="post" action="/live/camera/{{ camera.id }}/start">
         <button class="primary-button" type="submit">Start</button>
       </form>
@@ -37,7 +38,7 @@
     </div>
     {% for channel in channels_by_camera[camera.id] %}
     {% if channel.enabled %}
-    <div class="stream-line">
+    <div class="stream-line live-channel-row">
       <span>{{ channel.name }}</span>
       <form method="post" action="/live/channel/{{ channel.id }}/start">
         <button class="secondary-button" type="submit">Start</button>

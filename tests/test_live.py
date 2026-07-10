@@ -1,7 +1,8 @@
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from app.tbc.live import _is_nonfatal_hls_warning, _live_ffmpeg_command
+from app.tbc.live import LiveManager, _is_nonfatal_hls_warning, _live_ffmpeg_command
 
 
 class LiveTests(unittest.TestCase):
@@ -21,6 +22,16 @@ class LiveTests(unittest.TestCase):
 
         self.assertTrue(_is_nonfatal_hls_warning(message))
         self.assertFalse(_is_nonfatal_hls_warning("Connection refused"))
+
+    def test_live_message_hides_nonfatal_hls_warning(self):
+        with TemporaryDirectory() as temp_dir:
+            manager = LiveManager(temp_dir)
+            manager._messages["camera-1"] = [
+                "Starte Live-Stream camera-1",
+                "[hls @ 0x55b196e0d0] Timestamps are unset in a packet for stream 0",
+            ]
+
+            self.assertEqual(manager.message("camera-1"), "Starte Live-Stream camera-1")
 
 
 if __name__ == "__main__":

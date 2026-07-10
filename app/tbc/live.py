@@ -62,9 +62,10 @@ class LiveManager:
 
     def message(self, key: str) -> str:
         messages = self._messages.get(key) or []
-        if not messages:
-            return ""
-        return messages[-1]
+        for message in reversed(messages):
+            if not _is_nonfatal_hls_warning(message):
+                return message
+        return ""
 
     def wait_until_ready(self, key: str, timeout_seconds: float = 8) -> tuple[bool, str]:
         deadline = time.monotonic() + timeout_seconds

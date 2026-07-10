@@ -250,10 +250,24 @@ button,
   gap: 18px;
 }
 
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
 .camera-card {
   display: grid;
   gap: 22px;
   padding: 20px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.live-card {
+  gap: 14px;
+  padding: 16px;
 }
 
 .card-header,
@@ -555,10 +569,36 @@ code {
   display: grid;
   place-items: center;
   aspect-ratio: 16 / 9;
-  width: min(520px, 100%);
+  width: 100%;
   color: white;
   background: #111817;
+  border-radius: 6px;
   font-weight: 800;
+}
+
+.live-video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #111817;
+  border-radius: 6px;
+}
+
+.live-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.live-actions form,
+.live-actions button {
+  width: 100%;
+}
+
+.live-channel-row {
+  margin-bottom: 0;
 }
 
 .stream-note {
