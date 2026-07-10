@@ -31,31 +31,7 @@ class LiveManager:
         shutil.rmtree(out_dir, ignore_errors=True)
         out_dir.mkdir(parents=True, exist_ok=True)
         segment_pattern = out_dir / "segment%03d.ts"
-        command = [
-            "ffmpeg",
-            "-nostdin",
-            "-hide_banner",
-            "-loglevel",
-            "warning",
-            "-rtsp_transport",
-            "tcp",
-            "-i",
-            stream_uri,
-            "-an",
-            "-c:v",
-            "copy",
-            "-f",
-            "hls",
-            "-hls_time",
-            "2",
-            "-hls_list_size",
-            "5",
-            "-hls_flags",
-            "delete_segments+omit_endlist",
-            "-hls_segment_filename",
-            str(segment_pattern),
-            str(playlist),
-        ]
+        command = _live_ffmpeg_command(stream_uri, segment_pattern, playlist)
         self._messages[key] = [f"Starte Live-Stream {key}: {stream_uri}"]
         LOGGER.info("Starte Live-Stream %s mit %s", key, stream_uri)
         process = subprocess.Popen(
@@ -116,6 +92,9 @@ class LiveManager:
             message = line.strip()
             if not message:
                 continue
+            if _is_nonfatal_hls_warning(message):
+                LOGGER.debug("ffmpeg %s: %s", key, message)
+                continue
             self._messages.setdefault(key, []).append(message)
             self._messages[key] = self._messages[key][-20:]
             LOGGER.warning("ffmpeg %s: %s", key, message)
@@ -134,3 +113,45 @@ def stream_uri_for(camera: dict[str, Any], channel: dict[str, Any] | None = None
     if channel and channel.get("stream_uri"):
         return str(channel["stream_uri"])
     return str(camera["stream_uri"]) if camera.get("stream_uri") else None
+
+
+def _is_nonfatal_hls_warning(message: str) -> bool:
+    return "Timestamps are unset in a packet" in message and "[hls @" in message
+
+
+def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path) -> list[str]:
+    return [
+        "ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-fflags",
+        "+genpts+discardcorrupt",
+        "-rtsp_transport",
+        "tcp",
+        "-use_wallclock_as_timestamps",
+        "1",
+        "-i",
+        stream_uri,
+        "-an",
+        "-c:v",
+        "copy",
+        "-avoid_negative_ts",
+        "make_zero",
+        "-muxdelay",
+        "0",
+        "-muxpreload",
+        "0",
+        "-f",
+        "hls",
+        "-hls_time",
+        "2",
+        "-hls_list_size",
+        "5",
+        "-hls_flags",
+        "delete_segments+omit_endlist",
+        "-hls_segment_filename",
+        str(segment_pattern),
+        str(playlist),
+    ]
