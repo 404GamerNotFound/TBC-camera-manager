@@ -50,6 +50,16 @@
 {% endif %}
 
 {% if recordings %}
+{% set first = recordings[0] %}
+{% set first_query = 'channel=' ~ first.channel ~ '&stream=' ~ first.stream ~ '&source=' ~ (first.source | urlencode) ~ '&start=' ~ first.start_id ~ '&end=' ~ first.end_id %}
+<section class="sd-preview-panel">
+  <div class="section-title">
+    <h2 data-sd-preview-title>{{ first.file_name }}</h2>
+    <span data-sd-preview-meta>{{ first.start_time }} · {{ first.duration_seconds }}s</span>
+  </div>
+  <video class="sd-preview-player" controls preload="metadata" src="/sd-card/{{ selected_camera.id }}/media?{{ first_query }}&embed=1" data-sd-preview-player></video>
+</section>
+
 <section class="table-section">
   <div class="section-title">
     <h2>Aufnahmen auf SD-Karte</h2>
@@ -59,7 +69,6 @@
     <table class="sd-table">
       <thead>
         <tr>
-          <th>Vorschau</th>
           <th>Start</th>
           <th>Ende</th>
           <th>Dauer</th>
@@ -73,9 +82,6 @@
         {% for clip in recordings %}
         {% set query = 'channel=' ~ clip.channel ~ '&stream=' ~ clip.stream ~ '&source=' ~ (clip.source | urlencode) ~ '&start=' ~ clip.start_id ~ '&end=' ~ clip.end_id %}
         <tr>
-          <td>
-            <video class="sd-preview" controls preload="none" src="/sd-card/{{ selected_camera.id }}/media?{{ query }}&embed=1"></video>
-          </td>
           <td>{{ clip.start_time }}</td>
           <td>{{ clip.end_time }}</td>
           <td>{{ clip.duration_seconds }}s</td>
@@ -84,7 +90,7 @@
           <td>{{ (clip.size_bytes / 1048576) | round(1) }} MB</td>
           <td>
             <div class="button-row">
-              <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}">Abspielen</a>
+              <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}&embed=1" data-sd-play="/sd-card/{{ selected_camera.id }}/media?{{ query }}&embed=1" data-sd-title="{{ clip.file_name }}" data-sd-meta="{{ clip.start_time }} · {{ clip.duration_seconds }}s">Vorschau</a>
               <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}&download=1">Download</a>
             </div>
           </td>
@@ -99,4 +105,5 @@
   <h2>Keine SD-Card-Aufnahmen gefunden</h2>
 </section>
 {% endif %}
+<script src="{{ url_for('static', path='/sd-card.js') }}" defer></script>
 {% endblock %}
