@@ -6,28 +6,32 @@
     <p class="eyebrow">Monitoring</p>
     <h1>Leistung</h1>
   </div>
+  <div class="button-row">
+    <span class="status-pill status-warning" data-health-refresh-state>Prüfung läuft</span>
+    <button class="secondary-button" type="button" data-health-refresh>Aktualisieren</button>
+  </div>
 </section>
 
 <section class="performance-grid" aria-label="Aktuelle Systemleistung">
   <article class="performance-card">
     <div class="performance-card-head">
       <span>CPU</span>
-      <strong>{{ system_usage.cpu_label }}</strong>
+      <strong data-health-cpu-label>{{ system_usage.cpu_label }}</strong>
     </div>
     <div class="usage-bar" aria-hidden="true">
-      <span style="width: {{ system_usage.cpu_percent or 0 }}%"></span>
+      <span style="width: {{ system_usage.cpu_percent or 0 }}%" data-health-cpu-bar></span>
     </div>
-    <p>{{ system_usage.cpu_cores }} Kerne · {{ system_usage.load_label }}</p>
+    <p data-health-cpu-detail>{{ system_usage.cpu_cores }} Kerne · {{ system_usage.load_label }}</p>
   </article>
   <article class="performance-card">
     <div class="performance-card-head">
       <span>RAM</span>
-      <strong>{{ system_usage.memory_label }}</strong>
+      <strong data-health-memory-label>{{ system_usage.memory_label }}</strong>
     </div>
     <div class="usage-bar" aria-hidden="true">
-      <span style="width: {{ system_usage.memory_percent or 0 }}%"></span>
+      <span style="width: {{ system_usage.memory_percent or 0 }}%" data-health-memory-bar></span>
     </div>
-    <p>{{ system_usage.memory_detail }}</p>
+    <p data-health-memory-detail>{{ system_usage.memory_detail }}</p>
   </article>
 </section>
 
@@ -47,7 +51,7 @@
           <th>Geprüft</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody data-health-status-body>
         {% for item in items %}
         <tr>
           <td>{{ item.component_type }}</td>
@@ -78,7 +82,7 @@
           <th>Meldung</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody data-health-events-body>
         {% for event in events %}
         <tr>
           <td>{{ event.created_at }}</td>
@@ -92,4 +96,5 @@
     </table>
   </div>
 </section>
+<script src="{{ url_for('static', path='/health.js') }}" defer></script>
 {% endblock %}

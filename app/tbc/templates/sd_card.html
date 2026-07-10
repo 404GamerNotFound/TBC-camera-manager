@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<form class="filter-bar sd-filter" method="get" action="/sd-card">
+<form class="filter-bar sd-filter" method="get" action="/sd-card" data-sd-filter-form>
   <label>
     <span>Kamera</span>
     <select name="camera_id">
@@ -45,65 +45,48 @@
   <button class="primary-button" type="submit">Suchen</button>
 </form>
 
-{% if error %}
-<div class="inline-error">{{ error }}</div>
-{% endif %}
+<div class="inline-error" data-sd-error {% if not error %}hidden{% endif %}>{{ error or '' }}</div>
 
-{% if recordings %}
-{% set first = recordings[0] %}
-{% set first_query = 'channel=' ~ first.channel ~ '&stream=' ~ first.stream ~ '&source=' ~ (first.source | urlencode) ~ '&start=' ~ first.start_id ~ '&end=' ~ first.end_id %}
-<section class="sd-preview-panel">
-  <div class="section-title">
-    <h2 data-sd-preview-title>{{ first.file_name }}</h2>
-    <span data-sd-preview-meta>{{ first.start_time }} · {{ first.duration_seconds }}s</span>
-  </div>
-  <video class="sd-preview-player" controls preload="metadata" src="/sd-card/{{ selected_camera.id }}/media?{{ first_query }}&embed=1" data-sd-preview-player></video>
+<section data-sd-content data-sd-can-load="{% if selected_camera and not error %}1{% else %}0{% endif %}">
+  <section class="sd-preview-panel" data-sd-preview-panel hidden>
+    <div class="section-title">
+      <h2 data-sd-preview-title>Vorschau</h2>
+      <span data-sd-preview-meta></span>
+    </div>
+    <video class="sd-preview-player" controls preload="none" data-sd-preview-player></video>
+  </section>
+
+  <section class="quiet-box" data-sd-loading>
+    SD-Karteninhalt wird geladen...
+  </section>
+
+  <section class="table-section" data-sd-table-section hidden>
+    <div class="section-title">
+      <h2>Aufnahmen auf SD-Karte</h2>
+      <span data-sd-count>0</span>
+    </div>
+    <div class="table-wrap">
+      <table class="sd-table">
+        <thead>
+          <tr>
+            <th>Start</th>
+            <th>Ende</th>
+            <th>Dauer</th>
+            <th>Typ</th>
+            <th>Datei</th>
+            <th>Groesse</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody data-sd-recordings-body></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="empty-state" data-sd-empty hidden>
+    <h2>Keine SD-Card-Aufnahmen gefunden</h2>
+  </section>
 </section>
 
-<section class="table-section">
-  <div class="section-title">
-    <h2>Aufnahmen auf SD-Karte</h2>
-    <span>{{ recordings | length }}</span>
-  </div>
-  <div class="table-wrap">
-    <table class="sd-table">
-      <thead>
-        <tr>
-          <th>Start</th>
-          <th>Ende</th>
-          <th>Dauer</th>
-          <th>Typ</th>
-          <th>Datei</th>
-          <th>Groesse</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for clip in recordings %}
-        {% set query = 'channel=' ~ clip.channel ~ '&stream=' ~ clip.stream ~ '&source=' ~ (clip.source | urlencode) ~ '&start=' ~ clip.start_id ~ '&end=' ~ clip.end_id %}
-        <tr>
-          <td>{{ clip.start_time }}</td>
-          <td>{{ clip.end_time }}</td>
-          <td>{{ clip.duration_seconds }}s</td>
-          <td>{{ clip.trigger_label }}</td>
-          <td class="file-cell">{{ clip.file_name }}</td>
-          <td>{{ (clip.size_bytes / 1048576) | round(1) }} MB</td>
-          <td>
-            <div class="button-row">
-              <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}&embed=1" data-sd-play="/sd-card/{{ selected_camera.id }}/media?{{ query }}&embed=1" data-sd-title="{{ clip.file_name }}" data-sd-meta="{{ clip.start_time }} · {{ clip.duration_seconds }}s">Vorschau</a>
-              <a class="secondary-button" href="/sd-card/{{ selected_camera.id }}/media?{{ query }}&download=1">Download</a>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
-{% elif not error %}
-<section class="empty-state">
-  <h2>Keine SD-Card-Aufnahmen gefunden</h2>
-</section>
-{% endif %}
 <script src="{{ url_for('static', path='/sd-card.js') }}" defer></script>
 {% endblock %}

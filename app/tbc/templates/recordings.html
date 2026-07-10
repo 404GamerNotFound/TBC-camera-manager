@@ -44,7 +44,7 @@
   <article class="clip-card">
     <a class="clip-media" href="/recordings/{{ clip.id }}/media">
       {% if clip.snapshot_path or clip.snapshot_remote_key %}
-      <img src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}">
+      <img src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
       {% else %}
       <div class="clip-placeholder">{{ clip.detection_key }}</div>
       {% endif %}
@@ -58,7 +58,7 @@
         <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
       </div>
       {% if clip.status == 'ready' %}
-      <video controls preload="metadata" src="/recordings/{{ clip.id }}/media"></video>
+      <video controls preload="none" src="/recordings/{{ clip.id }}/media"></video>
       {% elif clip.message %}
       <p class="clip-message">{{ clip.message }}</p>
       {% endif %}
@@ -83,4 +83,3 @@
 </section>
 {% endif %}
 {% endblock %}
-

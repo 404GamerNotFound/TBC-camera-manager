@@ -444,6 +444,10 @@ button:focus-visible {
   max-width: 420px;
 }
 
+.live-toolbar {
+  align-items: center;
+}
+
 .card-header,
 .card-footer {
   display: flex;
@@ -776,14 +780,15 @@ code {
 }
 
 .live-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.live-actions form,
-.live-actions button {
-  width: 100%;
+.live-actions button,
+.live-actions a {
+  flex: 1 1 110px;
 }
 
 .live-channel-row {

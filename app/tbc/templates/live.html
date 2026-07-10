@@ -6,55 +6,45 @@
     <p class="eyebrow">HLS</p>
     <h1>Live</h1>
   </div>
+  <div class="button-row live-toolbar">
+    <span class="status-pill status-warning" data-live-summary>Streams werden gestartet</span>
+    <button class="secondary-button" type="button" data-live-refresh>Aktualisieren</button>
+  </div>
 </section>
 
-<section class="live-grid">
-  {% for camera in cameras %}
-  {% set camera_key = 'camera-' ~ camera.id %}
-  {% set status = live_status(camera_key) %}
-  <article class="camera-card live-card">
+{% if live_items %}
+<section class="live-grid" aria-label="Livestreams">
+  {% for item in live_items %}
+  <article class="camera-card live-card" data-live-card data-live-key="{{ item.key }}">
     <div class="card-header">
       <div>
-        <h2>{{ camera.name }}</h2>
-        <p>{{ camera.host }}</p>
+        <p class="eyebrow">{{ item.kind }}</p>
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.subtitle }}</p>
       </div>
-      <span class="status-pill status-{{ 'active' if status == 'running' else 'warning' if status == 'starting' else 'error' if status == 'failed' else 'idle' }}">{{ status }}</span>
+      <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
     </div>
-    {% if status in ['running', 'starting'] %}
-    <video class="live-video" controls muted playsinline autoplay src="/live/{{ camera_key }}/index.m3u8"></video>
-    {% else %}
-    <div class="live-placeholder">Stream gestoppt</div>
-    {% endif %}
-    {% if live_message(camera_key) %}
-    <p class="clip-message">{{ live_message(camera_key) }}</p>
-    {% endif %}
-    <div class="live-actions">
-      <form method="post" action="/live/camera/{{ camera.id }}/start">
-        <button class="primary-button" type="submit">Start</button>
-      </form>
-      <form method="post" action="/live/camera-{{ camera.id }}/stop">
-        <button class="secondary-button" type="submit">Stop</button>
-      </form>
-    </div>
-    {% for channel in channels_by_camera[camera.id] %}
-    {% if channel.enabled %}
-    <div class="stream-line live-channel-row">
-      <span>{{ channel.name }}</span>
-      <form method="post" action="/live/channel/{{ channel.id }}/start">
-        <button class="secondary-button" type="submit">Start</button>
-      </form>
-      <a class="text-button" href="/live/channel-{{ channel.id }}/index.m3u8">HLS</a>
-      {% if live_message('channel-' ~ channel.id) %}
-      <span class="stream-note">{{ live_message('channel-' ~ channel.id) }}</span>
+    <div class="live-player-shell" data-live-player>
+      {% if item.status == 'running' %}
+      <video class="live-video" controls muted playsinline autoplay src="{{ item.playlist_url }}"></video>
+      {% else %}
+      <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
       {% endif %}
     </div>
-    {% endif %}
-    {% endfor %}
+    <p class="clip-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
+    <div class="live-actions">
+      <button class="secondary-button" type="button" data-live-retry>Neu starten</button>
+      <button class="secondary-button" type="button" data-live-stop>Stop</button>
+      <a class="text-button" href="{{ item.playlist_url }}">HLS</a>
+    </div>
   </article>
-  {% else %}
-  <section class="empty-state">
-    <h2>Keine Kamera verfügbar</h2>
-  </section>
   {% endfor %}
 </section>
+{% else %}
+<section class="empty-state">
+  <h2>Keine Kamera verfügbar</h2>
+</section>
+{% endif %}
+
+<script src="{{ url_for('static', path='/live.js') }}" defer></script>
 {% endblock %}

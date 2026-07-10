@@ -5,6 +5,7 @@ import logging
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Query, Request, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
@@ -482,7 +483,6 @@ async def sd_card(
     selected_camera_id = camera_id or (int(cameras[0]["id"]) if cameras else None)
     selected_camera = None
     channels: list[dict[str, Any]] = []
-    recordings: list[dict[str, Any]] = []
     error = None
     today = date.today()
     start_date = _parse_date(date_from, today)
@@ -490,7 +490,9 @@ async def sd_card(
     stream_value = "sub" if stream == "sub" else "main"
     selected_channel = channel or 0
 
-    if selected_camera_id is not None:
+    if selected_camera_id is None:
+        error = "Keine Kamera verfügbar"
+    else:
         access_guard = _require_camera_access(request, selected_camera_id)
         if access_guard:
             return access_guard
@@ -512,17 +514,6 @@ async def sd_card(
             selected_channel = channel if channel in known_channel_indices else int(channels[0]["channel_index"])
             if start_date > end_date:
                 error = "Das Startdatum darf nicht nach dem Enddatum liegen"
-            else:
-                try:
-                    recordings = await list_sd_card_recordings(
-                        selected_camera,
-                        channel=selected_channel,
-                        start=datetime.combine(start_date, time.min),
-                        end=datetime.combine(end_date, time.max.replace(microsecond=0)),
-                        stream=stream_value,
-                    )
-                except Exception as exc:
-                    error = f"SD-Card-Inhalte konnten nicht gelesen werden: {exc}"
     return templates.TemplateResponse(
         request,
         "sd_card.html",
@@ -533,7 +524,6 @@ async def sd_card(
             "cameras": cameras,
             "selected_camera": selected_camera,
             "channels": channels,
-            "recordings": recordings,
             "error": error,
             "filters": {
                 "camera_id": selected_camera_id,
@@ -545,6 +535,62 @@ async def sd_card(
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.get("/api/sd-card/recordings")
+async def sd_card_recordings_api(
+    request: Request,
+    camera_id: int = Query(...),
+    channel: int | None = Query(None),
+    stream: str = Query("main"),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
+):
+    if not _is_logged_in(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    user = _current_user(request)
+    if not database.user_can_access_camera(SETTINGS.database_path, int(user["id"]), str(user["role"]), camera_id):
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    selected_camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if selected_camera is None:
+        return JSONResponse({"error": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+
+    today = date.today()
+    start_date = _parse_date(date_from, today)
+    end_date = _parse_date(date_to, start_date)
+    if start_date > end_date:
+        return JSONResponse({"error": "Das Startdatum darf nicht nach dem Enddatum liegen"}, status_code=status.HTTP_400_BAD_REQUEST)
+
+    channels = database.list_camera_channels(SETTINGS.database_path, camera_id)
+    if not channels:
+        channels = [{"channel_index": 0}]
+    known_channel_indices = {int(item["channel_index"]) for item in channels}
+    selected_channel = channel if channel in known_channel_indices else int(channels[0]["channel_index"])
+    stream_value = "sub" if stream == "sub" else "main"
+
+    try:
+        recordings = await list_sd_card_recordings(
+            selected_camera,
+            channel=selected_channel,
+            start=datetime.combine(start_date, time.min),
+            end=datetime.combine(end_date, time.max.replace(microsecond=0)),
+            stream=stream_value,
+        )
+    except Exception as exc:
+        return JSONResponse(
+            {"error": f"SD-Card-Inhalte konnten nicht gelesen werden: {exc}"},
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+    return {
+        "recordings": [_sd_card_recording_payload(camera_id, row) for row in recordings],
+        "filters": {
+            "camera_id": camera_id,
+            "channel": selected_channel,
+            "stream": stream_value,
+            "date_from": start_date.isoformat(),
+            "date_to": end_date.isoformat(),
+        },
+    }
 
 
 @app.get("/sd-card/{camera_id}/media")
@@ -818,8 +864,7 @@ async def live_view(request: Request):
     if guard:
         return guard
     user = _current_user(request)
-    cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
-    channels_by_camera = {camera["id"]: database.list_camera_channels(SETTINGS.database_path, int(camera["id"])) for camera in cameras}
+    live_items = _live_items_for_user(user)
     return templates.TemplateResponse(
         request,
         "live.html",
@@ -827,13 +872,53 @@ async def live_view(request: Request):
             "app_name": SETTINGS.app_name,
             "username": request.session.get("username"),
             "role": user["role"],
-            "cameras": cameras,
-            "channels_by_camera": channels_by_camera,
-            "live_status": LIVE_MANAGER.status,
-            "live_message": LIVE_MANAGER.message,
+            "live_items": [_live_item_payload(item) for item in live_items],
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.get("/api/live/status")
+async def live_status_api(request: Request):
+    if not _is_logged_in(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    user = _current_user(request)
+    return {"items": [_live_item_payload(item) for item in _live_items_for_user(user)]}
+
+
+@app.post("/api/live/start-all")
+async def start_all_live_api(request: Request):
+    if not _is_logged_in(request):
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    user = _current_user(request)
+    items = _live_items_for_user(user)
+    for item in items:
+        _start_live_item(item)
+    return {"items": [_live_item_payload(item) for item in items]}
+
+
+@app.post("/api/live/{live_key}/start")
+async def start_live_key_api(request: Request, live_key: str):
+    guard = _require_live_key_access(request, live_key)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    user = _current_user(request)
+    item = _live_item_for_key(user, live_key)
+    if item is None:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    _start_live_item(item)
+    return {"item": _live_item_payload(item)}
+
+
+@app.post("/api/live/{live_key}/stop")
+async def stop_live_key_api(request: Request, live_key: str):
+    guard = _require_live_key_access(request, live_key)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    LIVE_MANAGER.stop(live_key)
+    user = _current_user(request)
+    item = _live_item_for_key(user, live_key)
+    return {"item": _live_item_payload(item) if item else {"key": live_key, "status": "stopped"}}
 
 
 @app.post("/live/camera/{camera_id}/start")
@@ -854,9 +939,6 @@ async def start_camera_live(request: Request, camera_id: int):
     try:
         live_key = f"camera-{camera_id}"
         LIVE_MANAGER.start(live_key, uri)
-        ready, message = await asyncio.to_thread(LIVE_MANAGER.wait_until_ready, live_key)
-        if not ready:
-            _set_flash(request, f"Live-Ansicht startet nicht: {message}", "error")
     except Exception as exc:
         LOGGER.exception("Live-Ansicht konnte fuer Kamera %s nicht gestartet werden", camera_id)
         _set_flash(request, f"Live-Ansicht konnte nicht gestartet werden: {exc}", "error")
@@ -888,9 +970,6 @@ async def start_channel_live(request: Request, channel_id: int):
     try:
         live_key = f"channel-{channel_id}"
         LIVE_MANAGER.start(live_key, uri)
-        ready, message = await asyncio.to_thread(LIVE_MANAGER.wait_until_ready, live_key)
-        if not ready:
-            _set_flash(request, f"Live-Ansicht startet nicht: {message}", "error")
     except Exception as exc:
         LOGGER.exception("Live-Ansicht konnte fuer Kanal %s nicht gestartet werden", channel_id)
         _set_flash(request, f"Live-Ansicht konnte nicht gestartet werden: {exc}", "error")
@@ -971,7 +1050,6 @@ async def health_page(request: Request):
     guard = _require_admin(request)
     if guard:
         return guard
-    await asyncio.to_thread(run_health_checks, SETTINGS.database_path)
     system_usage = await asyncio.to_thread(current_system_usage)
     return templates.TemplateResponse(
         request,
@@ -986,6 +1064,20 @@ async def health_page(request: Request):
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.post("/api/health/refresh")
+async def health_refresh_api(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    await asyncio.to_thread(run_health_checks, SETTINGS.database_path)
+    system_usage = await asyncio.to_thread(current_system_usage)
+    return {
+        "system_usage": system_usage,
+        "items": database.list_health_status(SETTINGS.database_path),
+        "events": database.list_health_events(SETTINGS.database_path),
+    }
 
 
 @app.get("/storage/explorer", response_class=HTMLResponse)
@@ -1259,6 +1351,90 @@ def _require_live_key_access(request: Request, live_key: str):
             return JSONResponse({"error": "channel not found"}, status_code=status.HTTP_404_NOT_FOUND)
         return _require_camera_access(request, int(channel["camera_id"]))
     return JSONResponse({"error": "invalid live key"}, status_code=status.HTTP_404_NOT_FOUND)
+
+
+def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
+    cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    items: list[dict[str, Any]] = []
+    for camera in cameras:
+        camera_id = int(camera["id"])
+        items.append(
+            {
+                "key": f"camera-{camera_id}",
+                "name": str(camera["name"]),
+                "subtitle": str(camera.get("host") or ""),
+                "kind": "Kamera",
+                "camera_id": camera_id,
+                "stream_uri": stream_uri_for(camera),
+            }
+        )
+        for channel in database.list_camera_channels(SETTINGS.database_path, camera_id):
+            if int(channel.get("enabled") or 0) != 1:
+                continue
+            channel_id = int(channel["id"])
+            items.append(
+                {
+                    "key": f"channel-{channel_id}",
+                    "name": str(channel.get("name") or f"Kanal {int(channel['channel_index']) + 1}"),
+                    "subtitle": f"{camera['name']} · Kanal {int(channel['channel_index']) + 1}",
+                    "kind": "Kanal",
+                    "camera_id": camera_id,
+                    "channel_id": channel_id,
+                    "stream_uri": stream_uri_for(camera, channel),
+                }
+            )
+    return items
+
+
+def _live_item_for_key(user: dict[str, Any], live_key: str) -> dict[str, Any] | None:
+    for item in _live_items_for_user(user):
+        if item["key"] == live_key:
+            return item
+    return None
+
+
+def _start_live_item(item: dict[str, Any]) -> None:
+    stream_uri = item.get("stream_uri")
+    if not stream_uri:
+        LIVE_MANAGER.note(str(item["key"]), "Kein Stream fuer Live-Ansicht bekannt")
+        return
+    try:
+        LIVE_MANAGER.start(str(item["key"]), str(stream_uri))
+    except Exception as exc:
+        LOGGER.exception("Live-Stream %s konnte nicht gestartet werden", item["key"])
+        LIVE_MANAGER.note(str(item["key"]), f"Live-Stream konnte nicht gestartet werden: {exc}")
+
+
+def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
+    live_key = str(item["key"])
+    has_stream = bool(item.get("stream_uri"))
+    live_status = LIVE_MANAGER.status(live_key) if has_stream else "missing"
+    message = LIVE_MANAGER.message(live_key)
+    if not has_stream and not message:
+        message = "Kein Stream fuer Live-Ansicht bekannt"
+    return {
+        "key": live_key,
+        "name": item["name"],
+        "subtitle": item["subtitle"],
+        "kind": item["kind"],
+        "status": live_status,
+        "message": message,
+        "playlist_url": f"/live/{live_key}/index.m3u8",
+    }
+
+
+def _sd_card_recording_payload(camera_id: int, row: dict[str, Any]) -> dict[str, Any]:
+    payload = dict(row)
+    query = {
+        "channel": row.get("channel", 0),
+        "stream": row.get("stream") or "main",
+        "source": row.get("source") or "",
+        "start": row.get("start_id") or "",
+        "end": row.get("end_id") or "",
+    }
+    payload["media_url"] = f"/sd-card/{camera_id}/media?{urlencode({**query, 'embed': 1})}"
+    payload["download_url"] = f"/sd-card/{camera_id}/media?{urlencode({**query, 'download': 1})}"
+    return payload
 
 
 def _redirect(path: str) -> RedirectResponse:

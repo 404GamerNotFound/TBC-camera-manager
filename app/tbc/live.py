@@ -67,6 +67,10 @@ class LiveManager:
                 return message
         return ""
 
+    def note(self, key: str, message: str) -> None:
+        self._messages.setdefault(key, []).append(message)
+        self._messages[key] = self._messages[key][-20:]
+
     def wait_until_ready(self, key: str, timeout_seconds: float = 8) -> tuple[bool, str]:
         deadline = time.monotonic() + timeout_seconds
         playlist = self.playlist_path(key)
