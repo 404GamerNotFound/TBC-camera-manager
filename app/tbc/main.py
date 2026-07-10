@@ -17,7 +17,7 @@ from .channels import apply_channel_enabled_filter
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
-from .health import run_health_checks
+from .health import current_system_usage, run_health_checks
 from .live import LiveManager, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
@@ -971,7 +971,8 @@ async def health_page(request: Request):
     guard = _require_admin(request)
     if guard:
         return guard
-    run_health_checks(SETTINGS.database_path)
+    await asyncio.to_thread(run_health_checks, SETTINGS.database_path)
+    system_usage = await asyncio.to_thread(current_system_usage)
     return templates.TemplateResponse(
         request,
         "health.html",
@@ -979,6 +980,7 @@ async def health_page(request: Request):
             "app_name": SETTINGS.app_name,
             "username": request.session.get("username"),
             "role": "admin",
+            "system_usage": system_usage,
             "items": database.list_health_status(SETTINGS.database_path),
             "events": database.list_health_events(SETTINGS.database_path),
             "flash": _pop_flash(request),

@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -51,6 +52,24 @@ class HealthTests(unittest.TestCase):
 
         self.assertEqual(status, "ok")
         self.assertEqual(message, "Stream lesbar")
+
+    def test_cpu_percent_from_proc_totals(self):
+        percent = health._cpu_percent_from_totals((100, 40), (200, 60))
+
+        self.assertEqual(percent, 80.0)
+
+    def test_proc_memory_usage_formats_current_ram(self):
+        with tempfile.NamedTemporaryFile("w+", suffix=".meminfo") as handle:
+            handle.write("MemTotal:       1048576 kB\n")
+            handle.write("MemAvailable:    262144 kB\n")
+            handle.flush()
+
+            usage = health._read_proc_memory(Path(handle.name))
+
+        self.assertIsNotNone(usage)
+        self.assertEqual(usage["percent"], 75.0)
+        self.assertEqual(usage["used_mb"], 768)
+        self.assertEqual(usage["total_mb"], 1024)
 
 
 if __name__ == "__main__":

@@ -4,8 +4,31 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow">Monitoring</p>
-    <h1>Health</h1>
+    <h1>Leistung</h1>
   </div>
+</section>
+
+<section class="performance-grid" aria-label="Aktuelle Systemleistung">
+  <article class="performance-card">
+    <div class="performance-card-head">
+      <span>CPU</span>
+      <strong>{{ system_usage.cpu_label }}</strong>
+    </div>
+    <div class="usage-bar" aria-hidden="true">
+      <span style="width: {{ system_usage.cpu_percent or 0 }}%"></span>
+    </div>
+    <p>{{ system_usage.cpu_cores }} Kerne · {{ system_usage.load_label }}</p>
+  </article>
+  <article class="performance-card">
+    <div class="performance-card-head">
+      <span>RAM</span>
+      <strong>{{ system_usage.memory_label }}</strong>
+    </div>
+    <div class="usage-bar" aria-hidden="true">
+      <span style="width: {{ system_usage.memory_percent or 0 }}%"></span>
+    </div>
+    <p>{{ system_usage.memory_detail }}</p>
+  </article>
 </section>
 
 <section class="table-section">

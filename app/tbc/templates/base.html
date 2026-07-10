@@ -14,20 +14,45 @@
       </a>
       {% if username %}
       <nav class="top-actions" aria-label="Hauptnavigation">
-        <a class="nav-link" href="/cameras">Kameras</a>
-        <a class="nav-link" href="/live">Live</a>
-        <a class="nav-link" href="/recordings">Clips</a>
-        <a class="nav-link" href="/sd-card">SD-Karte</a>
+        <details class="nav-menu">
+          <summary>Kameras</summary>
+          <div class="nav-submenu">
+            <a class="nav-link" href="/cameras">Übersicht</a>
+            <a class="nav-link" href="/live">Live</a>
+          </div>
+        </details>
+        <details class="nav-menu">
+          <summary>Archiv</summary>
+          <div class="nav-submenu">
+            <a class="nav-link" href="/recordings">Clips</a>
+            <a class="nav-link" href="/sd-card">SD-Karte</a>
+          </div>
+        </details>
         {% if role == 'admin' %}
-        <a class="nav-link" href="/storage">Speicher</a>
-        <a class="nav-link" href="/storage/explorer">Explorer</a>
-        <a class="nav-link" href="/retention">Retention</a>
-        <a class="nav-link" href="/notifications">Notify</a>
-        <a class="nav-link" href="/health">Health</a>
-        <a class="nav-link" href="/users">Benutzer</a>
-        <a class="nav-link" href="/mqtt">MQTT</a>
-        <a class="nav-link" href="/settings">Einstellungen</a>
-        <button class="icon-button" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>Log</button>
+        <details class="nav-menu">
+          <summary>Speicher</summary>
+          <div class="nav-submenu">
+            <a class="nav-link" href="/storage">Ziele</a>
+            <a class="nav-link" href="/storage/explorer">Explorer</a>
+            <a class="nav-link" href="/retention">Retention</a>
+          </div>
+        </details>
+        <details class="nav-menu">
+          <summary>Betrieb</summary>
+          <div class="nav-submenu">
+            <a class="nav-link" href="/health">Leistung</a>
+            <a class="nav-link" href="/notifications">Notify</a>
+            <a class="nav-link" href="/mqtt">MQTT</a>
+          </div>
+        </details>
+        <details class="nav-menu">
+          <summary>Admin</summary>
+          <div class="nav-submenu">
+            <a class="nav-link" href="/users">Benutzer</a>
+            <a class="nav-link" href="/settings">Einstellungen</a>
+            <button class="nav-link" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>Debug Log</button>
+          </div>
+        </details>
         {% endif %}
         <form method="post" action="/logout">
           <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
