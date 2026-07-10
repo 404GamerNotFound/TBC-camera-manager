@@ -4,7 +4,13 @@
     return;
   }
 
-  const mobileToggle = root.querySelector("[data-menu-toggle]");
+  if (window.bootstrap?.Dropdown && window.bootstrap?.Collapse) {
+    return;
+  }
+
+  const mobileToggle =
+    document.querySelector(`[data-menu-toggle][aria-controls="${root.id}"]`) ||
+    root.querySelector("[data-menu-toggle]");
   const groups = Array.from(root.querySelectorAll("[data-menu-group]"));
 
   const closeGroups = (except = null) => {
@@ -25,6 +31,7 @@
 
   const closeMobileMenu = () => {
     root.classList.remove("is-open");
+    root.classList.remove("show");
     mobileToggle?.setAttribute("aria-expanded", "false");
   };
 
@@ -75,6 +82,7 @@
   mobileToggle?.addEventListener("click", () => {
     const isOpen = !root.classList.contains("is-open");
     root.classList.toggle("is-open", isOpen);
+    root.classList.toggle("show", isOpen);
     mobileToggle.setAttribute("aria-expanded", String(isOpen));
     if (!isOpen) {
       closeGroups();

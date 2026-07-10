@@ -4,14 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ app_name }} - TB Camera</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
   </head>
   <body>
-    <header class="topbar">
-      <a class="brand" href="/cameras" aria-label="TBC Dashboard">
-        <span class="brand-mark">TBC</span>
-        <span class="brand-name">TB Camera</span>
-      </a>
+    <header class="topbar navbar navbar-expand-xl">
+      <div class="container-fluid app-nav-container">
+        <a class="brand navbar-brand" href="/cameras" aria-label="TBC Dashboard">
+          <span class="brand-mark">TBC</span>
+          <span class="brand-name">TB Camera</span>
+        </a>
       {% if username %}
       {% set path = request.url.path %}
       {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') %}
@@ -19,112 +21,141 @@
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
       {% set admin_active = path.startswith('/users') or path.startswith('/settings') %}
-      <div class="nav-shell" data-main-menu>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu" data-menu-toggle>
-          <span class="menu-toggle-bars" aria-hidden="true"></span>
-          Menü
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Navigation umschalten" data-menu-toggle>
+          <span class="navbar-toggler-icon"></span>
         </button>
-        <nav class="top-actions" id="main-menu" aria-label="Hauptnavigation" data-menu-nav>
-          <div class="menu-group{% if cameras_active %} is-active{% endif %}" data-menu-group>
-            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
-              Kameras
-            </button>
-            <div class="menu-panel" data-menu-panel>
-              <a class="menu-item{% if path.startswith('/cameras') %} is-current{% endif %}" href="/cameras">
-                <span class="menu-icon" aria-hidden="true">K</span>
-                <span>Kameras</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/live') %} is-current{% endif %}" href="/live">
-                <span class="menu-icon" aria-hidden="true">L</span>
-                <span>Live</span>
-              </a>
-            </div>
-          </div>
-          <div class="menu-group{% if archive_active %} is-active{% endif %}" data-menu-group>
-            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
-              Archiv
-            </button>
-            <div class="menu-panel" data-menu-panel>
-              <a class="menu-item{% if path.startswith('/recordings') %} is-current{% endif %}" href="/recordings">
-                <span class="menu-icon" aria-hidden="true">C</span>
-                <span>Clips</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/sd-card') %} is-current{% endif %}" href="/sd-card">
-                <span class="menu-icon" aria-hidden="true">S</span>
-                <span>SD-Karte</span>
-              </a>
-            </div>
-          </div>
-        {% if role == 'admin' %}
-          <div class="menu-group{% if storage_active %} is-active{% endif %}" data-menu-group>
-            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
-              Speicher
-            </button>
-            <div class="menu-panel" data-menu-panel>
-              <a class="menu-item{% if path == '/storage' %} is-current{% endif %}" href="/storage">
-                <span class="menu-icon" aria-hidden="true">Z</span>
-                <span>Ziele</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/storage/explorer') %} is-current{% endif %}" href="/storage/explorer">
-                <span class="menu-icon" aria-hidden="true">E</span>
-                <span>Explorer</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/retention') %} is-current{% endif %}" href="/retention">
-                <span class="menu-icon" aria-hidden="true">R</span>
-                <span>Retention</span>
-              </a>
-            </div>
-          </div>
-          <div class="menu-group{% if ops_active %} is-active{% endif %}" data-menu-group>
-            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
-              Betrieb
-            </button>
-            <div class="menu-panel" data-menu-panel>
-              <a class="menu-item{% if path.startswith('/health') %} is-current{% endif %}" href="/health">
-                <span class="menu-icon" aria-hidden="true">P</span>
-                <span>Leistung</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/notifications') %} is-current{% endif %}" href="/notifications">
-                <span class="menu-icon" aria-hidden="true">N</span>
-                <span>Notify</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/mqtt') %} is-current{% endif %}" href="/mqtt">
-                <span class="menu-icon" aria-hidden="true">M</span>
-                <span>MQTT</span>
-              </a>
-            </div>
-          </div>
-          <div class="menu-group{% if admin_active %} is-active{% endif %}" data-menu-group>
-            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
-              Admin
-            </button>
-            <div class="menu-panel" data-menu-panel>
-              <a class="menu-item{% if path.startswith('/users') %} is-current{% endif %}" href="/users">
-                <span class="menu-icon" aria-hidden="true">B</span>
-                <span>Benutzer</span>
-              </a>
-              <a class="menu-item{% if path.startswith('/settings') %} is-current{% endif %}" href="/settings">
-                <span class="menu-icon" aria-hidden="true">A</span>
-                <span>Einstellungen</span>
-              </a>
-              <button class="menu-item" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>
-                <span class="menu-icon" aria-hidden="true">D</span>
-                <span>Debug Log</span>
+        <nav class="collapse navbar-collapse app-navbar" id="main-menu" aria-label="Hauptnavigation" data-main-menu data-menu-nav>
+          <ul class="navbar-nav app-nav-list ms-xl-auto align-items-xl-center">
+            <li class="nav-item dropdown{% if cameras_active %} is-active{% endif %}" data-menu-group>
+              <button class="nav-link dropdown-toggle{% if cameras_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+                Kameras
               </button>
-            </div>
-          </div>
+              <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/cameras') %} active{% endif %}" href="/cameras">
+                    <span class="nav-shortcut" aria-hidden="true">K</span>
+                    <span>Kameras</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/live') %} active{% endif %}" href="/live">
+                    <span class="nav-shortcut" aria-hidden="true">L</span>
+                    <span>Live</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown{% if archive_active %} is-active{% endif %}" data-menu-group>
+              <button class="nav-link dropdown-toggle{% if archive_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+                Archiv
+              </button>
+              <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="/recordings">
+                    <span class="nav-shortcut" aria-hidden="true">C</span>
+                    <span>Clips</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="/sd-card">
+                    <span class="nav-shortcut" aria-hidden="true">S</span>
+                    <span>SD-Karte</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+        {% if role == 'admin' %}
+            <li class="nav-item dropdown{% if storage_active %} is-active{% endif %}" data-menu-group>
+              <button class="nav-link dropdown-toggle{% if storage_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+                Speicher
+              </button>
+              <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="/storage">
+                    <span class="nav-shortcut" aria-hidden="true">Z</span>
+                    <span>Ziele</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/storage/explorer') %} active{% endif %}" href="/storage/explorer">
+                    <span class="nav-shortcut" aria-hidden="true">E</span>
+                    <span>Explorer</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/retention') %} active{% endif %}" href="/retention">
+                    <span class="nav-shortcut" aria-hidden="true">R</span>
+                    <span>Retention</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown{% if ops_active %} is-active{% endif %}" data-menu-group>
+              <button class="nav-link dropdown-toggle{% if ops_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+                Betrieb
+              </button>
+              <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="/health">
+                    <span class="nav-shortcut" aria-hidden="true">P</span>
+                    <span>Leistung</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="/notifications">
+                    <span class="nav-shortcut" aria-hidden="true">N</span>
+                    <span>Notify</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/mqtt') %} active{% endif %}" href="/mqtt">
+                    <span class="nav-shortcut" aria-hidden="true">M</span>
+                    <span>MQTT</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown{% if admin_active %} is-active{% endif %}" data-menu-group>
+              <button class="nav-link dropdown-toggle{% if admin_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+                Admin
+              </button>
+              <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
+                    <span class="nav-shortcut" aria-hidden="true">B</span>
+                    <span>Benutzer</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/settings') %} active{% endif %}" href="/settings">
+                    <span class="nav-shortcut" aria-hidden="true">A</span>
+                    <span>Einstellungen</span>
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <button class="dropdown-item" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>
+                    <span class="nav-shortcut" aria-hidden="true">D</span>
+                    <span>Debug Log</span>
+                  </button>
+                </li>
+              </ul>
+            </li>
         {% endif %}
-          <form method="post" action="/logout">
-            <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
-          </form>
+            <li class="nav-item nav-logout">
+              <form method="post" action="/logout">
+                <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
+              </form>
+            </li>
+          </ul>
         </nav>
-      </div>
       {% endif %}
+      </div>
     </header>
 
-    <main class="shell">
+    <main class="shell container-xxl">
       {% if flash %}
-      <div class="flash flash-{{ flash.level }}">{{ flash.message }}</div>
+      <div class="flash flash-{{ flash.level }} alert" role="alert">{{ flash.message }}</div>
       {% endif %}
       {% block content %}{% endblock %}
     </main>
@@ -148,6 +179,7 @@
     <script src="{{ url_for('static', path='/debug-log.js') }}" defer></script>
     {% endif %}
     {% if username %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="{{ url_for('static', path='/main-menu.js') }}" defer></script>
     {% endif %}
   </body>
