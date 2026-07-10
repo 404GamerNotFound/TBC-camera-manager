@@ -557,6 +557,7 @@ async def sd_card_media(
     end: str = Query(""),
     stream: str = Query("main"),
     download: bool = Query(False),
+    embed: bool = Query(False),
 ):
     guard = _require_camera_access(request, camera_id)
     if guard:
@@ -574,6 +575,8 @@ async def sd_card_media(
             stream=stream,
         )
     except Exception as exc:
+        if embed:
+            return JSONResponse({"error": str(exc)}, status_code=status.HTTP_502_BAD_GATEWAY)
         _set_flash(request, f"SD-Card-Medium konnte nicht geoeffnet werden: {exc}", "error")
         return _redirect(f"/sd-card?camera_id={camera_id}&channel={channel}&stream={stream}")
     disposition = "attachment" if download else "inline"

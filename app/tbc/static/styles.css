@@ -502,7 +502,15 @@ code {
 }
 
 .sd-table {
-  min-width: 940px;
+  min-width: 1120px;
+}
+
+.sd-preview {
+  display: block;
+  width: 180px;
+  aspect-ratio: 16 / 9;
+  background: #111817;
+  border-radius: 6px;
 }
 
 .clip-grid {

@@ -112,7 +112,7 @@ async def open_sd_card_download(
     except Exception:
         await _close_host(host_api)
         LOGGER.exception("SD card download failed for camera %s", camera.get("id"))
-        raise
+        raise RuntimeError(_friendly_reolink_error()) from None
 
 
 def _host(camera: dict[str, Any]):
@@ -121,11 +121,13 @@ def _host(camera: dict[str, Any]):
     except ImportError as exc:
         raise RuntimeError("reolink-aio ist nicht installiert") from exc
 
+    port = int(camera.get("http_port") or 80)
     return Host(
         str(camera["host"]),
         str(camera["username"]),
         str(camera["password"]),
-        port=int(camera.get("http_port") or 80),
+        port=port,
+        use_https=port == 443,
         timeout=20,
     )
 
@@ -196,6 +198,10 @@ async def _close_host(host_api: Any) -> None:
         await _call_if_available(host_api, "logout")
     except Exception:
         LOGGER.debug("Could not logout Reolink host", exc_info=True)
+    try:
+        await _call_if_available(host_api, "expire_session", False)
+    except Exception:
+        LOGGER.debug("Could not close Reolink host session", exc_info=True)
 
 
 def _valid_stream(stream: str) -> str:
@@ -207,3 +213,10 @@ def _download_name(source: str, start_id: str) -> str:
     if name:
         return name
     return f"sd-card-{start_id or 'clip'}.mp4"
+
+
+def _friendly_reolink_error() -> str:
+    return (
+        "Kamera konnte das SD-Card-Video nicht bereitstellen. "
+        "Bitte pruefen, ob der HTTP-Port der Kamera korrekt gesetzt ist und ob die Kamera gerade bereits einen anderen Playback-/Download-Stream bedient."
+    )

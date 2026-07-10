@@ -81,11 +81,13 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
     except ImportError:
         return CameraSnapshot("warn", "Reolink-AIO ist nicht installiert; nur ONVIF wurde geprüft")
 
+    http_port = int(camera.get("http_port") or 80)
     host_api = Host(
         camera["host"],
         camera["username"],
         camera["password"],
-        port=int(camera.get("http_port") or 80),
+        port=http_port,
+        use_https=http_port == 443,
         timeout=8,
     )
     try:
@@ -133,6 +135,10 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
                 await _call_if_available(host_api, close_method)
             except Exception:
                 LOGGER.debug("Reolink close method failed: %s", close_method, exc_info=True)
+        try:
+            await _call_if_available(host_api, "expire_session", False)
+        except Exception:
+            LOGGER.debug("Reolink session close failed", exc_info=True)
 
 
 def _channel_rows(host_api: Any, channel: int, *, multiple_channels: bool) -> list[dict[str, Any]]:

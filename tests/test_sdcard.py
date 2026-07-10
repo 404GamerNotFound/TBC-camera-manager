@@ -1,5 +1,7 @@
+import sys
 import unittest
 from datetime import datetime, timedelta
+from types import ModuleType
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -71,6 +73,31 @@ class SdCardTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(row["file_name"], "RecM01_20260710_100000_100030_ABCD_001000.mp4")
         self.assertEqual(row["start_id"], "20260710100000")
         self.assertEqual(row["duration_seconds"], 30)
+
+    def test_host_uses_configured_http_port_without_https_autodetect(self):
+        created = {}
+
+        class FakeReolinkHost:
+            def __init__(self, host, username, password, *, port, use_https, timeout):
+                created.update(
+                    {
+                        "host": host,
+                        "username": username,
+                        "password": password,
+                        "port": port,
+                        "use_https": use_https,
+                        "timeout": timeout,
+                    }
+                )
+
+        package = ModuleType("reolink_aio")
+        api = ModuleType("reolink_aio.api")
+        api.Host = FakeReolinkHost
+        with patch.dict(sys.modules, {"reolink_aio": package, "reolink_aio.api": api}):
+            sdcard._host({"host": "192.0.2.10", "username": "admin", "password": "secret", "http_port": 80})
+
+        self.assertEqual(created["port"], 80)
+        self.assertFalse(created["use_https"])
 
 
 if __name__ == "__main__":

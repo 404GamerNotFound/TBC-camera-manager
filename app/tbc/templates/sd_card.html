@@ -59,6 +59,7 @@
     <table class="sd-table">
       <thead>
         <tr>
+          <th>Vorschau</th>
           <th>Start</th>
           <th>Ende</th>
           <th>Dauer</th>
@@ -72,6 +73,9 @@
         {% for clip in recordings %}
         {% set query = 'channel=' ~ clip.channel ~ '&stream=' ~ clip.stream ~ '&source=' ~ (clip.source | urlencode) ~ '&start=' ~ clip.start_id ~ '&end=' ~ clip.end_id %}
         <tr>
+          <td>
+            <video class="sd-preview" controls preload="none" src="/sd-card/{{ selected_camera.id }}/media?{{ query }}&embed=1"></video>
+          </td>
           <td>{{ clip.start_time }}</td>
           <td>{{ clip.end_time }}</td>
           <td>{{ clip.duration_seconds }}s</td>
