@@ -13,51 +13,112 @@
         <span class="brand-name">TB Camera</span>
       </a>
       {% if username %}
-      <nav class="top-actions" aria-label="Hauptnavigation">
-        <details class="nav-menu">
-          <summary>Kameras</summary>
-          <div class="nav-submenu">
-            <a class="nav-link" href="/cameras">Übersicht</a>
-            <a class="nav-link" href="/live">Live</a>
+      {% set path = request.url.path %}
+      {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') %}
+      {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') %}
+      {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
+      {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
+      {% set admin_active = path.startswith('/users') or path.startswith('/settings') %}
+      <div class="nav-shell" data-main-menu>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-menu" data-menu-toggle>
+          <span class="menu-toggle-bars" aria-hidden="true"></span>
+          Menü
+        </button>
+        <nav class="top-actions" id="main-menu" aria-label="Hauptnavigation" data-menu-nav>
+          <div class="menu-group{% if cameras_active %} is-active{% endif %}" data-menu-group>
+            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
+              Kameras
+            </button>
+            <div class="menu-panel" data-menu-panel>
+              <a class="menu-item{% if path.startswith('/cameras') %} is-current{% endif %}" href="/cameras">
+                <span class="menu-icon" aria-hidden="true">K</span>
+                <span>Kameras</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/live') %} is-current{% endif %}" href="/live">
+                <span class="menu-icon" aria-hidden="true">L</span>
+                <span>Live</span>
+              </a>
+            </div>
           </div>
-        </details>
-        <details class="nav-menu">
-          <summary>Archiv</summary>
-          <div class="nav-submenu">
-            <a class="nav-link" href="/recordings">Clips</a>
-            <a class="nav-link" href="/sd-card">SD-Karte</a>
+          <div class="menu-group{% if archive_active %} is-active{% endif %}" data-menu-group>
+            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
+              Archiv
+            </button>
+            <div class="menu-panel" data-menu-panel>
+              <a class="menu-item{% if path.startswith('/recordings') %} is-current{% endif %}" href="/recordings">
+                <span class="menu-icon" aria-hidden="true">C</span>
+                <span>Clips</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/sd-card') %} is-current{% endif %}" href="/sd-card">
+                <span class="menu-icon" aria-hidden="true">S</span>
+                <span>SD-Karte</span>
+              </a>
+            </div>
           </div>
-        </details>
         {% if role == 'admin' %}
-        <details class="nav-menu">
-          <summary>Speicher</summary>
-          <div class="nav-submenu">
-            <a class="nav-link" href="/storage">Ziele</a>
-            <a class="nav-link" href="/storage/explorer">Explorer</a>
-            <a class="nav-link" href="/retention">Retention</a>
+          <div class="menu-group{% if storage_active %} is-active{% endif %}" data-menu-group>
+            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
+              Speicher
+            </button>
+            <div class="menu-panel" data-menu-panel>
+              <a class="menu-item{% if path == '/storage' %} is-current{% endif %}" href="/storage">
+                <span class="menu-icon" aria-hidden="true">Z</span>
+                <span>Ziele</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/storage/explorer') %} is-current{% endif %}" href="/storage/explorer">
+                <span class="menu-icon" aria-hidden="true">E</span>
+                <span>Explorer</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/retention') %} is-current{% endif %}" href="/retention">
+                <span class="menu-icon" aria-hidden="true">R</span>
+                <span>Retention</span>
+              </a>
+            </div>
           </div>
-        </details>
-        <details class="nav-menu">
-          <summary>Betrieb</summary>
-          <div class="nav-submenu">
-            <a class="nav-link" href="/health">Leistung</a>
-            <a class="nav-link" href="/notifications">Notify</a>
-            <a class="nav-link" href="/mqtt">MQTT</a>
+          <div class="menu-group{% if ops_active %} is-active{% endif %}" data-menu-group>
+            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
+              Betrieb
+            </button>
+            <div class="menu-panel" data-menu-panel>
+              <a class="menu-item{% if path.startswith('/health') %} is-current{% endif %}" href="/health">
+                <span class="menu-icon" aria-hidden="true">P</span>
+                <span>Leistung</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/notifications') %} is-current{% endif %}" href="/notifications">
+                <span class="menu-icon" aria-hidden="true">N</span>
+                <span>Notify</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/mqtt') %} is-current{% endif %}" href="/mqtt">
+                <span class="menu-icon" aria-hidden="true">M</span>
+                <span>MQTT</span>
+              </a>
+            </div>
           </div>
-        </details>
-        <details class="nav-menu">
-          <summary>Admin</summary>
-          <div class="nav-submenu">
-            <a class="nav-link" href="/users">Benutzer</a>
-            <a class="nav-link" href="/settings">Einstellungen</a>
-            <button class="nav-link" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>Debug Log</button>
+          <div class="menu-group{% if admin_active %} is-active{% endif %}" data-menu-group>
+            <button class="menu-trigger" type="button" aria-expanded="false" data-menu-trigger>
+              Admin
+            </button>
+            <div class="menu-panel" data-menu-panel>
+              <a class="menu-item{% if path.startswith('/users') %} is-current{% endif %}" href="/users">
+                <span class="menu-icon" aria-hidden="true">B</span>
+                <span>Benutzer</span>
+              </a>
+              <a class="menu-item{% if path.startswith('/settings') %} is-current{% endif %}" href="/settings">
+                <span class="menu-icon" aria-hidden="true">A</span>
+                <span>Einstellungen</span>
+              </a>
+              <button class="menu-item" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>
+                <span class="menu-icon" aria-hidden="true">D</span>
+                <span>Debug Log</span>
+              </button>
+            </div>
           </div>
-        </details>
         {% endif %}
-        <form method="post" action="/logout">
-          <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
-        </form>
-      </nav>
+          <form method="post" action="/logout">
+            <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
+          </form>
+        </nav>
+      </div>
       {% endif %}
     </header>
 
@@ -85,6 +146,9 @@
     </aside>
     <button class="debug-fab" type="button" data-debug-toggle>Log</button>
     <script src="{{ url_for('static', path='/debug-log.js') }}" defer></script>
+    {% endif %}
+    {% if username %}
+    <script src="{{ url_for('static', path='/main-menu.js') }}" defer></script>
     {% endif %}
   </body>
 </html>
