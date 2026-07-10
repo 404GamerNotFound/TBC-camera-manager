@@ -60,7 +60,33 @@ class AccessControlTests(unittest.TestCase):
 
         self.assertEqual(triggers, ["person", "vehicle"])
 
+    def test_camera_connection_update_keeps_password_when_blank(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Schuppenweg",
+                host="192.169.1.236",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            database.update_camera_connection(
+                handle.name,
+                camera_id,
+                name="Schuppenweg",
+                host="192.168.1.236",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password=None,
+            )
+            camera = database.get_camera(handle.name, camera_id)
+
+        self.assertEqual(camera["host"], "192.168.1.236")
+        self.assertEqual(camera["password"], "secret")
+
 
 if __name__ == "__main__":
     unittest.main()
-

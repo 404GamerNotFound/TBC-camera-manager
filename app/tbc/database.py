@@ -571,6 +571,41 @@ def delete_camera(database_path: str, camera_id: int) -> None:
         db.execute("DELETE FROM cameras WHERE id = ?", (camera_id,))
 
 
+def update_camera_connection(
+    database_path: str,
+    camera_id: int,
+    *,
+    name: str,
+    host: str,
+    onvif_port: int,
+    http_port: int,
+    username: str,
+    password: str | None = None,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cameras
+               SET name = ?,
+                   host = ?,
+                   onvif_port = ?,
+                   http_port = ?,
+                   username = ?,
+                   password = COALESCE(?, password),
+                   manufacturer = NULL,
+                   model = NULL,
+                   firmware = NULL,
+                   serial = NULL,
+                   stream_uri = NULL,
+                   last_probe_status = NULL,
+                   last_probe_message = NULL,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (name, host, onvif_port, http_port, username, password, camera_id),
+        )
+
+
 def upsert_camera_channels(database_path: str, camera_id: int, channels: Iterable[dict[str, Any]]) -> None:
     with connect(database_path) as db:
         for channel in channels:

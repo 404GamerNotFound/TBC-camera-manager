@@ -249,6 +249,41 @@ a {
   color: var(--danger);
 }
 
+.diagnostic-note {
+  margin: -8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+section.diagnostic-note {
+  margin: 0 0 18px;
+}
+
+.diagnostic-error {
+  border-color: rgba(167, 55, 55, 0.32);
+  color: var(--danger);
+  background: #fff0f0;
+}
+
+.diagnostic-warning,
+.diagnostic-warn {
+  border-color: rgba(163, 100, 19, 0.32);
+  color: var(--warn);
+  background: #fff5e6;
+}
+
+.diagnostic-ok {
+  border-color: rgba(30, 123, 77, 0.28);
+  color: var(--ok);
+  background: #edf8f1;
+}
+
 .auth-panel {
   display: grid;
   grid-template-columns: minmax(220px, 0.85fr) minmax(280px, 1fr);

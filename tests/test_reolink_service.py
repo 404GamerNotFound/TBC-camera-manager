@@ -23,6 +23,10 @@ class ReolinkServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(uri, "rtsp://example/sub")
         self.assertEqual(host.calls[0], (0, "sub", False))
 
+    async def test_host_hint_flags_common_192_169_typo(self):
+        self.assertIn("192.168", service._host_hint("192.169.1.236"))
+        self.assertIsNone(service._host_hint("192.168.1.236"))
+
 
 if __name__ == "__main__":
     unittest.main()

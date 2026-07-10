@@ -22,6 +22,11 @@
       </div>
       <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'neu' }}</span>
     </div>
+    {% if camera.last_probe_message %}
+    <p class="diagnostic-note diagnostic-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_message }}</p>
+    {% elif camera.host.startswith('192.169.') %}
+    <p class="diagnostic-note diagnostic-warning">Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint.</p>
+    {% endif %}
     <dl class="metric-row">
       <div>
         <dt>Unterstützt</dt>

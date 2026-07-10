@@ -301,6 +301,54 @@ async def update_camera_recording(
     return _redirect(f"/cameras/{camera_id}")
 
 
+@app.post("/cameras/{camera_id}/connection")
+async def update_camera_connection(
+    request: Request,
+    camera_id: int,
+    name: str = Form(...),
+    host: str = Form(...),
+    onvif_port: int = Form(8000),
+    http_port: int = Form(80),
+    username: str = Form(...),
+    password: str = Form(""),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        return _redirect("/cameras")
+    values = {
+        "name": name.strip(),
+        "host": host.strip(),
+        "onvif_port": max(1, min(65535, int(onvif_port))),
+        "http_port": max(1, min(65535, int(http_port))),
+        "username": username.strip(),
+        "password": password.strip() or None,
+    }
+    if not values["name"] or not values["host"] or not values["username"]:
+        _set_flash(request, "Name, Host und Benutzer sind erforderlich", "error")
+        return _redirect(f"/cameras/{camera_id}")
+    database.update_camera_connection(
+        SETTINGS.database_path,
+        camera_id,
+        name=str(values["name"]),
+        host=str(values["host"]),
+        onvif_port=int(values["onvif_port"]),
+        http_port=int(values["http_port"]),
+        username=str(values["username"]),
+        password=values["password"],
+    )
+    try:
+        snapshot = await _refresh_camera(camera_id)
+        _set_flash(request, snapshot.message, "success" if snapshot.status == "ok" else "warning")
+    except Exception as exc:
+        LOGGER.exception("Kamera %s konnte nach Verbindungsupdate nicht geprüft werden", camera_id)
+        _set_flash(request, f"Verbindung gespeichert, Probe fehlgeschlagen: {exc}", "error")
+    return _redirect(f"/cameras/{camera_id}")
+
+
 @app.post("/cameras/{camera_id}/delete")
 async def remove_camera(request: Request, camera_id: int):
     guard = _require_admin(request)

@@ -36,10 +36,10 @@ async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:
     )
     reolink_task = _probe_reolink(camera)
     onvif_probe, reolink_snapshot = await asyncio.gather(onvif_probe_task, reolink_task)
-    return _merge_snapshots(onvif_probe, reolink_snapshot)
+    return _merge_snapshots(camera, onvif_probe, reolink_snapshot)
 
 
-def _merge_snapshots(onvif_probe: OnvifProbe, reolink_snapshot: CameraSnapshot | None) -> CameraSnapshot:
+def _merge_snapshots(camera: dict[str, Any], onvif_probe: OnvifProbe, reolink_snapshot: CameraSnapshot | None) -> CameraSnapshot:
     base_rows = catalog_rows()
     for row in base_rows:
         if row["key"] in onvif_probe.event_detection_keys:
@@ -60,6 +60,9 @@ def _merge_snapshots(onvif_probe: OnvifProbe, reolink_snapshot: CameraSnapshot |
         messages.append(onvif_probe.message)
     if reolink_snapshot and reolink_snapshot.message:
         messages.append(reolink_snapshot.message)
+    host_hint = _host_hint(str(camera.get("host") or ""))
+    if host_hint:
+        messages.append(host_hint)
 
     return CameraSnapshot(
         status=status,
@@ -73,6 +76,12 @@ def _merge_snapshots(onvif_probe: OnvifProbe, reolink_snapshot: CameraSnapshot |
         detections=detections,
         channels=reolink_snapshot.channels if reolink_snapshot else [],
     )
+
+
+def _host_hint(host: str) -> str | None:
+    if host.startswith("192.169."):
+        return "Hinweis: Host beginnt mit 192.169; im Heimnetz ist oft 192.168 gemeint."
+    return None
 
 
 async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
