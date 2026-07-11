@@ -43,21 +43,45 @@
   <video class="timeline-player" controls preload="metadata" data-timeline-player></video>
 </section>
 
-<section class="timeline-scrubber" data-timeline-root>
+<section class="timeline-scrubber" data-timeline-root data-camera-id="{{ selected_camera_id }}">
   <script type="application/json" data-timeline-json>{{ timeline_data | tojson }}</script>
-  <div class="timeline-hours" aria-hidden="true">
-    {% for hour in range(0, 25, 2) %}
-    <span style="left: {{ (hour / 24 * 100) | round(2) }}%">{{ '%02d:00' % hour }}</span>
-    {% endfor %}
+
+  <div class="timeline-controls-row">
+    <div class="timeline-layers">
+      <label class="check-row">
+        <input type="checkbox" data-timeline-toggle="local" checked>
+        <span>Lokale Aufzeichnungen (von TBC)</span>
+      </label>
+      <label class="check-row{% if not sd_card_available %} is-disabled{% endif %}">
+        <input type="checkbox" data-timeline-toggle="sdcard" {% if sd_card_available %}checked{% endif %} {% if not sd_card_available %}disabled{% endif %}>
+        <span>Aufzeichnungen der SD-Karte{% if not sd_card_available %} (nicht verfügbar){% endif %}</span>
+      </label>
+    </div>
+    <div class="timeline-zoom-controls">
+      <button type="button" class="icon-button" data-timeline-zoom-out aria-label="Verkleinern">−</button>
+      <span data-timeline-zoom-label>1×</span>
+      <button type="button" class="icon-button" data-timeline-zoom-in aria-label="Vergrößern">+</button>
+      <button type="button" class="text-button" data-timeline-zoom-reset>Ganzer Tag</button>
+    </div>
   </div>
-  <div class="timeline-track" data-timeline-track>
-    <div class="timeline-continuous" data-timeline-continuous></div>
-    <div class="timeline-markers" data-timeline-markers></div>
-    <div class="timeline-cursor" data-timeline-cursor hidden></div>
+
+  <div class="timeline-scroll" data-timeline-scroll>
+    <div class="timeline-inner" data-timeline-inner>
+      <div class="timeline-hours" data-timeline-hours aria-hidden="true"></div>
+      <div class="timeline-grid" data-timeline-grid aria-hidden="true"></div>
+      <div class="timeline-lane" data-lane-kind="continuous" data-timeline-lane-continuous>
+        <span class="timeline-lane-label">Daueraufnahme</span>
+      </div>
+      <div class="timeline-lane" data-lane-kind="events" data-timeline-lane-events>
+        <span class="timeline-lane-label">Ereignisse</span>
+      </div>
+      <div class="timeline-lane" data-lane-kind="sdcard" data-timeline-lane-sdcard hidden>
+        <span class="timeline-lane-label">SD-Karte</span>
+      </div>
+      <div class="timeline-cursor" data-timeline-cursor hidden></div>
+    </div>
   </div>
-  {% if not has_segments %}
-  <p class="timeline-hint">Für diesen Tag liegen keine Aufnahmen vor.</p>
-  {% endif %}
+  <p class="timeline-hint" data-timeline-empty hidden>Für diesen Tag liegen keine Aufnahmen vor.</p>
 </section>
 
 <section class="event-panel">
