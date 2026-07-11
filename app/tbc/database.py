@@ -438,6 +438,15 @@ def get_camera(database_path: str, camera_id: int) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+def count_cameras_by_module(database_path: str, module_key: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM cameras WHERE module_key = ?",
+            (module_key,),
+        ).fetchone()
+    return int(row["total"] if row else 0)
+
+
 def get_storage_target(database_path: str, storage_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute("SELECT * FROM storage_targets WHERE id = ?", (storage_id,)).fetchone()

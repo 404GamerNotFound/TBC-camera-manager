@@ -7,14 +7,26 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
-from fastapi import FastAPI, Form, Query, Request, status
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi import FastAPI, File, Form, Query, Request, UploadFile, status
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import database, mqtt
-from .camera_modules import CameraCapability, get_camera_module, list_camera_modules
+from .camera_modules import (
+    CameraCapability,
+    get_camera_module,
+    list_camera_module_registrations,
+    list_camera_modules,
+    reload_camera_modules,
+)
+from .camera_modules.packages import (
+    CameraPluginError,
+    export_plugin_archive,
+    install_plugin_archive,
+    remove_external_plugin,
+)
 from .camera_modules.registry import UnknownCameraModuleError
 from .channels import apply_channel_enabled_filter
 from .config import load_settings
@@ -1154,6 +1166,87 @@ async def settings_page(request: Request):
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.get("/camera-modules", response_class=HTMLResponse)
+async def camera_modules_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registrations = list_camera_module_registrations()
+    return templates.TemplateResponse(
+        request,
+        "camera_modules.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "registrations": registrations,
+            "camera_counts": {
+                registration.module.key: database.count_cameras_by_module(
+                    SETTINGS.database_path,
+                    registration.module.key,
+                )
+                for registration in registrations
+            },
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/camera-modules/import")
+async def import_camera_module(request: Request, plugin_file: UploadFile = File(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        archive = await plugin_file.read(10 * 1024 * 1024 + 1)
+        package = install_plugin_archive(archive, SETTINGS.camera_modules_path)
+        reload_camera_modules()
+        _set_flash(request, f"Kamera-Plugin {package.manifest.label} wurde installiert")
+    except (CameraPluginError, OSError) as exc:
+        _set_flash(request, f"Plugin-Import fehlgeschlagen: {exc}", "error")
+    finally:
+        await plugin_file.close()
+    return _redirect("/camera-modules")
+
+
+@app.get("/camera-modules/{module_key}/export")
+async def export_camera_module(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registration = next(
+        (item for item in list_camera_module_registrations() if item.module.key == module_key),
+        None,
+    )
+    if registration is None or registration.package is None:
+        return JSONResponse({"error": "Plugin kann nicht exportiert werden"}, status_code=status.HTTP_404_NOT_FOUND)
+    archive = export_plugin_archive(registration.package)
+    filename = f"tbc-camera-plugin-{registration.module.key}-{registration.version}.zip"
+    return Response(
+        archive,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/camera-modules/{module_key}/delete")
+async def delete_camera_module(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera_count = database.count_cameras_by_module(SETTINGS.database_path, module_key)
+    if camera_count:
+        _set_flash(request, f"Plugin wird noch von {camera_count} Kamera(s) verwendet", "error")
+        return _redirect("/camera-modules")
+    try:
+        remove_external_plugin(module_key, SETTINGS.camera_modules_path)
+        reload_camera_modules()
+        _set_flash(request, "Kamera-Plugin wurde entfernt")
+    except (CameraPluginError, OSError) as exc:
+        _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
+    return _redirect("/camera-modules")
 
 
 @app.get("/api/debug-log")

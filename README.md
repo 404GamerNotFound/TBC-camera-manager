@@ -19,6 +19,7 @@ Standardwerte aus `docker-compose.yml`:
 - Datenbank: `/data/tbc.sqlite3` im Docker-Volume `tbc-data`
 - Aufnahmen: `/recordings` im Docker-Volume `tbc-recordings`
 - Live-HLS-Puffer: `/tmp/tbc-live`
+- Importierte Kamera-Plugins: `/data/camera-modules` im Docker-Volume `tbc-data`
 
 Bitte `TBC_ADMIN_PASSWORD` und `TBC_SECRET_KEY` in `.env` vor einem echten Einsatz aendern. `TBC_PUBLIC_BASE_URL` sollte gesetzt werden, wenn Webhooks oder Home-Assistant-Notify Links zu Clip und Snapshot erhalten sollen.
 
@@ -56,7 +57,7 @@ In der Weboberflaeche zuerst das installierte Kameramodul auswählen und die Kam
 
 ## Installierbare Kamera-Module
 
-Die Weboberfläche und die zentralen Kamera-Routen greifen nur auf eine herstellerunabhängige Modulschnittstelle zu. Module deklarieren Fähigkeiten für Live-Ansicht, Ereignisaufnahme, Erkennungen, Multi-Kanal-Geräte und Kamera-Archive. Externe Python-Pakete registrieren sich über den Entry-Point `tbc.camera_modules` und erscheinen nach Installation und Neustart automatisch in der Modulauswahl.
+Die Weboberfläche und die zentralen Kamera-Routen greifen nur auf eine herstellerunabhängige Modulschnittstelle zu. Module deklarieren Fähigkeiten für Live-Ansicht, Ereignisaufnahme, Erkennungen, Multi-Kanal-Geräte und Kamera-Archive. Im Adminbereich `Kamera-Plugins` können Plugin-ZIPs direkt importiert und installierte Plugins exportiert werden. Importierte Pakete liegen dauerhaft unter `TBC_CAMERA_MODULES_PATH` (standardmäßig `/data/camera-modules`) und erscheinen sofort in der Modulauswahl.
 
 Bestehende Datenbanken werden automatisch migriert; vorhandene Kameras erhalten das Modul `reolink`. Die technische Anleitung zur Entwicklung zusätzlicher Module steht in [docs/camera-modules.md](docs/camera-modules.md).
 
@@ -169,7 +170,7 @@ Nicht jede Reolink-Kamera liefert alle Funktionen. TBC speichert deshalb pro Kam
 - Webserver: FastAPI mit Jinja2-Templates.
 - Persistenz: SQLite unter `/data/tbc.sqlite3`.
 - Schema: Tabellen fuer Kameras, Kanaele, Erkennungen, Aufnahmen, Speicherziele, Retention-Regeln, Benachrichtigungskanaele, Health-Status, Health-Events, Benutzer/Rollen und MQTT-Konfiguration.
-- Kamera-Module: `CameraModule`-Schnittstelle, Capability-Modell und Registry mit Python-Entry-Point `tbc.camera_modules`; die Modulauswahl wird pro Kamera als `module_key` gespeichert.
+- Kamera-Module: `CameraModule`-Schnittstelle, Capability-Modell, validierte ZIP-Plugins und optional Python-Entry-Points; die Modulauswahl wird pro Kamera als `module_key` gespeichert.
 - Login: Cookie-Session mit PBKDF2-SHA256 gehashtem Admin-Passwort.
 - ONVIF: `onvif-zeep` fuer Device-, Media- und Event-Probe.
 - Reolink: `reolink-aio` fuer modellabhaengige AI-/Smart-AI-Zustaende.

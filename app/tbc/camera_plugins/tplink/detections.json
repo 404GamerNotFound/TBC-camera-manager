@@ -1,0 +1,8 @@
+[
+  {"key":"motion","label":"Bewegung","category":"Basis"},
+  {"key":"person","label":"Person","category":"KI-Objekte"},
+  {"key":"vehicle","label":"Fahrzeug","category":"KI-Objekte"},
+  {"key":"pet","label":"Haustier","category":"KI-Objekte"},
+  {"key":"cry","label":"Weinen","category":"Audio"},
+  {"key":"visitor","label":"Besucher / Klingel","category":"Türklingel"}
+]

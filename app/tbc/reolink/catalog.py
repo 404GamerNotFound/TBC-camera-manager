@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -14,42 +16,13 @@ class DetectionDefinition:
     smart_object: str | None = None
 
 
-BASE_DETECTIONS: tuple[DetectionDefinition, ...] = (
-    DetectionDefinition("motion", "Bewegung", "Basis", capability_key="motion_detection"),
-    DetectionDefinition("face", "Gesicht", "KI-Objekte", object_type="face"),
-    DetectionDefinition("person", "Person", "KI-Objekte", object_type="person"),
-    DetectionDefinition("vehicle", "Fahrzeug", "KI-Objekte", object_type="vehicle"),
-    DetectionDefinition(
-        "non_motor_vehicle",
-        "Nicht-motorisiertes Fahrzeug",
-        "KI-Objekte",
-        object_type="non-motor vehicle",
-        capability_key="ai_non-motor vehicle",
-    ),
-    DetectionDefinition("pet", "Haustier", "KI-Objekte", object_type="pet"),
-    DetectionDefinition("animal", "Tier", "KI-Objekte", object_type="pet", capability_key="ai_animal"),
-    DetectionDefinition("package", "Paket", "KI-Objekte", object_type="package"),
-    DetectionDefinition("visitor", "Besucher / Klingel", "Türklingel", object_type="visitor"),
-    DetectionDefinition("cry", "Weinen", "Audio", object_type="cry"),
-    DetectionDefinition("sleep", "Ruhezustand", "Diagnose", capability_key="sleep"),
-    DetectionDefinition("io_input", "I/O Eingang", "I/O", capability_key="io_input"),
-)
+def _load_definitions() -> tuple[DetectionDefinition, ...]:
+    path = Path(__file__).resolve().parents[1] / "camera_plugins" / "reolink" / "detections.json"
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    return tuple(DetectionDefinition(**row) for row in rows)
 
-SMART_AI_DETECTIONS: tuple[DetectionDefinition, ...] = (
-    DetectionDefinition("crossline_person", "Linienübertritt Person", "Smart-AI-Zonen", smart_type="crossline", smart_object="people"),
-    DetectionDefinition("crossline_vehicle", "Linienübertritt Fahrzeug", "Smart-AI-Zonen", smart_type="crossline", smart_object="vehicle"),
-    DetectionDefinition("crossline_dog_cat", "Linienübertritt Hund/Katze", "Smart-AI-Zonen", smart_type="crossline", smart_object="dog_cat"),
-    DetectionDefinition("intrusion_person", "Eindringen Person", "Smart-AI-Zonen", smart_type="intrusion", smart_object="people"),
-    DetectionDefinition("intrusion_vehicle", "Eindringen Fahrzeug", "Smart-AI-Zonen", smart_type="intrusion", smart_object="vehicle"),
-    DetectionDefinition("intrusion_dog_cat", "Eindringen Hund/Katze", "Smart-AI-Zonen", smart_type="intrusion", smart_object="dog_cat"),
-    DetectionDefinition("linger_person", "Verweilen Person", "Smart-AI-Zonen", smart_type="loitering", smart_object="people"),
-    DetectionDefinition("linger_vehicle", "Verweilen Fahrzeug", "Smart-AI-Zonen", smart_type="loitering", smart_object="vehicle"),
-    DetectionDefinition("linger_dog_cat", "Verweilen Hund/Katze", "Smart-AI-Zonen", smart_type="loitering", smart_object="dog_cat"),
-    DetectionDefinition("forgotten_item", "Vergessener Gegenstand", "Smart-AI-Zonen", smart_type="legacy"),
-    DetectionDefinition("taken_item", "Entfernter Gegenstand", "Smart-AI-Zonen", smart_type="loss"),
-)
 
-ALL_DETECTIONS: tuple[DetectionDefinition, ...] = BASE_DETECTIONS + SMART_AI_DETECTIONS
+ALL_DETECTIONS: tuple[DetectionDefinition, ...] = _load_definitions()
 
 def definitions() -> tuple[DetectionDefinition, ...]:
     return ALL_DETECTIONS

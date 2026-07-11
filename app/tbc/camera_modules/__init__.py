@@ -5,7 +5,7 @@ from .base import (
     CameraSnapshot,
     ModuleFeatureUnsupported,
 )
-from .registry import get_camera_module, list_camera_modules
+from .registry import get_camera_module, list_camera_module_registrations, list_camera_modules, reload_camera_modules
 
 __all__ = [
     "CameraCapability",
@@ -15,4 +15,6 @@ __all__ = [
     "ModuleFeatureUnsupported",
     "get_camera_module",
     "list_camera_modules",
+    "list_camera_module_registrations",
+    "reload_camera_modules",
 ]

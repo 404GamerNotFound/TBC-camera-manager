@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from ..camera_modules.detections import DetectionDefinition
 
 
-TAPO_DETECTIONS: tuple[DetectionDefinition, ...] = (
-    DetectionDefinition("motion", "Bewegung", "Basis"),
-    DetectionDefinition("person", "Person", "KI-Objekte"),
-    DetectionDefinition("vehicle", "Fahrzeug", "KI-Objekte"),
-    DetectionDefinition("pet", "Haustier", "KI-Objekte"),
-    DetectionDefinition("cry", "Weinen", "Audio"),
-    DetectionDefinition("visitor", "Besucher / Klingel", "Türklingel"),
-)
+def _load_definitions() -> tuple[DetectionDefinition, ...]:
+    path = Path(__file__).resolve().parents[1] / "camera_plugins" / "tplink" / "detections.json"
+    rows = json.loads(path.read_text(encoding="utf-8"))
+    return tuple(DetectionDefinition(**row) for row in rows)
+
+
+TAPO_DETECTIONS: tuple[DetectionDefinition, ...] = _load_definitions()
 
 
 def definitions() -> tuple[DetectionDefinition, ...]:

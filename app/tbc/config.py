@@ -17,6 +17,7 @@ class Settings:
     poll_interval_seconds: int = 60
     web_port: int = 8732
     cookie_secure: bool = False
+    camera_modules_path: str = "/data/camera-modules"
 
 
 def load_settings() -> Settings:
@@ -31,4 +32,5 @@ def load_settings() -> Settings:
         poll_interval_seconds=max(15, int(os.getenv("TBC_POLL_INTERVAL_SECONDS", "60"))),
         web_port=int(os.getenv("TBC_PORT", "8732")),
         cookie_secure=os.getenv("TBC_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"},
+        camera_modules_path=os.getenv("TBC_CAMERA_MODULES_PATH", "/data/camera-modules"),
     )

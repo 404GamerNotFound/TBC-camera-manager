@@ -1,25 +1,46 @@
 # Kamera-Module entwickeln
 
-TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink` und `tplink` sind Referenzimplementierungen. Weitere Module können als normales Python-Paket installiert werden, ohne Routen oder Templates in TBC zu ändern.
+TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink` und `tplink` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
+
+## Plugin-Datei
+
+Eine Plugin-ZIP enthält ihre Dateien direkt im Hauptverzeichnis oder in genau einem gemeinsamen Ordner:
+
+```text
+acme-camera-plugin.zip
+├── manifest.json
+├── plugin.py
+├── detections.json
+├── service.py
+└── README.md
+```
+
+`manifest.json` ist die verbindliche Konfiguration für Metadaten, Ports und Fähigkeiten:
+
+```json
+{
+  "schema_version": 1,
+  "key": "acme",
+  "label": "Acme Camera",
+  "version": "1.0.0",
+  "description": "Acme-Kameras",
+  "entrypoint": "plugin.py",
+  "capabilities": ["live", "detections"],
+  "ports": {"onvif": 8000, "http": 80, "rtsp": 554}
+}
+```
+
+Die eingebauten Konfigurationen befinden sich unter `app/tbc/camera_plugins/reolink/` und `app/tbc/camera_plugins/tplink/`. Dort liegen auch die jeweiligen `detections.json`-Dateien.
 
 ## Öffentlicher Vertrag
 
-Ein Modul erbt von `app.tbc.camera_modules.CameraModule` und definiert einen stabilen Schlüssel, einen Anzeigenamen und seine Fähigkeiten:
+Ein Modul erbt von `tbc_camera_api.CameraModule`. Schlüssel, Anzeigename und Fähigkeiten werden im Manifest definiert:
 
 ```python
-from app.tbc.camera_modules import CameraCapability, CameraModule, CameraSnapshot
+from tbc_camera_api import CameraModule, CameraSnapshot
 
 
 class AcmeCameraModule(CameraModule):
-    key = "acme"
-    label = "Acme Camera"
-    description = "Acme-Kameras"
-    capabilities = frozenset({
-        CameraCapability.LIVE,
-        CameraCapability.RECORDING,
-        CameraCapability.DETECTIONS,
-    })
-
     async def probe(self, camera):
         # Hersteller-API abfragen und in das einheitliche TBC-Modell übersetzen.
         return CameraSnapshot(
@@ -31,29 +52,27 @@ class AcmeCameraModule(CameraModule):
             detections=[],
             channels=[],
         )
+
+
+def create_module():
+    return AcmeCameraModule()
 ```
 
-`probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()` und `open_archive_download()` implementieren. Nur Fähigkeiten, die in `capabilities` deklariert sind, werden von Oberfläche und Routen angeboten. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
+`plugin.py` stellt entweder `create_module()` oder eine Variable `MODULE` bereit. Metadaten und Fähigkeiten werden aus dem Manifest auf die Modulinstanz übertragen. `probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()` und `open_archive_download()` implementieren. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
 
 Die einheitliche Momentaufnahme `CameraSnapshot` enthält Gerätestatus, Herstellerdaten, RTSP-URI, Erkennungszustände und Kanäle. Erkennungszeilen verwenden die Felder `key`, `label`, `category`, `channel`, `supported`, `active`, `source` und optional `raw_value`.
 
-## Installation und Registrierung
+## Import und Export
 
-Das Modul-Paket registriert seine Klasse über den Python-Entry-Point `tbc.camera_modules`:
+Administratoren öffnen `Admin → Kamera-Plugins` und importieren dort die ZIP-Datei. TBC prüft Manifest, Pfade, Dateitypen, Dateianzahl und entpackte Größe, lädt das Modul testweise und installiert es anschließend atomar. Ein vorhandenes externes Plugin mit demselben Schlüssel wird dabei aktualisiert. Eingebaute Plugins können weder überschrieben noch entfernt werden.
 
-```toml
-[project.entry-points."tbc.camera_modules"]
-acme = "tbc_camera_acme:AcmeCameraModule"
-```
+Jedes dateibasierte Plugin kann über dieselbe Seite wieder als ZIP exportiert werden. Externe Plugins dürfen nur entfernt werden, wenn keine Kamera mehr darauf verweist. Der Speicherort wird mit `TBC_CAMERA_MODULES_PATH` konfiguriert und liegt im Docker-Setup im persistenten `/data`-Volume.
 
-Nach Installation des Pakets in derselben Python-Umgebung und einem Neustart erscheint das Modul automatisch im Feld „Modul“ beim Anlegen einer Kamera. Modulschlüssel werden in der Datenbank pro Kamera gespeichert. Wird ein externes Modul später entfernt, bleiben die Kameradaten erhalten; herstellerspezifische Aktionen melden dann, dass das Modul nicht installiert ist.
+Alternativ bleiben Python-Distributionen mit dem Entry-Point `tbc.camera_modules` unterstützt. Diese werden außerhalb der ZIP-Verwaltung über den Image-Build installiert.
 
-Bei Docker-Deployments wird das zusätzliche Paket beim Image-Build installiert, zum Beispiel in einem abgeleiteten Dockerfile:
+## Sicherheit
 
-```dockerfile
-FROM tbc-camera-manager:latest
-RUN pip install --no-cache-dir tbc-camera-acme
-```
+Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Rechte wie der TBC-Prozess. Die ZIP-Prüfung verhindert technische Archivangriffe, kann aber keinen absichtlich schädlichen Python-Code sicher erkennen. Deshalb dürfen ausschließlich Plugins aus vertrauenswürdigen Quellen importiert werden. Zugangsdaten werden pro Kamera in TBC gespeichert und gehören niemals in eine exportierte Plugin-Datei.
 
 ## Fähigkeiten
 

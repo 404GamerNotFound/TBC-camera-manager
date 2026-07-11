@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Erweiterungen</p>
+    <h1>Kamera-Plugins</h1>
+  </div>
+</section>
+
+<section class="settings-layout">
+  <form class="editor-form compact-form" method="post" action="/camera-modules/import" enctype="multipart/form-data">
+    <div class="section-title">
+      <h2>Plugin importieren</h2>
+      <span>ZIP</span>
+    </div>
+    <div class="quiet-box">
+      Kamera-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.
+    </div>
+    <label>
+      <span>Plugin-Datei</span>
+      <input name="plugin_file" type="file" accept=".zip,application/zip" required>
+    </label>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Importieren</button>
+    </div>
+  </form>
+
+  <section class="storage-list">
+    <div class="section-title">
+      <h2>Installierte Plugins</h2>
+      <span>{{ registrations | length }}</span>
+    </div>
+    {% for registration in registrations %}
+    {% set camera_module = registration.module %}
+    <article class="storage-item">
+      <div class="section-title">
+        <div>
+          <h3>{{ camera_module.label }}</h3>
+          <p>{{ camera_module.description }}</p>
+        </div>
+        <span>{{ registration.version }}</span>
+      </div>
+      <dl class="metric-row">
+        <div><dt>Schlüssel</dt><dd>{{ camera_module.key }}</dd></div>
+        <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else ('ZIP-Import' if registration.origin == 'uploaded' else 'Python-Paket') }}</dd></div>
+        <div><dt>Kameras</dt><dd>{{ camera_counts[camera_module.key] }}</dd></div>
+      </dl>
+      <p>
+        {% for capability in camera_module.capabilities %}
+        <span class="status-pill status-active">{{ capability.value }}</span>
+        {% endfor %}
+      </p>
+      <div class="form-actions">
+        {% if registration.package %}
+        <a class="secondary-button" href="/camera-modules/{{ camera_module.key }}/export">ZIP exportieren</a>
+        {% endif %}
+        {% if registration.origin == 'uploaded' %}
+        <form method="post" action="/camera-modules/{{ camera_module.key }}/delete">
+          <button class="danger-button" type="submit" {% if camera_counts[camera_module.key] %}disabled{% endif %}>Entfernen</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}

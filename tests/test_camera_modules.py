@@ -32,7 +32,7 @@ class FakeEntryPoints(list):
 
 class CameraModuleTests(unittest.TestCase):
     def tearDown(self):
-        registry.list_camera_modules.cache_clear()
+        registry.reload_camera_modules()
 
     def test_existing_database_is_migrated_to_reolink_module(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
@@ -59,7 +59,7 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(camera["rtsp_port"], 554)
 
     def test_registry_loads_installed_entry_point_module(self):
-        registry.list_camera_modules.cache_clear()
+        registry.reload_camera_modules()
         with patch.object(registry.metadata, "entry_points", return_value=FakeEntryPoints([FakeEntryPoint()])):
             modules = registry.list_camera_modules()
 
