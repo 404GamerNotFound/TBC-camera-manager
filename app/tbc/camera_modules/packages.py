@@ -171,6 +171,16 @@ def _install_plugin_api() -> None:
     api.ModuleFeatureUnsupported = ModuleFeatureUnsupported
     tbc_package = __package__.rsplit(".camera_modules", 1)[0]
     api.import_tbc = lambda module_path: importlib.import_module(f"{tbc_package}.{module_path}")
+    # Shared, manufacturer-neutral building blocks (ONVIF probing/PTZ, stream URI
+    # helpers, detection-key normalization, the manual-RTSP module base class):
+    # plugins reach these through the api instead of relative imports so that a
+    # plugin's own device-specific code never has to know its dotted location in
+    # the host's package tree - see docs/camera-modules.md.
+    api.onvif = importlib.import_module(f"{tbc_package}.camera_modules.onvif")
+    api.onvif_control = importlib.import_module(f"{tbc_package}.camera_modules.onvif_control")
+    api.streams = importlib.import_module(f"{tbc_package}.camera_modules.streams")
+    api.detections = importlib.import_module(f"{tbc_package}.camera_modules.detections")
+    api.ManualRtspCameraModule = importlib.import_module(f"{tbc_package}.manual_rtsp.module").ManualRtspCameraModule
     sys.modules["tbc_camera_api"] = api
 
 

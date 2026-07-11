@@ -7,9 +7,12 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from ...camera_modules.base import CameraSnapshot
-from ...camera_modules.onvif import OnvifProbe, probe_onvif
+from tbc_camera_api import CameraSnapshot
+from tbc_camera_api import onvif as _onvif
 from .catalog import DetectionDefinition, catalog_rows, definitions
+
+OnvifProbe = _onvif.OnvifProbe
+probe_onvif = _onvif.probe_onvif
 
 LOGGER = logging.getLogger(__name__)
 

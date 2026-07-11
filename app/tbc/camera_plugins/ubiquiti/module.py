@@ -1,4 +1,4 @@
-from ...manual_rtsp.module import ManualRtspCameraModule
+from tbc_camera_api import ManualRtspCameraModule
 
 
 class UbiquitiCameraModule(ManualRtspCameraModule):

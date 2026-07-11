@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...camera_modules.base import CameraCapability, CameraModule, CameraSnapshot
+from tbc_camera_api import CameraCapability, CameraModule, CameraSnapshot
 from .catalog import definitions
 from .control import get_control_state, send_control
 from .service import probe_camera

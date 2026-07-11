@@ -1,5 +1,5 @@
-from tbc_camera_api import import_tbc
+from .module import TpLinkCameraModule
 
 
 def create_module():
-    return import_tbc("camera_plugins.tplink.module").TpLinkCameraModule()
+    return TpLinkCameraModule()

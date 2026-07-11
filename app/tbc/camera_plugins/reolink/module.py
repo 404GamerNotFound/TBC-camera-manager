@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from ...camera_modules.base import CameraCapability, CameraModule, CameraSnapshot
+from tbc_camera_api import CameraCapability, CameraModule, CameraSnapshot
 from .catalog import definitions
 from .control import get_control_state, send_control
 from .sdcard import list_sd_card_recordings, open_sd_card_download

@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ...camera_modules.detections import DetectionDefinition
+from tbc_camera_api import detections as _detections
+
+DetectionDefinition = _detections.DetectionDefinition
 
 
 def _load_definitions() -> tuple[DetectionDefinition, ...]:

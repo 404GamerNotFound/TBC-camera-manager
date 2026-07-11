@@ -1,5 +1,5 @@
-from tbc_camera_api import import_tbc
+from .module import RtspOnlyCameraModule
 
 
 def create_module():
-    return import_tbc("camera_plugins.rtsp_only.module").RtspOnlyCameraModule()
+    return RtspOnlyCameraModule()

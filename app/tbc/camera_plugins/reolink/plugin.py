@@ -1,5 +1,5 @@
-from tbc_camera_api import import_tbc
+from .module import ReolinkCameraModule
 
 
 def create_module():
-    return import_tbc("camera_plugins.reolink.module").ReolinkCameraModule()
+    return ReolinkCameraModule()

@@ -1,5 +1,5 @@
-from tbc_camera_api import import_tbc
+from .module import SonoffCameraModule
 
 
 def create_module():
-    return import_tbc("camera_plugins.sonoff.module").SonoffCameraModule()
+    return SonoffCameraModule()

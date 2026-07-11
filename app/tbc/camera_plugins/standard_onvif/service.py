@@ -3,10 +3,13 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from ...camera_modules.base import CameraSnapshot
-from ...camera_modules.onvif import probe_onvif
-from ...camera_modules.streams import rtsp_uri_with_credentials
+from tbc_camera_api import CameraSnapshot
+from tbc_camera_api import onvif as _onvif
+from tbc_camera_api import streams as _streams
 from .catalog import catalog_rows
+
+probe_onvif = _onvif.probe_onvif
+rtsp_uri_with_credentials = _streams.rtsp_uri_with_credentials
 
 
 async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:

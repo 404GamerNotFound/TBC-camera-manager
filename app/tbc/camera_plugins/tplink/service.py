@@ -4,9 +4,11 @@ import asyncio
 from typing import Any
 from urllib.parse import quote
 
-from ...camera_modules.base import CameraSnapshot
-from ...camera_modules.onvif import probe_onvif
+from tbc_camera_api import CameraSnapshot
+from tbc_camera_api import onvif as _onvif
 from .catalog import catalog_rows
+
+probe_onvif = _onvif.probe_onvif
 
 
 async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:

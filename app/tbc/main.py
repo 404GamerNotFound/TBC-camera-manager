@@ -26,6 +26,7 @@ from .camera_modules import (
 )
 from .camera_modules.packages import (
     CameraPluginError,
+    _install_plugin_api,
     export_plugin_archive,
     install_plugin_archive,
     remove_external_plugin,
@@ -41,6 +42,15 @@ from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
+
+# Built-in plugins (camera_plugins/<key>/) resolve shared platform helpers through
+# the tbc_camera_api facade instead of relative imports into app.tbc, exactly like
+# externally installed plugins do (see docs/camera-modules.md). That facade is
+# normally installed as a side effect of loading a plugin through the registry;
+# the reolink import below reaches into the plugin package directly (for the
+# real-time TCP event monitor, which isn't part of the CameraModule contract), so
+# it must be installed explicitly first.
+_install_plugin_api()
 from .camera_plugins.reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
 
@@ -71,6 +81,12 @@ SNAPSHOT_MANAGER = DashboardSnapshotManager(
 )
 SNAPSHOT_SEMAPHORE = asyncio.Semaphore(2)
 CONTROL_STATE_CACHE: dict[int, dict[str, Any]] = {}
+# Upper bound for a single device round-trip. reolink-aio in particular can spend
+# 25-30s retrying multiple login/encryption strategies against an unreachable or
+# slow camera before it ever raises, which would otherwise hang a control button
+# (or the background cache refresh) far longer than any UI should keep a user
+# waiting on a single click.
+CONTROL_TIMEOUT_SECONDS = 20
 
 
 @app.on_event("startup")
@@ -475,7 +491,16 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
     if not camera_module.supports(CameraCapability.CONTROL):
         return fail(f"Das Modul {camera_module.label} unterstützt keine Kamerasteuerung", status_code=status.HTTP_400_BAD_REQUEST)
     try:
-        await camera_module.send_control(camera, action=action, channel=channel, **params)
+        await asyncio.wait_for(
+            camera_module.send_control(camera, action=action, channel=channel, **params),
+            timeout=CONTROL_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        LOGGER.info("Control action %s timed out for camera %s channel %s", action, camera_id, channel)
+        return fail(
+            f"Befehl abgebrochen: Kamera antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s",
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+        )
     except Exception as exc:
         LOGGER.info("Control action %s failed for camera %s channel %s: %s", action, camera_id, channel, exc)
         return fail(f"Befehl fehlgeschlagen: {exc}", status_code=status.HTTP_502_BAD_GATEWAY)
@@ -488,7 +513,13 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
 
 async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_module: Any, *, channel: int = 0) -> None:
     try:
-        control_state = await camera_module.get_control_state(camera, channel=channel)
+        control_state = await asyncio.wait_for(
+            camera_module.get_control_state(camera, channel=channel),
+            timeout=CONTROL_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        LOGGER.debug("Control state fetch timed out for camera %s channel %s", camera_id, channel)
+        return
     except Exception:
         LOGGER.debug("Control state fetch failed for camera %s channel %s", camera_id, channel, exc_info=True)
         return
