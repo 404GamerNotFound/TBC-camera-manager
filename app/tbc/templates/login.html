@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="login-language" aria-label="Sprache wechseln">
+  <button class="secondary-button" type="button" data-language="de" lang="de">Deutsch</button>
+  <button class="secondary-button" type="button" data-language="en" lang="en">English</button>
+</div>
 <section class="auth-panel">
   <div>
     <p class="eyebrow">TB Camera</p>
@@ -22,4 +26,3 @@
   </form>
 </section>
 {% endblock %}
-
