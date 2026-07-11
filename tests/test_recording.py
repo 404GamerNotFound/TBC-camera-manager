@@ -1,9 +1,10 @@
 import tempfile
 import unittest
+from pathlib import Path
 
-from app.tbc import database
+from app.tbc import database, recording
 from app.tbc.maintenance import apply_cleanup, cleanup_preview
-from app.tbc.recording import _motion_is_active
+from app.tbc.recording import ContinuousRecordingManager, _motion_is_active
 
 
 class RecordingTests(unittest.TestCase):
@@ -149,6 +150,156 @@ class RecordingTests(unittest.TestCase):
             preview = cleanup_preview(handle.name)
 
             self.assertEqual([item["id"] for item in preview], [recording_id])
+
+
+class ContinuousRecordingTests(unittest.TestCase):
+    def test_continuous_settings_roundtrip_and_range_query(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Terrasse",
+                host="192.0.2.30",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            database.update_camera_continuous_settings(
+                handle.name,
+                camera_id,
+                continuous_recording_enabled=True,
+                continuous_segment_seconds=120,
+                continuous_storage_id=1,
+            )
+            camera = database.get_camera(handle.name, camera_id)
+            self.assertEqual(camera["continuous_recording_enabled"], 1)
+            self.assertEqual(camera["continuous_segment_seconds"], 120)
+
+            storage = database.list_storage_targets(handle.name)[0]
+            database.create_continuous_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=storage["id"],
+                storage_kind="local",
+                file_name="seg1.mp4",
+                local_path="/tmp/seg1.mp4",
+                remote_key=None,
+                duration_seconds=120,
+                size_bytes=1000,
+                started_at="2026-07-11T01:00:00",
+                ended_at="2026-07-11T01:02:00",
+            )
+            database.create_continuous_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=storage["id"],
+                storage_kind="local",
+                file_name="seg2.mp4",
+                local_path="/tmp/seg2.mp4",
+                remote_key=None,
+                duration_seconds=120,
+                size_bytes=1000,
+                started_at="2026-07-12T01:00:00",
+                ended_at="2026-07-12T01:02:00",
+            )
+
+            rows = database.list_recordings_for_range(
+                handle.name,
+                camera_id=camera_id,
+                start_at="2026-07-11T00:00:00",
+                end_at="2026-07-12T00:00:00",
+            )
+            self.assertEqual([row["file_name"] for row in rows], ["seg1.mp4"])
+            self.assertEqual(
+                database.list_continuous_file_names(handle.name, camera_id),
+                ["seg2.mp4", "seg1.mp4"],
+            )
+
+    def test_list_recordings_excludes_continuous_by_default(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Garten",
+                host="192.0.2.31",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            storage = database.list_storage_targets(handle.name)[0]
+            database.create_continuous_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=storage["id"],
+                storage_kind="local",
+                file_name="seg1.mp4",
+                local_path="/tmp/seg1.mp4",
+                remote_key=None,
+                duration_seconds=300,
+                size_bytes=1000,
+                started_at="2026-07-11T01:00:00",
+                ended_at="2026-07-11T01:05:00",
+            )
+            event_id = database.create_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=storage["id"],
+                detection_key="motion",
+                event_label="Bewegung",
+                storage_kind="local",
+                started_at="2026-07-11T02:00:00",
+            )
+            database.update_recording_finished(handle.name, event_id, status="ready", size_bytes=500)
+
+            default_rows = database.list_recordings(handle.name, camera_id=camera_id)
+            self.assertEqual([row["detection_key"] for row in default_rows], ["motion"])
+
+            continuous_rows = database.list_recordings(handle.name, camera_id=camera_id, detection_key="continuous")
+            self.assertEqual(len(continuous_rows), 1)
+
+    def test_collect_segments_registers_completed_files_and_skips_open_one(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle, tempfile.TemporaryDirectory() as storage_dir, tempfile.TemporaryDirectory() as scratch_dir:
+            database.initialize(handle.name, storage_dir)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Zufahrt",
+                host="192.0.2.32",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            camera = database.get_camera(handle.name, camera_id)
+            camera["continuous_segment_seconds"] = 60
+
+            original_root = recording.CONTINUOUS_ROOT
+            recording.CONTINUOUS_ROOT = Path(scratch_dir)
+            try:
+                work_dir = Path(scratch_dir) / str(camera_id)
+                work_dir.mkdir(parents=True)
+                first = work_dir / "zufahrt_20260711T010000.mp4"
+                second = work_dir / "zufahrt_20260711T010100.mp4"
+                first.write_bytes(b"fake-mp4-data")
+                second.write_bytes(b"fake-mp4-data")
+
+                manager = ContinuousRecordingManager(handle.name)
+                manager._collect_segments(camera)
+
+                rows = database.list_recordings_for_range(
+                    handle.name,
+                    camera_id=camera_id,
+                    start_at="2026-07-11T00:00:00",
+                    end_at="2026-07-12T00:00:00",
+                )
+                self.assertEqual(len(rows), 1)
+                self.assertEqual(rows[0]["file_name"], first.name)
+                self.assertEqual(rows[0]["detection_key"], "continuous")
+                self.assertFalse(first.exists())
+                self.assertTrue(second.exists())
+            finally:
+                recording.CONTINUOUS_ROOT = original_root
 
 
 if __name__ == "__main__":

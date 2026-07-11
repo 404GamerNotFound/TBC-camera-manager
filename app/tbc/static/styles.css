@@ -878,7 +878,8 @@ dd {
 }
 
 .detail-tab-panel > .editor-form,
-.detail-tab-panel > .event-panel {
+.detail-tab-panel > .event-panel,
+.recording-stack > .editor-form {
   margin: 0;
 }
 
@@ -887,6 +888,11 @@ dd {
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   gap: 18px;
   align-items: start;
+}
+
+.recording-stack {
+  display: grid;
+  gap: 18px;
 }
 
 .detection-section {
@@ -1465,6 +1471,120 @@ tr:last-child td {
 
 .state-on {
   background: var(--ok);
+}
+
+.timeline-day-nav {
+  align-items: center;
+}
+
+.timeline-day-nav .is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.timeline-player-panel,
+.timeline-scrubber {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: clamp(16px, 3vw, 26px);
+  margin-bottom: 18px;
+}
+
+.timeline-player {
+  display: block;
+  width: 100%;
+  max-height: 62vh;
+  margin-top: 10px;
+  border-radius: 6px;
+  background: #000;
+}
+
+.timeline-hours {
+  position: relative;
+  height: 18px;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.timeline-hours span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.timeline-track {
+  position: relative;
+  height: 56px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.timeline-continuous,
+.timeline-markers {
+  position: absolute;
+  inset: 0;
+}
+
+.timeline-continuous {
+  top: 10px;
+  bottom: 10px;
+}
+
+.timeline-block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 2px;
+  border: none;
+  border-radius: 3px;
+  padding: 0;
+  background: var(--brand);
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.timeline-block:hover,
+.timeline-block:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--brand-strong);
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--surface);
+  background: hsl(var(--marker-hue, 28), 70%, 45%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  padding: 0;
+}
+
+.timeline-marker:hover,
+.timeline-marker:focus-visible {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.timeline-cursor {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--danger);
+  pointer-events: none;
+}
+
+.timeline-hint {
+  margin: 12px 0 0;
+  color: var(--muted);
 }
 
 @media (max-width: 1199.98px) {

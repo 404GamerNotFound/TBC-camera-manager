@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Archiv</p>
+    <h1>Timeline</h1>
+  </div>
+</section>
+
+<form class="filter-bar" method="get" action="/timeline">
+  <label>
+    <span>Kamera</span>
+    <select name="camera_id">
+      {% for camera in cameras %}
+      <option value="{{ camera.id }}" {% if selected_camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    <span>Tag</span>
+    <input name="day" type="date" value="{{ selected_day }}" max="{{ today }}">
+  </label>
+  <button class="primary-button" type="submit">Anzeigen</button>
+  {% if selected_camera_id %}
+  <div class="button-row timeline-day-nav">
+    <a class="secondary-button" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ prev_day }}">‹ Vorheriger Tag</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ next_day }}">Nächster Tag ›</a>
+  </div>
+  {% endif %}
+</form>
+
+{% if not selected_camera %}
+<section class="empty-state">
+  <h2>Keine Kamera verfügbar</h2>
+</section>
+{% else %}
+<section class="timeline-player-panel">
+  <div class="section-title">
+    <h2 data-timeline-title>{{ selected_camera.name }}</h2>
+    <span data-timeline-meta></span>
+  </div>
+  <video class="timeline-player" controls preload="metadata" data-timeline-player></video>
+</section>
+
+<section class="timeline-scrubber" data-timeline-root>
+  <script type="application/json" data-timeline-json>{{ timeline_data | tojson }}</script>
+  <div class="timeline-hours" aria-hidden="true">
+    {% for hour in range(0, 25, 2) %}
+    <span style="left: {{ (hour / 24 * 100) | round(2) }}%">{{ '%02d:00' % hour }}</span>
+    {% endfor %}
+  </div>
+  <div class="timeline-track" data-timeline-track>
+    <div class="timeline-continuous" data-timeline-continuous></div>
+    <div class="timeline-markers" data-timeline-markers></div>
+    <div class="timeline-cursor" data-timeline-cursor hidden></div>
+  </div>
+  {% if not has_segments %}
+  <p class="timeline-hint">Für diesen Tag liegen keine Aufnahmen vor.</p>
+  {% endif %}
+</section>
+
+<section class="event-panel">
+  <div class="section-title">
+    <h2>Ereignisse an diesem Tag</h2>
+    <span data-timeline-list-count>0</span>
+  </div>
+  <ol class="event-list" data-timeline-list></ol>
+</section>
+{% endif %}
+
+<script src="{{ url_for('static', path='/timeline.js') }}" defer></script>
+{% endblock %}
