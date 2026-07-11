@@ -38,6 +38,7 @@ from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import RecordingManager, delete_recording_files, presigned_url
+from .reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
 
 LOGGER = logging.getLogger(__name__)
@@ -73,6 +74,7 @@ async def startup() -> None:
         SETTINGS.admin_password,
     )
     asyncio.create_task(_poll_loop())
+    asyncio.create_task(_reolink_event_supervisor())
     asyncio.create_task(_health_loop())
     asyncio.create_task(_cleanup_loop())
     asyncio.create_task(_snapshot_loop())
@@ -1059,14 +1061,21 @@ async def _refresh_camera(camera_id: int):
     )
     if camera_module.supports(CameraCapability.CHANNELS) and snapshot.channels:
         database.upsert_camera_channels(SETTINGS.database_path, camera_id, snapshot.channels)
-    channels = database.list_camera_channels(SETTINGS.database_path, camera_id)
-    detections = apply_channel_enabled_filter(snapshot.detections, channels)
-    database.replace_detections(SETTINGS.database_path, camera_id, detections)
-    updated_camera = database.get_camera(SETTINGS.database_path, camera_id) or camera
-    asyncio.create_task(asyncio.to_thread(mqtt.publish_detection_states, SETTINGS.database_path, updated_camera, detections))
-    if camera_module.supports(CameraCapability.RECORDING):
-        RECORDING_MANAGER.maybe_start_event_recordings(updated_camera, detections)
+    _process_detection_states(camera_id, snapshot.detections, camera_module)
     return snapshot
+
+
+def _process_detection_states(camera_id: int, detections: list[dict[str, Any]], camera_module=None) -> None:
+    channels = database.list_camera_channels(SETTINGS.database_path, camera_id)
+    detections = apply_channel_enabled_filter(detections, channels)
+    database.replace_detections(SETTINGS.database_path, camera_id, detections)
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if camera is None:
+        return
+    asyncio.create_task(asyncio.to_thread(mqtt.publish_detection_states, SETTINGS.database_path, camera, detections))
+    camera_module = camera_module or get_camera_module(camera.get("module_key"))
+    if camera_module.supports(CameraCapability.RECORDING):
+        RECORDING_MANAGER.maybe_start_event_recordings(camera, detections)
 
 
 @app.post("/cameras/{camera_id}/channels/{channel_id}")
@@ -1543,6 +1552,66 @@ async def _poll_loop() -> None:
         except Exception:
             LOGGER.exception("Background camera refresh failed")
         await asyncio.sleep(SETTINGS.poll_interval_seconds)
+
+
+async def _reolink_event_supervisor() -> None:
+    """Keep one real-time Reolink event connection per enabled camera."""
+    workers: dict[int, tuple[tuple[Any, ...], asyncio.Task[Any]]] = {}
+    await asyncio.sleep(2)
+    try:
+        while True:
+            cameras = {
+                int(camera["id"]): camera
+                for camera in database.list_cameras(SETTINGS.database_path)
+                if int(camera.get("enabled") or 0) == 1 and camera.get("module_key") == "reolink"
+            }
+            for camera_id, (_, task) in list(workers.items()):
+                camera = cameras.get(camera_id)
+                fingerprint = _reolink_connection_fingerprint(camera) if camera else None
+                if task.done() or fingerprint != workers[camera_id][0]:
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+                    workers.pop(camera_id, None)
+            for camera_id, camera in cameras.items():
+                if camera_id not in workers:
+                    workers[camera_id] = (
+                        _reolink_connection_fingerprint(camera),
+                        asyncio.create_task(_monitor_reolink_camera(camera_id)),
+                    )
+            await asyncio.sleep(10)
+    finally:
+        for _, task in workers.values():
+            task.cancel()
+        if workers:
+            await asyncio.gather(*(task for _, task in workers.values()), return_exceptions=True)
+
+
+def _reolink_connection_fingerprint(camera: dict[str, Any] | None) -> tuple[Any, ...]:
+    if camera is None:
+        return ()
+    return (
+        camera.get("host"),
+        camera.get("http_port"),
+        camera.get("username"),
+        camera.get("password"),
+    )
+
+
+async def _monitor_reolink_camera(camera_id: int) -> None:
+    while True:
+        camera = database.get_camera(SETTINGS.database_path, camera_id)
+        if camera is None or int(camera.get("enabled") or 0) != 1 or camera.get("module_key") != "reolink":
+            return
+        try:
+            await monitor_reolink_events(
+                camera,
+                lambda detections: _process_detection_states(camera_id, detections),
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            LOGGER.warning("Reolink real-time events unavailable for camera %s: %s", camera_id, exc)
+            await asyncio.sleep(15)
 
 
 async def _snapshot_loop() -> None:

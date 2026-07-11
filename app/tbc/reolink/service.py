@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from ..camera_modules.base import CameraSnapshot
@@ -11,6 +12,8 @@ from ..camera_modules.onvif import OnvifProbe, probe_onvif
 from .catalog import DetectionDefinition, catalog_rows, definitions
 
 LOGGER = logging.getLogger(__name__)
+
+DetectionCallback = Callable[[list[dict[str, Any]]], Awaitable[None] | None]
 
 
 async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:
@@ -135,6 +138,96 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
             await _call_if_available(host_api, "expire_session", False)
         except Exception:
             LOGGER.debug("Reolink session close failed", exc_info=True)
+
+
+async def monitor_events(camera: dict[str, Any], callback: DetectionCallback) -> None:
+    """Listen for Reolink TCP push events and publish fresh detection states.
+
+    The regular camera probe is intentionally retained as a fallback.  Push
+    events prevent short motion alarms from disappearing between poll cycles.
+    """
+    try:
+        from reolink_aio.api import Host
+    except ImportError as exc:
+        raise RuntimeError("Reolink-AIO ist nicht installiert") from exc
+
+    http_port = int(camera.get("http_port") or 80)
+    host_api = Host(
+        camera["host"],
+        camera["username"],
+        camera["password"],
+        port=http_port,
+        use_https=http_port == 443,
+        timeout=8,
+    )
+    callback_key = f"tbc-camera-{camera['id']}"
+    pending: set[asyncio.Task[Any]] = set()
+    loop = asyncio.get_running_loop()
+
+    def callback_finished(task: asyncio.Task[Any]) -> None:
+        pending.discard(task)
+        if task.cancelled():
+            return
+        try:
+            task.result()
+        except Exception:
+            LOGGER.exception("Async Reolink event callback failed for camera %s", camera.get("id"))
+
+    def publish_current_state() -> None:
+        channels = list(getattr(host_api, "channels", None) or [0])
+        multiple_channels = len(channels) > 1
+        detections = [
+            row
+            for channel in channels
+            for row in _channel_rows(host_api, channel, multiple_channels=multiple_channels)
+        ]
+        try:
+            result = callback(detections)
+        except Exception:
+            LOGGER.exception("Reolink event callback failed for camera %s", camera.get("id"))
+            return
+        if inspect.isawaitable(result):
+            task = asyncio.create_task(result)
+            pending.add(task)
+            task.add_done_callback(callback_finished)
+
+    def event_received() -> None:
+        # reolink-aio currently invokes callbacks in the event loop, but using
+        # call_soon_threadsafe keeps this safe if the transport changes later.
+        loop.call_soon_threadsafe(publish_current_state)
+
+    baichuan = None
+    try:
+        await _call_if_available(host_api, "get_host_data")
+        await _call_if_available(host_api, "get_states")
+        baichuan = getattr(host_api, "baichuan", None)
+        if baichuan is None:
+            raise RuntimeError("Diese Reolink-Kamera bietet keine TCP-Ereignisse an")
+        register = getattr(baichuan, "register_callback", None)
+        subscribe = getattr(baichuan, "subscribe_events", None)
+        if not callable(register) or not callable(subscribe):
+            raise RuntimeError("Reolink TCP-Ereignisse werden nicht unterstützt")
+        register(callback_key, event_received)
+        await subscribe()
+        publish_current_state()
+        await asyncio.Future()
+    finally:
+        unregister = getattr(baichuan, "unregister_callback", None) if baichuan is not None else None
+        if callable(unregister):
+            unregister(callback_key)
+        try:
+            await _call_if_available(baichuan, "unsubscribe_events")
+        except Exception:
+            LOGGER.debug("Reolink event unsubscribe failed", exc_info=True)
+        for task in pending:
+            task.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+        for close_method in ("logout", "close", "disconnect"):
+            try:
+                await _call_if_available(host_api, close_method)
+            except Exception:
+                LOGGER.debug("Reolink event connection close failed", exc_info=True)
 
 
 def _channel_rows(host_api: Any, channel: int, *, multiple_channels: bool) -> list[dict[str, Any]]:

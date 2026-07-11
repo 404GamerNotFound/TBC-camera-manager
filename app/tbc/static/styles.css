@@ -801,6 +801,93 @@ dd {
   overflow-wrap: anywhere;
 }
 
+.camera-detail-heading {
+  margin-bottom: 18px;
+}
+
+.camera-heading-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.camera-heading-status > span + span::before {
+  margin-right: 9px;
+  color: #aeb6b2;
+  content: "•";
+}
+
+.camera-heading-status .status-pill::before {
+  content: none;
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 22px 0 18px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.detail-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.detail-tabs button:hover {
+  color: var(--brand-strong);
+}
+
+.detail-tabs button[aria-selected="true"] {
+  color: var(--brand-strong);
+  background: var(--surface);
+  box-shadow: 0 2px 10px rgba(31, 45, 39, 0.08);
+}
+
+.tab-count {
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(17, 97, 92, 0.1);
+  font-size: 0.72rem;
+}
+
+.detail-tab-panel[hidden] {
+  display: none;
+}
+
+.detail-tab-panel > .editor-form,
+.detail-tab-panel > .event-panel {
+  margin: 0;
+}
+
+.recording-tab-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.detection-section {
+  margin-top: 0;
+}
+
 .stream-line {
   display: flex;
   gap: 12px;
@@ -1356,5 +1443,22 @@ tr:last-child td {
 
   .metric-row {
     grid-template-columns: repeat(3, minmax(82px, 1fr));
+  }
+
+  .recording-tab-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-heading-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .camera-heading-status > span + span::before {
+    content: none;
+  }
+
+  .detail-tabs button {
+    flex: 1 0 auto;
   }
 }
