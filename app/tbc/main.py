@@ -290,7 +290,7 @@ async def create_camera(
 
 
 @app.get("/cameras/{camera_id}", response_class=HTMLResponse)
-async def camera_detail(request: Request, camera_id: int):
+async def camera_detail(request: Request, camera_id: int, control_channel: int | None = Query(None)):
     guard = _require_camera_access(request, camera_id)
     if guard:
         return guard
@@ -303,22 +303,31 @@ async def camera_detail(request: Request, camera_id: int):
     storage_targets = database.list_storage_targets(SETTINGS.database_path)
     events = database.list_recent_events(SETTINGS.database_path, camera_id)
     active_trigger_keys = database.list_camera_recording_triggers(SETTINGS.database_path, camera_id) or ["motion"]
+    channels = database.list_camera_channels(SETTINGS.database_path, camera_id)
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError:
         camera_module = None
     module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
     available_triggers = camera_module.detection_definitions() if camera_module else ()
+    control_channel_options = [int(channel["channel_index"]) for channel in channels]
+    selected_control_channel = (
+        control_channel
+        if control_channel is not None and control_channel in control_channel_options
+        else (control_channel_options[0] if control_channel_options else 0)
+    )
     control_state = None
     if camera_module and camera_module.supports(CameraCapability.CONTROL):
-        control_state = CONTROL_STATE_CACHE.get(camera_id)
+        control_state = CONTROL_STATE_CACHE.get((camera_id, selected_control_channel))
         if control_state is None:
-            # First view before any probe cycle has populated the cache: kick off
-            # a background fetch instead of blocking this request on a live
-            # device round-trip, which can take many seconds for an
+            # First view of this channel before any probe cycle has populated the
+            # cache: kick off a background fetch instead of blocking this request
+            # on a live device round-trip, which can take many seconds for an
             # unreachable/slow camera. The page renders immediately with a
             # "status unknown" fallback and picks up fresh data on next visit.
-            asyncio.create_task(_publish_control_state(camera_id, camera, camera_module))
+            asyncio.create_task(
+                _publish_control_state(camera_id, camera, camera_module, channel=selected_control_channel)
+            )
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -330,13 +339,15 @@ async def camera_detail(request: Request, camera_id: int):
             "detections": detections,
             "storage_targets": storage_targets,
             "events": events,
-            "channels": database.list_camera_channels(SETTINGS.database_path, camera_id),
+            "channels": channels,
             "camera_module": camera_module,
             "module_capabilities": module_capabilities,
             "available_triggers": available_triggers,
             "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},
             "active_trigger_keys": active_trigger_keys,
             "control_state": control_state,
+            "control_channel_options": control_channel_options,
+            "selected_control_channel": selected_control_channel,
             "flash": _pop_flash(request),
         },
     )
@@ -396,70 +407,92 @@ async def refresh_camera(request: Request, camera_id: int):
 
 
 @app.post("/cameras/{camera_id}/control/ptz")
-async def control_camera_ptz(request: Request, camera_id: int, command: str = Form(...), speed: str = Form("")):
+async def control_camera_ptz(
+    request: Request, camera_id: int, command: str = Form(...), speed: str = Form(""), channel: int = Form(0)
+):
     params: dict[str, Any] = {"command": command}
     if speed.strip():
         try:
             params["speed"] = int(speed)
         except ValueError:
             pass
-    return await _execute_control(request, camera_id, action="ptz", params=params)
+    return await _execute_control(request, camera_id, action="ptz", params=params, channel=channel)
 
 
 @app.post("/cameras/{camera_id}/control/floodlight")
-async def control_camera_floodlight(request: Request, camera_id: int, state: str | None = Form(None)):
-    return await _execute_control(request, camera_id, action="floodlight", params={"state": state == "on"})
+async def control_camera_floodlight(
+    request: Request, camera_id: int, state: str | None = Form(None), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="floodlight", params={"state": state == "on"}, channel=channel
+    )
 
 
 @app.post("/cameras/{camera_id}/control/pir")
-async def control_camera_pir(request: Request, camera_id: int, enable: str | None = Form(None)):
-    return await _execute_control(request, camera_id, action="pir", params={"enable": enable == "on"})
+async def control_camera_pir(
+    request: Request, camera_id: int, enable: str | None = Form(None), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="pir", params={"enable": enable == "on"}, channel=channel
+    )
 
 
 @app.post("/cameras/{camera_id}/control/siren")
-async def control_camera_siren(request: Request, camera_id: int, duration: int = Form(5)):
-    return await _execute_control(request, camera_id, action="siren", params={"duration": duration})
+async def control_camera_siren(request: Request, camera_id: int, duration: int = Form(5), channel: int = Form(0)):
+    return await _execute_control(
+        request, camera_id, action="siren", params={"duration": duration}, channel=channel
+    )
 
 
 @app.post("/cameras/{camera_id}/control/reboot")
-async def control_camera_reboot(request: Request, camera_id: int):
-    return await _execute_control(request, camera_id, action="reboot", params={})
+async def control_camera_reboot(request: Request, camera_id: int, channel: int = Form(0)):
+    return await _execute_control(request, camera_id, action="reboot", params={}, channel=channel)
 
 
-async def _execute_control(request: Request, camera_id: int, *, action: str, params: dict[str, Any]):
+async def _execute_control(request: Request, camera_id: int, *, action: str, params: dict[str, Any], channel: int = 0):
+    # The control forms in the "Steuerung" tab are progressively enhanced: JS
+    # submits them via fetch with this header and renders the JSON result as a
+    # toast without a full page reload; without JS (or for the header-less
+    # case) the exact same route falls back to the classic flash+redirect flow.
+    is_ajax = request.headers.get("X-Requested-With") == "fetch"
+
+    def fail(message: str, *, status_code: int, redirect_to: str | None = None) -> Any:
+        if is_ajax:
+            return JSONResponse({"ok": False, "message": message}, status_code=status_code)
+        _set_flash(request, message, "error")
+        return _redirect(redirect_to or f"/cameras/{camera_id}?control_channel={channel}#control")
+
     guard = _require_admin(request)
     if guard:
-        return guard
+        return fail("Dafür werden Admin-Rechte benötigt", status_code=status.HTTP_403_FORBIDDEN) if is_ajax else guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
-        return _redirect("/cameras")
+        return fail("Kamera wurde nicht gefunden", status_code=status.HTTP_404_NOT_FOUND, redirect_to="/cameras")
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError as exc:
-        _set_flash(request, str(exc), "error")
-        return _redirect(f"/cameras/{camera_id}")
+        return fail(str(exc), status_code=status.HTTP_404_NOT_FOUND)
     if not camera_module.supports(CameraCapability.CONTROL):
-        _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Kamerasteuerung", "error")
-        return _redirect(f"/cameras/{camera_id}")
+        return fail(f"Das Modul {camera_module.label} unterstützt keine Kamerasteuerung", status_code=status.HTTP_400_BAD_REQUEST)
     try:
-        await camera_module.send_control(camera, action=action, **params)
+        await camera_module.send_control(camera, action=action, channel=channel, **params)
     except Exception as exc:
-        LOGGER.info("Control action %s failed for camera %s: %s", action, camera_id, exc)
-        _set_flash(request, f"Befehl fehlgeschlagen: {exc}", "error")
-        return _redirect(f"/cameras/{camera_id}")
+        LOGGER.info("Control action %s failed for camera %s channel %s: %s", action, camera_id, channel, exc)
+        return fail(f"Befehl fehlgeschlagen: {exc}", status_code=status.HTTP_502_BAD_GATEWAY)
+    asyncio.create_task(_publish_control_state(camera_id, camera, camera_module, channel=channel))
+    if is_ajax:
+        return {"ok": True, "message": "Befehl wurde gesendet"}
     _set_flash(request, "Befehl wurde gesendet")
-    asyncio.create_task(_publish_control_state(camera_id, camera, camera_module))
-    return _redirect(f"/cameras/{camera_id}")
+    return _redirect(f"/cameras/{camera_id}?control_channel={channel}#control")
 
 
-async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_module: Any) -> None:
+async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_module: Any, *, channel: int = 0) -> None:
     try:
-        control_state = await camera_module.get_control_state(camera)
+        control_state = await camera_module.get_control_state(camera, channel=channel)
     except Exception:
-        LOGGER.debug("Control state fetch failed for camera %s", camera_id, exc_info=True)
+        LOGGER.debug("Control state fetch failed for camera %s channel %s", camera_id, channel, exc_info=True)
         return
-    CONTROL_STATE_CACHE[camera_id] = control_state
+    CONTROL_STATE_CACHE[(camera_id, channel)] = control_state
     await asyncio.to_thread(mqtt.publish_control_state, SETTINGS.database_path, camera, control_state)
 
 
@@ -631,7 +664,8 @@ async def remove_camera(request: Request, camera_id: int):
         return guard
     database.delete_camera(SETTINGS.database_path, camera_id)
     SNAPSHOT_MANAGER.delete(camera_id)
-    CONTROL_STATE_CACHE.pop(camera_id, None)
+    for cache_key in [key for key in CONTROL_STATE_CACHE if key[0] == camera_id]:
+        CONTROL_STATE_CACHE.pop(cache_key, None)
     _set_flash(request, "Kamera wurde entfernt")
     return _redirect("/cameras")
 

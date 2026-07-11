@@ -44,3 +44,71 @@
     });
   }
 })();
+
+(() => {
+  const panel = document.querySelector("[data-control-panel]");
+  if (!panel) return;
+
+  const channelSelect = panel.querySelector("[data-control-channel-select]");
+  if (channelSelect) {
+    channelSelect.addEventListener("change", () => channelSelect.form.submit());
+  }
+
+  const toastStack = panel.querySelector("[data-toast-stack]");
+
+  function showToast(message, ok) {
+    if (!toastStack) return;
+    const toast = document.createElement("div");
+    toast.className = `tbc-toast flash-${ok ? "success" : "error"}`;
+    toast.setAttribute("role", "status");
+    toast.textContent = message;
+    toastStack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4500);
+  }
+
+  panel.querySelectorAll("[data-control-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const submitButton = form.querySelector('button[type="submit"]');
+      const originalLabel = submitButton ? submitButton.textContent : null;
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "…";
+      }
+      const pillTarget = form.dataset.controlPillTarget;
+      const pillValue = form.dataset.controlPillValue;
+      const pill = pillTarget ? panel.querySelector(`[data-control-pill="${pillTarget}"]`) : null;
+      const previousPillText = pill ? pill.textContent : null;
+      const previousPillClass = pill ? pill.className : null;
+      if (pill && pillValue) {
+        pill.textContent = pillValue;
+        pill.className = `status-pill ${pillValue === "aus" ? "status-idle" : "status-active"}`;
+      }
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { "X-Requested-With": "fetch" },
+        });
+        const data = await response.json().catch(() => null);
+        const ok = response.ok && data && data.ok;
+        showToast((data && data.message) || (ok ? "Befehl wurde gesendet" : "Befehl fehlgeschlagen"), ok);
+        if (!ok && pill && previousPillText !== null) {
+          pill.textContent = previousPillText;
+          pill.className = previousPillClass;
+        }
+      } catch (error) {
+        showToast("Befehl fehlgeschlagen: Netzwerkfehler", false);
+        if (pill && previousPillText !== null) {
+          pill.textContent = previousPillText;
+          pill.className = previousPillClass;
+        }
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalLabel;
+        }
+      }
+    });
+  });
+})();

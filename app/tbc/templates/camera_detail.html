@@ -353,20 +353,37 @@
   {% endif %}
 
   {% if 'control' in module_capabilities %}
-<div class="detail-tab-panel" id="camera-control" role="tabpanel" data-detail-panel="control" hidden>
+<div class="detail-tab-panel" id="camera-control" role="tabpanel" data-detail-panel="control" hidden data-control-panel>
+  <div class="tbc-toast-stack" data-toast-stack aria-live="polite"></div>
+
+  {% if control_channel_options|length > 1 %}
+  <form class="inline-form control-channel-form" method="get" action="/cameras/{{ camera.id }}#control" data-control-channel-form>
+    <label>
+      <span>Kanal</span>
+      <select name="control_channel" data-control-channel-select>
+        {% for option in control_channel_options %}
+        <option value="{{ option }}" {% if option == selected_control_channel %}selected{% endif %}>Kanal {{ option + 1 }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+  {% endif %}
+
   {% if not control_state %}
-  <div class="diagnostic-note diagnostic-warning">Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.</div>
+  <div class="diagnostic-note diagnostic-warning" data-control-fallback-note>Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.</div>
   {% endif %}
 
   {% if not control_state or control_state.ptz_supported %}
   <section class="table-section">
     <div class="section-title"><h2>Schwenk-/Neigekopf (PTZ)</h2></div>
     <div class="button-row ptz-controls">
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Up"><button class="secondary-button" type="submit">▲ Hoch</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Down"><button class="secondary-button" type="submit">▼ Runter</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Left"><button class="secondary-button" type="submit">◄ Links</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Right"><button class="secondary-button" type="submit">► Rechts</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Stop"><button class="text-button" type="submit">■ Stopp</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Up"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">▲ Hoch</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Down"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">▼ Runter</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Left"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">◄ Links</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Right"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">► Rechts</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomInc"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">＋ Zoom</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomDec"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">－ Zoom</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Stop"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="text-button" type="submit">■ Stopp</button></form>
     </div>
   </section>
   {% endif %}
@@ -375,11 +392,11 @@
   <section class="table-section">
     <div class="section-title">
       <h2>Flutlicht</h2>
-      {% if control_state and control_state.floodlight_state %}<span class="status-pill status-active">an</span>{% else %}<span class="status-pill status-idle">aus</span>{% endif %}
+      <span class="status-pill {{ 'status-active' if control_state and control_state.floodlight_state else 'status-idle' }}" data-control-pill="floodlight">{{ 'an' if control_state and control_state.floodlight_state else 'aus' }}</span>
     </div>
     <div class="button-row">
-      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight"><input type="hidden" name="state" value="on"><button class="primary-button" type="submit">Einschalten</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight"><input type="hidden" name="state" value="off"><button class="secondary-button" type="submit">Ausschalten</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="an"><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit">Einschalten</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="aus"><input type="hidden" name="state" value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">Ausschalten</button></form>
     </div>
   </section>
   {% endif %}
@@ -388,11 +405,11 @@
   <section class="table-section">
     <div class="section-title">
       <h2>PIR-Sensor</h2>
-      {% if control_state and control_state.pir_enabled %}<span class="status-pill status-active">aktiv</span>{% else %}<span class="status-pill status-idle">aus</span>{% endif %}
+      <span class="status-pill {{ 'status-active' if control_state and control_state.pir_enabled else 'status-idle' }}" data-control-pill="pir">{{ 'aktiv' if control_state and control_state.pir_enabled else 'aus' }}</span>
     </div>
     <div class="button-row">
-      <form method="post" action="/cameras/{{ camera.id }}/control/pir"><input type="hidden" name="enable" value="on"><button class="primary-button" type="submit">Aktivieren</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/pir"><button class="secondary-button" type="submit">Deaktivieren</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="aktiv"><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit">Aktivieren</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="aus"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">Deaktivieren</button></form>
     </div>
   </section>
   {% endif %}
@@ -400,8 +417,9 @@
   {% if not control_state or control_state.siren_supported %}
   <section class="table-section">
     <div class="section-title"><h2>Sirene</h2></div>
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/siren">
+    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/siren" data-control-form>
       <label><span>Dauer (Sek.)</span><input name="duration" type="number" min="1" max="30" value="5"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="primary-button" type="submit">Sirene abspielen</button>
     </form>
   </section>
@@ -424,7 +442,8 @@
   {% if not control_state or control_state.reboot_supported %}
   <section class="table-section">
     <div class="section-title"><h2>Neustart</h2></div>
-    <form method="post" action="/cameras/{{ camera.id }}/control/reboot">
+    <form method="post" action="/cameras/{{ camera.id }}/control/reboot" data-control-form>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="danger-button" type="submit">Kamera neu starten</button>
     </form>
   </section>
