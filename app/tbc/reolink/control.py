@@ -16,9 +16,12 @@ async def get_control_state(camera: dict[str, Any], *, channel: int = 0) -> dict
     try:
         await _call_if_available(host_api, "get_host_data")
         await _call_if_available(host_api, "get_states")
+        channel = _resolve_channel(host_api, channel)
         state: dict[str, Any] = {
             "channel": channel,
-            "ptz_supported": _supported(host_api, channel, "ptz") or _supported(host_api, channel, "pan"),
+            "ptz_supported": any(
+                _supported(host_api, channel, cap) for cap in ("ptz", "pan_tilt", "pan", "tilt")
+            ),
             "floodlight_supported": _supported(host_api, channel, "floodLight"),
             "floodlight_state": _value(host_api, "whiteled_state", channel),
             "pir_supported": _supported(host_api, channel, "PIR"),
@@ -40,6 +43,7 @@ async def send_control(camera: dict[str, Any], *, action: str, channel: int = 0,
     try:
         await _call_if_available(host_api, "get_host_data")
         await _call_if_available(host_api, "get_states")
+        channel = _resolve_channel(host_api, channel)
         if action == "ptz":
             await _send_ptz(host_api, channel, params)
         elif action == "floodlight":
@@ -91,6 +95,19 @@ def _host(camera: dict[str, Any]) -> Any:
         use_https=port == 443,
         timeout=15,
     )
+
+
+def _resolve_channel(host_api: Any, channel: int) -> int:
+    """Map the requested channel onto a channel the connected device actually reports.
+
+    NVR-connected and dual-lens cameras do not always expose channel 0, so
+    blindly using the caller's default would make every per-channel
+    capability check (PTZ, floodlight, PIR, ...) silently report unsupported.
+    """
+    channels = list(getattr(host_api, "channels", None) or [0])
+    if channel in channels:
+        return channel
+    return channels[0] if channels else channel
 
 
 def _supported(host_api: Any, channel: int | None, capability: str) -> bool:

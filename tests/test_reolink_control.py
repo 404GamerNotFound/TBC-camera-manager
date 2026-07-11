@@ -11,6 +11,7 @@ class FakeControlHost:
 
     def __init__(self, *args, **kwargs):
         type(self).instance = self
+        self.channels = [0]
         self.closed = False
         self.ptz_calls = []
         self.whiteled_calls = []
@@ -72,6 +73,18 @@ class FakeControlHost:
 
     async def logout(self):
         self.closed = True
+
+
+class FakeNvrChannelHost(FakeControlHost):
+    """A device whose only real channel is not 0 (e.g. behind an NVR)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.channels = [3]
+        self._supported = {
+            ("ptz", 3): True,
+            ("floodLight", 3): True,
+        }
 
 
 class ReolinkControlTests(unittest.IsolatedAsyncioTestCase):
@@ -144,6 +157,31 @@ class ReolinkControlTests(unittest.IsolatedAsyncioTestCase):
             await control.send_control(self.camera, action="unknown-action")
 
         self.assertTrue(FakeControlHost.instance.closed)
+
+
+class ReolinkControlNvrChannelTests(unittest.IsolatedAsyncioTestCase):
+    """A camera connected behind an NVR does not necessarily report channel 0."""
+
+    def setUp(self):
+        self.camera = {"id": 1, "host": "nvr", "username": "u", "password": "p", "http_port": 80}
+        api_module = types.ModuleType("reolink_aio.api")
+        api_module.Host = FakeNvrChannelHost
+        package = types.ModuleType("reolink_aio")
+        self._patcher = patch.dict(sys.modules, {"reolink_aio": package, "reolink_aio.api": api_module})
+        self._patcher.start()
+        self.addCleanup(self._patcher.stop)
+
+    async def test_get_control_state_resolves_to_the_devices_actual_channel(self):
+        state = await control.get_control_state(self.camera, channel=0)
+
+        self.assertEqual(state["channel"], 3)
+        self.assertTrue(state["ptz_supported"])
+        self.assertTrue(state["floodlight_supported"])
+
+    async def test_send_control_targets_the_devices_actual_channel(self):
+        await control.send_control(self.camera, action="floodlight", channel=0, state=True)
+
+        self.assertEqual(FakeNvrChannelHost.instance.whiteled_calls, [(3, True)])
 
 
 if __name__ == "__main__":
