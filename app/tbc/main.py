@@ -727,11 +727,13 @@ async def timeline_view(
     selected_camera = None
     timeline_segments: list[dict[str, Any]] = []
     timeline_events: list[dict[str, Any]] = []
+    sd_card_available = False
     if selected_camera_id is not None:
         access_guard = _require_camera_access(request, selected_camera_id)
         if access_guard:
             return access_guard
         selected_camera = database.get_camera(SETTINGS.database_path, selected_camera_id)
+        sd_card_available = bool(selected_camera) and _camera_supports(selected_camera, CameraCapability.ARCHIVE)
         start_at = f"{selected_day.isoformat()}T00:00:00"
         end_at = f"{(selected_day + timedelta(days=1)).isoformat()}T00:00:00"
         rows = database.list_recordings_for_range(
@@ -758,7 +760,14 @@ async def timeline_view(
             "next_day": (selected_day + timedelta(days=1)).isoformat(),
             "today": date.today().isoformat(),
             "is_today": selected_day == date.today(),
-            "timeline_data": {"segments": timeline_segments, "events": timeline_events, "day": selected_day.isoformat()},
+            "sd_card_available": sd_card_available,
+            "timeline_data": {
+                "segments": timeline_segments,
+                "events": timeline_events,
+                "day": selected_day.isoformat(),
+                "camera_id": selected_camera_id,
+                "sd_card_available": sd_card_available,
+            },
             "has_segments": bool(timeline_segments or timeline_events),
             "flash": _pop_flash(request),
         },
