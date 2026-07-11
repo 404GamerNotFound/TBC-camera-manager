@@ -93,6 +93,7 @@ class CameraModuleTests(unittest.TestCase):
         self.assertTrue(standard.supports(CameraCapability.LIVE))
         self.assertEqual(aqara.default_onvif_port, 5000)
         self.assertEqual(aqara.default_rtsp_port, 8554)
+        self.assertTrue(aqara.supports(CameraCapability.CHANNELS))
         self.assertFalse(aqara.supports(CameraCapability.ARCHIVE))
 
 

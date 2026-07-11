@@ -14,7 +14,7 @@ class AqaraCameraModule(CameraModule):
     default_onvif_port = 5000
     default_http_port = 80
     default_rtsp_port = 8554
-    capabilities = frozenset({CameraCapability.LIVE, CameraCapability.DETECTIONS})
+    capabilities = frozenset({CameraCapability.LIVE, CameraCapability.DETECTIONS, CameraCapability.CHANNELS})
 
     def detection_definitions(self) -> tuple[Any, ...]:
         return definitions()

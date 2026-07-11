@@ -2,9 +2,9 @@
   "schema_version": 1,
   "key": "aqara",
   "label": "Aqara",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Aqara-Kameras sowie kompatible Video-Türklingeln",
   "entrypoint": "plugin.py",
-  "capabilities": ["live", "detections"],
+  "capabilities": ["live", "detections", "channels"],
   "ports": {"onvif": 5000, "http": 80, "rtsp": 8554}
 }

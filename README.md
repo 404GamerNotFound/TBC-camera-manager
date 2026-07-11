@@ -65,7 +65,7 @@ Das eingebaute Modul `tplink` unterstützt TP-Link/Tapo-Kameras über ONVIF Prof
 
 Das Modul `standard_onvif` ist der Fallback für weitere Hersteller. Es verwendet ausschließlich die vom Gerät gemeldeten ONVIF-Informationen, RTSP-Medienprofile und Event-Definitionen. Das Modul konstruiert keine herstellerspezifischen Streampfade.
 
-Das Modul `aqara` prüft ONVIF-kompatible Aqara-Kameras standardmäßig auf Port `5000` und zusätzlich den lokalen Aqara-RTSP-Kanal `/ch1` auf Port `8554`. Bei der Video-Türklingel G410 muss die kabelgebundene Stromversorgung sowie „RTSP LAN Preview“ aktiv sein; Host, Benutzer und Passwort werden aus der Aqara-App übernommen. Die ältere G4 bietet offiziell keinen lokalen RTSP-Stream und wird deshalb ohne erreichbaren Stream als nicht unterstützt gemeldet. Aqara-Cloud-, HomeKit- und proprietäre Archivzugriffe sind nicht Bestandteil des Moduls.
+Das Modul `aqara` prüft ONVIF-kompatible Aqara-Kameras standardmäßig auf Port `5000` und zusätzlich den lokalen Aqara-RTSP-Kanal `/ch1` auf Port `8554`. Bei der kabelgebundenen/PoE-Türklingel G400 muss in Aqara Home unter `Weitere Einstellungen` die `RTSP LAN Preview` aktiviert werden; diese Option aktiviert gleichzeitig ONVIF. Host sowie die dort angezeigten separaten LAN-Zugangsdaten werden in TBC eingetragen. Die G400 stellt zusätzlich `/ch2` und `/ch3` mit geringerer Auflösung bereit. Bei der G410 ist RTSP nur mit kabelgebundener Stromversorgung verfügbar; die ältere G4 bietet offiziell keinen lokalen RTSP-Stream. Aqara-Cloud-, HomeKit- und proprietäre Archivzugriffe sind nicht Bestandteil des Moduls.
 
 ## Aufnahmen
 

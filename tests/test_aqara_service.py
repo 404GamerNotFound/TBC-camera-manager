@@ -22,16 +22,31 @@ class AqaraServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(snapshot.status, "ok")
         self.assertEqual(snapshot.stream_uri, "rtsp://aqara:secret@192.0.2.40:8554/ch1")
-        self.assertIn("G410", snapshot.message)
+        self.assertIn("LAN-Streaming ist aktiv", snapshot.message)
+        self.assertEqual([channel["name"] for channel in snapshot.channels], [
+            "Kanal 1 · 1200p",
+            "Kanal 2 · 960p",
+            "Kanal 3 · 480p",
+        ])
+        self.assertTrue(snapshot.channels[2]["stream_uri"].endswith("/ch3"))
 
-    async def test_g4_style_device_without_onvif_or_rtsp_is_reported_unsupported(self):
+    async def test_g400_without_enabled_lan_preview_gets_setup_instructions(self):
         with patch.object(service, "probe_onvif", return_value=OnvifProbe(False, "kein ONVIF")):
             with patch.object(service, "probe_rtsp_stream", return_value=("error", "nicht erreichbar")):
                 snapshot = await service.probe_camera(CAMERA)
 
         self.assertEqual(snapshot.status, "error")
         self.assertIsNone(snapshot.stream_uri)
-        self.assertIn("G4 unterstützt kein RTSP", snapshot.message)
+        self.assertIn("RTSP-LAN-Vorschau aktivieren", snapshot.message)
+        self.assertIn("RTSP-LAN-Zugangsdaten", snapshot.message)
+
+    async def test_wrong_g400_lan_credentials_are_reported(self):
+        with patch.object(service, "probe_onvif", return_value=OnvifProbe(False, "kein ONVIF")):
+            with patch.object(service, "probe_rtsp_stream", return_value=("error", "401 Unauthorized")):
+                snapshot = await service.probe_camera(CAMERA)
+
+        self.assertIn("RTSP-Anmeldung abgelehnt", snapshot.message)
+        self.assertIn("LAN-Zugangsdaten", snapshot.message)
 
     async def test_onvif_stream_is_preferred_for_compatible_aqara_camera(self):
         onvif = OnvifProbe(
@@ -46,6 +61,7 @@ class AqaraServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(snapshot.status, "ok")
         self.assertEqual(snapshot.stream_uri, "rtsp://aqara:secret@192.0.2.40:554/live")
+        self.assertEqual(len(snapshot.channels), 1)
 
 
 if __name__ == "__main__":
