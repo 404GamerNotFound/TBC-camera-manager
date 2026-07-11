@@ -62,6 +62,19 @@ class CameraPluginPackageTests(unittest.TestCase):
                 self.assertIn("plugin.py", bundle.namelist())
                 self.assertIn("detections.json", bundle.namelist())
 
+    def test_builtin_plugin_export_includes_its_own_device_specific_implementation(self):
+        """Builtin plugins are encapsulated exactly like external ones: the exported
+        archive contains their manufacturer-specific code, not just the manifest
+        shim, because that code physically lives inside the plugin directory."""
+        with tempfile.TemporaryDirectory() as external_path:
+            packages = discover_plugin_packages(external_path)
+
+        reolink = next(package for package in packages if package.manifest.key == "reolink")
+        archive = export_plugin_archive(reolink)
+        with zipfile.ZipFile(BytesIO(archive)) as bundle:
+            names = set(bundle.namelist())
+        self.assertTrue({"module.py", "service.py", "catalog.py", "control.py", "sdcard.py"} <= names)
+
     def test_zip_plugin_can_be_installed_loaded_exported_and_removed(self):
         with tempfile.TemporaryDirectory() as external_path:
             package = install_plugin_archive(plugin_archive(wrapped=True), external_path)

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from app.tbc.standard_onvif import control
+from app.tbc.camera_plugins.standard_onvif import control
 
 
 class StandardOnvifControlTests(unittest.IsolatedAsyncioTestCase):

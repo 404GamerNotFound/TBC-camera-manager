@@ -5,7 +5,7 @@ from types import ModuleType
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from app.tbc.reolink import sdcard
+from app.tbc.camera_plugins.reolink import sdcard
 
 
 class FakeStream:
@@ -73,7 +73,7 @@ class SdCardTests(unittest.IsolatedAsyncioTestCase):
         host = FakeHost()
         camera = {"host": "192.0.2.10", "username": "admin", "password": "secret", "http_port": 80}
 
-        with patch("app.tbc.reolink.sdcard._host", return_value=host):
+        with patch("app.tbc.camera_plugins.reolink.sdcard._host", return_value=host):
             download = await sdcard.open_sd_card_download(
                 camera,
                 channel=0,
@@ -90,7 +90,7 @@ class SdCardTests(unittest.IsolatedAsyncioTestCase):
         host = NoSdCardHost()
         camera = {"id": 3, "host": "192.0.2.10", "username": "admin", "password": "secret", "http_port": 80}
 
-        with patch("app.tbc.reolink.sdcard._host", return_value=host):
+        with patch("app.tbc.camera_plugins.reolink.sdcard._host", return_value=host):
             rows = await sdcard.list_sd_card_recordings(
                 camera,
                 channel=0,

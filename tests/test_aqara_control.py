@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from app.tbc.aqara import control
+from app.tbc.camera_plugins.aqara import control
 
 
 class AqaraControlTests(unittest.IsolatedAsyncioTestCase):

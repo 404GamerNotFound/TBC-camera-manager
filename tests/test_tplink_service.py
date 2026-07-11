@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from app.tbc.camera_modules.onvif import OnvifProbe
-from app.tbc.tplink import service
+from app.tbc.camera_plugins.tplink import service
 
 
 class TpLinkServiceTests(unittest.IsolatedAsyncioTestCase):

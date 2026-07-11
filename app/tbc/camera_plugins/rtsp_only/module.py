@@ -1,4 +1,4 @@
-from ..manual_rtsp.module import ManualRtspCameraModule
+from ...manual_rtsp.module import ManualRtspCameraModule
 
 
 class RtspOnlyCameraModule(ManualRtspCameraModule):

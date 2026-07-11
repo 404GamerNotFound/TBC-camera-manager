@@ -7,8 +7,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from ..camera_modules.base import CameraSnapshot
-from ..camera_modules.onvif import OnvifProbe, probe_onvif
+from ...camera_modules.base import CameraSnapshot
+from ...camera_modules.onvif import OnvifProbe, probe_onvif
 from .catalog import DetectionDefinition, catalog_rows, definitions
 
 LOGGER = logging.getLogger(__name__)

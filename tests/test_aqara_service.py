@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from app.tbc.aqara import service
+from app.tbc.camera_plugins.aqara import service
 from app.tbc.camera_modules.onvif import OnvifProbe
 
 

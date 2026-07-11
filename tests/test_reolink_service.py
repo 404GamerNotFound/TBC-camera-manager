@@ -4,7 +4,7 @@ import types
 import unittest
 from unittest.mock import patch
 
-from app.tbc.reolink import service
+from app.tbc.camera_plugins.reolink import service
 
 
 class FakeReolinkHost:

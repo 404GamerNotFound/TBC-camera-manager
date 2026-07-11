@@ -30,7 +30,7 @@ acme-camera-plugin.zip
 }
 ```
 
-Die eingebauten Konfigurationen befinden sich unter `app/tbc/camera_plugins/`. Dort liegen auch die jeweiligen `detections.json`-Dateien. Profile ohne auswertbare Ereignisquelle verwenden eine leere Liste und deklarieren nur `live`.
+Die eingebauten Module liegen vollständig unter `app/tbc/camera_plugins/<schlüssel>/` — nicht nur `manifest.json`/`plugin.py`/`detections.json`, sondern auch die komplette herstellerspezifische Implementierung (`module.py`, `service.py`, `catalog.py`, ggf. `control.py`). Jedes eingebaute Modul ist damit genauso in sich geschlossen wie ein extern installiertes Plugin; nur generischer, herstellerneutraler Code (ONVIF-Hilfsfunktionen, die `CameraModule`-Basisklasse, die gemeinsame `manual_rtsp`-Implementierung für reine RTSP-Profile) liegt bewusst außerhalb, unter `app/tbc/camera_modules/` bzw. `app/tbc/manual_rtsp/`. Profile ohne auswertbare Ereignisquelle verwenden eine leere `detections.json`-Liste und deklarieren nur `live`.
 
 ## Öffentlicher Vertrag
 
@@ -85,7 +85,7 @@ Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Recht
 - `ARCHIVE`: Das Modul implementiert Suche, Wiedergabe und Download des Kamera-Archivs.
 - `CONTROL`: Das Modul implementiert `get_control_state()` und `send_control()` für Live-Gerätesteuerung (z. B. PTZ, Flutlicht, PIR-Sensor, Sirene, Neustart, Akkustatus).
 
-Die Implementierungen liegen in den Herstellerpaketen unter `app/tbc/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet.
+Die Implementierungen liegen in den Herstellerpaketen unter `app/tbc/camera_plugins/<schlüssel>/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet; `plugin.py` lädt sie über `import_tbc("camera_plugins.<schlüssel>.module")` — denselben Mechanismus, den auch extern installierte Plugins für den Zugriff auf die TBC-Basisklassen nutzen.
 
 ## Kamerasteuerung (`CONTROL`)
 
@@ -99,4 +99,4 @@ async def send_control(self, camera: dict, *, action: str, channel: int = 0, **p
     """Einen Steuerbefehl ausführen, z. B. action="floodlight", params={"state": True}."""
 ```
 
-Das eingebaute `reolink`-Modul (`app/tbc/reolink/control.py`) implementiert darüber PTZ-Schwenk/Neige-Befehle, Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus über `reolink-aio`. Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).
+Das eingebaute `reolink`-Modul (`app/tbc/camera_plugins/reolink/control.py`) implementiert darüber PTZ-Schwenk/Neige-Befehle, Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus über `reolink-aio`. `tplink`, `standard_onvif` und `aqara` bieten PTZ über den herstellerneutralen ONVIF-PTZ-Service (`app/tbc/camera_modules/onvif_control.py`) an, den ihre jeweiligen `camera_plugins/<schlüssel>/control.py`-Adapter nur mit dem passenden Standard-ONVIF-Port aufrufen. Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).

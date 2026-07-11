@@ -1,7 +1,7 @@
 import unittest
 
 from app.tbc.camera_modules.detections import normalize_detection_key
-from app.tbc.reolink.catalog import definition_by_key
+from app.tbc.camera_plugins.reolink.catalog import definition_by_key
 
 
 class DetectionCatalogTests(unittest.TestCase):

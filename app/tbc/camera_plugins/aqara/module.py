@@ -2,23 +2,24 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..camera_modules.base import CameraCapability, CameraModule, CameraSnapshot
+from ...camera_modules.base import CameraCapability, CameraModule, CameraSnapshot
 from .catalog import definitions
 from .control import get_control_state, send_control
 from .service import probe_camera
 
 
-class TpLinkCameraModule(CameraModule):
-    key = "tplink"
-    label = "TP-Link / Tapo"
-    description = "TP-Link-Tapo-Kameras via ONVIF und RTSP"
-    default_onvif_port = 2020
+class AqaraCameraModule(CameraModule):
+    key = "aqara"
+    label = "Aqara"
+    description = "Aqara-Kameras sowie kompatible Video-Türklingeln"
+    default_onvif_port = 5000
     default_http_port = 80
-    default_rtsp_port = 554
+    default_rtsp_port = 8554
     capabilities = frozenset(
         {
             CameraCapability.LIVE,
             CameraCapability.DETECTIONS,
+            CameraCapability.CHANNELS,
             CameraCapability.CONTROL,
         }
     )

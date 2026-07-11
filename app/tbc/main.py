@@ -41,7 +41,7 @@ from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
-from .reolink.service import monitor_events as monitor_reolink_events
+from .camera_plugins.reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
 
 LOGGER = logging.getLogger(__name__)

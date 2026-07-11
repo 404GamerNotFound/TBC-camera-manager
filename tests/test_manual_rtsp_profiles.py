@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch
 
 from app.tbc.camera_modules.streams import validate_manual_stream_uri
-from app.tbc.sonoff.module import SonoffCameraModule
-from app.tbc.ubiquiti.module import UbiquitiCameraModule
+from app.tbc.camera_plugins.sonoff.module import SonoffCameraModule
+from app.tbc.camera_plugins.ubiquiti.module import UbiquitiCameraModule
 
 
 CAMERA = {

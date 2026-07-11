@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..camera_modules import onvif_control
+from ...camera_modules import onvif_control
 
-DEFAULT_ONVIF_PORT = 2020
+DEFAULT_ONVIF_PORT = 80
 
 
 async def get_control_state(camera: dict[str, Any]) -> dict[str, Any]:

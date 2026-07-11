@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..camera_modules import onvif_control
+from ...camera_modules import onvif_control
 
 DEFAULT_ONVIF_PORT = 5000
 

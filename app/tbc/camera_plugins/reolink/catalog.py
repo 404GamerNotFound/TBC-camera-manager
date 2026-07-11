@@ -17,7 +17,7 @@ class DetectionDefinition:
 
 
 def _load_definitions() -> tuple[DetectionDefinition, ...]:
-    path = Path(__file__).resolve().parents[1] / "camera_plugins" / "reolink" / "detections.json"
+    path = Path(__file__).resolve().parent / "detections.json"
     rows = json.loads(path.read_text(encoding="utf-8"))
     return tuple(DetectionDefinition(**row) for row in rows)
 

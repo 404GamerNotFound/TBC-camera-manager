@@ -3,23 +3,23 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..camera_modules.detections import DetectionDefinition
+from ...camera_modules.detections import DetectionDefinition
 
 
 def _load_definitions() -> tuple[DetectionDefinition, ...]:
-    path = Path(__file__).resolve().parents[1] / "camera_plugins" / "aqara" / "detections.json"
+    path = Path(__file__).resolve().parent / "detections.json"
     rows = json.loads(path.read_text(encoding="utf-8"))
     return tuple(DetectionDefinition(**row) for row in rows)
 
 
-AQARA_DETECTIONS = _load_definitions()
+ONVIF_DETECTIONS = _load_definitions()
 
 
 def definitions() -> tuple[DetectionDefinition, ...]:
-    return AQARA_DETECTIONS
+    return ONVIF_DETECTIONS
 
 
-def catalog_rows(supported_keys: set[str]) -> list[dict[str, object]]:
+def catalog_rows(supported_keys: set[str], *, source: str = "onvif-events") -> list[dict[str, object]]:
     return [
         {
             "key": definition.key,
@@ -28,8 +28,8 @@ def catalog_rows(supported_keys: set[str]) -> list[dict[str, object]]:
             "channel": None,
             "supported": definition.key in supported_keys,
             "active": False,
-            "source": "aqara/onvif" if definition.key in supported_keys else "aqara/catalog",
+            "source": source,
             "raw_value": None,
         }
-        for definition in AQARA_DETECTIONS
+        for definition in ONVIF_DETECTIONS
     ]

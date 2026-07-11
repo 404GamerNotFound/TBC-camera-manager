@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from app.tbc.tplink import control
+from app.tbc.camera_plugins.tplink import control
 
 
 class TpLinkControlTests(unittest.IsolatedAsyncioTestCase):
