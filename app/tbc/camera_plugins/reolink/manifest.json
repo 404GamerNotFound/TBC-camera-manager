@@ -5,6 +5,6 @@
   "version": "1.0.0",
   "description": "Reolink-Kameras und NVR via ONVIF und reolink-aio",
   "entrypoint": "plugin.py",
-  "capabilities": ["live", "recording", "detections", "channels", "archive"],
+  "capabilities": ["live", "recording", "detections", "channels", "archive", "control"],
   "ports": {"onvif": 8000, "http": 80, "rtsp": 554}
 }

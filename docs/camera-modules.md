@@ -58,7 +58,7 @@ def create_module():
     return AcmeCameraModule()
 ```
 
-`plugin.py` stellt entweder `create_module()` oder eine Variable `MODULE` bereit. Metadaten und Fähigkeiten werden aus dem Manifest auf die Modulinstanz übertragen. `probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()` und `open_archive_download()` implementieren. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
+`plugin.py` stellt entweder `create_module()` oder eine Variable `MODULE` bereit. Metadaten und Fähigkeiten werden aus dem Manifest auf die Modulinstanz übertragen. `probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()`, `open_archive_download()`, `get_control_state()` und `send_control()` implementieren. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
 
 Module, die eine vollständige Stream-URL statt separater ONVIF-Zugangsdaten erwarten, setzen `supports_manual_stream_uri = True`, `requires_manual_stream_uri = True` und `requires_credentials = False`. TBC speichert diese URL getrennt in `manual_stream_uri`, validiert ausschließlich `rtsp://` und `rtsps://` und rendert sie nie unzensiert in HTML. `ubiquiti`, `sonoff` und `rtsp_only` verwenden die gemeinsame Implementierung `manual_rtsp/`.
 
@@ -83,5 +83,20 @@ Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Recht
 - `DETECTIONS`: Das Modul stellt Erkennungsdefinitionen und Zustände bereit.
 - `CHANNELS`: Das Modul unterstützt mehrere Kamera- oder NVR-Kanäle.
 - `ARCHIVE`: Das Modul implementiert Suche, Wiedergabe und Download des Kamera-Archivs.
+- `CONTROL`: Das Modul implementiert `get_control_state()` und `send_control()` für Live-Gerätesteuerung (z. B. PTZ, Flutlicht, PIR-Sensor, Sirene, Neustart, Akkustatus).
 
 Die Implementierungen liegen in den Herstellerpaketen unter `app/tbc/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet.
+
+## Kamerasteuerung (`CONTROL`)
+
+Module mit der Fähigkeit `CONTROL` implementieren zwei zusätzliche Methoden:
+
+```python
+async def get_control_state(self, camera: dict, *, channel: int = 0) -> dict:
+    """Aktuellen Gerätezustand liefern, z. B. {"floodlight_supported": True, "floodlight_state": False, ...}."""
+
+async def send_control(self, camera: dict, *, action: str, channel: int = 0, **params) -> dict:
+    """Einen Steuerbefehl ausführen, z. B. action="floodlight", params={"state": True}."""
+```
+
+Das eingebaute `reolink`-Modul (`app/tbc/reolink/control.py`) implementiert darüber PTZ-Schwenk/Neige-Befehle, Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus über `reolink-aio`. Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).

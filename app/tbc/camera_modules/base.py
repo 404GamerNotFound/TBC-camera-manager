@@ -13,6 +13,7 @@ class CameraCapability(str, Enum):
     DETECTIONS = "detections"
     CHANNELS = "channels"
     ARCHIVE = "archive"
+    CONTROL = "control"
 
 
 @dataclass
@@ -86,3 +87,9 @@ class CameraModule(ABC):
         stream: str = "main",
     ) -> ArchiveDownload:
         raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt kein Kamera-Archiv")
+
+    async def get_control_state(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
+        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Kamerasteuerung")
+
+    async def send_control(self, camera: dict[str, Any], *, action: str, channel: int = 0, **params: Any) -> dict[str, Any]:
+        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Kamerasteuerung")

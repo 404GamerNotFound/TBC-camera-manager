@@ -43,6 +43,7 @@
   <button type="button" role="tab" aria-selected="true" aria-controls="camera-overview" data-detail-tab="overview">Übersicht</button>
   {% if role == 'admin' %}
   {% if 'recording' in module_capabilities %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Aufnahme <span class="tab-count">{{ events | length }}</span></button>{% endif %}
+  {% if 'control' in module_capabilities %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-control" data-detail-tab="control">Steuerung</button>{% endif %}
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-connection" data-detail-tab="connection">Verbindung</button>
   {% endif %}
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-detections" data-detail-tab="detections">Erkennungen <span class="tab-count">{{ detections | length }}</span></button>
@@ -348,6 +349,86 @@
     <div class="quiet-box">Noch keine Ereignisse</div>
     {% endif %}
   </section>
+</div>
+  {% endif %}
+
+  {% if 'control' in module_capabilities %}
+<div class="detail-tab-panel" id="camera-control" role="tabpanel" data-detail-panel="control" hidden>
+  {% if not control_state %}
+  <div class="diagnostic-note diagnostic-warning">Gerätestatus konnte nicht abgefragt werden. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt.</div>
+  {% endif %}
+
+  {% if not control_state or control_state.ptz_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2>Schwenk-/Neigekopf (PTZ)</h2></div>
+    <div class="button-row ptz-controls">
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Up"><button class="secondary-button" type="submit">▲ Hoch</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Down"><button class="secondary-button" type="submit">▼ Runter</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Left"><button class="secondary-button" type="submit">◄ Links</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Right"><button class="secondary-button" type="submit">► Rechts</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz"><input type="hidden" name="command" value="Stop"><button class="text-button" type="submit">■ Stopp</button></form>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not control_state or control_state.floodlight_supported %}
+  <section class="table-section">
+    <div class="section-title">
+      <h2>Flutlicht</h2>
+      {% if control_state and control_state.floodlight_state %}<span class="status-pill status-active">an</span>{% else %}<span class="status-pill status-idle">aus</span>{% endif %}
+    </div>
+    <div class="button-row">
+      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight"><input type="hidden" name="state" value="on"><button class="primary-button" type="submit">Einschalten</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight"><input type="hidden" name="state" value="off"><button class="secondary-button" type="submit">Ausschalten</button></form>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not control_state or control_state.pir_supported %}
+  <section class="table-section">
+    <div class="section-title">
+      <h2>PIR-Sensor</h2>
+      {% if control_state and control_state.pir_enabled %}<span class="status-pill status-active">aktiv</span>{% else %}<span class="status-pill status-idle">aus</span>{% endif %}
+    </div>
+    <div class="button-row">
+      <form method="post" action="/cameras/{{ camera.id }}/control/pir"><input type="hidden" name="enable" value="on"><button class="primary-button" type="submit">Aktivieren</button></form>
+      <form method="post" action="/cameras/{{ camera.id }}/control/pir"><button class="secondary-button" type="submit">Deaktivieren</button></form>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not control_state or control_state.siren_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2>Sirene</h2></div>
+    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/siren">
+      <label><span>Dauer (Sek.)</span><input name="duration" type="number" min="1" max="30" value="5"></label>
+      <button class="primary-button" type="submit">Sirene abspielen</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if not control_state or control_state.is_battery %}
+  <section class="overview-metrics">
+    <div class="overview-metric">
+      <span>Akkustand</span>
+      {% if control_state and control_state.battery_percentage is not none %}
+      <strong>{{ control_state.battery_percentage }} %</strong>
+      <small>{{ control_state.battery_status or '' }}{% if control_state.battery_temperature is not none %} · {{ control_state.battery_temperature }} °C{% endif %}</small>
+      {% else %}
+      <strong class="metric-unavailable">–</strong><small>Nicht verfügbar</small>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if not control_state or control_state.reboot_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2>Neustart</h2></div>
+    <form method="post" action="/cameras/{{ camera.id }}/control/reboot">
+      <button class="danger-button" type="submit">Kamera neu starten</button>
+    </form>
+  </section>
+  {% endif %}
 </div>
   {% endif %}
 {% endif %}

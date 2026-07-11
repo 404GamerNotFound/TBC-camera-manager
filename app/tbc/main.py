@@ -86,6 +86,7 @@ async def startup() -> None:
     asyncio.create_task(_cleanup_loop())
     asyncio.create_task(_snapshot_loop())
     asyncio.create_task(_continuous_recording_loop())
+    asyncio.create_task(mqtt.run_control_listener(SETTINGS.database_path))
 
 
 @app.get("/healthz")
@@ -307,6 +308,12 @@ async def camera_detail(request: Request, camera_id: int):
         camera_module = None
     module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
     available_triggers = camera_module.detection_definitions() if camera_module else ()
+    control_state = None
+    if camera_module and camera_module.supports(CameraCapability.CONTROL):
+        try:
+            control_state = await camera_module.get_control_state(camera)
+        except Exception as exc:
+            LOGGER.info("Control state fetch failed for camera %s: %s", camera_id, exc)
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -324,6 +331,7 @@ async def camera_detail(request: Request, camera_id: int):
             "available_triggers": available_triggers,
             "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},
             "active_trigger_keys": active_trigger_keys,
+            "control_state": control_state,
             "flash": _pop_flash(request),
         },
     )
@@ -380,6 +388,73 @@ async def refresh_camera(request: Request, camera_id: int):
         return _redirect(f"/cameras/{camera_id}")
     _set_flash(request, snapshot.message, "success" if snapshot.status == "ok" else "warning")
     return _redirect(f"/cameras/{camera_id}")
+
+
+@app.post("/cameras/{camera_id}/control/ptz")
+async def control_camera_ptz(request: Request, camera_id: int, command: str = Form(...), speed: str = Form("")):
+    params: dict[str, Any] = {"command": command}
+    if speed.strip():
+        try:
+            params["speed"] = int(speed)
+        except ValueError:
+            pass
+    return await _execute_control(request, camera_id, action="ptz", params=params)
+
+
+@app.post("/cameras/{camera_id}/control/floodlight")
+async def control_camera_floodlight(request: Request, camera_id: int, state: str | None = Form(None)):
+    return await _execute_control(request, camera_id, action="floodlight", params={"state": state == "on"})
+
+
+@app.post("/cameras/{camera_id}/control/pir")
+async def control_camera_pir(request: Request, camera_id: int, enable: str | None = Form(None)):
+    return await _execute_control(request, camera_id, action="pir", params={"enable": enable == "on"})
+
+
+@app.post("/cameras/{camera_id}/control/siren")
+async def control_camera_siren(request: Request, camera_id: int, duration: int = Form(5)):
+    return await _execute_control(request, camera_id, action="siren", params={"duration": duration})
+
+
+@app.post("/cameras/{camera_id}/control/reboot")
+async def control_camera_reboot(request: Request, camera_id: int):
+    return await _execute_control(request, camera_id, action="reboot", params={})
+
+
+async def _execute_control(request: Request, camera_id: int, *, action: str, params: dict[str, Any]):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        return _redirect("/cameras")
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cameras/{camera_id}")
+    if not camera_module.supports(CameraCapability.CONTROL):
+        _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Kamerasteuerung", "error")
+        return _redirect(f"/cameras/{camera_id}")
+    try:
+        await camera_module.send_control(camera, action=action, **params)
+    except Exception as exc:
+        LOGGER.info("Control action %s failed for camera %s: %s", action, camera_id, exc)
+        _set_flash(request, f"Befehl fehlgeschlagen: {exc}", "error")
+        return _redirect(f"/cameras/{camera_id}")
+    _set_flash(request, "Befehl wurde gesendet")
+    asyncio.create_task(_publish_control_state(camera_id, camera, camera_module))
+    return _redirect(f"/cameras/{camera_id}")
+
+
+async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_module: Any) -> None:
+    try:
+        control_state = await camera_module.get_control_state(camera)
+    except Exception:
+        LOGGER.debug("Control state fetch failed for camera %s", camera_id, exc_info=True)
+        return
+    await asyncio.to_thread(mqtt.publish_control_state, SETTINGS.database_path, camera, control_state)
 
 
 @app.post("/cameras/{camera_id}/recording")
@@ -1173,6 +1248,8 @@ async def _refresh_camera(camera_id: int):
     if camera_module.supports(CameraCapability.CHANNELS) and snapshot.channels:
         database.upsert_camera_channels(SETTINGS.database_path, camera_id, snapshot.channels)
     _process_detection_states(camera_id, snapshot.detections, camera_module)
+    if camera_module.supports(CameraCapability.CONTROL):
+        asyncio.create_task(_publish_control_state(camera_id, camera, camera_module))
     return snapshot
 
 

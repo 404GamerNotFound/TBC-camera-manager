@@ -5,6 +5,7 @@ from typing import Any
 
 from ..camera_modules.base import CameraCapability, CameraModule, CameraSnapshot
 from .catalog import definitions
+from .control import get_control_state, send_control
 from .sdcard import list_sd_card_recordings, open_sd_card_download
 from .service import probe_camera
 
@@ -20,6 +21,7 @@ class ReolinkCameraModule(CameraModule):
             CameraCapability.DETECTIONS,
             CameraCapability.CHANNELS,
             CameraCapability.ARCHIVE,
+            CameraCapability.CONTROL,
         }
     )
 
@@ -64,3 +66,9 @@ class ReolinkCameraModule(CameraModule):
             end_id=end_id,
             stream=stream,
         )
+
+    async def get_control_state(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
+        return await get_control_state(camera, channel=channel)
+
+    async def send_control(self, camera: dict[str, Any], *, action: str, channel: int = 0, **params: Any) -> dict[str, Any]:
+        return await send_control(camera, action=action, channel=channel, **params)
