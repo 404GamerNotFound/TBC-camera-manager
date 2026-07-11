@@ -3,12 +3,14 @@ from __future__ import annotations
 import shutil
 import subprocess
 import logging
+import re
 import threading
 import time
 from pathlib import Path
 from typing import Any
 
 LOGGER = logging.getLogger(__name__)
+RTSP_URI_PATTERN = re.compile(r"rtsp://[^\s<>\"']+", re.IGNORECASE)
 
 
 class LiveManager:
@@ -32,8 +34,9 @@ class LiveManager:
         out_dir.mkdir(parents=True, exist_ok=True)
         segment_pattern = out_dir / "segment%03d.ts"
         command = _live_ffmpeg_command(stream_uri, segment_pattern, playlist)
-        self._messages[key] = [f"Starte Live-Stream {key}: {stream_uri}"]
-        LOGGER.info("Starte Live-Stream %s mit %s", key, stream_uri)
+        safe_stream_uri = redact_rtsp_credentials(stream_uri)
+        self._messages[key] = [f"Starte Live-Stream {key}: {safe_stream_uri}"]
+        LOGGER.info("Starte Live-Stream %s mit %s", key, safe_stream_uri)
         process = subprocess.Popen(
             command,
             stdout=subprocess.DEVNULL,
@@ -64,7 +67,7 @@ class LiveManager:
         messages = self._messages.get(key) or []
         for message in reversed(messages):
             if not _is_nonfatal_hls_warning(message):
-                return message
+                return redact_rtsp_credentials(message)
         return ""
 
     def note(self, key: str, message: str) -> None:
@@ -94,7 +97,7 @@ class LiveManager:
         if process.stderr is None:
             return
         for line in process.stderr:
-            message = line.strip()
+            message = redact_rtsp_credentials(line.strip())
             if not message:
                 continue
             if _is_nonfatal_hls_warning(message):
@@ -118,6 +121,20 @@ def stream_uri_for(camera: dict[str, Any], channel: dict[str, Any] | None = None
     if channel and channel.get("stream_uri"):
         return str(channel["stream_uri"])
     return str(camera["stream_uri"]) if camera.get("stream_uri") else None
+
+
+def redact_rtsp_credentials(value: str) -> str:
+    """Mask credentials in RTSP URLs without changing the URL used for streaming."""
+    def redact(match: re.Match[str]) -> str:
+        uri = match.group(0)
+        authority_end = uri.find("/", len("rtsp://"))
+        authority_end = len(uri) if authority_end == -1 else authority_end
+        authority = uri[len("rtsp://"):authority_end]
+        if "@" not in authority:
+            return uri
+        return f"rtsp://***:***@{authority.rsplit('@', 1)[1]}{uri[authority_end:]}"
+
+    return RTSP_URI_PATTERN.sub(redact, str(value))
 
 
 def _is_nonfatal_hls_warning(message: str) -> bool:

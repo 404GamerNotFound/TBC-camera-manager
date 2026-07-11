@@ -2,10 +2,23 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from app.tbc.live import LiveManager, _is_nonfatal_hls_warning, _live_ffmpeg_command
+from app.tbc.live import LiveManager, _is_nonfatal_hls_warning, _live_ffmpeg_command, redact_rtsp_credentials
 
 
 class LiveTests(unittest.TestCase):
+    def test_redact_rtsp_credentials_masks_username_and_password(self):
+        uri = "rtsp://user:pw@192.168.1.236:554/Preview_01_sub"
+
+        self.assertEqual(
+            redact_rtsp_credentials(uri),
+            "rtsp://***:***@192.168.1.236:554/Preview_01_sub",
+        )
+
+    def test_redact_rtsp_credentials_masks_urls_inside_messages(self):
+        message = "Fehler bei rtsp://user:pw@camera.local/stream: Verbindung fehlgeschlagen"
+
+        self.assertNotIn("user:pw", redact_rtsp_credentials(message))
+
     def test_live_ffmpeg_command_generates_timestamps(self):
         command = _live_ffmpeg_command(
             "rtsp://example/stream",

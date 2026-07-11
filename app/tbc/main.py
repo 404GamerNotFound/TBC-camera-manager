@@ -19,7 +19,7 @@ from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .health import current_system_usage, run_health_checks
-from .live import LiveManager, stream_uri_for
+from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import RecordingManager, delete_recording_files, presigned_url
@@ -41,6 +41,7 @@ app.add_middleware(
 )
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 LIVE_MANAGER = LiveManager(SETTINGS.live_path)
 

@@ -50,7 +50,7 @@
 {% if camera.stream_uri %}
 <section class="stream-line">
   <span>Stream</span>
-  <code>{{ camera.stream_uri }}</code>
+  <code>{{ camera.stream_uri | redact_rtsp_credentials }}</code>
   <form method="post" action="/live/camera/{{ camera.id }}/start">
     <button class="secondary-button" type="submit">Live</button>
   </form>
