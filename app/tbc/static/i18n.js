@@ -27,6 +27,7 @@
     "Manipulation / Videoverlust": "Tampering / video loss",
     "Nicht-motorisiertes Fahrzeug": "Non-motor vehicle",
     "Objekterkennung": "Object detection",
+    "ONVIF-Verbindung erfolgreich": "ONVIF connection successful",
     "Paket": "Package",
     "Ruhezustand": "Sleep mode",
     "Tier": "Animal",
@@ -38,6 +39,7 @@
     "Verweilen Person": "Person loitering",
     "Weinen": "Crying",
     "Reolink-Kameras und NVR via ONVIF und reolink-aio": "Reolink cameras and NVRs via ONVIF and reolink-aio",
+    "Reolink-Status erfolgreich abgefragt": "Reolink status retrieved successfully",
     "Aqara-Kameras sowie kompatible Video-Türklingeln": "Aqara cameras and compatible video doorbells",
     "TP-Link-Tapo-Kameras via ONVIF und RTSP": "TP-Link Tapo cameras via ONVIF and RTSP",
     "Standard ONVIF Verbindung": "Standard ONVIF connection",
@@ -238,6 +240,7 @@
     "Typ": "Type",
     "Unterstützt": "Supported",
     "Verbindung": "Connection",
+    "Verbindungsstatus": "Connection status",
     "Von": "From",
     "Vorhandene Benutzer": "Existing users",
     "Vorhandene Ziele": "Existing destinations",
@@ -308,7 +311,7 @@
 
   const translateElement = (element) => {
     if (!(element instanceof Element)) return;
-    for (const attribute of ["aria-label", "title", "placeholder"]) {
+    for (const attribute of ["aria-label", "title", "placeholder", "data-tooltip"]) {
       if (element.hasAttribute(attribute)) {
         element.setAttribute(attribute, translate(element.getAttribute(attribute)));
       }
@@ -317,7 +320,7 @@
       if (child.nodeType === Node.TEXT_NODE) translateTextNode(child);
     }
     element.querySelectorAll("*").forEach((child) => {
-      for (const attribute of ["aria-label", "title", "placeholder"]) {
+      for (const attribute of ["aria-label", "title", "placeholder", "data-tooltip"]) {
         if (child.hasAttribute(attribute)) {
           child.setAttribute(attribute, translate(child.getAttribute(attribute)));
         }

@@ -485,10 +485,89 @@ button:focus-visible {
 
 .camera-card {
   display: grid;
-  gap: 22px;
+  gap: 16px;
   padding: 20px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.camera-card:has(.probe-indicator:hover),
+.camera-card:has(.probe-indicator:focus-visible) {
+  position: relative;
+  z-index: 3;
+}
+
+.probe-status-list {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  gap: 8px;
+}
+
+.probe-indicator {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: help;
+  outline: none;
+}
+
+.probe-indicator-ok {
+  color: var(--ok);
+  border-color: rgba(30, 123, 77, 0.3);
+  background: #e4f5ea;
+}
+
+.probe-indicator-error {
+  color: var(--danger);
+  border-color: rgba(167, 55, 55, 0.3);
+  background: #ffe8e8;
+}
+
+.probe-indicator::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 9px);
+  left: 0;
+  width: max-content;
+  max-width: min(290px, calc(100vw - 48px));
+  padding: 9px 11px;
+  border-radius: 7px;
+  color: white;
+  background: #17211e;
+  box-shadow: 0 10px 26px rgba(20, 32, 28, 0.22);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.probe-indicator:hover::after,
+.probe-indicator:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.probe-indicator:focus-visible {
+  box-shadow: 0 0 0 0.2rem rgba(17, 97, 92, 0.18);
 }
 
 .camera-snapshot {
@@ -571,6 +650,61 @@ dt {
 .details-strip div {
   padding: 13px;
   background: var(--surface-soft);
+}
+
+.camera-metrics {
+  gap: 8px;
+  overflow: visible;
+  padding: 8px;
+  border-color: rgba(17, 97, 92, 0.12);
+  background: linear-gradient(135deg, #f3f7f4, #edf3f0);
+}
+
+.camera-metrics .camera-metric {
+  display: flex;
+  min-width: 0;
+  min-height: 76px;
+  padding: 10px 6px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(17, 97, 92, 0.1);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.camera-metrics dt {
+  max-width: 100%;
+  color: var(--muted);
+  font-size: clamp(0.58rem, 0.65vw, 0.68rem);
+  letter-spacing: 0.045em;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.camera-metrics dd {
+  order: -1;
+  margin: 0 0 5px;
+  color: var(--text);
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.camera-metric-supported dd {
+  color: var(--brand);
+}
+
+.camera-metric-active dd {
+  color: var(--ok);
+}
+
+.camera-metric-active.is-empty dd {
+  color: var(--muted);
+}
+
+.camera-metric-features dd {
+  color: var(--warn);
 }
 
 dt {
