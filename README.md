@@ -1,6 +1,6 @@
 # TBC - TB Camera
 
-TBC ist ein kleiner Docker-basierter Kamera-Manager fuer Reolink-Kameras. Die aktuelle Version bringt Login, Kamera-Verwaltung, ONVIF-Probe, RTSP-Stream-Ermittlung, einen Reolink-Erkennungskatalog, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
+TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink sowie TP-Link/Tapo sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
 
 ## Start
 
@@ -47,12 +47,20 @@ Hinweise fuer typische Portainer-Probleme:
 
 ## Kamera einbinden
 
-In der Weboberflaeche eine Kamera mit Host/IP, ONVIF-Port, HTTP-Port und Reolink-Zugangsdaten anlegen. TBC prueft danach:
+In der Weboberflaeche zuerst das installierte Kameramodul auswählen und die Kamera mit Host/IP, Ports und Zugangsdaten anlegen. Das Modul bestimmt danach, welche Hersteller-API abgefragt und welche Funktionen angeboten werden. Das enthaltene Reolink-Modul prueft:
 
 - ONVIF Device-Informationen
 - ONVIF Media-Profile und RTSP-Stream-URI
 - ONVIF Event-Properties, soweit die Kamera sie meldet
 - Reolink Smart-AI-Zustaende ueber `reolink-aio`, wenn die Kamera/API sie unterstuetzt
+
+## Installierbare Kamera-Module
+
+Die Weboberfläche und die zentralen Kamera-Routen greifen nur auf eine herstellerunabhängige Modulschnittstelle zu. Module deklarieren Fähigkeiten für Live-Ansicht, Ereignisaufnahme, Erkennungen, Multi-Kanal-Geräte und Kamera-Archive. Externe Python-Pakete registrieren sich über den Entry-Point `tbc.camera_modules` und erscheinen nach Installation und Neustart automatisch in der Modulauswahl.
+
+Bestehende Datenbanken werden automatisch migriert; vorhandene Kameras erhalten das Modul `reolink`. Die technische Anleitung zur Entwicklung zusätzlicher Module steht in [docs/camera-modules.md](docs/camera-modules.md).
+
+Das eingebaute Modul `tplink` unterstützt TP-Link/Tapo-Kameras über ONVIF Profile S und RTSP. Beim Auswählen werden ONVIF-Port `2020` und RTSP-Port `554` vorbelegt. Als Stream werden `/stream1` und die in TBC gespeicherten separaten Kamera-Zugangsdaten verwendet. Live-Ansicht und ONVIF-Funktionserkennung sind aktiviert; Reolink-spezifisches SD-Karten-Archiv, NVR-Kanäle und ereignisgesteuerte Aufnahmen werden für dieses Modul nicht angeboten.
 
 ## Aufnahmen
 
@@ -161,6 +169,7 @@ Nicht jede Reolink-Kamera liefert alle Funktionen. TBC speichert deshalb pro Kam
 - Webserver: FastAPI mit Jinja2-Templates.
 - Persistenz: SQLite unter `/data/tbc.sqlite3`.
 - Schema: Tabellen fuer Kameras, Kanaele, Erkennungen, Aufnahmen, Speicherziele, Retention-Regeln, Benachrichtigungskanaele, Health-Status, Health-Events, Benutzer/Rollen und MQTT-Konfiguration.
+- Kamera-Module: `CameraModule`-Schnittstelle, Capability-Modell und Registry mit Python-Entry-Point `tbc.camera_modules`; die Modulauswahl wird pro Kamera als `module_key` gespeichert.
 - Login: Cookie-Session mit PBKDF2-SHA256 gehashtem Admin-Passwort.
 - ONVIF: `onvif-zeep` fuer Device-, Media- und Event-Probe.
 - Reolink: `reolink-aio` fuer modellabhaengige AI-/Smart-AI-Zustaende.

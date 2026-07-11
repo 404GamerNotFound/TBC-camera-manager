@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">{{ camera.host }}:{{ camera.onvif_port }}</p>
+    <p class="eyebrow">{{ camera_module.label if camera_module else camera.module_key }} · {{ camera.host }}:{{ camera.onvif_port }}</p>
     <h1>{{ camera.name }}</h1>
   </div>
   {% if role == 'admin' %}
@@ -51,14 +51,18 @@
 <section class="stream-line">
   <span>Stream</span>
   <code>{{ camera.stream_uri | redact_rtsp_credentials }}</code>
+  {% if 'live' in module_capabilities %}
   <form method="post" action="/live/camera/{{ camera.id }}/start">
     <button class="secondary-button" type="submit">Live</button>
   </form>
+  {% endif %}
+  {% if 'archive' in module_capabilities %}
   <a class="secondary-button" href="/sd-card?camera_id={{ camera.id }}">SD-Karte</a>
+  {% endif %}
 </section>
 {% endif %}
 
-{% if channels %}
+{% if channels and 'channels' in module_capabilities %}
 <section class="table-section">
   <div class="section-title">
     <h2>NVR-Kanäle</h2>
@@ -135,6 +139,10 @@
         <input name="http_port" type="number" min="1" max="65535" value="{{ camera.http_port }}" required>
       </label>
       <label>
+        <span>RTSP-Port</span>
+        <input name="rtsp_port" type="number" min="1" max="65535" value="{{ camera.rtsp_port or 554 }}" required>
+      </label>
+      <label>
         <span>Benutzer</span>
         <input name="username" value="{{ camera.username }}" autocomplete="username" required>
       </label>
@@ -148,6 +156,7 @@
     </div>
   </form>
 
+  {% if 'recording' in module_capabilities %}
   <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/recording">
     <div class="section-title">
       <h2>Aufnahme bei Bewegung</h2>
@@ -210,6 +219,7 @@
       <button class="primary-button" type="submit">Speichern</button>
     </div>
   </form>
+  {% endif %}
 
   <section class="event-panel">
     <div class="section-title">
@@ -237,7 +247,9 @@
 <section class="stream-line">
   <span>Aufnahmen</span>
   <a class="text-button" href="/recordings?camera_id={{ camera.id }}">Clips öffnen</a>
+  {% if 'archive' in module_capabilities %}
   <a class="text-button" href="/sd-card?camera_id={{ camera.id }}">SD-Karte öffnen</a>
+  {% endif %}
 </section>
 {% endif %}
 

@@ -131,7 +131,7 @@ def _discovery_payload(
         "device": {
             "identifiers": [f"tbc_camera_{camera['id']}"],
             "name": camera.get("name"),
-            "manufacturer": camera.get("manufacturer") or "Reolink",
+            "manufacturer": camera.get("manufacturer") or "Kamera",
             "model": camera.get("model") or "Kamera",
         },
     }
@@ -140,4 +140,3 @@ def _discovery_payload(
 def _topic_key(value: str) -> str:
     value = value.replace(":", "_")
     return re.sub(r"[^a-zA-Z0-9_/-]+", "_", value).strip("_").lower()
-

@@ -22,10 +22,12 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS cameras (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    module_key TEXT NOT NULL DEFAULT 'reolink',
     name TEXT NOT NULL,
     host TEXT NOT NULL,
     onvif_port INTEGER NOT NULL DEFAULT 8000,
     http_port INTEGER NOT NULL DEFAULT 80,
+    rtsp_port INTEGER NOT NULL DEFAULT 554,
     username TEXT NOT NULL,
     password TEXT NOT NULL,
     enabled INTEGER NOT NULL DEFAULT 1,
@@ -222,6 +224,8 @@ CREATE TABLE IF NOT EXISTS mqtt_config (
 """
 
 MIGRATIONS: tuple[str, ...] = (
+    "ALTER TABLE cameras ADD COLUMN module_key TEXT NOT NULL DEFAULT 'reolink'",
+    "ALTER TABLE cameras ADD COLUMN rtsp_port INTEGER NOT NULL DEFAULT 554",
     "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin'",
     "ALTER TABLE cameras ADD COLUMN recording_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE cameras ADD COLUMN recording_duration_seconds INTEGER NOT NULL DEFAULT 30",
@@ -554,14 +558,16 @@ def create_camera(
     http_port: int,
     username: str,
     password: str,
+    module_key: str = "reolink",
+    rtsp_port: int = 554,
 ) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
             """
-            INSERT INTO cameras (name, host, onvif_port, http_port, username, password)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO cameras (module_key, name, host, onvif_port, http_port, rtsp_port, username, password)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (name, host, onvif_port, http_port, username, password),
+            (module_key, name, host, onvif_port, http_port, rtsp_port, username, password),
         )
         return int(cursor.lastrowid)
 
@@ -581,6 +587,7 @@ def update_camera_connection(
     http_port: int,
     username: str,
     password: str | None = None,
+    rtsp_port: int | None = None,
 ) -> None:
     with connect(database_path) as db:
         db.execute(
@@ -590,6 +597,7 @@ def update_camera_connection(
                    host = ?,
                    onvif_port = ?,
                    http_port = ?,
+                   rtsp_port = COALESCE(?, rtsp_port),
                    username = ?,
                    password = COALESCE(?, password),
                    manufacturer = NULL,
@@ -602,7 +610,7 @@ def update_camera_connection(
                    updated_at = CURRENT_TIMESTAMP
              WHERE id = ?
             """,
-            (name, host, onvif_port, http_port, username, password, camera_id),
+            (name, host, onvif_port, http_port, rtsp_port, username, password, camera_id),
         )
 
 

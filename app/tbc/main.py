@@ -14,6 +14,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import database, mqtt
+from .camera_modules import CameraCapability, get_camera_module, list_camera_modules
+from .camera_modules.registry import UnknownCameraModuleError
 from .channels import apply_channel_enabled_filter
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
@@ -23,9 +25,6 @@ from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import RecordingManager, delete_recording_files, presigned_url
-from .reolink.catalog import definitions
-from .reolink.service import probe_camera
-from .reolink.sdcard import list_sd_card_recordings, open_sd_card_download
 
 LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
@@ -147,12 +146,15 @@ async def new_camera(request: Request):
             "role": user["role"],
             "flash": _pop_flash(request),
             "values": {
+                "module_key": "reolink",
                 "name": "",
                 "host": "",
                 "onvif_port": 8000,
                 "http_port": 80,
+                "rtsp_port": 554,
                 "username": "",
             },
+            "camera_modules": list_camera_modules(),
             "error": None,
         },
     )
@@ -165,20 +167,41 @@ async def create_camera(
     host: str = Form(...),
     onvif_port: int = Form(8000),
     http_port: int = Form(80),
+    rtsp_port: int = Form(554),
     username: str = Form(...),
     password: str = Form(...),
+    module_key: str = Form("reolink"),
 ):
     guard = _require_admin(request)
     if guard:
         return guard
 
     values = {
+        "module_key": module_key.strip().lower(),
         "name": name.strip(),
         "host": host.strip(),
         "onvif_port": onvif_port,
         "http_port": http_port,
+        "rtsp_port": rtsp_port,
         "username": username.strip(),
     }
+    try:
+        get_camera_module(values["module_key"])
+    except UnknownCameraModuleError as exc:
+        return templates.TemplateResponse(
+            request,
+            "camera_form.html",
+            {
+                "app_name": SETTINGS.app_name,
+                "username": request.session.get("username"),
+                "role": "admin",
+                "flash": None,
+                "values": values,
+                "camera_modules": list_camera_modules(),
+                "error": str(exc),
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     if not values["name"] or not values["host"] or not values["username"] or not password:
         return templates.TemplateResponse(
             request,
@@ -186,8 +209,10 @@ async def create_camera(
             {
                 "app_name": SETTINGS.app_name,
                 "username": request.session.get("username"),
+                "role": "admin",
                 "flash": None,
                 "values": values,
+                "camera_modules": list_camera_modules(),
                 "error": "Name, Host, Benutzer und Passwort sind erforderlich",
             },
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -201,6 +226,8 @@ async def create_camera(
         http_port=int(http_port),
         username=values["username"],
         password=password,
+        module_key=values["module_key"],
+        rtsp_port=max(1, min(65535, int(rtsp_port))),
     )
     await _refresh_camera(camera_id)
     _set_flash(request, "Kamera wurde angelegt und geprüft")
@@ -221,6 +248,11 @@ async def camera_detail(request: Request, camera_id: int):
     storage_targets = database.list_storage_targets(SETTINGS.database_path)
     events = database.list_recent_events(SETTINGS.database_path, camera_id)
     active_trigger_keys = database.list_camera_recording_triggers(SETTINGS.database_path, camera_id) or ["motion"]
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError:
+        camera_module = None
+    module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -233,7 +265,9 @@ async def camera_detail(request: Request, camera_id: int):
             "storage_targets": storage_targets,
             "events": events,
             "channels": database.list_camera_channels(SETTINGS.database_path, camera_id),
-            "available_triggers": definitions(),
+            "camera_module": camera_module,
+            "module_capabilities": module_capabilities,
+            "available_triggers": camera_module.detection_definitions() if camera_module else (),
             "active_trigger_keys": active_trigger_keys,
             "flash": _pop_flash(request),
         },
@@ -260,7 +294,11 @@ async def refresh_camera(request: Request, camera_id: int):
     if not camera:
         _set_flash(request, "Kamera wurde nicht gefunden", "error")
         return _redirect("/cameras")
-    snapshot = await _refresh_camera(camera_id)
+    try:
+        snapshot = await _refresh_camera(camera_id)
+    except UnknownCameraModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cameras/{camera_id}")
     _set_flash(request, snapshot.message, "success" if snapshot.status == "ok" else "warning")
     return _redirect(f"/cameras/{camera_id}")
 
@@ -285,6 +323,14 @@ async def update_camera_recording(
     if not camera:
         _set_flash(request, "Kamera wurde nicht gefunden", "error")
         return _redirect("/cameras")
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cameras/{camera_id}")
+    if not camera_module.supports(CameraCapability.RECORDING):
+        _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Ereignisaufnahmen", "error")
+        return _redirect(f"/cameras/{camera_id}")
     storage_id = int(recording_storage_id) if recording_storage_id else None
     database.update_camera_recording_settings(
         SETTINGS.database_path,
@@ -310,6 +356,7 @@ async def update_camera_connection(
     host: str = Form(...),
     onvif_port: int = Form(8000),
     http_port: int = Form(80),
+    rtsp_port: int = Form(554),
     username: str = Form(...),
     password: str = Form(""),
 ):
@@ -325,6 +372,7 @@ async def update_camera_connection(
         "host": host.strip(),
         "onvif_port": max(1, min(65535, int(onvif_port))),
         "http_port": max(1, min(65535, int(http_port))),
+        "rtsp_port": max(1, min(65535, int(rtsp_port))),
         "username": username.strip(),
         "password": password.strip() or None,
     }
@@ -338,6 +386,7 @@ async def update_camera_connection(
         host=str(values["host"]),
         onvif_port=int(values["onvif_port"]),
         http_port=int(values["http_port"]),
+        rtsp_port=int(values["rtsp_port"]),
         username=str(values["username"]),
         password=values["password"],
     )
@@ -528,8 +577,13 @@ async def sd_card(
     if guard:
         return guard
     user = _current_user(request)
-    cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
-    selected_camera_id = camera_id or (int(cameras[0]["id"]) if cameras else None)
+    cameras = [
+        camera
+        for camera in database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+        if _camera_supports(camera, CameraCapability.ARCHIVE)
+    ]
+    available_camera_ids = {int(camera["id"]) for camera in cameras}
+    selected_camera_id = camera_id if camera_id in available_camera_ids else (int(cameras[0]["id"]) if cameras else None)
     selected_camera = None
     channels: list[dict[str, Any]] = []
     error = None
@@ -540,7 +594,7 @@ async def sd_card(
     selected_channel = channel or 0
 
     if selected_camera_id is None:
-        error = "Keine Kamera verfügbar"
+        error = "Keine Kamera mit unterstütztem Kamera-Archiv verfügbar"
     else:
         access_guard = _require_camera_access(request, selected_camera_id)
         if access_guard:
@@ -603,6 +657,15 @@ async def sd_card_recordings_api(
     selected_camera = database.get_camera(SETTINGS.database_path, camera_id)
     if selected_camera is None:
         return JSONResponse({"error": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        camera_module = get_camera_module(selected_camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=status.HTTP_400_BAD_REQUEST)
+    if not camera_module.supports(CameraCapability.ARCHIVE):
+        return JSONResponse(
+            {"error": f"Das Modul {camera_module.label} unterstützt kein Kamera-Archiv"},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     today = date.today()
     start_date = _parse_date(date_from, today)
@@ -618,7 +681,7 @@ async def sd_card_recordings_api(
     stream_value = "sub" if stream == "sub" else "main"
 
     try:
-        recordings = await list_sd_card_recordings(
+        recordings = await camera_module.list_archive_recordings(
             selected_camera,
             channel=selected_channel,
             start=datetime.combine(start_date, time.min),
@@ -661,7 +724,16 @@ async def sd_card_media(
     if not camera:
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     try:
-        download_stream = await open_sd_card_download(
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=status.HTTP_400_BAD_REQUEST)
+    if not camera_module.supports(CameraCapability.ARCHIVE):
+        return JSONResponse(
+            {"error": f"Das Modul {camera_module.label} unterstützt kein Kamera-Archiv"},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        download_stream = await camera_module.open_archive_download(
             camera,
             channel=channel,
             source=source,
@@ -874,7 +946,8 @@ async def _refresh_camera(camera_id: int):
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if camera is None:
         raise ValueError(f"camera {camera_id} does not exist")
-    snapshot = await probe_camera(camera)
+    camera_module = get_camera_module(camera.get("module_key"))
+    snapshot = await camera_module.probe(camera)
     database.update_camera_probe(
         SETTINGS.database_path,
         camera_id,
@@ -886,14 +959,15 @@ async def _refresh_camera(camera_id: int):
         serial=snapshot.serial,
         stream_uri=snapshot.stream_uri,
     )
-    if snapshot.channels:
+    if camera_module.supports(CameraCapability.CHANNELS) and snapshot.channels:
         database.upsert_camera_channels(SETTINGS.database_path, camera_id, snapshot.channels)
     channels = database.list_camera_channels(SETTINGS.database_path, camera_id)
     detections = apply_channel_enabled_filter(snapshot.detections, channels)
     database.replace_detections(SETTINGS.database_path, camera_id, detections)
     updated_camera = database.get_camera(SETTINGS.database_path, camera_id) or camera
     asyncio.create_task(asyncio.to_thread(mqtt.publish_detection_states, SETTINGS.database_path, updated_camera, detections))
-    RECORDING_MANAGER.maybe_start_event_recordings(updated_camera, detections)
+    if camera_module.supports(CameraCapability.RECORDING):
+        RECORDING_MANAGER.maybe_start_event_recordings(updated_camera, detections)
     return snapshot
 
 
@@ -976,6 +1050,9 @@ async def start_camera_live(request: Request, camera_id: int):
     if guard:
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if camera and not _camera_supports(camera, CameraCapability.LIVE):
+        _set_flash(request, "Das Kameramodul unterstützt keine Live-Ansicht", "error")
+        return _redirect("/live")
     uri = stream_uri_for(camera) if camera else None
     if camera and not uri:
         LOGGER.info("Kein Live-Stream fuer Kamera %s bekannt, aktualisiere Kamera-Probe", camera_id)
@@ -1006,6 +1083,9 @@ async def start_channel_live(request: Request, channel_id: int):
         _set_flash(request, "Dieser Kanal ist deaktiviert", "error")
         return _redirect("/live")
     camera = database.get_camera(SETTINGS.database_path, int(channel["camera_id"]))
+    if camera and not _camera_supports(camera, CameraCapability.LIVE):
+        _set_flash(request, "Das Kameramodul unterstützt keine Live-Ansicht", "error")
+        return _redirect("/live")
     uri = stream_uri_for(camera, channel)
     if camera and not uri:
         LOGGER.info("Kein Live-Stream fuer Kanal %s bekannt, aktualisiere Kamera-Probe", channel_id)
@@ -1163,7 +1243,13 @@ async def retention_page(request: Request):
             "role": "admin",
             "rules": database.list_retention_rules(SETTINGS.database_path),
             "cameras": database.list_cameras(SETTINGS.database_path),
-            "event_keys": [definition.key for definition in definitions()],
+            "event_keys": sorted(
+                {
+                    definition.key
+                    for camera_module in list_camera_modules()
+                    for definition in camera_module.detection_definitions()
+                }
+            ),
             "flash": _pop_flash(request),
         },
     )
@@ -1406,6 +1492,8 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
     cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
     items: list[dict[str, Any]] = []
     for camera in cameras:
+        if not _camera_supports(camera, CameraCapability.LIVE):
+            continue
         camera_id = int(camera["id"])
         items.append(
             {
@@ -1484,6 +1572,13 @@ def _sd_card_recording_payload(camera_id: int, row: dict[str, Any]) -> dict[str,
     payload["media_url"] = f"/sd-card/{camera_id}/media?{urlencode({**query, 'embed': 1})}"
     payload["download_url"] = f"/sd-card/{camera_id}/media?{urlencode({**query, 'download': 1})}"
     return payload
+
+
+def _camera_supports(camera: dict[str, Any], capability: CameraCapability) -> bool:
+    try:
+        return get_camera_module(camera.get("module_key")).supports(capability)
+    except UnknownCameraModuleError:
+        return False
 
 
 def _redirect(path: str) -> RedirectResponse:

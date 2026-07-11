@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">ONVIF / Reolink</p>
+    <p class="eyebrow">Kameramodul</p>
     <h1>Kamera einbinden</h1>
   </div>
 </section>
@@ -13,6 +13,20 @@
   <div class="inline-error">{{ error }}</div>
   {% endif %}
   <div class="form-grid">
+    <label class="span-2">
+      <span>Modul</span>
+      <select name="module_key" required>
+        {% for camera_module in camera_modules %}
+        <option value="{{ camera_module.key }}"
+                data-onvif-port="{{ camera_module.default_onvif_port }}"
+                data-http-port="{{ camera_module.default_http_port }}"
+                data-rtsp-port="{{ camera_module.default_rtsp_port }}"
+                {% if values.module_key == camera_module.key %}selected{% endif %}>
+          {{ camera_module.label }} · {{ camera_module.description }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
     <label>
       <span>Name</span>
       <input name="name" value="{{ values.name }}" required autofocus>
@@ -30,6 +44,10 @@
       <input name="http_port" type="number" min="1" max="65535" value="{{ values.http_port }}" required>
     </label>
     <label>
+      <span>RTSP-Port</span>
+      <input name="rtsp_port" type="number" min="1" max="65535" value="{{ values.rtsp_port }}" required>
+    </label>
+    <label>
       <span>Benutzer</span>
       <input name="username" value="{{ values.username }}" autocomplete="username" required>
     </label>
@@ -43,5 +61,5 @@
     <button class="primary-button" type="submit">Speichern</button>
   </div>
 </form>
+<script src="{{ url_for('static', path='/camera-form.js') }}" defer></script>
 {% endblock %}
-

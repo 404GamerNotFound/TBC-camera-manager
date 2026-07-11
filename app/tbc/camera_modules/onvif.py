@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from .catalog import normalize_detection_key
+from .detections import normalize_detection_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -133,4 +133,3 @@ def _field(data: Any, name: str) -> str | None:
         return str(value) if value not in (None, "") else None
     value = getattr(data, name, None)
     return str(value) if value not in (None, "") else None
-

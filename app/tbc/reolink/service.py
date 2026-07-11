@@ -4,26 +4,13 @@ import asyncio
 import inspect
 import json
 import logging
-from dataclasses import dataclass, field
 from typing import Any
 
+from ..camera_modules.base import CameraSnapshot
+from ..camera_modules.onvif import OnvifProbe, probe_onvif
 from .catalog import DetectionDefinition, catalog_rows, definitions
-from .onvif import OnvifProbe, probe_onvif
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class CameraSnapshot:
-    status: str
-    message: str
-    manufacturer: str | None = None
-    model: str | None = None
-    firmware: str | None = None
-    serial: str | None = None
-    stream_uri: str | None = None
-    detections: list[dict[str, Any]] = field(default_factory=list)
-    channels: list[dict[str, Any]] = field(default_factory=list)
 
 
 async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:
