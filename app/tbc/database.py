@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS cameras (
     snapshot_enabled INTEGER NOT NULL DEFAULT 1,
     recording_storage_id INTEGER,
     recording_last_started_at TEXT,
+    continuous_recording_enabled INTEGER NOT NULL DEFAULT 0,
+    continuous_segment_seconds INTEGER NOT NULL DEFAULT 300,
+    continuous_storage_id INTEGER,
     last_probe_at TEXT,
     last_probe_status TEXT,
     last_probe_message TEXT,
@@ -245,6 +248,9 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE cameras ADD COLUMN performance_net_throughput INTEGER",
     "ALTER TABLE storage_targets ADD COLUMN retention_days INTEGER",
     "ALTER TABLE storage_targets ADD COLUMN retention_max_gb REAL",
+    "ALTER TABLE cameras ADD COLUMN continuous_recording_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE cameras ADD COLUMN continuous_segment_seconds INTEGER NOT NULL DEFAULT 300",
+    "ALTER TABLE cameras ADD COLUMN continuous_storage_id INTEGER",
 )
 
 
@@ -760,6 +766,33 @@ def update_camera_recording_settings(
             )
 
 
+def update_camera_continuous_settings(
+    database_path: str,
+    camera_id: int,
+    *,
+    continuous_recording_enabled: bool,
+    continuous_segment_seconds: int,
+    continuous_storage_id: int | None,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cameras
+               SET continuous_recording_enabled = ?,
+                   continuous_segment_seconds = ?,
+                   continuous_storage_id = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (
+                1 if continuous_recording_enabled else 0,
+                continuous_segment_seconds,
+                continuous_storage_id,
+                camera_id,
+            ),
+        )
+
+
 def list_camera_recording_triggers(database_path: str, camera_id: int) -> list[str]:
     with connect(database_path) as db:
         rows = db.execute(
@@ -873,6 +906,83 @@ def update_recording_finished(
         )
 
 
+def create_continuous_recording(
+    database_path: str,
+    *,
+    camera_id: int,
+    storage_id: int,
+    storage_kind: str,
+    file_name: str,
+    local_path: str | None,
+    remote_key: str | None,
+    duration_seconds: int,
+    size_bytes: int,
+    started_at: str,
+    ended_at: str,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO recordings (
+                camera_id, storage_id, detection_key, event_label, status, storage_kind,
+                file_name, local_path, remote_key, duration_seconds, size_bytes,
+                started_at, ended_at
+            )
+            VALUES (?, ?, 'continuous', 'Daueraufzeichnung', 'ready', ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                camera_id,
+                storage_id,
+                storage_kind,
+                file_name,
+                local_path,
+                remote_key,
+                duration_seconds,
+                size_bytes,
+                started_at,
+                ended_at,
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_continuous_file_names(database_path: str, camera_id: int, limit: int = 3000) -> list[str]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT file_name
+              FROM recordings
+             WHERE camera_id = ? AND detection_key = 'continuous' AND file_name IS NOT NULL
+             ORDER BY id DESC
+             LIMIT ?
+            """,
+            (camera_id, limit),
+        ).fetchall()
+    return [str(row["file_name"]) for row in rows]
+
+
+def list_recordings_for_range(
+    database_path: str,
+    *,
+    camera_id: int,
+    start_at: str,
+    end_at: str,
+) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT r.*, c.name AS camera_name
+              FROM recordings r
+              JOIN cameras c ON c.id = r.camera_id
+             WHERE r.camera_id = ? AND r.status = 'ready'
+               AND r.started_at >= ? AND r.started_at < ?
+             ORDER BY r.started_at ASC, r.id ASC
+            """,
+            (camera_id, start_at, end_at),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute(
@@ -909,6 +1019,8 @@ def list_recordings(
     if detection_key:
         filters.append("r.detection_key = ?")
         params.append(detection_key)
+    else:
+        filters.append("r.detection_key != 'continuous'")
     if date_from:
         filters.append("r.started_at >= ?")
         params.append(date_from)

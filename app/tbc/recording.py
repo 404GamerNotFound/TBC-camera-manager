@@ -18,6 +18,8 @@ from .notifications import notify_event
 
 LOGGER = logging.getLogger(__name__)
 PREBUFFER_ROOT = Path("/tmp/tbc-prebuffer")
+CONTINUOUS_ROOT = Path("/tmp/tbc-continuous")
+_SEGMENT_NAME_RE = re.compile(r"_(\d{8}T\d{6})\.mp4$")
 
 
 @dataclass(frozen=True)
@@ -253,6 +255,222 @@ class RecordingManager:
         if last_started is None:
             return False
         return datetime.utcnow() < last_started + timedelta(seconds=max(0, cooldown_seconds))
+
+
+class ContinuousRecordingManager:
+    """Runs a 24/7 ffmpeg segmenter per camera and registers finished chunks as recordings."""
+
+    def __init__(self, database_path: str) -> None:
+        self.database_path = database_path
+        self._processes: dict[int, subprocess.Popen] = {}
+        self._fingerprints: dict[int, tuple[Any, ...]] = {}
+        self._last_start: dict[int, datetime] = {}
+        self._known_files: dict[int, set[str]] = {}
+
+    def sync(self, cameras: list[dict[str, Any]]) -> None:
+        active_ids: set[int] = set()
+        for camera in cameras:
+            if int(camera.get("enabled") or 0) != 1:
+                continue
+            if int(camera.get("continuous_recording_enabled") or 0) != 1:
+                continue
+            if not camera.get("stream_uri"):
+                continue
+            camera_id = int(camera["id"])
+            active_ids.add(camera_id)
+            try:
+                self._ensure_process(camera)
+                self._collect_segments(camera)
+            except Exception:
+                LOGGER.exception("Continuous recording sync failed for camera %s", camera_id)
+
+        for camera_id in list(self._processes):
+            if camera_id in active_ids:
+                continue
+            self._stop_process(camera_id)
+            camera = database.get_camera(self.database_path, camera_id)
+            if camera is not None:
+                try:
+                    self._collect_segments(camera, include_latest=True)
+                except Exception:
+                    LOGGER.exception("Failed to finalize continuous segments for camera %s", camera_id)
+            self._known_files.pop(camera_id, None)
+
+    def _ensure_process(self, camera: dict[str, Any]) -> None:
+        camera_id = int(camera["id"])
+        segment_seconds = max(60, min(1800, int(camera.get("continuous_segment_seconds") or 300)))
+        fingerprint = (camera["stream_uri"], segment_seconds)
+
+        existing = self._processes.get(camera_id)
+        if existing is not None:
+            if existing.poll() is None and self._fingerprints.get(camera_id) == fingerprint:
+                return
+            self._stop_process(camera_id)
+
+        last_start = self._last_start.get(camera_id)
+        if last_start and datetime.utcnow() < last_start + timedelta(seconds=5):
+            return
+        if shutil.which("ffmpeg") is None:
+            return
+
+        work_dir = CONTINUOUS_ROOT / str(camera_id)
+        work_dir.mkdir(parents=True, exist_ok=True)
+        pattern = work_dir / f"{_slug(str(camera['name']))}_%Y%m%dT%H%M%S.mp4"
+        command = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-rtsp_transport",
+            "tcp",
+            "-i",
+            str(camera["stream_uri"]),
+            "-an",
+            "-c",
+            "copy",
+            "-f",
+            "segment",
+            "-segment_time",
+            str(segment_seconds),
+            "-reset_timestamps",
+            "1",
+            "-strftime",
+            "1",
+            "-segment_format_options",
+            "movflags=+faststart",
+            str(pattern),
+        ]
+        try:
+            self._processes[camera_id] = subprocess.Popen(
+                command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            self._fingerprints[camera_id] = fingerprint
+            self._last_start[camera_id] = datetime.utcnow()
+        except Exception:
+            LOGGER.exception("Failed to start continuous recording for camera %s", camera_id)
+
+    def _stop_process(self, camera_id: int) -> None:
+        process = self._processes.pop(camera_id, None)
+        self._fingerprints.pop(camera_id, None)
+        if process and process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=8)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=8)
+
+    def _known_file_set(self, camera_id: int) -> set[str]:
+        if camera_id not in self._known_files:
+            self._known_files[camera_id] = set(
+                database.list_continuous_file_names(self.database_path, camera_id)
+            )
+        return self._known_files[camera_id]
+
+    def _collect_segments(self, camera: dict[str, Any], *, include_latest: bool = False) -> None:
+        camera_id = int(camera["id"])
+        work_dir = CONTINUOUS_ROOT / str(camera_id)
+        if not work_dir.exists():
+            return
+        files = sorted((path for path in work_dir.glob("*.mp4") if path.is_file()), key=lambda path: path.name)
+        if not files:
+            return
+        finished = files if include_latest else files[:-1]
+        if not finished:
+            return
+
+        known = self._known_file_set(camera_id)
+        storage_id = camera.get("continuous_storage_id")
+        storage_target = (
+            database.get_storage_target(self.database_path, int(storage_id))
+            if storage_id
+            else _first_storage_target(self.database_path)
+        )
+
+        for segment_path in finished:
+            if segment_path.name in known:
+                segment_path.unlink(missing_ok=True)
+                continue
+            self._register_segment(camera, segment_path, storage_target, camera.get("continuous_segment_seconds"))
+            known.add(segment_path.name)
+
+    def _register_segment(
+        self,
+        camera: dict[str, Any],
+        segment_path: Path,
+        storage_target: dict[str, Any] | None,
+        default_duration: int | None,
+    ) -> None:
+        camera_id = int(camera["id"])
+        match = _SEGMENT_NAME_RE.search(segment_path.name)
+        if not match or storage_target is None or segment_path.stat().st_size == 0:
+            segment_path.unlink(missing_ok=True)
+            return
+        try:
+            started_at = datetime.strptime(match.group(1), "%Y%m%dT%H%M%S")
+        except ValueError:
+            segment_path.unlink(missing_ok=True)
+            return
+
+        duration_seconds = _probe_duration(segment_path) or max(1, int(default_duration or 300))
+        size_bytes = segment_path.stat().st_size
+        ended_at = started_at + timedelta(seconds=duration_seconds)
+        target_is_s3 = storage_target["kind"] == "s3"
+        local_path: str | None = None
+        remote_key: str | None = None
+
+        try:
+            if target_is_s3:
+                remote_key = _upload_to_s3(segment_path, storage_target)
+                segment_path.unlink(missing_ok=True)
+            else:
+                local_base = Path(storage_target.get("local_path") or "/recordings") / "continuous" / str(camera_id)
+                local_base.mkdir(parents=True, exist_ok=True)
+                destination = local_base / segment_path.name
+                shutil.move(str(segment_path), str(destination))
+                local_path = str(destination)
+            database.create_continuous_recording(
+                self.database_path,
+                camera_id=camera_id,
+                storage_id=int(storage_target["id"]),
+                storage_kind=str(storage_target["kind"]),
+                file_name=segment_path.name,
+                local_path=local_path,
+                remote_key=remote_key,
+                duration_seconds=duration_seconds,
+                size_bytes=size_bytes,
+                started_at=started_at.isoformat(timespec="seconds"),
+                ended_at=ended_at.isoformat(timespec="seconds"),
+            )
+        except Exception:
+            LOGGER.exception("Failed to register continuous segment %s for camera %s", segment_path, camera_id)
+
+
+def _probe_duration(path: Path) -> int | None:
+    if shutil.which("ffprobe") is None:
+        return None
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                str(path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        return max(1, int(float(result.stdout.strip())))
+    except Exception:
+        return None
 
 
 def _record_clip(job: RecordingJob, active: ActiveRecording) -> dict[str, Any]:

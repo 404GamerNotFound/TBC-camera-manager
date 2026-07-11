@@ -18,7 +18,7 @@
       {% if username %}
       {% set path = request.url.path %}
       {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') %}
-      {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') %}
+      {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
       {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/camera-modules') %}
@@ -51,6 +51,12 @@
                 Archiv
               </button>
               <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="/timeline">
+                    <span class="nav-shortcut" aria-hidden="true">T</span>
+                    <span>Timeline</span>
+                  </a>
+                </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="/recordings">
                     <span class="nav-shortcut" aria-hidden="true">C</span>

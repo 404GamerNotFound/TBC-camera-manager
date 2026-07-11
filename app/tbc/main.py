@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode, urlsplit
+
+from markupsafe import Markup
 
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
@@ -37,7 +40,7 @@ from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
-from .recording import RecordingManager, delete_recording_files, presigned_url
+from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
 from .reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
 
@@ -56,7 +59,11 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
+templates.env.filters["tojson"] = lambda value: Markup(
+    json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+)
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
+CONTINUOUS_RECORDING_MANAGER = ContinuousRecordingManager(SETTINGS.database_path)
 LIVE_MANAGER = LiveManager(SETTINGS.live_path)
 SNAPSHOT_MANAGER = DashboardSnapshotManager(
     SETTINGS.dashboard_snapshots_path,
@@ -78,6 +85,7 @@ async def startup() -> None:
     asyncio.create_task(_health_loop())
     asyncio.create_task(_cleanup_loop())
     asyncio.create_task(_snapshot_loop())
+    asyncio.create_task(_continuous_recording_loop())
 
 
 @app.get("/healthz")
@@ -419,6 +427,41 @@ async def update_camera_recording(
     return _redirect(f"/cameras/{camera_id}")
 
 
+@app.post("/cameras/{camera_id}/continuous-recording")
+async def update_camera_continuous_recording(
+    request: Request,
+    camera_id: int,
+    continuous_segment_seconds: int = Form(300),
+    continuous_storage_id: str = Form(""),
+    continuous_recording_enabled: str | None = Form(None),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        return _redirect("/cameras")
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cameras/{camera_id}")
+    if not camera_module.supports(CameraCapability.RECORDING):
+        _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Daueraufzeichnung", "error")
+        return _redirect(f"/cameras/{camera_id}")
+    storage_id = int(continuous_storage_id) if continuous_storage_id else None
+    database.update_camera_continuous_settings(
+        SETTINGS.database_path,
+        camera_id,
+        continuous_recording_enabled=continuous_recording_enabled == "on",
+        continuous_segment_seconds=max(60, min(1800, int(continuous_segment_seconds))),
+        continuous_storage_id=storage_id,
+    )
+    _set_flash(request, "Daueraufzeichnung wurde gespeichert")
+    return _redirect(f"/cameras/{camera_id}#recording")
+
+
 @app.post("/cameras/{camera_id}/connection")
 async def update_camera_connection(
     request: Request,
@@ -661,6 +704,62 @@ async def recordings(
                 "date_from": date_from or "",
                 "date_to": date_to or "",
             },
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/timeline", response_class=HTMLResponse)
+async def timeline_view(
+    request: Request,
+    camera_id: int | None = Query(None),
+    day: str | None = Query(None),
+):
+    guard = _require_login(request)
+    if guard:
+        return guard
+    user = _current_user(request)
+    cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    available_camera_ids = {int(camera["id"]) for camera in cameras}
+    selected_camera_id = camera_id if camera_id in available_camera_ids else (int(cameras[0]["id"]) if cameras else None)
+    selected_day = _parse_date(day, date.today())
+
+    selected_camera = None
+    timeline_segments: list[dict[str, Any]] = []
+    timeline_events: list[dict[str, Any]] = []
+    if selected_camera_id is not None:
+        access_guard = _require_camera_access(request, selected_camera_id)
+        if access_guard:
+            return access_guard
+        selected_camera = database.get_camera(SETTINGS.database_path, selected_camera_id)
+        start_at = f"{selected_day.isoformat()}T00:00:00"
+        end_at = f"{(selected_day + timedelta(days=1)).isoformat()}T00:00:00"
+        rows = database.list_recordings_for_range(
+            SETTINGS.database_path,
+            camera_id=selected_camera_id,
+            start_at=start_at,
+            end_at=end_at,
+        )
+        timeline_segments = _timeline_payload(row for row in rows if row["detection_key"] == "continuous")
+        timeline_events = _timeline_payload(row for row in rows if row["detection_key"] != "continuous")
+
+    return templates.TemplateResponse(
+        request,
+        "timeline.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": user["role"],
+            "cameras": cameras,
+            "selected_camera": selected_camera,
+            "selected_camera_id": selected_camera_id,
+            "selected_day": selected_day.isoformat(),
+            "prev_day": (selected_day - timedelta(days=1)).isoformat(),
+            "next_day": (selected_day + timedelta(days=1)).isoformat(),
+            "today": date.today().isoformat(),
+            "is_today": selected_day == date.today(),
+            "timeline_data": {"segments": timeline_segments, "events": timeline_events, "day": selected_day.isoformat()},
+            "has_segments": bool(timeline_segments or timeline_events),
             "flash": _pop_flash(request),
         },
     )
@@ -1434,7 +1533,8 @@ async def retention_page(request: Request):
             "role": "admin",
             "rules": database.list_retention_rules(SETTINGS.database_path),
             "cameras": database.list_cameras(SETTINGS.database_path),
-            "event_keys": sorted(
+            "event_keys": ["continuous"]
+            + sorted(
                 {
                     definition.key
                     for camera_module in list_camera_modules()
@@ -1681,6 +1781,17 @@ async def _cleanup_loop() -> None:
         await asyncio.sleep(3600)
 
 
+async def _continuous_recording_loop() -> None:
+    await asyncio.sleep(8)
+    while True:
+        try:
+            cameras = database.list_cameras(SETTINGS.database_path)
+            await asyncio.to_thread(CONTINUOUS_RECORDING_MANAGER.sync, cameras)
+        except Exception:
+            LOGGER.exception("Continuous recording sync failed")
+        await asyncio.sleep(20)
+
+
 def _is_logged_in(request: Request) -> bool:
     return bool(request.session.get("user_id"))
 
@@ -1742,6 +1853,25 @@ def _authorized_recording(request: Request, recording_id: int) -> dict[str, Any]
     ):
         return None
     return recording
+
+
+def _timeline_payload(rows: Any) -> list[dict[str, Any]]:
+    payload = []
+    for row in rows:
+        has_snapshot = bool(row.get("snapshot_path") or row.get("snapshot_remote_key"))
+        payload.append(
+            {
+                "id": int(row["id"]),
+                "start": row["started_at"],
+                "end": row.get("ended_at") or row["started_at"],
+                "duration": int(row.get("duration_seconds") or 0),
+                "detection_key": row["detection_key"],
+                "label": row["event_label"],
+                "media_url": f"/recordings/{row['id']}/media",
+                "snapshot_url": f"/recordings/{row['id']}/snapshot" if has_snapshot else None,
+            }
+        )
+    return payload
 
 
 def _require_live_key_access(request: Request, live_key: str):
