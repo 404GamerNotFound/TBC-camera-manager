@@ -34,6 +34,10 @@ DIRECT_TOKEN_MAP: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("face", ("face",)),
     ("cry", ("cry", "babycry", "baby cry")),
     ("io_input", ("ioinput", "io input", "alarm input")),
+    ("line_crossing", ("line crossing", "linecrossing", "tripwire")),
+    ("presence", ("presence", "occupancy", "occupied")),
+    ("tamper", ("tamper", "video loss", "signal loss")),
+    ("sound", ("sound detected", "audio detection", "sound detection")),
     ("sleep", ("sleep", "sleeping")),
     ("motion", ("motion", "cellmotion", "motiondetector", "ismotion")),
 )

@@ -33,6 +33,8 @@ class DetectionCatalogTests(unittest.TestCase):
         self.assertEqual(normalize_detection_key(["Smart", "CrossLine", "Vehicle"]), "crossline_vehicle")
         self.assertEqual(normalize_detection_key(["Doorbell", "Visitor"]), "visitor")
         self.assertEqual(normalize_detection_key(["Legacy", "Left Item"]), "forgotten_item")
+        self.assertEqual(normalize_detection_key(["RuleEngine", "Occupancy"]), "presence")
+        self.assertEqual(normalize_detection_key(["VideoSource", "Tamper"]), "tamper")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # TBC - TB Camera
 
-TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink sowie TP-Link/Tapo sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
+TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink, TP-Link/Tapo, Aqara und ein herstellerneutraler Standard-ONVIF-Fallback sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
 
 ## Start
 
@@ -62,6 +62,10 @@ Die Weboberfläche und die zentralen Kamera-Routen greifen nur auf eine herstell
 Bestehende Datenbanken werden automatisch migriert; vorhandene Kameras erhalten das Modul `reolink`. Die technische Anleitung zur Entwicklung zusätzlicher Module steht in [docs/camera-modules.md](docs/camera-modules.md).
 
 Das eingebaute Modul `tplink` unterstützt TP-Link/Tapo-Kameras über ONVIF Profile S und RTSP. Beim Auswählen werden ONVIF-Port `2020` und RTSP-Port `554` vorbelegt. Als Stream werden `/stream1` und die in TBC gespeicherten separaten Kamera-Zugangsdaten verwendet. Live-Ansicht und ONVIF-Funktionserkennung sind aktiviert; Reolink-spezifisches SD-Karten-Archiv, NVR-Kanäle und ereignisgesteuerte Aufnahmen werden für dieses Modul nicht angeboten.
+
+Das Modul `standard_onvif` ist der Fallback für weitere Hersteller. Es verwendet ausschließlich die vom Gerät gemeldeten ONVIF-Informationen, RTSP-Medienprofile und Event-Definitionen. Das Modul konstruiert keine herstellerspezifischen Streampfade.
+
+Das Modul `aqara` prüft ONVIF-kompatible Aqara-Kameras standardmäßig auf Port `5000` und zusätzlich den lokalen Aqara-RTSP-Kanal `/ch1` auf Port `8554`. Bei der Video-Türklingel G410 muss die kabelgebundene Stromversorgung sowie „RTSP LAN Preview“ aktiv sein; Host, Benutzer und Passwort werden aus der Aqara-App übernommen. Die ältere G4 bietet offiziell keinen lokalen RTSP-Stream und wird deshalb ohne erreichbaren Stream als nicht unterstützt gemeldet. Aqara-Cloud-, HomeKit- und proprietäre Archivzugriffe sind nicht Bestandteil des Moduls.
 
 ## Aufnahmen
 

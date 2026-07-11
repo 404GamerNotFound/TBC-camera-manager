@@ -51,7 +51,10 @@ class CameraPluginPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as external_path:
             packages = discover_plugin_packages(external_path)
 
-        self.assertEqual([package.manifest.key for package in packages], ["reolink", "tplink"])
+        self.assertEqual(
+            [package.manifest.key for package in packages],
+            ["aqara", "reolink", "standard_onvif", "tplink"],
+        )
         for package in packages:
             archive = export_plugin_archive(package)
             with zipfile.ZipFile(BytesIO(archive)) as bundle:

@@ -1,6 +1,6 @@
 # Kamera-Module entwickeln
 
-TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink` und `tplink` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
+TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink`, `tplink`, `standard_onvif` und `aqara` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
 
 ## Plugin-Datei
 
@@ -30,7 +30,7 @@ acme-camera-plugin.zip
 }
 ```
 
-Die eingebauten Konfigurationen befinden sich unter `app/tbc/camera_plugins/reolink/` und `app/tbc/camera_plugins/tplink/`. Dort liegen auch die jeweiligen `detections.json`-Dateien.
+Die eingebauten Konfigurationen befinden sich unter `app/tbc/camera_plugins/`. Dort liegen auch die jeweiligen `detections.json`-Dateien für Reolink, TP-Link/Tapo, Standard ONVIF und Aqara.
 
 ## Öffentlicher Vertrag
 
@@ -82,4 +82,4 @@ Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Recht
 - `CHANNELS`: Das Modul unterstützt mehrere Kamera- oder NVR-Kanäle.
 - `ARCHIVE`: Das Modul implementiert Suche, Wiedergabe und Download des Kamera-Archivs.
 
-Das Reolink-Modul liegt unter `app/tbc/reolink/`, das TP-Link/Tapo-Modul unter `app/tbc/tplink/`. Ihre jeweiligen Adapter `module.py` sind die einzigen herstellerspezifischen Einstiegspunkte, die die Registry verwendet.
+Die Implementierungen liegen in den Herstellerpaketen `reolink/`, `tplink/`, `standard_onvif/` und `aqara/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet.

@@ -1,0 +1,11 @@
+[
+  {"key":"motion","label":"Bewegung","category":"Basis"},
+  {"key":"person","label":"Person","category":"KI-Erkennung"},
+  {"key":"face","label":"Gesicht","category":"KI-Erkennung"},
+  {"key":"pet","label":"Haustier","category":"KI-Erkennung"},
+  {"key":"package","label":"Paket","category":"Türklingel"},
+  {"key":"visitor","label":"Klingeln / Besucher","category":"Türklingel"},
+  {"key":"linger_person","label":"Verweilen","category":"Türklingel"},
+  {"key":"presence","label":"Anwesenheit","category":"Türklingel"},
+  {"key":"sound","label":"Geräuscherkennung","category":"Audio"}
+]

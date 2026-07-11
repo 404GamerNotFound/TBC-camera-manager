@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 import logging
 from dataclasses import dataclass, field
@@ -75,8 +76,27 @@ def probe_onvif(
         return OnvifProbe(False, f"ONVIF-Bibliothek ist nicht installiert: {exc}")
 
     try:
-        camera = ONVIFCamera(host, port, username, password, no_cache=True, encrypt=False)
-        camera.update_xaddrs()
+        camera_options = {
+            "no_cache": True,
+            "encrypt": True,
+            "adjust_time": True,
+            "event_pullpoint": False,
+            "override_camera_address": True,
+        }
+        parameters = inspect.signature(ONVIFCamera).parameters
+        accepts_options = any(parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in parameters.values())
+        supported_options = {
+            key: value
+            for key, value in camera_options.items()
+            if accepts_options or key in parameters
+        }
+        camera = ONVIFCamera(
+            host,
+            port,
+            username,
+            password,
+            **supported_options,
+        )
         device_service = camera.create_devicemgmt_service()
         info = device_service.GetDeviceInformation()
         info_data = _serialize(info)
@@ -124,7 +144,7 @@ def probe_onvif(
             raw_events=raw_events,
         )
     except Exception as exc:
-        return OnvifProbe(False, f"ONVIF-Verbindung fehlgeschlagen: {exc}")
+        return OnvifProbe(False, _friendly_error(exc))
 
 
 def _field(data: Any, name: str) -> str | None:
@@ -133,3 +153,10 @@ def _field(data: Any, name: str) -> str | None:
         return str(value) if value not in (None, "") else None
     value = getattr(data, name, None)
     return str(value) if value not in (None, "") else None
+
+
+def _friendly_error(exc: Exception) -> str:
+    message = str(exc)
+    if "authority failure" in message.lower() or "notauthorized" in message.lower():
+        return "ONVIF-Anmeldung abgelehnt: Kamera-Benutzer, Passwort und Kamerazeit prüfen"
+    return f"ONVIF-Verbindung fehlgeschlagen: {message}"

@@ -63,7 +63,10 @@ class CameraModuleTests(unittest.TestCase):
         with patch.object(registry.metadata, "entry_points", return_value=FakeEntryPoints([FakeEntryPoint()])):
             modules = registry.list_camera_modules()
 
-        self.assertEqual([module.key for module in modules], ["reolink", "tplink", "acme"])
+        self.assertEqual(
+            [module.key for module in modules],
+            ["aqara", "reolink", "standard_onvif", "tplink", "acme"],
+        )
         self.assertTrue(registry.get_camera_module("acme").supports(CameraCapability.LIVE))
 
     def test_reolink_declares_current_application_features(self):
@@ -81,6 +84,16 @@ class CameraModuleTests(unittest.TestCase):
         self.assertTrue(module.supports(CameraCapability.DETECTIONS))
         self.assertFalse(module.supports(CameraCapability.ARCHIVE))
         self.assertFalse(module.supports(CameraCapability.RECORDING))
+
+    def test_standard_onvif_and_aqara_modules_are_available(self):
+        standard = registry.get_camera_module("standard_onvif")
+        aqara = registry.get_camera_module("aqara")
+
+        self.assertEqual(standard.default_onvif_port, 80)
+        self.assertTrue(standard.supports(CameraCapability.LIVE))
+        self.assertEqual(aqara.default_onvif_port, 5000)
+        self.assertEqual(aqara.default_rtsp_port, 8554)
+        self.assertFalse(aqara.supports(CameraCapability.ARCHIVE))
 
 
 if __name__ == "__main__":

@@ -1640,6 +1640,8 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
     has_stream = bool(item.get("stream_uri"))
     live_status = LIVE_MANAGER.status(live_key) if has_stream else "missing"
     message = LIVE_MANAGER.message(live_key)
+    if live_status == "running" and message.startswith("Starte Live-Stream"):
+        message = ""
     if not has_stream and not message:
         message = "Kein Stream fuer Live-Ansicht bekannt"
     return {
