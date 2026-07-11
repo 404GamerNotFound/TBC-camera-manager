@@ -42,6 +42,9 @@ class CameraModuleTests(unittest.TestCase):
                     .replace("    module_key TEXT NOT NULL DEFAULT 'reolink',\n", "")
                     .replace("    rtsp_port INTEGER NOT NULL DEFAULT 554,\n", "")
                     .replace("    manual_stream_uri TEXT,\n", "")
+                    .replace("    performance_cpu REAL,\n", "")
+                    .replace("    performance_codec_rate INTEGER,\n", "")
+                    .replace("    performance_net_throughput INTEGER,\n", "")
                 )
             database.initialize(handle.name)
             camera_id = database.create_camera(
@@ -59,6 +62,7 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(camera["module_key"], "reolink")
         self.assertEqual(camera["rtsp_port"], 554)
         self.assertIsNone(camera["manual_stream_uri"])
+        self.assertIsNone(camera["performance_cpu"])
 
     def test_registry_loads_installed_entry_point_module(self):
         registry.reload_camera_modules()
@@ -70,6 +74,32 @@ class CameraModuleTests(unittest.TestCase):
             ["aqara", "reolink", "rtsp_only", "sonoff", "standard_onvif", "tplink", "ubiquiti", "acme"],
         )
         self.assertTrue(registry.get_camera_module("acme").supports(CameraCapability.LIVE))
+
+    def test_camera_probe_persists_optional_performance_metrics(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Einfahrt",
+                host="192.0.2.10",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+
+            database.update_camera_probe(
+                handle.name,
+                camera_id,
+                status="ok",
+                message="Performance gelesen",
+                metrics={"cpu_used": 27, "codec_rate": 6794, "net_throughput": 42},
+            )
+            camera = database.get_camera(handle.name, camera_id)
+
+        self.assertEqual(camera["performance_cpu"], 27)
+        self.assertEqual(camera["performance_codec_rate"], 6794)
+        self.assertEqual(camera["performance_net_throughput"], 42)
 
     def test_reolink_declares_current_application_features(self):
         module = registry.get_camera_module("reolink")

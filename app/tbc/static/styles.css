@@ -805,6 +805,11 @@ dd {
   margin-bottom: 18px;
 }
 
+.camera-detail-heading h1 {
+  font-size: clamp(2.3rem, 5vw, 4.4rem);
+  line-height: 1.03;
+}
+
 .camera-heading-status {
   display: flex;
   align-items: center;
@@ -886,6 +891,100 @@ dd {
 
 .detection-section {
   margin-top: 0;
+}
+
+.overview-metrics {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.35fr) repeat(4, minmax(145px, 1fr));
+  gap: 1px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--line);
+}
+
+.overview-metric {
+  display: flex;
+  min-height: 118px;
+  padding: 18px;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--surface);
+}
+
+.overview-metric > span,
+.overview-metric small {
+  color: var(--muted);
+}
+
+.overview-metric > span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.overview-metric strong {
+  margin: 5px 0 2px;
+  font-size: 1.35rem;
+  overflow-wrap: anywhere;
+}
+
+.overview-metric-device strong {
+  color: var(--brand-strong);
+}
+
+.overview-metric .overview-metric-time {
+  font-size: 0.95rem;
+}
+
+.metric-unavailable {
+  color: var(--muted);
+}
+
+.metric-bar {
+  height: 5px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.metric-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ok);
+}
+
+.event-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trigger-actions {
+  justify-content: flex-end;
+  margin: -35px 0 14px;
+}
+
+.trigger-actions .text-button {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.78rem;
+}
+
+.event-trigger {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  background: rgba(17, 97, 92, 0.1);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .stream-line {
@@ -1369,6 +1468,14 @@ tr:last-child td {
 }
 
 @media (max-width: 1199.98px) {
+  .overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-metric-device {
+    grid-column: span 2;
+  }
+
   .app-nav-container {
     align-items: center;
   }
@@ -1460,5 +1567,18 @@ tr:last-child td {
 
   .detail-tabs button {
     flex: 1 0 auto;
+  }
+
+  .overview-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-metric-device {
+    grid-column: auto;
+  }
+
+  .trigger-actions {
+    justify-content: flex-start;
+    margin: 0 0 14px;
   }
 }

@@ -18,6 +18,17 @@ class FakeReolinkHost:
         return "rtsp://example/main"
 
 
+class FakePerformanceHost:
+    async def send(self, body):
+        return [
+            {
+                "cmd": "GetPerformance",
+                "code": 0,
+                "value": {"Performance": {"cpuUsed": 27, "codecRate": 6794, "netThroughput": 42}},
+            }
+        ]
+
+
 class FakeBaichuan:
     def __init__(self):
         self.callback = None
@@ -75,6 +86,21 @@ class ReolinkServiceTests(unittest.IsolatedAsyncioTestCase):
     async def test_host_hint_flags_common_192_169_typo(self):
         self.assertIn("192.168", service._host_hint("192.169.1.236"))
         self.assertIsNone(service._host_hint("192.168.1.236"))
+
+    async def test_performance_metrics_are_normalized(self):
+        metrics = await service._performance_metrics(FakePerformanceHost())
+
+        self.assertEqual(
+            metrics,
+            {"cpu_used": 27, "codec_rate": 6794, "net_throughput": 42},
+        )
+
+    async def test_performance_metrics_are_optional(self):
+        class UnsupportedHost:
+            async def send(self, body):
+                return [{"cmd": "GetPerformance", "code": 1}]
+
+        self.assertEqual(await service._performance_metrics(UnsupportedHost()), {})
 
     async def test_event_monitor_forwards_tcp_push_state_and_cleans_up(self):
         api_module = types.ModuleType("reolink_aio.api")

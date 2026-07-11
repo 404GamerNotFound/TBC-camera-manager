@@ -26,6 +26,7 @@ class CameraSnapshot:
     stream_uri: str | None = None
     detections: list[dict[str, Any]] = field(default_factory=list)
     channels: list[dict[str, Any]] = field(default_factory=list)
+    metrics: dict[str, int | float] = field(default_factory=dict)
 
 
 class ModuleFeatureUnsupported(RuntimeError):

@@ -31,4 +31,16 @@
   });
 
   activate(location.hash.slice(1), false);
+
+  const triggerFieldset = document.querySelector("[data-trigger-fieldset]");
+  if (triggerFieldset) {
+    triggerFieldset.querySelectorAll("[data-trigger-selection]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const checked = button.dataset.triggerSelection === "all";
+        triggerFieldset.querySelectorAll('input[name="trigger_keys"]').forEach((input) => {
+          input.checked = checked;
+        });
+      });
+    });
+  }
 })();

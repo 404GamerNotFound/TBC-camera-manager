@@ -65,6 +65,7 @@ def _merge_snapshots(camera: dict[str, Any], onvif_probe: OnvifProbe, reolink_sn
         or (onvif_probe.stream_uris[0] if onvif_probe.stream_uris else None),
         detections=detections,
         channels=reolink_snapshot.channels if reolink_snapshot else [],
+        metrics=reolink_snapshot.metrics if reolink_snapshot else {},
     )
 
 
@@ -92,6 +93,7 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
     try:
         await _call_if_available(host_api, "get_host_data")
         await _call_if_available(host_api, "get_states")
+        metrics = await _performance_metrics(host_api)
 
         channels = list(getattr(host_api, "channels", None) or [0])
         detections: list[dict[str, Any]] = []
@@ -124,6 +126,7 @@ async def _probe_reolink(camera: dict[str, Any]) -> CameraSnapshot | None:
             stream_uri=stream_uri,
             detections=detections,
             channels=channel_rows,
+            metrics=metrics,
         )
     except Exception as exc:
         LOGGER.info("Reolink probe failed for %s: %s", camera["host"], exc)
@@ -228,6 +231,42 @@ async def monitor_events(camera: dict[str, Any], callback: DetectionCallback) ->
                 await _call_if_available(host_api, close_method)
             except Exception:
                 LOGGER.debug("Reolink event connection close failed", exc_info=True)
+
+
+async def _performance_metrics(host_api: Any) -> dict[str, int | float]:
+    """Read optional Reolink device performance counters.
+
+    GetPerformance is not implemented by every model/firmware. An unsupported
+    or malformed response is therefore treated as unavailable telemetry and
+    must never fail the normal camera probe.
+    """
+    try:
+        response = await _call_if_available(host_api, "send", [{"cmd": "GetPerformance"}])
+    except Exception:
+        LOGGER.debug("Reolink GetPerformance failed", exc_info=True)
+        return {}
+    if not isinstance(response, list) or not response:
+        return {}
+    first = response[0]
+    if not isinstance(first, dict) or first.get("code") != 0:
+        return {}
+    value = first.get("value")
+    performance = value.get("Performance") if isinstance(value, dict) else None
+    if not isinstance(performance, dict):
+        return {}
+
+    fields = {
+        "cpu_used": "cpuUsed",
+        "codec_rate": "codecRate",
+        "net_throughput": "netThroughput",
+    }
+    metrics: dict[str, int | float] = {}
+    for target, source in fields.items():
+        raw = performance.get(source)
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            continue
+        metrics[target] = raw
+    return metrics
 
 
 def _channel_rows(host_api: Any, channel: int, *, multiple_channels: bool) -> list[dict[str, Any]]:

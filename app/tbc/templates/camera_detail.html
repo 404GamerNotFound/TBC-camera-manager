@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set event_type_labels = {
+  'recording_started': 'Aufnahme gestartet',
+  'recording_finished': 'Aufnahme gespeichert',
+  'recording_failed': 'Aufnahme fehlgeschlagen',
+  'recording_skipped': 'Aufnahme übersprungen'
+} %}
 <section class="page-heading camera-detail-heading">
   <div>
     <p class="eyebrow">{{ camera_module.label if camera_module else camera.module_key }} · {{ camera.host }}:{{ camera.onvif_port }}</p>
@@ -23,25 +29,6 @@
   {% endif %}
 </section>
 
-<section class="details-strip" aria-label="Kameradaten">
-  <div>
-    <span>Hersteller</span>
-    <strong>{{ camera.manufacturer or 'offen' }}</strong>
-  </div>
-  <div>
-    <span>Modell</span>
-    <strong>{{ camera.model or 'offen' }}</strong>
-  </div>
-  <div>
-    <span>Firmware</span>
-    <strong>{{ camera.firmware or 'offen' }}</strong>
-  </div>
-  <div>
-    <span>Status</span>
-    <strong>{{ camera.last_probe_status or 'neu' }}</strong>
-  </div>
-</section>
-
 {% if camera.last_probe_message %}
 <section class="diagnostic-note diagnostic-{{ camera.last_probe_status or 'unknown' }}">
   {{ camera.last_probe_message }}
@@ -62,6 +49,35 @@
 </nav>
 
 <div class="detail-tab-panel" id="camera-overview" role="tabpanel" data-detail-panel="overview">
+<section class="overview-metrics" aria-label="Kameraübersicht">
+  <div class="overview-metric overview-metric-device">
+    <span>Gerät</span>
+    <strong>{{ camera.manufacturer or 'Unbekannt' }} {{ camera.model or '' }}</strong>
+    <small>Firmware {{ camera.firmware or 'nicht gemeldet' }}</small>
+  </div>
+  <div class="overview-metric">
+    <span>CPU-Last</span>
+    {% if camera.performance_cpu is not none %}
+    <strong>{{ camera.performance_cpu | round | int }} %</strong>
+    <div class="metric-bar" aria-hidden="true"><i style="width: {{ [camera.performance_cpu, 100] | min }}%"></i></div>
+    {% else %}
+    <strong class="metric-unavailable">–</strong><small>Nicht verfügbar</small>
+    {% endif %}
+  </div>
+  <div class="overview-metric">
+    <span>Codec-Datenrate</span>
+    {% if camera.performance_codec_rate is not none %}<strong>{{ camera.performance_codec_rate }}</strong><small>Bitrate laut Kamera</small>{% else %}<strong class="metric-unavailable">–</strong><small>Nicht verfügbar</small>{% endif %}
+  </div>
+  <div class="overview-metric">
+    <span>Netzwerkdurchsatz</span>
+    {% if camera.performance_net_throughput is not none %}<strong>{{ camera.performance_net_throughput }}</strong><small>Durchsatz laut Kamera</small>{% else %}<strong class="metric-unavailable">–</strong><small>Nicht verfügbar</small>{% endif %}
+  </div>
+  <div class="overview-metric">
+    <span>Letzte Prüfung</span>
+    <strong class="overview-metric-time">{{ camera.last_probe_at or 'Noch nicht geprüft' }}</strong>
+    <small>{{ channels | length }} Kanal/Kanäle · {{ detections | selectattr('supported') | list | length }} Erkennungen</small>
+  </div>
+</section>
 {% if camera.stream_uri %}
 <section class="stream-line">
   <span>Stream</span>
@@ -246,8 +262,11 @@
           {% endfor %}
         </select>
       </label>
-      <fieldset class="span-2 checkbox-field">
+      <fieldset class="span-2 checkbox-field" data-trigger-fieldset>
         <legend>Ereignistypen aufnehmen</legend>
+        <div class="button-row trigger-actions">
+          <button class="text-button" type="button" data-trigger-selection="all">Alle auswählen</button>
+        </div>
         <div class="checkbox-grid">
           {% for trigger in available_triggers %}
           <label class="check-row">
@@ -273,7 +292,13 @@
     <ol class="event-list">
       {% for event in events %}
       <li>
-        <strong>{{ event.event_type }}</strong>
+        <div class="event-list-heading">
+          <strong>{{ event_type_labels.get(event.event_type, event.event_type) }}</strong>
+          {% if event.detection_key %}
+          {% set event_key = event.detection_key.split(':')[-1] %}
+          <span class="event-trigger">{{ trigger_labels.get(event_key, event_key | replace('_', ' ') | title) }}</span>
+          {% endif %}
+        </div>
         <span>{{ event.created_at }}</span>
         {% if event.payload %}
         <p>{{ event.payload }}</p>

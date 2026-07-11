@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS cameras (
     last_probe_at TEXT,
     last_probe_status TEXT,
     last_probe_message TEXT,
+    performance_cpu REAL,
+    performance_codec_rate INTEGER,
+    performance_net_throughput INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -237,6 +240,9 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE cameras ADD COLUMN recording_storage_id INTEGER",
     "ALTER TABLE cameras ADD COLUMN recording_last_started_at TEXT",
     "ALTER TABLE cameras ADD COLUMN manual_stream_uri TEXT",
+    "ALTER TABLE cameras ADD COLUMN performance_cpu REAL",
+    "ALTER TABLE cameras ADD COLUMN performance_codec_rate INTEGER",
+    "ALTER TABLE cameras ADD COLUMN performance_net_throughput INTEGER",
     "ALTER TABLE storage_targets ADD COLUMN retention_days INTEGER",
     "ALTER TABLE storage_targets ADD COLUMN retention_max_gb REAL",
 )
@@ -1175,7 +1181,9 @@ def update_camera_probe(
     firmware: str | None = None,
     serial: str | None = None,
     stream_uri: str | None = None,
+    metrics: dict[str, int | float] | None = None,
 ) -> None:
+    metrics = metrics or {}
     with connect(database_path) as db:
         db.execute(
             """
@@ -1185,13 +1193,28 @@ def update_camera_probe(
                    firmware = COALESCE(?, firmware),
                    serial = COALESCE(?, serial),
                    stream_uri = COALESCE(?, stream_uri),
+                   performance_cpu = ?,
+                   performance_codec_rate = ?,
+                   performance_net_throughput = ?,
                    last_probe_at = CURRENT_TIMESTAMP,
                    last_probe_status = ?,
                    last_probe_message = ?,
                    updated_at = CURRENT_TIMESTAMP
              WHERE id = ?
             """,
-            (manufacturer, model, firmware, serial, stream_uri, status, message, camera_id),
+            (
+                manufacturer,
+                model,
+                firmware,
+                serial,
+                stream_uri,
+                metrics.get("cpu_used"),
+                metrics.get("codec_rate"),
+                metrics.get("net_throughput"),
+                status,
+                message,
+                camera_id,
+            ),
         )
 
 

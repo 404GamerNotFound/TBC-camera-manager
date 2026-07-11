@@ -298,6 +298,7 @@ async def camera_detail(request: Request, camera_id: int):
     except UnknownCameraModuleError:
         camera_module = None
     module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
+    available_triggers = camera_module.detection_definitions() if camera_module else ()
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -312,7 +313,8 @@ async def camera_detail(request: Request, camera_id: int):
             "channels": database.list_camera_channels(SETTINGS.database_path, camera_id),
             "camera_module": camera_module,
             "module_capabilities": module_capabilities,
-            "available_triggers": camera_module.detection_definitions() if camera_module else (),
+            "available_triggers": available_triggers,
+            "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},
             "active_trigger_keys": active_trigger_keys,
             "flash": _pop_flash(request),
         },
@@ -1058,6 +1060,7 @@ async def _refresh_camera(camera_id: int):
         firmware=snapshot.firmware,
         serial=snapshot.serial,
         stream_uri=snapshot.stream_uri,
+        metrics=snapshot.metrics,
     )
     if camera_module.supports(CameraCapability.CHANNELS) and snapshot.channels:
         database.upsert_camera_channels(SETTINGS.database_path, camera_id, snapshot.channels)
