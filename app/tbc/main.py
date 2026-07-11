@@ -70,6 +70,7 @@ SNAPSHOT_MANAGER = DashboardSnapshotManager(
     interval_seconds=SETTINGS.dashboard_snapshot_interval_seconds,
 )
 SNAPSHOT_SEMAPHORE = asyncio.Semaphore(2)
+CONTROL_STATE_CACHE: dict[int, dict[str, Any]] = {}
 
 
 @app.on_event("startup")
@@ -310,10 +311,14 @@ async def camera_detail(request: Request, camera_id: int):
     available_triggers = camera_module.detection_definitions() if camera_module else ()
     control_state = None
     if camera_module and camera_module.supports(CameraCapability.CONTROL):
-        try:
-            control_state = await camera_module.get_control_state(camera)
-        except Exception as exc:
-            LOGGER.info("Control state fetch failed for camera %s: %s", camera_id, exc)
+        control_state = CONTROL_STATE_CACHE.get(camera_id)
+        if control_state is None:
+            # First view before any probe cycle has populated the cache: kick off
+            # a background fetch instead of blocking this request on a live
+            # device round-trip, which can take many seconds for an
+            # unreachable/slow camera. The page renders immediately with a
+            # "status unknown" fallback and picks up fresh data on next visit.
+            asyncio.create_task(_publish_control_state(camera_id, camera, camera_module))
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -454,6 +459,7 @@ async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_
     except Exception:
         LOGGER.debug("Control state fetch failed for camera %s", camera_id, exc_info=True)
         return
+    CONTROL_STATE_CACHE[camera_id] = control_state
     await asyncio.to_thread(mqtt.publish_control_state, SETTINGS.database_path, camera, control_state)
 
 
@@ -625,6 +631,7 @@ async def remove_camera(request: Request, camera_id: int):
         return guard
     database.delete_camera(SETTINGS.database_path, camera_id)
     SNAPSHOT_MANAGER.delete(camera_id)
+    CONTROL_STATE_CACHE.pop(camera_id, None)
     _set_flash(request, "Kamera wurde entfernt")
     return _redirect("/cameras")
 

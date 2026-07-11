@@ -355,7 +355,7 @@
   {% if 'control' in module_capabilities %}
 <div class="detail-tab-panel" id="camera-control" role="tabpanel" data-detail-panel="control" hidden>
   {% if not control_state %}
-  <div class="diagnostic-note diagnostic-warning">Gerätestatus konnte nicht abgefragt werden. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt.</div>
+  <div class="diagnostic-note diagnostic-warning">Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.</div>
   {% endif %}
 
   {% if not control_state or control_state.ptz_supported %}

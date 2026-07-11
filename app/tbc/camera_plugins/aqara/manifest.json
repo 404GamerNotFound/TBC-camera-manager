@@ -5,6 +5,6 @@
   "version": "1.1.0",
   "description": "Aqara-Kameras sowie kompatible Video-Türklingeln",
   "entrypoint": "plugin.py",
-  "capabilities": ["live", "detections", "channels"],
+  "capabilities": ["live", "detections", "channels", "control"],
   "ports": {"onvif": 5000, "http": 80, "rtsp": 8554}
 }
