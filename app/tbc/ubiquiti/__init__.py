@@ -1,0 +1,1 @@
+"""Ubiquiti / UniFi Protect profile."""

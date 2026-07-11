@@ -19,6 +19,12 @@ class LiveTests(unittest.TestCase):
 
         self.assertNotIn("user:pw", redact_rtsp_credentials(message))
 
+    def test_redact_rtsps_credentials_masks_username_and_password(self):
+        self.assertEqual(
+            redact_rtsp_credentials("rtsps://secure:secret@nvr.local:7441/camera"),
+            "rtsps://***:***@nvr.local:7441/camera",
+        )
+
     def test_live_ffmpeg_command_generates_timestamps(self):
         command = _live_ffmpeg_command(
             "rtsp://example/stream",

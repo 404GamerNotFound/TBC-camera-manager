@@ -48,6 +48,9 @@ class CameraModule(ABC):
     default_onvif_port: int = 8000
     default_http_port: int = 80
     default_rtsp_port: int = 554
+    supports_manual_stream_uri: bool = False
+    requires_manual_stream_uri: bool = False
+    requires_credentials: bool = True
     capabilities: frozenset[CameraCapability] = frozenset()
 
     def supports(self, capability: CameraCapability) -> bool:

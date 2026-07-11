@@ -7,6 +7,21 @@ from urllib.parse import quote, urlsplit, urlunsplit
 from ..live import redact_rtsp_credentials
 
 
+def validate_manual_stream_uri(value: str) -> str:
+    """Validate a user-provided RTSP URI without ever logging its credentials."""
+    uri = str(value or "").strip()
+    if not uri or any(character in uri for character in ("\r", "\n", "\x00")):
+        raise ValueError("Eine gültige RTSP-/RTSPS-URL ist erforderlich")
+    parsed = urlsplit(uri)
+    if parsed.scheme.lower() not in {"rtsp", "rtsps"} or not parsed.hostname:
+        raise ValueError("Die Stream-URL muss mit rtsp:// oder rtsps:// beginnen und einen Host enthalten")
+    try:
+        _ = parsed.port
+    except ValueError as exc:
+        raise ValueError("Die RTSP-/RTSPS-URL enthält einen ungültigen Port") from exc
+    return uri
+
+
 def rtsp_uri_with_credentials(uri: str, username: str, password: str) -> str:
     parsed = urlsplit(str(uri))
     if parsed.scheme.lower() != "rtsp" or not parsed.hostname:

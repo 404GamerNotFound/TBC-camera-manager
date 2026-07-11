@@ -87,6 +87,45 @@ class AccessControlTests(unittest.TestCase):
         self.assertEqual(camera["host"], "192.168.1.236")
         self.assertEqual(camera["password"], "secret")
 
+    def test_manual_stream_uri_can_be_replaced_and_cleared(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="RTSP",
+                host="192.0.2.20",
+                onvif_port=80,
+                http_port=80,
+                username="",
+                password="",
+                module_key="rtsp_only",
+                manual_stream_uri="rtsp://one:secret@192.0.2.20/live",
+            )
+            database.update_camera_connection(
+                handle.name,
+                camera_id,
+                name="RTSP",
+                host="192.0.2.20",
+                onvif_port=80,
+                http_port=80,
+                username="",
+                manual_stream_uri="rtsps://two:secret@192.0.2.20/live",
+            )
+            self.assertTrue(database.get_camera(handle.name, camera_id)["manual_stream_uri"].startswith("rtsps://"))
+            database.update_camera_connection(
+                handle.name,
+                camera_id,
+                name="RTSP",
+                host="192.0.2.20",
+                onvif_port=80,
+                http_port=80,
+                username="",
+                clear_manual_stream_uri=True,
+            )
+            camera = database.get_camera(handle.name, camera_id)
+
+        self.assertIsNone(camera["manual_stream_uri"])
+
 
 if __name__ == "__main__":
     unittest.main()

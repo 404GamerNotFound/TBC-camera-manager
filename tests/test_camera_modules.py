@@ -41,6 +41,7 @@ class CameraModuleTests(unittest.TestCase):
                     database.SCHEMA
                     .replace("    module_key TEXT NOT NULL DEFAULT 'reolink',\n", "")
                     .replace("    rtsp_port INTEGER NOT NULL DEFAULT 554,\n", "")
+                    .replace("    manual_stream_uri TEXT,\n", "")
                 )
             database.initialize(handle.name)
             camera_id = database.create_camera(
@@ -57,6 +58,7 @@ class CameraModuleTests(unittest.TestCase):
 
         self.assertEqual(camera["module_key"], "reolink")
         self.assertEqual(camera["rtsp_port"], 554)
+        self.assertIsNone(camera["manual_stream_uri"])
 
     def test_registry_loads_installed_entry_point_module(self):
         registry.reload_camera_modules()
@@ -65,7 +67,7 @@ class CameraModuleTests(unittest.TestCase):
 
         self.assertEqual(
             [module.key for module in modules],
-            ["aqara", "reolink", "standard_onvif", "tplink", "acme"],
+            ["aqara", "reolink", "rtsp_only", "sonoff", "standard_onvif", "tplink", "ubiquiti", "acme"],
         )
         self.assertTrue(registry.get_camera_module("acme").supports(CameraCapability.LIVE))
 
@@ -95,6 +97,16 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(aqara.default_rtsp_port, 8554)
         self.assertTrue(aqara.supports(CameraCapability.CHANNELS))
         self.assertFalse(aqara.supports(CameraCapability.ARCHIVE))
+
+    def test_manual_rtsp_profiles_are_available(self):
+        for key in ("rtsp_only", "sonoff", "ubiquiti"):
+            module = registry.get_camera_module(key)
+            self.assertTrue(module.supports(CameraCapability.LIVE))
+            self.assertTrue(module.supports_manual_stream_uri)
+            self.assertTrue(module.requires_manual_stream_uri)
+            self.assertFalse(module.requires_credentials)
+
+        self.assertEqual(registry.get_camera_module("ubiquiti").default_rtsp_port, 7447)
 
 
 if __name__ == "__main__":

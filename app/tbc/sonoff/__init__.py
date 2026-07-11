@@ -1,0 +1,1 @@
+"""SONOFF camera profile."""

@@ -12,6 +12,8 @@ class Settings:
     database_path: str = "/data/tbc.sqlite3"
     recordings_path: str = "/recordings"
     live_path: str = "/tmp/tbc-live"
+    dashboard_snapshots_path: str = "/data/dashboard-snapshots"
+    dashboard_snapshot_interval_seconds: int = 600
     public_base_url: str = ""
     secret_key: str = "lokaler-dev-schluessel-bitte-aendern"
     poll_interval_seconds: int = 60
@@ -27,6 +29,11 @@ def load_settings() -> Settings:
         database_path=os.getenv("TBC_DATABASE_PATH", "/data/tbc.sqlite3"),
         recordings_path=os.getenv("TBC_RECORDINGS_PATH", "/recordings"),
         live_path=os.getenv("TBC_LIVE_PATH", "/tmp/tbc-live"),
+        dashboard_snapshots_path=os.getenv("TBC_DASHBOARD_SNAPSHOTS_PATH", "/data/dashboard-snapshots"),
+        dashboard_snapshot_interval_seconds=max(
+            60,
+            int(os.getenv("TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS", "600")),
+        ),
         public_base_url=os.getenv("TBC_PUBLIC_BASE_URL", "").rstrip("/"),
         secret_key=os.getenv("TBC_SECRET_KEY", "lokaler-dev-schluessel-bitte-aendern"),
         poll_interval_seconds=max(15, int(os.getenv("TBC_POLL_INTERVAL_SECONDS", "60"))),

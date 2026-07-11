@@ -21,6 +21,9 @@
                 data-onvif-port="{{ camera_module.default_onvif_port }}"
                 data-http-port="{{ camera_module.default_http_port }}"
                 data-rtsp-port="{{ camera_module.default_rtsp_port }}"
+                data-supports-manual-stream="{{ 'true' if camera_module.supports_manual_stream_uri else 'false' }}"
+                data-requires-manual-stream="{{ 'true' if camera_module.requires_manual_stream_uri else 'false' }}"
+                data-requires-credentials="{{ 'true' if camera_module.requires_credentials else 'false' }}"
                 {% if values.module_key == camera_module.key %}selected{% endif %}>
           {{ camera_module.label }} · {{ camera_module.description }}
         </option>
@@ -31,29 +34,34 @@
       <span>Name</span>
       <input name="name" value="{{ values.name }}" required autofocus>
     </label>
-    <label>
+    <label class="host-field">
       <span>Host / IP</span>
-      <input name="host" value="{{ values.host }}" required>
+      <input name="host" value="{{ values.host }}">
     </label>
-    <label>
+    <label class="onvif-field">
       <span>ONVIF-Port</span>
       <input name="onvif_port" type="number" min="1" max="65535" value="{{ values.onvif_port }}" required>
     </label>
-    <label>
+    <label class="http-field">
       <span>HTTP-Port</span>
       <input name="http_port" type="number" min="1" max="65535" value="{{ values.http_port }}" required>
     </label>
-    <label>
+    <label class="rtsp-field">
       <span>RTSP-Port</span>
       <input name="rtsp_port" type="number" min="1" max="65535" value="{{ values.rtsp_port }}" required>
     </label>
-    <label>
+    <label class="credential-field">
       <span>Benutzer</span>
-      <input name="username" value="{{ values.username }}" autocomplete="username" required>
+      <input name="username" value="{{ values.username }}" autocomplete="username">
     </label>
-    <label>
+    <label class="credential-field">
       <span>Passwort</span>
-      <input name="password" type="password" autocomplete="current-password" required>
+      <input name="password" type="password" autocomplete="current-password">
+    </label>
+    <label class="span-2 manual-stream-field" hidden>
+      <span>RTSP-/RTSPS-URL</span>
+      <input name="manual_stream_uri" type="password" autocomplete="off" placeholder="rtsp://benutzer:passwort@kamera:554/pfad">
+      <small>Die vollständige URL wird geschützt gespeichert und in der Oberfläche immer zensiert.</small>
     </label>
   </div>
   <div class="form-actions">

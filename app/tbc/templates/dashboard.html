@@ -27,6 +27,17 @@
     {% elif camera.host.startswith('192.169.') %}
     <p class="diagnostic-note diagnostic-warning">Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint.</p>
     {% endif %}
+    {% if camera.stream_uri %}
+    <figure class="camera-snapshot">
+      <img src="/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
+           alt="Aktuelles Vorschaubild von {{ camera.name }}"
+           loading="lazy"
+           decoding="async">
+      <figcaption>Vorschaubild · Aktualisierung alle {{ snapshot_interval_minutes }} Minuten</figcaption>
+    </figure>
+    {% else %}
+    <div class="camera-snapshot camera-snapshot-empty">Noch kein Stream für ein Vorschaubild verfügbar</div>
+    {% endif %}
     <dl class="metric-row">
       <div>
         <dt>Unterstützt</dt>

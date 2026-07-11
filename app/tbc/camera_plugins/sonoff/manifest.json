@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "key": "sonoff",
+  "label": "SONOFF",
+  "version": "1.0.0",
+  "description": "SONOFF-Kameras über den in eWeLink erzeugten RTSP-Link",
+  "entrypoint": "plugin.py",
+  "capabilities": ["live"],
+  "ports": {"onvif": 80, "http": 80, "rtsp": 554}
+}

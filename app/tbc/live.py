@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 LOGGER = logging.getLogger(__name__)
-RTSP_URI_PATTERN = re.compile(r"rtsp://[^\s<>\"']+", re.IGNORECASE)
+RTSP_URI_PATTERN = re.compile(r"rtsps?://[^\s<>\"']+", re.IGNORECASE)
 
 
 class LiveManager:
@@ -127,12 +127,13 @@ def redact_rtsp_credentials(value: str) -> str:
     """Mask credentials in RTSP URLs without changing the URL used for streaming."""
     def redact(match: re.Match[str]) -> str:
         uri = match.group(0)
-        authority_end = uri.find("/", len("rtsp://"))
+        scheme_end = uri.find("://") + 3
+        authority_end = uri.find("/", scheme_end)
         authority_end = len(uri) if authority_end == -1 else authority_end
-        authority = uri[len("rtsp://"):authority_end]
+        authority = uri[scheme_end:authority_end]
         if "@" not in authority:
             return uri
-        return f"rtsp://***:***@{authority.rsplit('@', 1)[1]}{uri[authority_end:]}"
+        return f"{uri[:scheme_end]}***:***@{authority.rsplit('@', 1)[1]}{uri[authority_end:]}"
 
     return RTSP_URI_PATTERN.sub(redact, str(value))
 

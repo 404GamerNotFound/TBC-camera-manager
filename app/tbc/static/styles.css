@@ -332,6 +332,10 @@ label {
   font-weight: 700;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 input,
 select {
   width: 100%;
@@ -470,6 +474,39 @@ button:focus-visible {
   padding: 20px;
   min-width: 0;
   overflow: hidden;
+}
+
+.camera-snapshot {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.camera-snapshot img,
+.camera-snapshot-empty {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.camera-snapshot img {
+  display: block;
+  object-fit: cover;
+}
+
+.camera-snapshot figcaption {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.camera-snapshot-empty {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  color: var(--muted);
+  text-align: center;
 }
 
 .live-card {

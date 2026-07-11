@@ -5,7 +5,7 @@ import logging
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
@@ -28,6 +28,7 @@ from .camera_modules.packages import (
     remove_external_plugin,
 )
 from .camera_modules.registry import UnknownCameraModuleError
+from .camera_modules.streams import validate_manual_stream_uri
 from .channels import apply_channel_enabled_filter
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
@@ -37,6 +38,7 @@ from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import RecordingManager, delete_recording_files, presigned_url
+from .snapshots import DashboardSnapshotManager
 
 LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
@@ -55,6 +57,11 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 LIVE_MANAGER = LiveManager(SETTINGS.live_path)
+SNAPSHOT_MANAGER = DashboardSnapshotManager(
+    SETTINGS.dashboard_snapshots_path,
+    interval_seconds=SETTINGS.dashboard_snapshot_interval_seconds,
+)
+SNAPSHOT_SEMAPHORE = asyncio.Semaphore(2)
 
 
 @app.on_event("startup")
@@ -68,6 +75,7 @@ async def startup() -> None:
     asyncio.create_task(_poll_loop())
     asyncio.create_task(_health_loop())
     asyncio.create_task(_cleanup_loop())
+    asyncio.create_task(_snapshot_loop())
 
 
 @app.get("/healthz")
@@ -130,6 +138,8 @@ async def cameras(request: Request):
         return guard
     user = _current_user(request)
     camera_rows = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    for camera in camera_rows:
+        camera["dashboard_snapshot_version"] = SNAPSHOT_MANAGER.version(int(camera["id"]))
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -138,6 +148,7 @@ async def cameras(request: Request):
             "username": request.session.get("username"),
             "role": user["role"],
             "cameras": camera_rows,
+            "snapshot_interval_minutes": max(1, SETTINGS.dashboard_snapshot_interval_seconds // 60),
             "flash": _pop_flash(request),
         },
     )
@@ -165,6 +176,7 @@ async def new_camera(request: Request):
                 "http_port": 80,
                 "rtsp_port": 554,
                 "username": "",
+                "manual_stream_uri": "",
             },
             "camera_modules": list_camera_modules(),
             "error": None,
@@ -176,13 +188,14 @@ async def new_camera(request: Request):
 async def create_camera(
     request: Request,
     name: str = Form(...),
-    host: str = Form(...),
+    host: str = Form(""),
     onvif_port: int = Form(8000),
     http_port: int = Form(80),
     rtsp_port: int = Form(554),
-    username: str = Form(...),
-    password: str = Form(...),
+    username: str = Form(""),
+    password: str = Form(""),
     module_key: str = Form("reolink"),
+    manual_stream_uri: str = Form(""),
 ):
     guard = _require_admin(request)
     if guard:
@@ -196,9 +209,11 @@ async def create_camera(
         "http_port": http_port,
         "rtsp_port": rtsp_port,
         "username": username.strip(),
+        # Never echo a credential-bearing URI back into rendered HTML.
+        "manual_stream_uri": "",
     }
     try:
-        get_camera_module(values["module_key"])
+        camera_module = get_camera_module(values["module_key"])
     except UnknownCameraModuleError as exc:
         return templates.TemplateResponse(
             request,
@@ -214,7 +229,22 @@ async def create_camera(
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    if not values["name"] or not values["host"] or not values["username"] or not password:
+    try:
+        normalized_manual_uri = (
+            validate_manual_stream_uri(manual_stream_uri)
+            if manual_stream_uri.strip()
+            else None
+        )
+    except ValueError as exc:
+        return _camera_form_error(request, values, str(exc))
+    if normalized_manual_uri and not camera_module.supports_manual_stream_uri:
+        return _camera_form_error(request, values, f"Das Modul {camera_module.label} akzeptiert keine manuelle Stream-URL")
+    if camera_module.requires_manual_stream_uri and not normalized_manual_uri:
+        return _camera_form_error(request, values, "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich")
+    if not values["host"] and normalized_manual_uri:
+        values["host"] = str(urlsplit(normalized_manual_uri).hostname or "")
+    credentials_missing = camera_module.requires_credentials and (not values["username"] or not password)
+    if not values["name"] or not values["host"] or credentials_missing:
         return templates.TemplateResponse(
             request,
             "camera_form.html",
@@ -225,7 +255,7 @@ async def create_camera(
                 "flash": None,
                 "values": values,
                 "camera_modules": list_camera_modules(),
-                "error": "Name, Host, Benutzer und Passwort sind erforderlich",
+                "error": "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich",
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -240,6 +270,7 @@ async def create_camera(
         password=password,
         module_key=values["module_key"],
         rtsp_port=max(1, min(65535, int(rtsp_port))),
+        manual_stream_uri=normalized_manual_uri,
     )
     await _refresh_camera(camera_id)
     _set_flash(request, "Kamera wurde angelegt und geprüft")
@@ -283,6 +314,30 @@ async def camera_detail(request: Request, camera_id: int):
             "active_trigger_keys": active_trigger_keys,
             "flash": _pop_flash(request),
         },
+    )
+
+
+@app.get("/cameras/{camera_id}/snapshot.jpg")
+async def dashboard_camera_snapshot(request: Request, camera_id: int):
+    guard = _require_camera_access(request, camera_id)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    stream_uri = stream_uri_for(camera) if camera else None
+    if not stream_uri:
+        return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
+    async with SNAPSHOT_SEMAPHORE:
+        snapshot_path = await asyncio.to_thread(
+            SNAPSHOT_MANAGER.refresh_if_due,
+            camera_id,
+            stream_uri,
+        )
+    if snapshot_path is None or not snapshot_path.exists():
+        return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(
+        snapshot_path,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "private, no-store, max-age=0"},
     )
 
 
@@ -365,12 +420,14 @@ async def update_camera_connection(
     request: Request,
     camera_id: int,
     name: str = Form(...),
-    host: str = Form(...),
+    host: str = Form(""),
     onvif_port: int = Form(8000),
     http_port: int = Form(80),
     rtsp_port: int = Form(554),
-    username: str = Form(...),
+    username: str = Form(""),
     password: str = Form(""),
+    manual_stream_uri: str = Form(""),
+    clear_manual_stream_uri: str | None = Form(None),
 ):
     guard = _require_admin(request)
     if guard:
@@ -379,17 +436,42 @@ async def update_camera_connection(
     if not camera:
         _set_flash(request, "Kamera wurde nicht gefunden", "error")
         return _redirect("/cameras")
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cameras/{camera_id}")
+    try:
+        normalized_manual_uri = (
+            validate_manual_stream_uri(manual_stream_uri)
+            if manual_stream_uri.strip()
+            else None
+        )
+    except ValueError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cameras/{camera_id}")
+    clear_manual = clear_manual_stream_uri == "on"
+    effective_manual_uri = normalized_manual_uri or (None if clear_manual else camera.get("manual_stream_uri"))
+    if normalized_manual_uri and not camera_module.supports_manual_stream_uri:
+        _set_flash(request, f"Das Modul {camera_module.label} akzeptiert keine manuelle Stream-URL", "error")
+        return _redirect(f"/cameras/{camera_id}")
+    if camera_module.requires_manual_stream_uri and not effective_manual_uri:
+        _set_flash(request, "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich", "error")
+        return _redirect(f"/cameras/{camera_id}")
+    normalized_host = host.strip()
+    if not normalized_host and effective_manual_uri:
+        normalized_host = str(urlsplit(str(effective_manual_uri)).hostname or "")
     values = {
         "name": name.strip(),
-        "host": host.strip(),
+        "host": normalized_host,
         "onvif_port": max(1, min(65535, int(onvif_port))),
         "http_port": max(1, min(65535, int(http_port))),
         "rtsp_port": max(1, min(65535, int(rtsp_port))),
         "username": username.strip(),
         "password": password.strip() or None,
     }
-    if not values["name"] or not values["host"] or not values["username"]:
-        _set_flash(request, "Name, Host und Benutzer sind erforderlich", "error")
+    if not values["name"] or not values["host"] or (camera_module.requires_credentials and not values["username"]):
+        _set_flash(request, "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich", "error")
         return _redirect(f"/cameras/{camera_id}")
     database.update_camera_connection(
         SETTINGS.database_path,
@@ -401,7 +483,10 @@ async def update_camera_connection(
         rtsp_port=int(values["rtsp_port"]),
         username=str(values["username"]),
         password=values["password"],
+        manual_stream_uri=normalized_manual_uri,
+        clear_manual_stream_uri=clear_manual,
     )
+    SNAPSHOT_MANAGER.delete(camera_id)
     try:
         snapshot = await _refresh_camera(camera_id)
         _set_flash(request, snapshot.message, "success" if snapshot.status == "ok" else "warning")
@@ -417,6 +502,7 @@ async def remove_camera(request: Request, camera_id: int):
     if guard:
         return guard
     database.delete_camera(SETTINGS.database_path, camera_id)
+    SNAPSHOT_MANAGER.delete(camera_id)
     _set_flash(request, "Kamera wurde entfernt")
     return _redirect("/cameras")
 
@@ -1459,6 +1545,30 @@ async def _poll_loop() -> None:
         await asyncio.sleep(SETTINGS.poll_interval_seconds)
 
 
+async def _snapshot_loop() -> None:
+    await asyncio.sleep(20)
+    while True:
+        try:
+            cameras_with_stream = [
+                camera
+                for camera in database.list_cameras(SETTINGS.database_path)
+                if int(camera.get("enabled") or 0) == 1 and stream_uri_for(camera)
+            ]
+
+            async def refresh(camera: dict[str, Any]) -> None:
+                async with SNAPSHOT_SEMAPHORE:
+                    await asyncio.to_thread(
+                        SNAPSHOT_MANAGER.refresh_if_due,
+                        int(camera["id"]),
+                        str(stream_uri_for(camera)),
+                    )
+
+            await asyncio.gather(*(refresh(camera) for camera in cameras_with_stream))
+        except Exception:
+            LOGGER.exception("Dashboard-Snapshots konnten nicht aktualisiert werden")
+        await asyncio.sleep(60)
+
+
 async def _health_loop() -> None:
     await asyncio.sleep(15)
     last_health_event_id = _latest_health_event_id()
@@ -1682,6 +1792,23 @@ def _redirect(path: str) -> RedirectResponse:
 
 def _set_flash(request: Request, message: str, level: str = "success") -> None:
     request.session["flash"] = {"message": message, "level": level}
+
+
+def _camera_form_error(request: Request, values: dict[str, Any], message: str):
+    return templates.TemplateResponse(
+        request,
+        "camera_form.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "flash": None,
+            "values": values,
+            "camera_modules": list_camera_modules(),
+            "error": message,
+        },
+        status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 def _pop_flash(request: Request) -> dict[str, Any] | None:

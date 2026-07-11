@@ -1,6 +1,6 @@
 # Kamera-Module entwickeln
 
-TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink`, `tplink`, `standard_onvif` und `aqara` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
+TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink`, `tplink`, `standard_onvif`, `aqara`, `ubiquiti`, `sonoff` und `rtsp_only` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
 
 ## Plugin-Datei
 
@@ -30,7 +30,7 @@ acme-camera-plugin.zip
 }
 ```
 
-Die eingebauten Konfigurationen befinden sich unter `app/tbc/camera_plugins/`. Dort liegen auch die jeweiligen `detections.json`-Dateien für Reolink, TP-Link/Tapo, Standard ONVIF und Aqara.
+Die eingebauten Konfigurationen befinden sich unter `app/tbc/camera_plugins/`. Dort liegen auch die jeweiligen `detections.json`-Dateien. Profile ohne auswertbare Ereignisquelle verwenden eine leere Liste und deklarieren nur `live`.
 
 ## Öffentlicher Vertrag
 
@@ -60,6 +60,8 @@ def create_module():
 
 `plugin.py` stellt entweder `create_module()` oder eine Variable `MODULE` bereit. Metadaten und Fähigkeiten werden aus dem Manifest auf die Modulinstanz übertragen. `probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()` und `open_archive_download()` implementieren. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
 
+Module, die eine vollständige Stream-URL statt separater ONVIF-Zugangsdaten erwarten, setzen `supports_manual_stream_uri = True`, `requires_manual_stream_uri = True` und `requires_credentials = False`. TBC speichert diese URL getrennt in `manual_stream_uri`, validiert ausschließlich `rtsp://` und `rtsps://` und rendert sie nie unzensiert in HTML. `ubiquiti`, `sonoff` und `rtsp_only` verwenden die gemeinsame Implementierung `manual_rtsp/`.
+
 Die einheitliche Momentaufnahme `CameraSnapshot` enthält Gerätestatus, Herstellerdaten, RTSP-URI, Erkennungszustände und Kanäle. Erkennungszeilen verwenden die Felder `key`, `label`, `category`, `channel`, `supported`, `active`, `source` und optional `raw_value`.
 
 ## Import und Export
@@ -82,4 +84,4 @@ Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Recht
 - `CHANNELS`: Das Modul unterstützt mehrere Kamera- oder NVR-Kanäle.
 - `ARCHIVE`: Das Modul implementiert Suche, Wiedergabe und Download des Kamera-Archivs.
 
-Die Implementierungen liegen in den Herstellerpaketen `reolink/`, `tplink/`, `standard_onvif/` und `aqara/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet.
+Die Implementierungen liegen in den Herstellerpaketen unter `app/tbc/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet.

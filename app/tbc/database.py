@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS cameras (
     model TEXT,
     firmware TEXT,
     serial TEXT,
+    manual_stream_uri TEXT,
     stream_uri TEXT,
     recording_enabled INTEGER NOT NULL DEFAULT 0,
     recording_duration_seconds INTEGER NOT NULL DEFAULT 30,
@@ -235,6 +236,7 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE cameras ADD COLUMN snapshot_enabled INTEGER NOT NULL DEFAULT 1",
     "ALTER TABLE cameras ADD COLUMN recording_storage_id INTEGER",
     "ALTER TABLE cameras ADD COLUMN recording_last_started_at TEXT",
+    "ALTER TABLE cameras ADD COLUMN manual_stream_uri TEXT",
     "ALTER TABLE storage_targets ADD COLUMN retention_days INTEGER",
     "ALTER TABLE storage_targets ADD COLUMN retention_max_gb REAL",
 )
@@ -569,14 +571,21 @@ def create_camera(
     password: str,
     module_key: str = "reolink",
     rtsp_port: int = 554,
+    manual_stream_uri: str | None = None,
 ) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
             """
-            INSERT INTO cameras (module_key, name, host, onvif_port, http_port, rtsp_port, username, password)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO cameras (
+                module_key, name, host, onvif_port, http_port, rtsp_port,
+                username, password, manual_stream_uri
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (module_key, name, host, onvif_port, http_port, rtsp_port, username, password),
+            (
+                module_key, name, host, onvif_port, http_port, rtsp_port,
+                username, password, manual_stream_uri,
+            ),
         )
         return int(cursor.lastrowid)
 
@@ -597,6 +606,8 @@ def update_camera_connection(
     username: str,
     password: str | None = None,
     rtsp_port: int | None = None,
+    manual_stream_uri: str | None = None,
+    clear_manual_stream_uri: bool = False,
 ) -> None:
     with connect(database_path) as db:
         db.execute(
@@ -609,6 +620,11 @@ def update_camera_connection(
                    rtsp_port = COALESCE(?, rtsp_port),
                    username = ?,
                    password = COALESCE(?, password),
+                   manual_stream_uri = CASE
+                       WHEN ? = 1 THEN NULL
+                       WHEN ? IS NOT NULL THEN ?
+                       ELSE manual_stream_uri
+                   END,
                    manufacturer = NULL,
                    model = NULL,
                    firmware = NULL,
@@ -619,7 +635,13 @@ def update_camera_connection(
                    updated_at = CURRENT_TIMESTAMP
              WHERE id = ?
             """,
-            (name, host, onvif_port, http_port, rtsp_port, username, password, camera_id),
+            (
+                name, host, onvif_port, http_port, rtsp_port, username, password,
+                1 if clear_manual_stream_uri else 0,
+                manual_stream_uri,
+                manual_stream_uri,
+                camera_id,
+            ),
         )
 
 

@@ -1,6 +1,6 @@
 # TBC - TB Camera
 
-TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink, TP-Link/Tapo, Aqara und ein herstellerneutraler Standard-ONVIF-Fallback sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
+TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink, TP-Link/Tapo, Aqara, Ubiquiti/UniFi Protect, SONOFF, ein reines RTSP-Profil und ein herstellerneutraler Standard-ONVIF-Fallback sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, Dashboard-Vorschaubilder, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
 
 ## Start
 
@@ -20,6 +20,7 @@ Standardwerte aus `docker-compose.yml`:
 - Aufnahmen: `/recordings` im Docker-Volume `tbc-recordings`
 - Live-HLS-Puffer: `/tmp/tbc-live`
 - Importierte Kamera-Plugins: `/data/camera-modules` im Docker-Volume `tbc-data`
+- Dashboard-Snapshots: `/data/dashboard-snapshots` im Docker-Volume `tbc-data`, standardmäßig alle 600 Sekunden
 
 Bitte `TBC_ADMIN_PASSWORD` und `TBC_SECRET_KEY` in `.env` vor einem echten Einsatz aendern. `TBC_PUBLIC_BASE_URL` sollte gesetzt werden, wenn Webhooks oder Home-Assistant-Notify Links zu Clip und Snapshot erhalten sollen.
 
@@ -66,6 +67,12 @@ Das eingebaute Modul `tplink` unterstützt TP-Link/Tapo-Kameras über ONVIF Prof
 Das Modul `standard_onvif` ist der Fallback für weitere Hersteller. Es verwendet ausschließlich die vom Gerät gemeldeten ONVIF-Informationen, RTSP-Medienprofile und Event-Definitionen. Das Modul konstruiert keine herstellerspezifischen Streampfade.
 
 Das Modul `aqara` prüft ONVIF-kompatible Aqara-Kameras standardmäßig auf Port `5000` und zusätzlich den lokalen Aqara-RTSP-Kanal `/ch1` auf Port `8554`. Bei der kabelgebundenen/PoE-Türklingel G400 muss in Aqara Home unter `Weitere Einstellungen` die `RTSP LAN Preview` aktiviert werden; diese Option aktiviert gleichzeitig ONVIF. Host sowie die dort angezeigten separaten LAN-Zugangsdaten werden in TBC eingetragen. Die G400 stellt zusätzlich `/ch2` und `/ch3` mit geringerer Auflösung bereit. Bei der G410 ist RTSP nur mit kabelgebundener Stromversorgung verfügbar; die ältere G4 bietet offiziell keinen lokalen RTSP-Stream. Aqara-Cloud-, HomeKit- und proprietäre Archivzugriffe sind nicht Bestandteil des Moduls.
+
+Die Profile `ubiquiti` und `sonoff` arbeiten mit der vollständigen, vom jeweiligen Herstellersystem erzeugten Stream-URL. Bei Ubiquiti wird der RTSP-/RTSPS-Link aus UniFi Protect verwendet; Port `7447` ist für RTSP vorbelegt. Bei SONOFF wird RTSP in eWeLink aktiviert und der dort erzeugte Link in TBC eingefügt. Das Profil `rtsp_only` ermöglicht dieselbe Konfiguration herstellerneutral und überspringt ONVIF vollständig. Host/IP wird bei Bedarf aus der URL übernommen. In Formularen, Statusmeldungen und Detailansichten werden Benutzername und Passwort einer RTSP-/RTSPS-URL immer als `***:***` dargestellt.
+
+## Dashboard-Vorschaubilder
+
+Für jede aktivierte Kamera mit bekanntem Stream erzeugt TBC per `ffmpeg` ein JPEG-Vorschaubild. Der geschützte Cache wird standardmäßig spätestens nach zehn Minuten erneuert; fehlende Bilder werden beim ersten Aufruf der Kameraseite direkt erzeugt. Die Bildroute prüft dieselbe Kamera-Berechtigung wie Detail- und Live-Ansicht und liefert keine Zugangsdaten aus. Speicherort und Intervall können mit `TBC_DASHBOARD_SNAPSHOTS_PATH` und `TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS` angepasst werden.
 
 ## Aufnahmen
 
@@ -181,6 +188,7 @@ Nicht jede Reolink-Kamera liefert alle Funktionen. TBC speichert deshalb pro Kam
 - SD-Karte: `reolink-aio` VOD-Suche ueber `Search`, Wiedergabe ueber `Playback` und Download ueber `Download` bzw. `NvrDownload`.
 - Recording: `ffmpeg` fuer RTSP-Clips, Ringbuffer-Segmente fuer Vorlauf, Nachlaufsteuerung ueber aktive Events, optional `boto3` fuer S3-kompatible Uploads.
 - Live: HLS-Proxy ueber `ffmpeg` mit authentifizierten Playlist- und Segment-Routen.
+- Dashboard-Snapshots: `DashboardSnapshotManager` erzeugt atomar ersetzte JPEG-Dateien per `ffmpeg`; ein Hintergrundjob prüft minütlich, ob der konfigurierbare 600-Sekunden-Zeitraum abgelaufen ist. Auslieferung erfolgt nur über eine authentifizierte, kamerabezogen autorisierte Route.
 - Debug Log: In-Memory-Ringbuffer fuer App- und ffmpeg-Meldungen, abrufbar als Admin-Pull-up auf jeder Seite und unter `Einstellungen`.
 - Retention: `app/tbc/maintenance.py` erzeugt Cleanup-Vorschau aus expliziten Regeln und Speicherziel-Limits und loescht lokale Dateien bzw. S3-Objekte ueber die vorhandene Recording-Abstraktion.
 - Benachrichtigungen: `app/tbc/notifications.py` versendet Recording-, Cleanup- und Health-Statuswechsel an Webhook, Telegram, E-Mail, Pushover oder Home Assistant Notify.

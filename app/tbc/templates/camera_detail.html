@@ -126,27 +126,44 @@
         <span>Name</span>
         <input name="name" value="{{ camera.name }}" required>
       </label>
-      <label>
+      <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
         <span>Host / IP</span>
         <input name="host" value="{{ camera.host }}" required>
       </label>
-      <label>
+      <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
         <span>ONVIF-Port</span>
         <input name="onvif_port" type="number" min="1" max="65535" value="{{ camera.onvif_port }}" required>
       </label>
-      <label>
+      <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
         <span>HTTP-Port</span>
         <input name="http_port" type="number" min="1" max="65535" value="{{ camera.http_port }}" required>
       </label>
-      <label>
+      <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
         <span>RTSP-Port</span>
         <input name="rtsp_port" type="number" min="1" max="65535" value="{{ camera.rtsp_port or 554 }}" required>
       </label>
-      <label>
+      <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
         <span>Benutzer</span>
-        <input name="username" value="{{ camera.username }}" autocomplete="username" required>
+        <input name="username" value="{{ camera.username }}" autocomplete="username" {% if camera_module and camera_module.requires_credentials %}required{% endif %}>
       </label>
-      <label>
+      {% if camera_module and camera_module.supports_manual_stream_uri %}
+      <label class="span-2">
+        <span>Neue RTSP-/RTSPS-URL</span>
+        <input name="manual_stream_uri" type="password" autocomplete="off" placeholder="leer lassen = unverändert">
+        {% if camera.manual_stream_uri %}
+        <small>Aktuell: <code>{{ camera.manual_stream_uri | redact_rtsp_credentials }}</code></small>
+        {% else %}
+        <small>Die vollständige URL wird geschützt gespeichert und in der Oberfläche zensiert.</small>
+        {% endif %}
+      </label>
+      {% if camera.manual_stream_uri and not camera_module.requires_manual_stream_uri %}
+      <label class="check-row span-2">
+        <input name="clear_manual_stream_uri" type="checkbox">
+        <span>Manuelle Stream-URL entfernen</span>
+      </label>
+      {% endif %}
+      {% endif %}
+      <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
         <span>Neues Passwort</span>
         <input name="password" type="password" autocomplete="new-password" placeholder="leer lassen = unverändert">
       </label>

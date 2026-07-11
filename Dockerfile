@@ -5,6 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TBC_DATABASE_PATH=/data/tbc.sqlite3 \
     TBC_RECORDINGS_PATH=/recordings \
     TBC_CAMERA_MODULES_PATH=/data/camera-modules \
+    TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
     TBC_PORT=8732
 
 WORKDIR /app
