@@ -80,7 +80,12 @@
         <h2>{{ item.name }}</h2>
         <p>{{ item.subtitle }}</p>
       </div>
-      <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
+      <div class="button-row">
+        {% if role == 'admin' %}
+        <button class="live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Kachel verschieben">⠿</button>
+        {% endif %}
+        <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
+      </div>
     </div>
     <div
       class="live-player-shell"
@@ -94,8 +99,16 @@
     </div>
     {% if role == 'admin' %}
     <div class="live-span-editor" data-live-span-editor data-live-key="{{ item.key }}">
-      <label>Breite <input type="number" min="1" max="4" value="{{ item.column_span }}" data-span-col></label>
-      <label>Höhe <input type="number" min="1" max="4" value="{{ item.row_span }}" data-span-row></label>
+      <label>
+        Breite
+        <input type="range" min="1" max="4" step="1" value="{{ item.column_span }}" data-span-col aria-label="Breite in Rasterfeldern">
+        <span class="live-span-value" data-span-col-value>{{ item.column_span }}</span>
+      </label>
+      <label>
+        Höhe
+        <input type="range" min="1" max="4" step="1" value="{{ item.row_span }}" data-span-row aria-label="Höhe in Rasterfeldern">
+        <span class="live-span-value" data-span-row-value>{{ item.row_span }}</span>
+      </label>
     </div>
     {% endif %}
     <p class="clip-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>

@@ -664,6 +664,15 @@ button:focus-visible {
   max-height: none;
 }
 
+.live-grid .live-video {
+  /* Camera aspect ratios vary widely (panoramic/fisheye unwraps in
+     particular) and the grid cell size is fixed by the chosen layout, so
+     "contain" would letterbox most tiles. A video wall reads better filled
+     edge-to-edge, accepting a crop, than with black bars. */
+  object-fit: cover;
+  aspect-ratio: auto;
+}
+
 .live-toolbar {
   align-items: center;
 }
@@ -1492,16 +1501,48 @@ code {
 .live-span-editor label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   color: var(--muted);
 }
 
-.live-span-editor input {
-  width: 44px;
-  min-height: 28px;
-  padding: 2px 4px;
+.live-span-editor input[type="range"] {
+  width: 84px;
+  min-height: auto;
+  padding: 0;
+  accent-color: var(--brand);
+}
+
+.live-span-editor .live-span-value {
+  min-width: 14px;
+  color: var(--text);
+  font-weight: 800;
   text-align: center;
-  font-size: 0.8rem;
+}
+
+.live-drag-handle {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: grab;
+}
+
+.live-drag-handle:active {
+  cursor: grabbing;
+}
+
+.live-card.is-dragging {
+  opacity: 0.4;
+}
+
+.live-card.is-drop-target {
+  outline: 2px dashed var(--brand);
+  outline-offset: 3px;
 }
 
 /* Fullscreen kiosk mode: hide app chrome so the wall fills the screen and

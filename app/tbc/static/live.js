@@ -255,16 +255,21 @@
     const card = byKey.get(key);
     const colInput = editor.querySelector("[data-span-col]");
     const rowInput = editor.querySelector("[data-span-row]");
+    const colValue = editor.querySelector("[data-span-col-value]");
+    const rowValue = editor.querySelector("[data-span-row-value]");
+
+    const preview = () => {
+      if (colValue) colValue.textContent = colInput.value;
+      if (rowValue) rowValue.textContent = rowInput.value;
+      if (card) {
+        card.style.gridColumn = `span ${colInput.value}`;
+        card.style.gridRow = `span ${rowInput.value}`;
+      }
+    };
 
     const save = async () => {
       const columnSpan = Math.max(1, Math.min(4, Number(colInput.value) || 1));
       const rowSpan = Math.max(1, Math.min(4, Number(rowInput.value) || 1));
-      colInput.value = String(columnSpan);
-      rowInput.value = String(rowSpan);
-      if (card) {
-        card.style.gridColumn = `span ${columnSpan}`;
-        card.style.gridRow = `span ${rowSpan}`;
-      }
       try {
         await fetchJson("/api/live/layout/item", {
           method: "POST",
@@ -281,8 +286,65 @@
       }
     };
 
+    colInput?.addEventListener("input", preview);
+    rowInput?.addEventListener("input", preview);
     colInput?.addEventListener("change", save);
     rowInput?.addEventListener("change", save);
+  });
+
+  // --- Admin: drag-and-drop tile reordering ---------------------------------
+  let draggedKey = null;
+
+  const persistOrder = () => {
+    const ordered = Array.from(grid?.querySelectorAll("[data-live-card]") || []);
+    ordered.forEach((card, index) => {
+      card.dataset.sortOrder = String(index);
+      const key = card.dataset.liveKey;
+      const editor = card.querySelector("[data-live-span-editor]");
+      const columnSpan = Number(editor?.querySelector("[data-span-col]")?.value || 1);
+      const rowSpan = Number(editor?.querySelector("[data-span-row]")?.value || 1);
+      fetchJson("/api/live/layout/item", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({live_key: key, column_span: columnSpan, row_span: rowSpan, sort_order: index}),
+      }).catch(() => {});
+    });
+  };
+
+  cards.forEach((card) => {
+    const handle = card.querySelector("[data-live-drag-handle]");
+    if (!handle) return;
+    handle.addEventListener("dragstart", (event) => {
+      draggedKey = card.dataset.liveKey;
+      card.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", draggedKey);
+    });
+    handle.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      cards.forEach((other) => other.classList.remove("is-drop-target"));
+    });
+    card.addEventListener("dragover", (event) => {
+      if (!draggedKey || draggedKey === card.dataset.liveKey) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      card.classList.add("is-drop-target");
+    });
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("is-drop-target");
+    });
+    card.addEventListener("drop", (event) => {
+      event.preventDefault();
+      card.classList.remove("is-drop-target");
+      if (!draggedKey || draggedKey === card.dataset.liveKey || !grid) return;
+      const draggedCard = byKey.get(draggedKey);
+      if (!draggedCard) return;
+      const targetRect = card.getBoundingClientRect();
+      const insertAfter = event.clientX - targetRect.left > targetRect.width / 2;
+      grid.insertBefore(draggedCard, insertAfter ? card.nextSibling : card);
+      draggedKey = null;
+      persistOrder();
+    });
   });
 
   // --- Admin: layout panel toggle -------------------------------------------
