@@ -66,13 +66,13 @@
     video.className = "live-video";
     container.append(video);
     const cameraId = container.dataset.cameraId;
-    const ptzSupported = container.dataset.ptzSupported === "1";
+    const canControl = container.dataset.canControl === "1" && !!item.ptz_supported;
     container._tbcPlayer = new window.TBCPlayer(video, {
       mode: "live",
       src: item.playlist_url,
       autoplay: true,
       muted: true,
-      ptz: ptzSupported && cameraId
+      ptz: canControl && cameraId
         ? {
             cameraId,
             channel: Number(container.dataset.controlChannel || 0),

@@ -29,7 +29,7 @@
       data-live-player
       data-camera-id="{{ item.camera_id or '' }}"
       data-control-channel="{{ item.control_channel or 0 }}"
-      data-ptz-supported="{{ '1' if (item.ptz_supported and role == 'admin') else '0' }}"
+      data-can-control="{{ '1' if role == 'admin' else '0' }}"
     >
       <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
     </div>

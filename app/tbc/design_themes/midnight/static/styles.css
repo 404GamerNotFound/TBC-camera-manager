@@ -1285,7 +1285,11 @@ code {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 2;
+  /* Above .debug-fab (19) / .debug-drawer (20): the admin-only debug pull-up
+     sits fixed at the bottom-right of the viewport and would otherwise catch
+     clicks meant for the player controls whenever the video ends up near
+     that corner. */
+  z-index: 21;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1363,7 +1367,7 @@ code {
   position: absolute;
   right: 10px;
   bottom: 46px;
-  z-index: 2;
+  z-index: 21;
   display: flex;
   flex-direction: column;
   align-items: center;

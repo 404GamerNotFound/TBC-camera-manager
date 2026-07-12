@@ -2171,6 +2171,27 @@ def _require_live_key_access(request: Request, live_key: str):
     return JSONResponse({"error": "invalid live key"}, status_code=status.HTTP_404_NOT_FOUND)
 
 
+def _control_ptz_supported(camera: dict[str, Any], camera_id: int, *, channel: int) -> bool:
+    """Strict, probe-confirmed PTZ support: unlike CameraCapability.CONTROL (a coarse
+    module-level flag also true for cameras that only offer floodlight/siren/etc.),
+    this only reports true once a background control-state probe has actually
+    confirmed the device itself has PTZ. If no probe result is cached yet, one is
+    kicked off in the background (mirroring camera_detail's lazy-probe pattern) and
+    this returns False for now; the next page load/poll picks up the fresh result.
+    """
+    if not _camera_supports(camera, CameraCapability.CONTROL):
+        return False
+    control_state = CONTROL_STATE_CACHE.get((camera_id, channel))
+    if control_state is None:
+        try:
+            camera_module = get_camera_module(camera.get("module_key"))
+        except UnknownCameraModuleError:
+            return False
+        asyncio.create_task(_publish_control_state(camera_id, camera, camera_module, channel=channel))
+        return False
+    return bool(control_state.get("ptz_supported"))
+
+
 def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
     cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
     items: list[dict[str, Any]] = []
@@ -2178,7 +2199,6 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
         if not _camera_supports(camera, CameraCapability.LIVE):
             continue
         camera_id = int(camera["id"])
-        ptz_supported = _camera_supports(camera, CameraCapability.CONTROL)
         items.append(
             {
                 "key": f"camera-{camera_id}",
@@ -2187,7 +2207,7 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
                 "kind": "Kamera",
                 "camera_id": camera_id,
                 "control_channel": 0,
-                "ptz_supported": ptz_supported,
+                "ptz_supported": _control_ptz_supported(camera, camera_id, channel=0),
                 "stream_uri": stream_uri_for(camera),
             }
         )
@@ -2195,15 +2215,16 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
             if int(channel.get("enabled") or 0) != 1:
                 continue
             channel_id = int(channel["id"])
+            channel_index = int(channel["channel_index"])
             items.append(
                 {
                     "key": f"channel-{channel_id}",
-                    "name": str(channel.get("name") or f"Kanal {int(channel['channel_index']) + 1}"),
-                    "subtitle": f"{camera['name']} · Kanal {int(channel['channel_index']) + 1}",
+                    "name": str(channel.get("name") or f"Kanal {channel_index + 1}"),
+                    "subtitle": f"{camera['name']} · Kanal {channel_index + 1}",
                     "kind": "Kanal",
                     "camera_id": camera_id,
-                    "control_channel": int(channel["channel_index"]),
-                    "ptz_supported": ptz_supported,
+                    "control_channel": channel_index,
+                    "ptz_supported": _control_ptz_supported(camera, camera_id, channel=channel_index),
                     "stream_uri": stream_uri_for(camera, channel),
                 }
             )

@@ -375,7 +375,6 @@
   <div class="diagnostic-note" data-control-none-note>Diese Kamera meldet über ONVIF keine der hier unterstützten Steuerfunktionen (PTZ, Flutlicht, PIR, Sirene, Akku, Neustart).</div>
   {% endif %}
 
-  {% if not control_state or control_state.ptz_supported %}
   <section class="table-section">
     <div class="section-title"><h2>Live-Vorschau</h2></div>
     <div
@@ -384,10 +383,13 @@
       data-camera-id="{{ camera.id }}"
       data-control-channel="{{ selected_control_channel }}"
       data-live-key="{{ control_live_key }}"
+      data-ptz-supported="{{ '1' if (control_state and control_state.ptz_supported) else '0' }}"
     >
       <div class="live-placeholder">Stream wird gestartet…</div>
     </div>
   </section>
+
+  {% if not control_state or control_state.ptz_supported %}
   <section class="table-section">
     <div class="section-title"><h2>Schwenk-/Neigekopf (PTZ)</h2></div>
     <div class="button-row ptz-controls">

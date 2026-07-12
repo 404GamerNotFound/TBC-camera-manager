@@ -85,12 +85,13 @@
     livePlayerContainer.append(video);
     const cameraId = livePlayerContainer.dataset.cameraId;
     const channel = Number(livePlayerContainer.dataset.controlChannel || 0);
+    const ptzSupported = livePlayerContainer.dataset.ptzSupported === "1";
     new window.TBCPlayer(video, {
       mode: "live",
       src: playlistUrl,
       autoplay: true,
       muted: true,
-      ptz: cameraId ? { cameraId, channel, onError: (message) => showToast(message, false) } : null,
+      ptz: ptzSupported && cameraId ? { cameraId, channel, onError: (message) => showToast(message, false) } : null,
     });
   }
 
