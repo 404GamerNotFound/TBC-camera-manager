@@ -418,6 +418,32 @@
   {% endif %}
   {% endif %}
 
+  {% if control_state and (control_state.zoom_supported or control_state.focus_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2>Zoom &amp; Fokus</h2></div>
+    {% if control_state.zoom_supported %}
+    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/zoom" data-control-form>
+      <label>
+        <span>Zoom ({{ control_state.zoom_range.min }}–{{ control_state.zoom_range.max }})</span>
+        <input name="position" type="range" min="{{ control_state.zoom_range.min or 0 }}" max="{{ control_state.zoom_range.max or 100 }}" value="{{ control_state.zoom_position or control_state.zoom_range.min or 0 }}">
+      </label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit">Zoom anwenden</button>
+    </form>
+    {% endif %}
+    {% if control_state.focus_supported %}
+    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/focus" data-control-form>
+      <label>
+        <span>Fokus ({{ control_state.focus_range.min }}–{{ control_state.focus_range.max }})</span>
+        <input name="position" type="range" min="{{ control_state.focus_range.min or 0 }}" max="{{ control_state.focus_range.max or 100 }}" value="{{ control_state.focus_position or control_state.focus_range.min or 0 }}">
+      </label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit">Fokus anwenden</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if not control_state or control_state.floodlight_supported %}
   <section class="table-section">
     <div class="section-title">
@@ -452,6 +478,21 @@
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="primary-button" type="submit">Sirene abspielen</button>
     </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and control_state.is_doorbell and control_state.quick_reply_supported and control_state.quick_reply_options %}
+  <section class="table-section">
+    <div class="section-title"><h2>Schnellantworten</h2></div>
+    <div class="button-row">
+      {% for file_id, name in control_state.quick_reply_options.items() %}
+      <form method="post" action="/cameras/{{ camera.id }}/control/quick-reply" data-control-form>
+        <input type="hidden" name="file_id" value="{{ file_id }}">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="secondary-button" type="submit">{{ name }}</button>
+      </form>
+      {% endfor %}
+    </div>
   </section>
   {% endif %}
 

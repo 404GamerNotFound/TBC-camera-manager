@@ -1,0 +1,51 @@
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directories:
+      - "/"
+      - "/.github"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:15"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      python-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "deps(python)"
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:30"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(docker)"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:45"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "deps(actions)"

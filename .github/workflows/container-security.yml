@@ -1,0 +1,60 @@
+name: Container quality and security
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - requirements.txt
+      - app/**
+      - .github/workflows/container-security.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - requirements.txt
+      - app/**
+      - .github/workflows/container-security.yml
+  schedule:
+    - cron: "23 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  container:
+    name: Build and scan image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.2.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+
+      - name: Build container image
+        run: docker build --tag tbc-camera-manager:ci .
+
+      - name: Scan container image
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: image
+          image-ref: tbc-camera-manager:ci
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"

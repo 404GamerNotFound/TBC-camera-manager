@@ -520,6 +520,23 @@ async def control_camera_reboot(request: Request, camera_id: int, channel: int =
     return await _execute_control(request, camera_id, action="reboot", params={}, channel=channel)
 
 
+@app.post("/cameras/{camera_id}/control/zoom")
+async def control_camera_zoom(request: Request, camera_id: int, position: int = Form(...), channel: int = Form(0)):
+    return await _execute_control(request, camera_id, action="zoom", params={"position": position}, channel=channel)
+
+
+@app.post("/cameras/{camera_id}/control/focus")
+async def control_camera_focus(request: Request, camera_id: int, position: int = Form(...), channel: int = Form(0)):
+    return await _execute_control(request, camera_id, action="focus", params={"position": position}, channel=channel)
+
+
+@app.post("/cameras/{camera_id}/control/quick-reply")
+async def control_camera_quick_reply(request: Request, camera_id: int, file_id: int = Form(...), channel: int = Form(0)):
+    return await _execute_control(
+        request, camera_id, action="quick_reply", params={"file_id": file_id}, channel=channel
+    )
+
+
 @app.post("/cameras/{camera_id}/firmware/check")
 async def check_camera_firmware(request: Request, camera_id: int, channel: int = Form(0)):
     guard = _require_admin(request)

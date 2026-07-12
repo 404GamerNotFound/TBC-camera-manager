@@ -27,6 +27,9 @@ class FakeControlHost:
             ("siren_play", 0): True,
             ("battery", 0): True,
             ("firmware", 0): True,
+            ("zoom", 0): True,
+            ("focus", 0): True,
+            ("play_quick_reply", 0): True,
         }
         self._floodlight_state = True
         self._pir_enabled = False
@@ -39,6 +42,14 @@ class FakeControlHost:
         self._sw_upload_progress: dict = {}
         self.check_new_firmware_calls = []
         self.update_firmware_calls = []
+        self._zoom_position = 10
+        self._focus_position = 20
+        self._zoom_range_data = {0: {"zoom": {"min": 0, "max": 100}, "focus": {"min": 0, "max": 50}}}
+        self._is_doorbell = False
+        self._quick_reply_options = {-1: "Aus", 1: "Hallo, ich bin gleich da", 2: "Bitte Paket abstellen"}
+        self.zoom_calls = []
+        self.focus_calls = []
+        self.quick_reply_calls = []
 
     async def get_host_data(self):
         return None
@@ -97,6 +108,30 @@ class FakeControlHost:
 
     async def logout(self):
         self.closed = True
+
+    def get_zoom(self, channel):
+        return self._zoom_position
+
+    def get_focus(self, channel):
+        return self._focus_position
+
+    def zoom_range(self, channel):
+        return self._zoom_range_data.get(channel, {})
+
+    async def set_zoom(self, channel, position):
+        self.zoom_calls.append((channel, position))
+
+    async def set_focus(self, channel, position):
+        self.focus_calls.append((channel, position))
+
+    def is_doorbell(self, channel):
+        return self._is_doorbell
+
+    def quick_reply_dict(self, channel):
+        return self._quick_reply_options
+
+    async def play_quick_reply(self, channel, file_id):
+        self.quick_reply_calls.append((channel, file_id))
 
 
 class FakeNvrChannelHost(FakeControlHost):
@@ -249,6 +284,57 @@ class ReolinkControlTests(unittest.IsolatedAsyncioTestCase):
             await control.send_control(self.camera, action="unknown-action")
 
         self.assertTrue(FakeControlHost.instance.closed)
+
+    async def test_get_control_state_reports_zoom_and_focus(self):
+        state = await control.get_control_state(self.camera)
+
+        self.assertTrue(state["zoom_supported"])
+        self.assertEqual(state["zoom_position"], 10)
+        self.assertEqual(state["zoom_range"], {"min": 0, "max": 100})
+        self.assertTrue(state["focus_supported"])
+        self.assertEqual(state["focus_position"], 20)
+        self.assertEqual(state["focus_range"], {"min": 0, "max": 50})
+
+    async def test_get_control_state_reports_quick_reply_options_excluding_off_sentinel(self):
+        FakeControlHost.instance = None
+
+        class DoorbellHost(FakeControlHost):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._is_doorbell = True
+
+        with patch.object(sys.modules["reolink_aio.api"], "Host", DoorbellHost):
+            state = await control.get_control_state(self.camera)
+
+        self.assertTrue(state["is_doorbell"])
+        self.assertTrue(state["quick_reply_supported"])
+        self.assertEqual(
+            state["quick_reply_options"],
+            {"1": "Hallo, ich bin gleich da", "2": "Bitte Paket abstellen"},
+        )
+
+    async def test_send_control_zoom_sets_position(self):
+        await control.send_control(self.camera, action="zoom", position=42)
+
+        self.assertEqual(FakeControlHost.instance.zoom_calls, [(0, 42)])
+
+    async def test_send_control_zoom_rejects_non_numeric_position(self):
+        with self.assertRaises(ValueError):
+            await control.send_control(self.camera, action="zoom", position="far")
+
+    async def test_send_control_focus_sets_position(self):
+        await control.send_control(self.camera, action="focus", position=15)
+
+        self.assertEqual(FakeControlHost.instance.focus_calls, [(0, 15)])
+
+    async def test_send_control_quick_reply_plays_file(self):
+        await control.send_control(self.camera, action="quick_reply", file_id=2)
+
+        self.assertEqual(FakeControlHost.instance.quick_reply_calls, [(0, 2)])
+
+    async def test_send_control_quick_reply_rejects_non_numeric_file_id(self):
+        with self.assertRaises(ValueError):
+            await control.send_control(self.camera, action="quick_reply", file_id="clip.mp3")
 
 
 class ReolinkControlNvrChannelTests(unittest.IsolatedAsyncioTestCase):

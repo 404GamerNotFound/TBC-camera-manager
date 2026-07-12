@@ -35,6 +35,15 @@ async def get_control_state(camera: dict[str, Any], *, channel: int = 0) -> dict
             "battery_status": _battery_status_label(_value(host_api, "battery_status", channel)),
             "firmware_supported": _supported(host_api, channel, "firmware"),
             "firmware_current": _value(host_api, "camera_sw_version", channel),
+            "zoom_supported": _supported(host_api, channel, "zoom"),
+            "zoom_position": _value(host_api, "get_zoom", channel),
+            "zoom_range": _zoom_focus_range(host_api, channel, "zoom"),
+            "focus_supported": _supported(host_api, channel, "focus"),
+            "focus_position": _value(host_api, "get_focus", channel),
+            "focus_range": _zoom_focus_range(host_api, channel, "focus"),
+            "is_doorbell": bool(_value(host_api, "is_doorbell", channel)),
+            "quick_reply_supported": _supported(host_api, channel, "play_quick_reply"),
+            "quick_reply_options": _quick_reply_options(host_api, channel),
         }
         return state
     finally:
@@ -58,6 +67,12 @@ async def send_control(camera: dict[str, Any], *, action: str, channel: int = 0,
         elif action == "siren":
             duration = max(1, min(30, int(params.get("duration") or 5)))
             await host_api.set_siren(channel, enable=True, duration=duration)
+        elif action == "zoom":
+            await host_api.set_zoom(channel, _required_int(params, "position", label="Zoom-Position"))
+        elif action == "focus":
+            await host_api.set_focus(channel, _required_int(params, "position", label="Fokus-Position"))
+        elif action == "quick_reply":
+            await host_api.play_quick_reply(channel, _required_int(params, "file_id", label="Audiodatei"))
         else:
             raise ValueError(f"Unbekannte Steuerungsaktion: {action}")
         return {"status": "ok", "action": action}
@@ -164,6 +179,40 @@ async def _send_ptz(host_api: Any, channel: int, params: dict[str, Any]) -> None
             await host_api.set_ptz_command(channel, command="Stop")
         except Exception:
             LOGGER.debug("Reolink PTZ stop pulse failed", exc_info=True)
+
+
+def _required_int(params: dict[str, Any], key: str, *, label: str) -> int:
+    value = params.get(key)
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Ungültiger Wert für {label}: {value}") from exc
+
+
+def _zoom_focus_range(host_api: Any, channel: int, key: str) -> dict[str, int]:
+    getter = getattr(host_api, "zoom_range", None)
+    if not callable(getter):
+        return {}
+    try:
+        sub = dict((getter(channel) or {}).get(key) or {})
+        return {"min": int(sub["min"]), "max": int(sub["max"])}
+    except Exception:
+        return {}
+
+
+def _quick_reply_options(host_api: Any, channel: int) -> dict[str, str]:
+    getter = getattr(host_api, "quick_reply_dict", None)
+    if not callable(getter):
+        return {}
+    try:
+        options = dict(getter(channel) or {})
+    except Exception:
+        LOGGER.debug("Reolink quick-reply lookup failed", exc_info=True)
+        return {}
+    # -1 is the "off" sentinel reolink-aio uses for the auto-reply *setting*,
+    # not a playable clip - exclude it here since this list is only used to
+    # offer real audio files to play back on demand.
+    return {str(file_id): str(name) for file_id, name in options.items() if isinstance(file_id, int) and file_id >= 0}
 
 
 def _ptz_presets(host_api: Any, channel: int) -> dict[str, int]:
