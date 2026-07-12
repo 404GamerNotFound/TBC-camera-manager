@@ -516,10 +516,10 @@ button:focus-visible {
 
 .live-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 420px));
+  grid-template-columns: repeat(var(--live-columns, 3), minmax(0, 1fr));
+  grid-auto-rows: minmax(220px, auto);
   gap: 18px;
-  align-items: start;
-  justify-content: start;
+  align-items: stretch;
 }
 
 .camera-card {
@@ -646,7 +646,22 @@ button:focus-visible {
   gap: 14px;
   padding: 16px;
   width: 100%;
-  max-width: 420px;
+}
+
+.live-grid .live-card {
+  grid-template-rows: auto 1fr auto auto;
+}
+
+.live-grid .live-player-shell {
+  min-height: 160px;
+  height: 100%;
+}
+
+.live-grid .live-video,
+.live-grid .live-placeholder,
+.live-grid .tbc-player {
+  height: 100%;
+  max-height: none;
 }
 
 .live-toolbar {
@@ -1441,6 +1456,126 @@ code {
 .tbc-ptz-zoom .tbc-ptz-btn {
   width: 30px;
   height: 30px;
+}
+
+.live-wall-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.live-wall-controls .check-row {
+  gap: 6px;
+  font-size: 0.86rem;
+}
+
+.live-columns-select {
+  width: auto;
+  min-height: 38px;
+  padding: 6px 10px;
+}
+
+.live-span-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.live-span-editor label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+}
+
+.live-span-editor input {
+  width: 44px;
+  min-height: 28px;
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+/* Fullscreen kiosk mode: hide app chrome so the wall fills the screen and
+   only expose a low-key affordance for leaving it again (besides Esc, which
+   the browser's own Fullscreen API already handles). */
+body.live-kiosk .topbar,
+body.live-kiosk .page-heading,
+body.live-kiosk .debug-fab,
+body.live-kiosk .debug-drawer {
+  display: none !important;
+}
+
+body.live-kiosk .shell {
+  width: 100%;
+  max-width: none;
+  padding: 10px;
+}
+
+body.live-kiosk .live-grid {
+  height: calc(100vh - 20px);
+}
+
+.live-kiosk-exit {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 40;
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+
+.live-kiosk-exit:hover,
+.live-kiosk-exit:focus-visible {
+  opacity: 1;
+}
+
+.live-solo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 4vw, 48px);
+  background: rgba(10, 14, 12, 0.86);
+}
+
+.live-solo-overlay[hidden] {
+  display: none;
+}
+
+.live-solo-panel {
+  display: grid;
+  gap: 14px;
+  width: min(1400px, 100%);
+}
+
+.live-solo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+
+.live-solo-header h2 {
+  margin: 0;
+}
+
+.live-solo-player {
+  width: 100%;
+}
+
+.live-solo-player .tbc-player {
+  aspect-ratio: 16 / 9;
+  max-height: 80vh;
 }
 
 .live-channel-row {

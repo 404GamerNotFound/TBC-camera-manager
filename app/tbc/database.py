@@ -232,6 +232,17 @@ CREATE TABLE IF NOT EXISTS mqtt_config (
 CREATE TABLE IF NOT EXISTS ui_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_theme_key TEXT NOT NULL DEFAULT 'standard',
+    live_grid_columns INTEGER NOT NULL DEFAULT 3,
+    live_rotation_enabled INTEGER NOT NULL DEFAULT 0,
+    live_rotation_seconds INTEGER NOT NULL DEFAULT 15,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS live_layout (
+    live_key TEXT PRIMARY KEY,
+    column_span INTEGER NOT NULL DEFAULT 1,
+    row_span INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 """
@@ -257,6 +268,9 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE cameras ADD COLUMN continuous_recording_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE cameras ADD COLUMN continuous_segment_seconds INTEGER NOT NULL DEFAULT 300",
     "ALTER TABLE cameras ADD COLUMN continuous_storage_id INTEGER",
+    "ALTER TABLE ui_settings ADD COLUMN live_grid_columns INTEGER NOT NULL DEFAULT 3",
+    "ALTER TABLE ui_settings ADD COLUMN live_rotation_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN live_rotation_seconds INTEGER NOT NULL DEFAULT 15",
 )
 
 
@@ -1485,6 +1499,74 @@ def set_active_theme_key(database_path: str, theme_key: str) -> None:
                 updated_at = CURRENT_TIMESTAMP
             """,
             (theme_key,),
+        )
+
+
+def get_live_wall_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT live_grid_columns, live_rotation_enabled, live_rotation_seconds FROM ui_settings WHERE id = 1"
+        ).fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+            return {"columns": 3, "rotation_enabled": False, "rotation_seconds": 15}
+    return {
+        "columns": int(row["live_grid_columns"]),
+        "rotation_enabled": bool(row["live_rotation_enabled"]),
+        "rotation_seconds": int(row["live_rotation_seconds"]),
+    }
+
+
+def set_live_wall_settings(
+    database_path: str, *, columns: int, rotation_enabled: bool, rotation_seconds: int
+) -> None:
+    columns = max(1, min(6, columns))
+    rotation_seconds = max(5, min(300, rotation_seconds))
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO ui_settings (id, live_grid_columns, live_rotation_enabled, live_rotation_seconds)
+            VALUES (1, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                live_grid_columns = excluded.live_grid_columns,
+                live_rotation_enabled = excluded.live_rotation_enabled,
+                live_rotation_seconds = excluded.live_rotation_seconds,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (columns, 1 if rotation_enabled else 0, rotation_seconds),
+        )
+
+
+def get_live_layout(database_path: str) -> dict[str, dict[str, int]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT live_key, column_span, row_span, sort_order FROM live_layout").fetchall()
+    return {
+        str(row["live_key"]): {
+            "column_span": int(row["column_span"]),
+            "row_span": int(row["row_span"]),
+            "sort_order": int(row["sort_order"]),
+        }
+        for row in rows
+    }
+
+
+def set_live_layout_item(
+    database_path: str, live_key: str, *, column_span: int, row_span: int, sort_order: int
+) -> None:
+    column_span = max(1, min(4, column_span))
+    row_span = max(1, min(4, row_span))
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO live_layout (live_key, column_span, row_span, sort_order)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(live_key) DO UPDATE SET
+                column_span = excluded.column_span,
+                row_span = excluded.row_span,
+                sort_order = excluded.sort_order,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (live_key, column_span, row_span, sort_order),
         )
 
 

@@ -1427,9 +1427,51 @@ async def live_view(request: Request):
             "username": request.session.get("username"),
             "role": user["role"],
             "live_items": [_live_item_payload(item) for item in live_items],
+            "wall_settings": database.get_live_wall_settings(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.post("/live/layout")
+async def update_live_wall_settings(
+    request: Request,
+    columns: int = Form(3),
+    rotation_enabled: str | None = Form(None),
+    rotation_seconds: int = Form(15),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.set_live_wall_settings(
+        SETTINGS.database_path,
+        columns=columns,
+        rotation_enabled=rotation_enabled == "on",
+        rotation_seconds=rotation_seconds,
+    )
+    return _redirect("/live")
+
+
+@app.post("/api/live/layout/item")
+async def update_live_layout_item(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    user = _current_user(request)
+    payload = await request.json()
+    live_key = str(payload.get("live_key") or "")
+    if not _live_item_for_key(user, live_key):
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        column_span = int(payload.get("column_span", 1))
+        row_span = int(payload.get("row_span", 1))
+        sort_order = int(payload.get("sort_order", 0))
+    except (TypeError, ValueError):
+        return JSONResponse({"error": "invalid payload"}, status_code=status.HTTP_400_BAD_REQUEST)
+    database.set_live_layout_item(
+        SETTINGS.database_path, live_key, column_span=column_span, row_span=row_span, sort_order=sort_order
+    )
+    return {"ok": True}
 
 
 @app.get("/api/live/status")
@@ -2272,6 +2314,15 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
                     "stream_uri": stream_uri_for(camera, channel),
                 }
             )
+    layout = database.get_live_layout(SETTINGS.database_path)
+    for index, item in enumerate(items):
+        entry = layout.get(item["key"], {})
+        item["column_span"] = int(entry.get("column_span", 1))
+        item["row_span"] = int(entry.get("row_span", 1))
+        # Ties (the common case: nothing customized yet) keep the original,
+        # stable camera/channel order instead of being reshuffled by sort().
+        item["sort_order"] = int(entry.get("sort_order", index))
+    items.sort(key=lambda entry: entry["sort_order"])
     return items
 
 
@@ -2314,6 +2365,9 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
         "camera_id": item.get("camera_id"),
         "control_channel": item.get("control_channel", 0),
         "ptz_supported": bool(item.get("ptz_supported")),
+        "column_span": int(item.get("column_span", 1)),
+        "row_span": int(item.get("row_span", 1)),
+        "sort_order": int(item.get("sort_order", 0)),
     }
 
 

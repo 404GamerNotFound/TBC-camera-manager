@@ -2,13 +2,27 @@
   const cards = Array.from(document.querySelectorAll("[data-live-card]"));
   const summary = document.querySelector("[data-live-summary]");
   const refreshButton = document.querySelector("[data-live-refresh]");
+  const fullscreenButton = document.querySelector("[data-live-fullscreen]");
+  const kioskExitButton = document.querySelector("[data-live-kiosk-exit]");
+  const layoutToggleButton = document.querySelector("[data-live-layout-toggle]");
+  const layoutForm = document.querySelector("[data-live-layout-form]");
+  const rotationToggle = document.querySelector("[data-live-rotation-toggle]");
+  const grid = document.querySelector("[data-live-grid]");
+  const soloOverlay = document.querySelector("[data-live-solo-overlay]");
+  const soloTitle = document.querySelector("[data-live-solo-title]");
+  const soloPlayerContainer = document.querySelector("[data-live-solo-player]");
+  const soloCloseButton = document.querySelector("[data-live-solo-close]");
+
   if (!cards.length) {
     if (summary) summary.textContent = "Keine Streams";
     return;
   }
 
   const byKey = new Map(cards.map((card) => [card.dataset.liveKey, card]));
+  const latestItems = new Map();
   let pollTimer = null;
+  let soloPlayer = null;
+  let soloKey = null;
 
   const statusClass = (status) => {
     if (status === "running") return "status-active";
@@ -83,6 +97,7 @@
   };
 
   const renderItem = (item) => {
+    latestItems.set(item.key, item);
     const card = byKey.get(item.key);
     if (!card) return;
     const pill = card.querySelector("[data-live-status]");
@@ -157,6 +172,162 @@
       await refresh();
     });
   });
+
+  // --- Fullscreen / kiosk mode -------------------------------------------
+  const isFullscreen = () => !!document.fullscreenElement;
+
+  const applyKioskState = () => {
+    const active = isFullscreen();
+    document.body.classList.toggle("live-kiosk", active);
+    if (kioskExitButton) kioskExitButton.hidden = !active;
+  };
+
+  fullscreenButton?.addEventListener("click", () => {
+    if (isFullscreen()) {
+      document.exitFullscreen?.();
+    } else {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+  });
+
+  kioskExitButton?.addEventListener("click", () => {
+    document.exitFullscreen?.();
+  });
+
+  document.addEventListener("fullscreenchange", applyKioskState);
+
+  // --- Solo / focused view -------------------------------------------------
+  const closeSolo = () => {
+    if (soloPlayer) {
+      soloPlayer.destroy();
+      soloPlayer = null;
+    }
+    soloKey = null;
+    if (soloPlayerContainer) soloPlayerContainer.innerHTML = "";
+    if (soloOverlay) soloOverlay.hidden = true;
+  };
+
+  const openSolo = (key) => {
+    const item = latestItems.get(key);
+    const card = byKey.get(key);
+    if (!item || !card || item.status !== "running" || !soloOverlay || !soloPlayerContainer) return;
+    closeSolo();
+    soloKey = key;
+    if (soloTitle) soloTitle.textContent = card.dataset.liveName || item.name || "";
+    const video = document.createElement("video");
+    video.className = "live-video";
+    soloPlayerContainer.appendChild(video);
+    const player = card.querySelector("[data-live-player]");
+    const cameraId = player?.dataset.cameraId;
+    const canControl = player?.dataset.canControl === "1" && !!item.ptz_supported;
+    soloPlayer = new window.TBCPlayer(video, {
+      mode: "live",
+      src: item.playlist_url,
+      autoplay: true,
+      muted: true,
+      ptz: canControl && cameraId
+        ? { cameraId, channel: Number(player.dataset.controlChannel || 0), onError: () => {} }
+        : null,
+    });
+    soloOverlay.hidden = false;
+  };
+
+  cards.forEach((card) => {
+    const key = card.dataset.liveKey;
+    const shell = card.querySelector("[data-live-expand]");
+    shell?.addEventListener("click", (event) => {
+      if (event.target.closest(".tbc-player-bar, .tbc-ptz, button, input, a")) return;
+      openSolo(key);
+    });
+  });
+
+  soloCloseButton?.addEventListener("click", closeSolo);
+  soloOverlay?.addEventListener("click", (event) => {
+    if (event.target === soloOverlay) closeSolo();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && soloOverlay && !soloOverlay.hidden) closeSolo();
+  });
+
+  // --- Admin: per-card size editor -----------------------------------------
+  document.querySelectorAll("[data-live-span-editor]").forEach((editor) => {
+    const key = editor.dataset.liveKey;
+    const card = byKey.get(key);
+    const colInput = editor.querySelector("[data-span-col]");
+    const rowInput = editor.querySelector("[data-span-row]");
+
+    const save = async () => {
+      const columnSpan = Math.max(1, Math.min(4, Number(colInput.value) || 1));
+      const rowSpan = Math.max(1, Math.min(4, Number(rowInput.value) || 1));
+      colInput.value = String(columnSpan);
+      rowInput.value = String(rowSpan);
+      if (card) {
+        card.style.gridColumn = `span ${columnSpan}`;
+        card.style.gridRow = `span ${rowSpan}`;
+      }
+      try {
+        await fetchJson("/api/live/layout/item", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            live_key: key,
+            column_span: columnSpan,
+            row_span: rowSpan,
+            sort_order: Number(card?.dataset.sortOrder || 0),
+          }),
+        });
+      } catch (error) {
+        // best effort; the visual change already applied locally
+      }
+    };
+
+    colInput?.addEventListener("change", save);
+    rowInput?.addEventListener("change", save);
+  });
+
+  // --- Admin: layout panel toggle -------------------------------------------
+  layoutToggleButton?.addEventListener("click", () => {
+    if (!layoutForm) return;
+    const nowHidden = !layoutForm.hidden;
+    layoutForm.hidden = nowHidden;
+    layoutToggleButton.setAttribute("aria-expanded", String(!nowHidden));
+  });
+
+  // --- Rotation: cycle through pages of cards when there are more than fit
+  // on one screen. Page size is columns x columns (a simple, predictable
+  // square page rather than trying to fit exact remaining vertical space,
+  // which would need per-card span-aware bin packing).
+  let rotationTimer = null;
+  let rotationPage = 0;
+
+  const applyRotation = () => {
+    window.clearInterval(rotationTimer);
+    const columns = Number(grid?.dataset.liveColumns || 3);
+    const seconds = Number(grid?.dataset.rotationSeconds || 15);
+    const pageSize = Math.max(1, columns * columns);
+    const enabled = !!rotationToggle?.checked;
+    if (!enabled || cards.length <= pageSize) {
+      cards.forEach((card) => {
+        card.hidden = false;
+      });
+      return;
+    }
+    const pageCount = Math.ceil(cards.length / pageSize);
+    const showPage = (page) => {
+      cards.forEach((card, index) => {
+        card.hidden = Math.floor(index / pageSize) !== page;
+      });
+    };
+    rotationPage = rotationPage % pageCount;
+    showPage(rotationPage);
+    rotationTimer = window.setInterval(() => {
+      rotationPage = (rotationPage + 1) % pageCount;
+      showPage(rotationPage);
+    }, Math.max(5, seconds) * 1000);
+  };
+
+  rotationToggle?.addEventListener("change", applyRotation);
+  applyRotation();
 
   refreshButton?.addEventListener("click", () => {
     refresh().catch((error) => {

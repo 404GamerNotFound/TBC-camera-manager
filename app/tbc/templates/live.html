@@ -9,13 +9,71 @@
   <div class="button-row live-toolbar">
     <span class="status-pill status-warning" data-live-summary>Streams werden gestartet</span>
     <button class="secondary-button" type="button" data-live-refresh>Aktualisieren</button>
+    <button class="secondary-button" type="button" data-live-fullscreen>Vollbild</button>
+    {% if role == 'admin' %}
+    <button class="secondary-button" type="button" data-live-layout-toggle aria-expanded="false">Layout</button>
+    {% endif %}
   </div>
 </section>
 
+<div class="live-wall-controls">
+  <label class="check-row">
+    <input type="checkbox" data-live-rotation-toggle {% if wall_settings.rotation_enabled %}checked{% endif %}>
+    <span>Automatisch durchschalten</span>
+  </label>
+</div>
+
+{% if role == 'admin' %}
+<form class="editor-form compact-form" method="post" action="/live/layout" data-live-layout-form hidden>
+  <div class="section-title">
+    <h2>Wandlayout</h2>
+    <span>Admin</span>
+  </div>
+  <div class="form-grid">
+    <label>
+      <span>Raster-Spalten</span>
+      <select name="columns" class="live-columns-select">
+        {% for n in [2, 3, 4, 5, 6] %}
+        <option value="{{ n }}" {% if wall_settings.columns == n %}selected{% endif %}>{{ n }} Spalten</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="check-row">
+      <input type="checkbox" name="rotation_enabled" {% if wall_settings.rotation_enabled %}checked{% endif %}>
+      <span>Rotation standardmäßig aktiv</span>
+    </label>
+    <label>
+      <span>Rotationsintervall (Sekunden)</span>
+      <input type="number" name="rotation_seconds" min="5" max="300" value="{{ wall_settings.rotation_seconds }}">
+    </label>
+  </div>
+  <div class="quiet-box">
+    Die Kachelgröße jeder einzelnen Kamera wird direkt unter ihrer Vorschau eingestellt (Breite/Höhe in Rasterfeldern).
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit">Speichern</button>
+  </div>
+</form>
+{% endif %}
+
 {% if live_items %}
-<section class="live-grid" aria-label="Livestreams">
+<section
+  class="live-grid"
+  aria-label="Livestreams"
+  data-live-grid
+  data-live-columns="{{ wall_settings.columns }}"
+  data-rotation-seconds="{{ wall_settings.rotation_seconds }}"
+  style="--live-columns: {{ wall_settings.columns }};"
+>
   {% for item in live_items %}
-  <article class="camera-card live-card" data-live-card data-live-key="{{ item.key }}">
+  <article
+    class="camera-card live-card"
+    data-live-card
+    data-live-key="{{ item.key }}"
+    data-live-name="{{ item.name }}"
+    data-sort-order="{{ item.sort_order }}"
+    style="grid-column: span {{ item.column_span }}; grid-row: span {{ item.row_span }};"
+  >
     <div class="card-header">
       <div>
         <p class="eyebrow">{{ item.kind }}</p>
@@ -30,9 +88,16 @@
       data-camera-id="{{ item.camera_id or '' }}"
       data-control-channel="{{ item.control_channel or 0 }}"
       data-can-control="{{ '1' if role == 'admin' else '0' }}"
+      data-live-expand
     >
       <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
     </div>
+    {% if role == 'admin' %}
+    <div class="live-span-editor" data-live-span-editor data-live-key="{{ item.key }}">
+      <label>Breite <input type="number" min="1" max="4" value="{{ item.column_span }}" data-span-col></label>
+      <label>Höhe <input type="number" min="1" max="4" value="{{ item.row_span }}" data-span-row></label>
+    </div>
+    {% endif %}
     <p class="clip-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
     <div class="live-actions">
       <button class="secondary-button" type="button" data-live-retry>Neu starten</button>
@@ -47,6 +112,18 @@
   <h2>Keine Kamera verfügbar</h2>
 </section>
 {% endif %}
+
+<button class="secondary-button live-kiosk-exit" type="button" data-live-kiosk-exit hidden>Vollbild verlassen (Esc)</button>
+
+<div class="live-solo-overlay" data-live-solo-overlay hidden>
+  <div class="live-solo-panel">
+    <div class="live-solo-header">
+      <h2 data-live-solo-title></h2>
+      <button class="icon-button" type="button" aria-label="Schließen" data-live-solo-close>×</button>
+    </div>
+    <div class="live-solo-player" data-live-solo-player></div>
+  </div>
+</div>
 
 <script src="{{ url_for('static', path='/vendor/hls.min.js') }}" defer></script>
 <script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
