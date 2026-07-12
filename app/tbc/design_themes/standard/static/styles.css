@@ -649,6 +649,7 @@ button:focus-visible {
 }
 
 .live-grid .live-card {
+  position: relative;
   grid-template-rows: auto 1fr auto auto;
 }
 
@@ -1486,37 +1487,38 @@ code {
   padding: 6px 10px;
 }
 
-.live-span-editor {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 2px 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.live-span-editor label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-}
-
-.live-span-editor input[type="range"] {
-  width: 84px;
+.live-resize-handle {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
   min-height: auto;
   padding: 0;
-  accent-color: var(--brand);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: nwse-resize;
+  opacity: 0.6;
+  touch-action: none;
+  user-select: none;
 }
 
-.live-span-editor .live-span-value {
-  min-width: 14px;
-  color: var(--text);
-  font-weight: 800;
-  text-align: center;
+.live-resize-handle:hover,
+.live-resize-handle:focus-visible {
+  opacity: 1;
+  color: var(--brand-strong);
+}
+
+.live-card.is-resizing {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 .live-drag-handle {

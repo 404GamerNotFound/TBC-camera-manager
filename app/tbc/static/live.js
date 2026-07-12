@@ -249,27 +249,20 @@
     if (event.key === "Escape" && soloOverlay && !soloOverlay.hidden) closeSolo();
   });
 
-  // --- Admin: per-card size editor -----------------------------------------
-  document.querySelectorAll("[data-live-span-editor]").forEach((editor) => {
-    const key = editor.dataset.liveKey;
+  // --- Admin: drag-to-resize card corner ------------------------------------
+  // Pixels of drag movement per grid-unit step. Deliberately not measured from
+  // the actual rendered column/row size (which varies with content and would
+  // make the drag feel jumpy) - a fixed step gives a predictable, steady feel
+  // while still growing/shrinking the tile as the pointer moves.
+  const RESIZE_COLUMN_STEP_PX = 70;
+  const RESIZE_ROW_STEP_PX = 90;
+
+  document.querySelectorAll("[data-live-resize-handle]").forEach((handle) => {
+    const key = handle.dataset.liveKey;
     const card = byKey.get(key);
-    const colInput = editor.querySelector("[data-span-col]");
-    const rowInput = editor.querySelector("[data-span-row]");
-    const colValue = editor.querySelector("[data-span-col-value]");
-    const rowValue = editor.querySelector("[data-span-row-value]");
+    if (!card) return;
 
-    const preview = () => {
-      if (colValue) colValue.textContent = colInput.value;
-      if (rowValue) rowValue.textContent = rowInput.value;
-      if (card) {
-        card.style.gridColumn = `span ${colInput.value}`;
-        card.style.gridRow = `span ${rowInput.value}`;
-      }
-    };
-
-    const save = async () => {
-      const columnSpan = Math.max(1, Math.min(4, Number(colInput.value) || 1));
-      const rowSpan = Math.max(1, Math.min(4, Number(rowInput.value) || 1));
+    const saveSpan = async (columnSpan, rowSpan) => {
       try {
         await fetchJson("/api/live/layout/item", {
           method: "POST",
@@ -278,7 +271,7 @@
             live_key: key,
             column_span: columnSpan,
             row_span: rowSpan,
-            sort_order: Number(card?.dataset.sortOrder || 0),
+            sort_order: Number(card.dataset.sortOrder || 0),
           }),
         });
       } catch (error) {
@@ -286,10 +279,39 @@
       }
     };
 
-    colInput?.addEventListener("input", preview);
-    rowInput?.addEventListener("input", preview);
-    colInput?.addEventListener("change", save);
-    rowInput?.addEventListener("change", save);
+    handle.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startColumnSpan = Number(handle.dataset.columnSpan || 1);
+      const startRowSpan = Number(handle.dataset.rowSpan || 1);
+      let columnSpan = startColumnSpan;
+      let rowSpan = startRowSpan;
+      card.classList.add("is-resizing");
+
+      const onMove = (moveEvent) => {
+        const deltaX = moveEvent.clientX - startX;
+        const deltaY = moveEvent.clientY - startY;
+        columnSpan = Math.max(1, Math.min(4, startColumnSpan + Math.round(deltaX / RESIZE_COLUMN_STEP_PX)));
+        rowSpan = Math.max(1, Math.min(4, startRowSpan + Math.round(deltaY / RESIZE_ROW_STEP_PX)));
+        card.style.gridColumn = `span ${columnSpan}`;
+        card.style.gridRow = `span ${rowSpan}`;
+      };
+
+      const onUp = () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        card.classList.remove("is-resizing");
+        handle.dataset.columnSpan = String(columnSpan);
+        handle.dataset.rowSpan = String(rowSpan);
+        if (columnSpan !== startColumnSpan || rowSpan !== startRowSpan) {
+          saveSpan(columnSpan, rowSpan);
+        }
+      };
+
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    });
   });
 
   // --- Admin: drag-and-drop tile reordering ---------------------------------
@@ -300,9 +322,9 @@
     ordered.forEach((card, index) => {
       card.dataset.sortOrder = String(index);
       const key = card.dataset.liveKey;
-      const editor = card.querySelector("[data-live-span-editor]");
-      const columnSpan = Number(editor?.querySelector("[data-span-col]")?.value || 1);
-      const rowSpan = Number(editor?.querySelector("[data-span-row]")?.value || 1);
+      const resizeHandle = card.querySelector("[data-live-resize-handle]");
+      const columnSpan = Number(resizeHandle?.dataset.columnSpan || 1);
+      const rowSpan = Number(resizeHandle?.dataset.rowSpan || 1);
       fetchJson("/api/live/layout/item", {
         method: "POST",
         headers: {"Content-Type": "application/json"},

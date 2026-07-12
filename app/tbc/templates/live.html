@@ -48,7 +48,7 @@
     </label>
   </div>
   <div class="quiet-box">
-    Die Kachelgröße jeder einzelnen Kamera wird direkt unter ihrer Vorschau eingestellt (Breite/Höhe in Rasterfeldern).
+    Die Kachelgröße jeder einzelnen Kamera wird direkt an der Kachel eingestellt: Griff unten rechts an der Karte ziehen.
   </div>
   <div class="form-actions">
     <button class="primary-button" type="submit">Speichern</button>
@@ -97,26 +97,23 @@
     >
       <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
     </div>
-    {% if role == 'admin' %}
-    <div class="live-span-editor" data-live-span-editor data-live-key="{{ item.key }}">
-      <label>
-        Breite
-        <input type="range" min="1" max="4" step="1" value="{{ item.column_span }}" data-span-col aria-label="Breite in Rasterfeldern">
-        <span class="live-span-value" data-span-col-value>{{ item.column_span }}</span>
-      </label>
-      <label>
-        Höhe
-        <input type="range" min="1" max="4" step="1" value="{{ item.row_span }}" data-span-row aria-label="Höhe in Rasterfeldern">
-        <span class="live-span-value" data-span-row-value>{{ item.row_span }}</span>
-      </label>
-    </div>
-    {% endif %}
     <p class="clip-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
     <div class="live-actions">
       <button class="secondary-button" type="button" data-live-retry>Neu starten</button>
       <button class="secondary-button" type="button" data-live-stop>Stop</button>
       <a class="text-button" href="{{ item.playlist_url }}">HLS</a>
     </div>
+    {% if role == 'admin' %}
+    <button
+      class="live-resize-handle"
+      type="button"
+      data-live-resize-handle
+      data-live-key="{{ item.key }}"
+      data-column-span="{{ item.column_span }}"
+      data-row-span="{{ item.row_span }}"
+      aria-label="Kachelgröße ändern, ziehen"
+    >⤡</button>
+    {% endif %}
   </article>
   {% endfor %}
 </section>
