@@ -126,7 +126,17 @@ class _CapturedLoginResponse:
     def __getattr__(self, name: str) -> Any:
         return getattr(self.response, name)
 
+    @property
+    def headers(self) -> Any:
+        headers = self.response.headers
+        if any(str(key).lower() == "content-type" for key in headers):
+            return headers
+        # Eufy's successful 2FA response can omit Content-Type even though the
+        # body is JSON. pyeufysecurity otherwise rejects it before parsing.
+        return {**headers, "Content-Type": "application/json"}
+
     async def json(self, *args: Any, **kwargs: Any) -> Any:
+        kwargs.setdefault("content_type", None)
         data = await self.response.json(*args, **kwargs)
         if isinstance(data, dict):
             self.session.login_response = data

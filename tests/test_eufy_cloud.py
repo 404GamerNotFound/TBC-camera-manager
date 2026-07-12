@@ -234,6 +234,19 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(request["headers"]["x-auth-token"], "temporary-token")
         self.assertEqual(request["json"]["message_type"], 2)
 
+    async def test_login_response_accepts_json_without_content_type_header(self):
+        raw_session = FakeVerificationSession({"code": 0})
+        login_session = eufy_plugin._EufyLoginSession(raw_session, "123456")
+        response = FakeHttpResponse({"code": 0, "data": {"auth_token": "token"}})
+        response.headers = {}
+        captured = eufy_plugin._CapturedLoginResponse(response, login_session)
+
+        self.assertEqual(captured.headers["Content-Type"], "application/json")
+        payload = await captured.json()
+
+        self.assertEqual(payload["code"], 0)
+        self.assertEqual(login_session.login_response, payload)
+
 
 if __name__ == "__main__":
     unittest.main()
