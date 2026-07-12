@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<section class="settings-layout">
+<section class="plugin-manager">
   <form class="editor-form compact-form" method="post" action="/camera-modules/import" enctype="multipart/form-data">
     <div class="section-title">
       <h2>Plugin importieren</h2>
@@ -26,14 +26,19 @@
     </div>
   </form>
 
-  <section class="storage-list">
+  <div class="plugin-search-bar">
+    <label class="visually-hidden" for="camera-module-search">Plugins durchsuchen</label>
+    <input type="search" id="camera-module-search" placeholder="Plugins durchsuchen…" autocomplete="off" data-plugin-search="#camera-module-list">
+  </div>
+
+  <section class="storage-list plugin-grid" id="camera-module-list">
     <div class="section-title">
       <h2>Installierte Plugins</h2>
       <span>{{ registrations | length }}</span>
     </div>
     {% for registration in registrations %}
     {% set camera_module = registration.module %}
-    <article class="storage-item">
+    <article class="storage-item" data-plugin-search-item>
       <div class="section-title">
         <div>
           <h3>{{ camera_module.label }}</h3>
@@ -63,6 +68,8 @@
       </div>
     </article>
     {% endfor %}
+    <p class="quiet-box" data-plugin-search-empty hidden>Keine Plugins gefunden.</p>
   </section>
 </section>
+<script src="{{ url_for('static', path='/plugin-search.js') }}" defer></script>
 {% endblock %}

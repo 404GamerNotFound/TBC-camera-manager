@@ -1124,6 +1124,31 @@ code {
   padding: 16px;
 }
 
+.plugin-manager {
+  display: grid;
+  gap: 18px;
+  margin: 22px 0;
+}
+
+.plugin-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plugin-search-bar input[type="search"] {
+  max-width: 360px;
+}
+
+.storage-list.plugin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.storage-list.plugin-grid > .section-title,
+.storage-list.plugin-grid > [data-plugin-search-empty] {
+  grid-column: 1 / -1;
+}
+
 .filter-bar {
   display: grid;
   grid-template-columns: repeat(4, minmax(140px, 1fr)) auto;

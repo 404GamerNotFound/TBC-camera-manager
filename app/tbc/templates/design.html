@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<section class="settings-layout">
+<section class="plugin-manager">
   <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
     <div class="section-title">
       <h2>Design importieren</h2>
@@ -26,14 +26,19 @@
     </div>
   </form>
 
-  <section class="storage-list">
+  <div class="plugin-search-bar">
+    <label class="visually-hidden" for="design-theme-search">Designs durchsuchen</label>
+    <input type="search" id="design-theme-search" placeholder="Designs durchsuchen…" autocomplete="off" data-plugin-search="#design-theme-list">
+  </div>
+
+  <section class="storage-list plugin-grid" id="design-theme-list">
     <div class="section-title">
       <h2>Installierte Designs</h2>
       <span>{{ registrations | length }}</span>
     </div>
     {% for registration in registrations %}
     {% set manifest = registration.manifest %}
-    <article class="storage-item">
+    <article class="storage-item" data-plugin-search-item>
       <div class="section-title">
         <div>
           <h3>{{ manifest.label }}</h3>
@@ -64,6 +69,8 @@
       </div>
     </article>
     {% endfor %}
+    <p class="quiet-box" data-plugin-search-empty hidden>Keine Designs gefunden.</p>
   </section>
 </section>
+<script src="{{ url_for('static', path='/plugin-search.js') }}" defer></script>
 {% endblock %}
