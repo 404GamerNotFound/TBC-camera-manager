@@ -48,7 +48,7 @@
     </label>
   </div>
   <div class="quiet-box">
-    Die Kachelgröße jeder einzelnen Kamera wird direkt an der Kachel eingestellt: Griff unten rechts an der Karte ziehen.
+    Größe und Reihenfolge jeder Kachel werden direkt am Bild eingestellt: Werkzeuge oben rechts erscheinen beim Überfahren mit der Maus (⠿ verschiebt, ⤡ ändert die Größe).
   </div>
   <div class="form-actions">
     <button class="primary-button" type="submit">Speichern</button>
@@ -74,18 +74,28 @@
     data-sort-order="{{ item.sort_order }}"
     style="grid-column: span {{ item.column_span }}; grid-row: span {{ item.row_span }};"
   >
-    <div class="card-header">
-      <div>
-        <p class="eyebrow">{{ item.kind }}</p>
-        <h2>{{ item.name }}</h2>
-        <p>{{ item.subtitle }}</p>
+    <div class="live-card-overlay">
+      <div class="live-card-overlay-row">
+        <span class="live-card-name">{{ item.name }}</span>
+        <div class="live-card-tools">
+          <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
+          <a class="live-card-tool-btn" href="{{ item.playlist_url }}" aria-label="HLS-Playlist öffnen" title="HLS-Playlist">HLS</a>
+          {% if role == 'admin' %}
+          <button class="live-card-tool-btn live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Kachel verschieben" title="Verschieben">⠿</button>
+          <button
+            class="live-card-tool-btn live-resize-handle"
+            type="button"
+            data-live-resize-handle
+            data-live-key="{{ item.key }}"
+            data-column-span="{{ item.column_span }}"
+            data-row-span="{{ item.row_span }}"
+            aria-label="Kachelgröße ändern, ziehen"
+            title="Größe ändern"
+          >⤡</button>
+          {% endif %}
+        </div>
       </div>
-      <div class="button-row">
-        {% if role == 'admin' %}
-        <button class="live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Kachel verschieben">⠿</button>
-        {% endif %}
-        <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
-      </div>
+      <p class="live-card-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
     </div>
     <div
       class="live-player-shell"
@@ -97,23 +107,6 @@
     >
       <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
     </div>
-    <p class="clip-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
-    <div class="live-actions">
-      <button class="secondary-button" type="button" data-live-retry>Neu starten</button>
-      <button class="secondary-button" type="button" data-live-stop>Stop</button>
-      <a class="text-button" href="{{ item.playlist_url }}">HLS</a>
-    </div>
-    {% if role == 'admin' %}
-    <button
-      class="live-resize-handle"
-      type="button"
-      data-live-resize-handle
-      data-live-key="{{ item.key }}"
-      data-column-span="{{ item.column_span }}"
-      data-row-span="{{ item.row_span }}"
-      aria-label="Kachelgröße ändern, ziehen"
-    >⤡</button>
-    {% endif %}
   </article>
   {% endfor %}
 </section>

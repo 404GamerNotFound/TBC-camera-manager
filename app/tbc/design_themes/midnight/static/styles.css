@@ -650,12 +650,14 @@ button:focus-visible {
 
 .live-grid .live-card {
   position: relative;
-  grid-template-rows: auto 1fr auto auto;
+  min-height: 220px;
+  padding: 0;
+  overflow: hidden;
 }
 
 .live-grid .live-player-shell {
-  min-height: 160px;
-  height: 100%;
+  position: absolute;
+  inset: 0;
 }
 
 .live-grid .live-video,
@@ -1487,55 +1489,109 @@ code {
   padding: 6px 10px;
 }
 
-.live-resize-handle {
+.live-card-overlay {
   position: absolute;
-  right: 6px;
-  bottom: 6px;
-  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 22;
   display: grid;
-  place-items: center;
-  width: 26px;
+  gap: 2px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+
+.live-card-overlay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.live-card-name {
+  overflow: hidden;
+  color: white;
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.live-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: auto;
+}
+
+.live-card:hover .live-card-tools,
+.live-card:focus-within .live-card-tools {
+  opacity: 1;
+}
+
+.live-card-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
   height: 26px;
   min-height: auto;
-  padding: 0;
-  border: 1px solid var(--line);
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 6px;
-  color: var(--muted);
-  background: var(--surface-soft);
-  font-size: 0.95rem;
+  color: white;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 0.76rem;
+  font-weight: 800;
   line-height: 1;
-  cursor: nwse-resize;
-  opacity: 0.6;
+  text-decoration: none;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
 }
 
-.live-resize-handle:hover,
-.live-resize-handle:focus-visible {
-  opacity: 1;
-  color: var(--brand-strong);
-}
-
-.live-card.is-resizing {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+.live-card-tool-btn:hover,
+.live-card-tool-btn:focus-visible {
+  background: var(--brand);
+  border-color: var(--brand);
 }
 
 .live-drag-handle {
-  width: 30px;
-  min-height: 30px;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--muted);
-  background: var(--surface-soft);
-  font-size: 1rem;
-  line-height: 1;
   cursor: grab;
 }
 
 .live-drag-handle:active {
   cursor: grabbing;
+}
+
+.live-resize-handle {
+  cursor: nwse-resize;
+}
+
+.live-card-message {
+  margin: 0;
+  padding-top: 2px;
+  color: white;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.live-card:hover .live-card-message,
+.live-card:focus-within .live-card-message {
+  opacity: 1;
+}
+
+.live-card.is-resizing {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 .live-card.is-dragging {

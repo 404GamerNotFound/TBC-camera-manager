@@ -96,6 +96,22 @@
     });
   };
 
+  // Without a manual "Neu starten" button on the wall, a camera that once
+  // fails would otherwise stay dark until someone reloads the page. Retry it
+  // automatically instead, with a cooldown so a persistently broken camera
+  // doesn't get hammered every poll cycle.
+  const AUTO_RETRY_COOLDOWN_MS = 20000;
+  const lastAutoRetry = new Map();
+
+  const maybeAutoRetry = (item) => {
+    if (item.status !== "failed") return;
+    const last = lastAutoRetry.get(item.key) || 0;
+    const now = Date.now();
+    if (now - last < AUTO_RETRY_COOLDOWN_MS) return;
+    lastAutoRetry.set(item.key, now);
+    fetchJson(`/api/live/${encodeURIComponent(item.key)}/start`, {method: "POST"}).catch(() => {});
+  };
+
   const renderItem = (item) => {
     latestItems.set(item.key, item);
     const card = byKey.get(item.key);
@@ -118,6 +134,7 @@
         ensurePlaceholder(player, item.status);
       }
     }
+    maybeAutoRetry(item);
   };
 
   const renderItems = (items) => {
@@ -160,18 +177,6 @@
       });
     }, 3000);
   };
-
-  cards.forEach((card) => {
-    const key = card.dataset.liveKey;
-    card.querySelector("[data-live-retry]")?.addEventListener("click", async () => {
-      await fetchJson(`/api/live/${encodeURIComponent(key)}/start`, {method: "POST"});
-      await refresh();
-    });
-    card.querySelector("[data-live-stop]")?.addEventListener("click", async () => {
-      await fetchJson(`/api/live/${encodeURIComponent(key)}/stop`, {method: "POST"});
-      await refresh();
-    });
-  });
 
   // --- Fullscreen / kiosk mode -------------------------------------------
   const isFullscreen = () => !!document.fullscreenElement;
