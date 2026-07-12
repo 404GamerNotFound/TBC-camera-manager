@@ -85,8 +85,19 @@ class CloudPluginPackageTests(unittest.TestCase):
         eufy = next(package for package in packages if package.manifest.key == "eufy")
         self.assertEqual(
             [field.key for field in eufy.manifest.account_fields],
-            ["email", "password", "country", "rtsp_username", "rtsp_password"],
+            [
+                "email",
+                "password",
+                "country",
+                "verification_code",
+                "rtsp_username",
+                "rtsp_password",
+            ],
         )
+        verification_field = next(
+            field for field in eufy.manifest.account_fields if field.key == "verification_code"
+        )
+        self.assertTrue(verification_field.transient)
         config = normalize_account_configuration(
             eufy.manifest.account_fields,
             {"email": "user@example.com", "password": "secret"},

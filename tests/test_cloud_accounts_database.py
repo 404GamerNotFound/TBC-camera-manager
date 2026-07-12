@@ -69,6 +69,22 @@ class CloudAccountDatabaseTests(unittest.TestCase):
             self.assertEqual(account["config"]["rtsp_username"], "nas-user")
             self.assertEqual(account["identifier"], "")
 
+            database.update_cloud_account_configuration(
+                handle.name,
+                account_id,
+                label="Eufy Neu",
+                config={**account["config"], "verification_code": "123456"},
+            )
+            updated = database.get_cloud_account(handle.name, account_id)
+            self.assertEqual(updated["label"], "Eufy Neu")
+            self.assertEqual(updated["verification_code"], "123456")
+
+            database.clear_cloud_account_configuration_fields(
+                handle.name, account_id, ("verification_code",)
+            )
+            cleared = database.get_cloud_account(handle.name, account_id)
+            self.assertEqual(cleared["verification_code"], "")
+
 
 if __name__ == "__main__":
     unittest.main()

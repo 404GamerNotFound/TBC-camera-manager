@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">{{ cloud_module.label }}</p>
+    <h1>Cloud-Konto bearbeiten</h1>
+  </div>
+  <a class="secondary-button" href="/cloud-accounts">Zurück zu Cloud-Konten</a>
+</section>
+
+<form class="editor-form" method="post" action="/cloud-accounts/{{ account.id }}/edit">
+  <div class="form-grid">
+    <label class="span-2">
+      <span>Anbieter</span>
+      <input value="{{ cloud_module.label }}" disabled>
+    </label>
+    <label>
+      <span>Bezeichnung</span>
+      <input name="label" value="{{ account.label }}" required>
+    </label>
+    {% for field in cloud_module.account_fields %}
+      {% set current_value = account.config.get(field.key, field.default) %}
+      {% if field.field_type.value == 'checkbox' %}
+      <label class="check-row{% if field.full_width %} span-2{% endif %}">
+        <input name="account_{{ field.key }}" type="checkbox"{% if current_value %} checked{% endif %}{% if field.required %} required{% endif %}>
+        <span>{{ field.label }}</span>
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      </label>
+      {% else %}
+      <label class="{% if field.full_width %}span-2{% endif %}">
+        <span>{{ field.label }}</span>
+        {% if field.field_type.value == 'select' %}
+        <select name="account_{{ field.key }}"{% if field.required %} required{% endif %}>
+          {% for option in field.options %}
+          <option value="{{ option.value }}"{% if option.value == current_value %} selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <input name="account_{{ field.key }}"
+               type="{{ field.field_type.value }}"
+               {% if field.field_type.value == 'password' %}placeholder="Unverändert lassen"
+               {% elif current_value is not none %}value="{{ current_value }}"
+               {% elif field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+               {% if field.minimum is not none %}min="{{ field.minimum }}"{% endif %}
+               {% if field.maximum is not none %}max="{{ field.maximum }}"{% endif %}
+               {% if field.autocomplete %}autocomplete="{{ field.autocomplete }}"{% endif %}
+               {% if field.required and field.field_type.value != 'password' %}required{% endif %}>
+        {% endif %}
+        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      </label>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit">Änderungen speichern</button>
+  </div>
+</form>
+{% endblock %}

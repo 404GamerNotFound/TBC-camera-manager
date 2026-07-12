@@ -11,6 +11,9 @@
 
 {% if error %}
 <div class="inline-error">{{ error }}</div>
+<div class="form-actions">
+  <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Kontodaten oder Bestätigungscode bearbeiten</a>
+</div>
 {% elif not devices %}
 <div class="quiet-box">Es wurden keine Geräte in diesem Cloud-Konto gefunden.</div>
 {% endif %}

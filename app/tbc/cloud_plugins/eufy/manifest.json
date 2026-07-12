@@ -2,7 +2,7 @@
   "schema_version": 1,
   "key": "eufy",
   "label": "Eufy Security",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Eufy-Security-Cloud-Konto und Kamerasuche via pyeufysecurity",
   "entrypoint": "plugin.py",
   "auth_type": "credentials",
@@ -34,6 +34,15 @@
       "default": "DE",
       "placeholder": "DE",
       "help_text": "Zweistelliger ISO-Ländercode des Eufy-Kontos, z. B. DE, AT oder CH."
+    },
+    {
+      "key": "verification_code",
+      "label": "Eufy-Bestätigungscode (einmalig)",
+      "type": "text",
+      "autocomplete": "one-time-code",
+      "placeholder": "Code aus der E-Mail",
+      "help_text": "Leer lassen, um einen Code anzufordern. Nach erfolgreicher Bestätigung wird dieses Feld automatisch geleert.",
+      "transient": true
     },
     {
       "key": "rtsp_username",

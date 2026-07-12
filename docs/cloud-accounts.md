@@ -46,7 +46,7 @@ Eine Cloud-Plugin-ZIP ist wie eine Kamera-Plugin-ZIP aufgebaut: Dateien direkt i
 }
 ```
 
-`account_fields` ist die vollständig vom Plugin gelieferte Beschreibung des Kontoformulars. Das Hauptprojekt kennt keine Anbieterfelder. Unterstützte Typen sind `text`, `email`, `password`, `number`, `checkbox` und `select`. Je Feld stehen `required`, `placeholder`, `help_text`, `autocomplete`, `default`, `min`, `max`, `full_width` und bei Auswahlfeldern `options` zur Verfügung. Schlüssel dürfen aus Kleinbuchstaben, Zahlen und Unterstrichen bestehen.
+`account_fields` ist die vollständig vom Plugin gelieferte Beschreibung des Kontoformulars. Das Hauptprojekt kennt keine Anbieterfelder. Unterstützte Typen sind `text`, `email`, `password`, `number`, `checkbox` und `select`. Je Feld stehen `required`, `placeholder`, `help_text`, `autocomplete`, `default`, `min`, `max`, `full_width`, `transient` und bei Auswahlfeldern `options` zur Verfügung. Ein Feld mit `transient: true` wird nach einem erfolgreichen Verbindungstest oder einer erfolgreichen Gerätesuche automatisch geleert; das ist für Einmalcodes gedacht. Schlüssel dürfen aus Kleinbuchstaben, Zahlen und Unterstrichen bestehen.
 
 Beim Absenden validiert TBC ausschließlich die Felder des gewählten Plugins und speichert sie als JSON in `cloud_accounts.config_json`. Vor `test_connection()` oder `discover_devices()` wird die Konfiguration zusätzlich flach in das `account`-Dictionary eingeblendet, sodass ein Plugin direkt `account["email"]` verwenden kann. Die alten Schema-v1-Angaben `identifier_label`, `secret_label`, `requires_host` und `default_port` bleiben kompatibel: Fehlt `account_fields`, erzeugt der Loader daraus das bisherige Standardformular.
 
@@ -89,13 +89,13 @@ Das eingebaute `unifi_protect`-Plugin meldet sich über [`uiprotect`](https://py
 
 ## Referenzimplementierung: Eufy Security
 
-Das eingebaute `eufy`-Plugin verwendet [`pyeufysecurity`](https://pypi.org/project/pyeufysecurity/) für die verschlüsselte Eufy-v2-Cloud-Anmeldung und Gerätesuche. Sein Manifest liefert E-Mail-Adresse, Passwort, ISO-Ländercode sowie optionale lokale RTSP-Zugangsdaten. Für die Anmeldung empfiehlt sich ein separates, in der Eufy-App freigegebenes Gastkonto. Verlangt Eufy ein CAPTCHA, meldet das Plugin dies verständlich; die Bestätigung muss derzeit in der Eufy-App erfolgen.
+Das eingebaute `eufy`-Plugin verwendet [`pyeufysecurity`](https://pypi.org/project/pyeufysecurity/) für die verschlüsselte Eufy-v2-Cloud-Anmeldung und Gerätesuche. Sein Manifest liefert E-Mail-Adresse, Passwort, ISO-Ländercode, einen einmaligen Bestätigungscode sowie optionale lokale RTSP-Zugangsdaten. Für die Anmeldung empfiehlt sich ein separates, in der Eufy-App freigegebenes Gastkonto. Verlangt Eufy die Bestätigung eines neuen Clients, fordert das Plugin den Code über Eufys E-Mail-Endpunkt an. Der Administrator trägt ihn über „Konto bearbeiten“ ein; nach erfolgreicher Anmeldung wird der Client als vertrauenswürdig registriert und der gespeicherte Einmalcode geleert. Verlangt Eufy stattdessen ein CAPTCHA, muss dieses weiterhin in der Eufy-App bestätigt werden.
 
 Die Eufy-Cloud liefert für einen gestarteten Stream nur eine sitzungsgebundene URL. `discover_devices()` startet deshalb keine Cloud-Streams und speichert keine kurzlebigen URLs. Hat eine Kamera eine lokale IP und wurden RTSP-Zugangsdaten hinterlegt, erzeugt das Plugin die dauerhafte lokale `rtsp://…/live0`-Adresse und markiert das Gerät mit `suggested_module_key="rtsp_only"`. Bei allen anderen Eufy-Kameras bleibt `manual_stream_uri` leer: Sie erscheinen in der Gerätesuche, können aber erst nach Aktivierung von NAS/RTSP in der Eufy-App als Kamera übernommen werden.
 
 ## Import, Export und Admin-Oberfläche
 
-Administratoren verwalten Cloud-Plugins unter `Admin → Cloud-Anbieter` und Konten unter `Admin → Cloud-Konten`: Konto anlegen, Verbindung testen und Geräte suchen. Ein Plugin mit zugeordneten Konten kann nicht entfernt werden; eingebaute Plugins können weder überschrieben noch entfernt werden. Der externe Speicherort wird mit `TBC_CLOUD_MODULES_PATH` konfiguriert.
+Administratoren verwalten Cloud-Plugins unter `Admin → Cloud-Anbieter` und Konten unter `Admin → Cloud-Konten`: Konto anlegen, Plugin-Felder bearbeiten, Verbindung testen und Geräte suchen. Ein Plugin mit zugeordneten Konten kann nicht entfernt werden; eingebaute Plugins können weder überschrieben noch entfernt werden. Der externe Speicherort wird mit `TBC_CLOUD_MODULES_PATH` konfiguriert.
 
 ## Sicherheit
 

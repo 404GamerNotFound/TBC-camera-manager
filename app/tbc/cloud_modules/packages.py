@@ -204,6 +204,7 @@ def _read_account_fields(raw_fields: Any) -> tuple[CloudAccountField, ...] | Non
                 minimum=minimum,
                 maximum=maximum,
                 full_width=bool(raw.get("full_width", False)),
+                transient=bool(raw.get("transient", False)),
                 options=options,
             )
         )

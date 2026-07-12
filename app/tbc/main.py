@@ -34,6 +34,7 @@ from .camera_modules.registry import UnknownCameraModuleError
 from .camera_modules.streams import validate_manual_stream_uri
 from .channels import apply_channel_enabled_filter
 from .cloud_modules import (
+    CloudAccountFieldType,
     CloudAccountValidationError,
     CloudConnectionError,
     get_cloud_module,
@@ -1992,6 +1993,71 @@ async def create_cloud_account_route(request: Request):
     return _redirect("/cloud-accounts")
 
 
+@app.get("/cloud-accounts/{account_id}/edit", response_class=HTMLResponse)
+async def edit_cloud_account_page(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        return _redirect("/cloud-accounts")
+    try:
+        cloud_module = get_cloud_module(account["module_key"])
+    except UnknownCloudModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    return templates.TemplateResponse(
+        request,
+        "cloud_account_edit.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "account": account,
+            "cloud_module": cloud_module,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/cloud-accounts/{account_id}/edit")
+async def update_cloud_account_route(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        return _redirect("/cloud-accounts")
+    try:
+        cloud_module = get_cloud_module(account["module_key"])
+    except UnknownCloudModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    form = await request.form()
+    submitted: dict[str, Any] = {}
+    for field in cloud_module.account_fields:
+        value = form.get(f"account_{field.key}")
+        if field.field_type == CloudAccountFieldType.PASSWORD and not value:
+            value = account["config"].get(field.key, "")
+        submitted[field.key] = value
+    try:
+        config = normalize_account_configuration(cloud_module.account_fields, submitted)
+    except CloudAccountValidationError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cloud-accounts/{account_id}/edit")
+    label = str(form.get("label") or "").strip() or cloud_module.label
+    database.update_cloud_account_configuration(
+        SETTINGS.database_path,
+        account_id,
+        label=label,
+        config=config,
+    )
+    _set_flash(request, "Cloud-Konto wurde aktualisiert")
+    return _redirect("/cloud-accounts")
+
+
 @app.post("/cloud-accounts/{account_id}/delete")
 async def delete_cloud_account_route(request: Request, account_id: int):
     guard = _require_admin(request)
@@ -2033,6 +2099,7 @@ async def test_cloud_account_route(request: Request, account_id: int):
         _set_flash(request, f"Verbindung fehlgeschlagen: {exc}", "error")
         return _redirect("/cloud-accounts")
     database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
+    _clear_transient_cloud_account_fields(account_id, cloud_module)
     _set_flash(request, message)
     return _redirect("/cloud-accounts")
 
@@ -2055,6 +2122,7 @@ async def cloud_account_devices_page(request: Request, account_id: int):
     error: str | None = None
     try:
         devices = await asyncio.wait_for(cloud_module.discover_devices(account), timeout=CONTROL_TIMEOUT_SECONDS)
+        _clear_transient_cloud_account_fields(account_id, cloud_module)
     except asyncio.TimeoutError:
         error = f"Geräte-Suche antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
     except CloudConnectionError as exc:
@@ -2804,6 +2872,14 @@ def _camera_supports(camera: dict[str, Any], capability: CameraCapability) -> bo
 
 def _redirect(path: str) -> RedirectResponse:
     return RedirectResponse(path, status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _clear_transient_cloud_account_fields(account_id: int, cloud_module: Any) -> None:
+    keys = tuple(field.key for field in cloud_module.account_fields if field.transient)
+    if keys:
+        database.clear_cloud_account_configuration_fields(
+            SETTINGS.database_path, account_id, keys
+        )
 
 
 def _set_flash(request: Request, message: str, level: str = "success") -> None:

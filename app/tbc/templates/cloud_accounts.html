@@ -89,6 +89,7 @@
       <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'noch nicht getestet' }}</span>
     </div>
     <div class="form-actions">
+      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Konto bearbeiten</a>
       <form method="post" action="/cloud-accounts/{{ account.id }}/test">
         <button class="secondary-button" type="submit">Verbindung testen</button>
       </form>

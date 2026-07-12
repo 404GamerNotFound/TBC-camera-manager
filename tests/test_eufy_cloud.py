@@ -1,9 +1,10 @@
 import sys
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from app.tbc.cloud_modules import CloudConnectionError
+from app.tbc.cloud_plugins.eufy import module as eufy_plugin
 from app.tbc.cloud_plugins.eufy.module import EufyCloudModule
 
 
@@ -16,12 +17,20 @@ class FakeCamera:
 
 
 class FakeApi:
+    last_instance = None
+
     def __init__(self):
+        type(self).last_instance = self
         self.cameras = {
             "cam1": FakeCamera("cam1", "Eingang", "EufyCam 3", "192.168.1.25"),
             "cam2": FakeCamera("cam2", "Garten", "SoloCam S340"),
         }
         self.stations = {"station1": object()}
+        self.requests = []
+
+    async def request(self, method, endpoint, **kwargs):
+        self.requests.append((method, endpoint, kwargs))
+        return {"code": 0}
 
 
 class FakeClientSession:
@@ -30,6 +39,11 @@ class FakeClientSession:
     def __init__(self):
         type(self).last_instance = self
         self.closed = False
+        self.post_calls = []
+
+    def post(self, url, **kwargs):
+        self.post_calls.append((url, kwargs))
+        return object()
 
     async def __aenter__(self):
         return self
@@ -38,11 +52,54 @@ class FakeClientSession:
         self.closed = True
 
 
+class FakeHttpResponse:
+    headers = {"Content-Type": "application/json"}
+
+    def __init__(self, payload):
+        self.payload = payload
+        self.status = 200
+
+    def raise_for_status(self):
+        return None
+
+    async def json(self, *args, **kwargs):
+        return self.payload
+
+
+class FakeHttpRequest:
+    def __init__(self, response):
+        self.response = response
+
+    async def __aenter__(self):
+        return self.response
+
+    async def __aexit__(self, exc_type, exc, traceback):
+        return None
+
+
+class FakeVerificationSession:
+    def __init__(self, payload):
+        self.payload = payload
+        self.post_calls = []
+
+    def post(self, url, **kwargs):
+        self.post_calls.append((url, kwargs))
+        return FakeHttpRequest(FakeHttpResponse(self.payload))
+
+
 class FakeInvalidCredentialsError(Exception):
     pass
 
 
 class FakeCaptchaRequiredError(Exception):
+    pass
+
+
+class FakeNeedVerifyCodeError(Exception):
+    pass
+
+
+class FakeVerifyCodeError(Exception):
     pass
 
 
@@ -60,9 +117,19 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         eufy_module.async_login = async_login
         eufy_module.InvalidCredentialsError = FakeInvalidCredentialsError
         eufy_module.CaptchaRequiredError = FakeCaptchaRequiredError
+        errors_module = types.ModuleType("eufy_security.errors")
+        errors_module.NeedVerifyCodeError = FakeNeedVerifyCodeError
+        errors_module.VerifyCodeError = FakeVerifyCodeError
+        errors_module.VerifyCodeExpiredError = FakeVerifyCodeError
+        errors_module.VerifyCodeMaxError = FakeVerifyCodeError
+        errors_module.VerifyCodeNoneMatchError = FakeVerifyCodeError
         self._patcher = patch.dict(
             sys.modules,
-            {"aiohttp": aiohttp_module, "eufy_security": eufy_module},
+            {
+                "aiohttp": aiohttp_module,
+                "eufy_security": eufy_module,
+                "eufy_security.errors": errors_module,
+            },
         )
         self._patcher.start()
         self.addCleanup(self._patcher.stop)
@@ -112,6 +179,60 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
     async def test_invalid_country_is_rejected_before_login(self):
         with self.assertRaisesRegex(CloudConnectionError, "zwei Buchstaben"):
             await self.module.test_connection({**self.account, "country": "Germany"})
+
+    async def test_verification_requirement_requests_email_code(self):
+        async def needs_verification(email, password, session, country="US"):
+            session.login_response = {"data": {"auth_token": "temporary-token"}}
+            session.api_base = "https://security-app-eu.eufylife.com"
+            raise FakeNeedVerifyCodeError("need validate code")
+
+        send_code = AsyncMock()
+        with (
+            patch("eufy_security.async_login", needs_verification),
+            patch.object(eufy_plugin, "_send_verification_code", send_code),
+        ):
+            with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet"):
+                await self.module.test_connection(self.account)
+
+        send_code.assert_awaited_once()
+
+    async def test_verification_code_is_used_and_device_is_trusted(self):
+        await self.module.test_connection({**self.account, "verification_code": "123456"})
+
+        login_session = self.login_calls[0][2]
+        self.assertEqual(login_session.verification_code, "123456")
+        self.assertEqual(FakeApi.last_instance.requests[0][1], "v1/app/trust_device/add")
+        self.assertEqual(
+            FakeApi.last_instance.requests[0][2]["json"]["verify_code"], "123456"
+        )
+
+    def test_login_session_injects_verification_code_into_login_payload(self):
+        raw_session = FakeClientSession()
+        login_session = eufy_plugin._EufyLoginSession(raw_session, "654321")
+
+        login_session.post(
+            "https://example.test/v2/passport/login_sec",
+            json={"email": "guest@example.com"},
+        )
+
+        payload = raw_session.post_calls[0][1]["json"]
+        self.assertEqual(payload["verify_code"], "654321")
+
+    async def test_send_verification_code_uses_temporary_login_token(self):
+        raw_session = FakeVerificationSession({"code": 0})
+        login_session = eufy_plugin._EufyLoginSession(raw_session, "")
+        login_session.api_base = "https://security-app-eu.eufylife.com"
+        login_session.login_response = {"data": {"auth_token": "temporary-token"}}
+        api_module = types.ModuleType("eufy_security.api")
+        api_module.DEFAULT_HEADERS = {"App_version": "test"}
+
+        with patch.dict(sys.modules, {"eufy_security.api": api_module}):
+            await eufy_plugin._send_verification_code(login_session, "DE")
+
+        url, request = raw_session.post_calls[0]
+        self.assertTrue(url.endswith("/v1/sms/send/verify_code"))
+        self.assertEqual(request["headers"]["x-auth-token"], "temporary-token")
+        self.assertEqual(request["json"]["message_type"], 2)
 
 
 if __name__ == "__main__":

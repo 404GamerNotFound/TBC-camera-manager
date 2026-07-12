@@ -565,6 +565,59 @@ def get_cloud_account(database_path: str, account_id: int) -> dict[str, Any] | N
     return _hydrate_cloud_account(row) if row else None
 
 
+def update_cloud_account_configuration(
+    database_path: str,
+    account_id: int,
+    *,
+    label: str,
+    config: dict[str, Any],
+) -> None:
+    host = str(config.get("host") or "").strip() or None
+    raw_port = config.get("port")
+    port = int(raw_port) if raw_port not in (None, "") else None
+    verify_ssl = bool(config.get("verify_ssl", False))
+    identifier = str(config.get("identifier") or "")
+    secret = str(config.get("secret") or "")
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cloud_accounts
+               SET label = ?, host = ?, port = ?, verify_ssl = ?,
+                   identifier = ?, secret = ?, config_json = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (
+                label,
+                host,
+                port,
+                1 if verify_ssl else 0,
+                identifier,
+                secret,
+                json.dumps(config, ensure_ascii=False, separators=(",", ":")),
+                account_id,
+            ),
+        )
+
+
+def clear_cloud_account_configuration_fields(
+    database_path: str, account_id: int, field_keys: Iterable[str]
+) -> None:
+    account = get_cloud_account(database_path, account_id)
+    if account is None:
+        return
+    config = dict(account.get("config") or {})
+    for key in field_keys:
+        if key in config:
+            config[key] = ""
+    update_cloud_account_configuration(
+        database_path,
+        account_id,
+        label=str(account["label"]),
+        config=config,
+    )
+
+
 def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
     account = dict(row)
     try:

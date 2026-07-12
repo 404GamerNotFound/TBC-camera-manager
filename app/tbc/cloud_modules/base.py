@@ -49,6 +49,7 @@ class CloudAccountField:
     minimum: int | None = None
     maximum: int | None = None
     full_width: bool = False
+    transient: bool = False
     options: tuple[CloudAccountFieldOption, ...] = ()
 
 
