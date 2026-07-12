@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "key": "midnight",
+  "label": "Midnight",
+  "version": "1.0.0",
+  "description": "Dunkles Design mit blauem Akzent",
+  "stylesheet": "styles.css"
+}

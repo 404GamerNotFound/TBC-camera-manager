@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Erweiterungen</p>
+    <h1>Design</h1>
+  </div>
+</section>
+
+<section class="settings-layout">
+  <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
+    <div class="section-title">
+      <h2>Design importieren</h2>
+      <span>ZIP</span>
+    </div>
+    <div class="quiet-box">
+      Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.
+    </div>
+    <label>
+      <span>Design-Datei</span>
+      <input name="theme_file" type="file" accept=".zip,application/zip" required>
+    </label>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Importieren</button>
+    </div>
+  </form>
+
+  <section class="storage-list">
+    <div class="section-title">
+      <h2>Installierte Designs</h2>
+      <span>{{ registrations | length }}</span>
+    </div>
+    {% for registration in registrations %}
+    {% set manifest = registration.manifest %}
+    <article class="storage-item">
+      <div class="section-title">
+        <div>
+          <h3>{{ manifest.label }}</h3>
+          <p>{{ manifest.description }}</p>
+        </div>
+        <span>{{ manifest.version }}</span>
+      </div>
+      <dl class="metric-row">
+        <div><dt>Schlüssel</dt><dd>{{ manifest.key }}</dd></div>
+        <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else 'ZIP-Import' }}</dd></div>
+        <div><dt>Status</dt><dd>{{ 'Aktiv' if manifest.key == active_theme_key else 'Inaktiv' }}</dd></div>
+      </dl>
+      <div class="form-actions">
+        {% if manifest.key != active_theme_key %}
+        <form method="post" action="/design/activate">
+          <input type="hidden" name="theme_key" value="{{ manifest.key }}">
+          <button class="primary-button" type="submit">Aktivieren</button>
+        </form>
+        {% else %}
+        <span class="status-pill status-active">Aktiv</span>
+        {% endif %}
+        <a class="secondary-button" href="/design/{{ manifest.key }}/export">ZIP exportieren</a>
+        {% if registration.origin == 'uploaded' %}
+        <form method="post" action="/design/{{ manifest.key }}/delete">
+          <button class="danger-button" type="submit" {% if manifest.key == active_theme_key %}disabled{% endif %}>Entfernen</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}

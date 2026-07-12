@@ -228,6 +228,12 @@ CREATE TABLE IF NOT EXISTS mqtt_config (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS ui_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    active_theme_key TEXT NOT NULL DEFAULT 'standard',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -290,6 +296,9 @@ def initialize(database_path: str, default_recordings_path: str = "/recordings")
             INSERT OR IGNORE INTO mqtt_config (id, enabled, host, port, topic_prefix, discovery_enabled, discovery_prefix)
             VALUES (1, 0, NULL, 1883, 'tbc', 1, 'homeassistant')
             """
+        )
+        db.execute(
+            "INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')"
         )
 
 
@@ -1453,6 +1462,29 @@ def update_mqtt_config(
                 1 if discovery_enabled else 0,
                 discovery_prefix,
             ),
+        )
+
+
+def get_active_theme_key(database_path: str) -> str:
+    with connect(database_path) as db:
+        row = db.execute("SELECT active_theme_key FROM ui_settings WHERE id = 1").fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')")
+            return "standard"
+    return str(row["active_theme_key"])
+
+
+def set_active_theme_key(database_path: str, theme_key: str) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO ui_settings (id, active_theme_key)
+            VALUES (1, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                active_theme_key = excluded.active_theme_key,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (theme_key,),
         )
 
 

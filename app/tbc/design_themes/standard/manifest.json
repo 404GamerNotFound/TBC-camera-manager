@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "key": "standard",
+  "label": "TBC Standard",
+  "version": "1.0.0",
+  "description": "Das mitgelieferte helle Standard-Design",
+  "stylesheet": "styles.css"
+}

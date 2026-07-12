@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ app_name }} - TB Camera</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+    {% if active_theme %}
+    <link rel="stylesheet" href="{{ url_for('theme_asset', theme_key=active_theme.key, asset_path=active_theme.stylesheet) }}">
+    {% endif %}
     <script src="{{ url_for('static', path='/i18n.js') }}"></script>
   </head>
   <body>
@@ -21,7 +23,7 @@
       {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
-      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/camera-modules') %}
+      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/camera-modules') or path.startswith('/design') %}
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Navigation umschalten" data-menu-toggle>
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -137,6 +139,12 @@
                   <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
                     <span>Kamera-Plugins</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
+                    <span class="nav-shortcut" aria-hidden="true">G</span>
+                    <span>Design</span>
                   </a>
                 </li>
                 <li>

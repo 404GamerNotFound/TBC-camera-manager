@@ -72,6 +72,12 @@ Die Module `axis`, `foscam`, `hikvision` und `dahua` (Letzteres deckt auch verbr
 
 Die Profile `ubiquiti` und `sonoff` arbeiten mit der vollständigen, vom jeweiligen Herstellersystem erzeugten Stream-URL. Bei Ubiquiti wird der RTSP-/RTSPS-Link aus UniFi Protect verwendet; Port `7447` ist für RTSP vorbelegt. Bei SONOFF wird RTSP in eWeLink aktiviert und der dort erzeugte Link in TBC eingefügt. Das Profil `rtsp_only` ermöglicht dieselbe Konfiguration herstellerneutral und überspringt ONVIF vollständig. Host/IP wird bei Bedarf aus der URL übernommen. In Formularen, Statusmeldungen und Detailansichten werden Benutzername und Passwort einer RTSP-/RTSPS-URL immer als `***:***` dargestellt.
 
+## Installierbare Designs
+
+Das visuelle Design der Weboberfläche ist genauso ausgelagert wie die Kamera-Module: Ein Design ist ein in sich geschlossenes Paket aus `manifest.json` und Stylesheet, das eingebaut oder als ZIP importiert sein kann und keinen ausführbaren Code enthält. Ausgeliefert werden `standard` (das bisherige helle Design, weiterhin Vorgabe) und `midnight` (ein dunkles Design mit blauem Akzent).
+
+Im Adminbereich `Design` wird das aktive Design ausgewählt sowie Design-ZIPs importiert, exportiert und entfernt. Importierte Pakete liegen dauerhaft unter `TBC_THEME_MODULES_PATH` (standardmäßig `/data/design-themes`) und erscheinen sofort in der Liste. Das aktive Design kann nicht entfernt werden, eingebaute Designs können weder überschrieben noch entfernt werden. Die technische Anleitung zur Entwicklung zusätzlicher Designs steht in [docs/design-themes.md](docs/design-themes.md).
+
 ## Dashboard-Vorschaubilder
 
 Für jede aktivierte Kamera mit bekanntem Stream erzeugt TBC per `ffmpeg` ein JPEG-Vorschaubild. Der geschützte Cache wird standardmäßig spätestens nach zehn Minuten erneuert; fehlende Bilder werden beim ersten Aufruf der Kameraseite direkt erzeugt. Die Bildroute prüft dieselbe Kamera-Berechtigung wie Detail- und Live-Ansicht und liefert keine Zugangsdaten aus. Speicherort und Intervall können mit `TBC_DASHBOARD_SNAPSHOTS_PATH` und `TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS` angepasst werden.

@@ -20,6 +20,7 @@ class Settings:
     web_port: int = 8732
     cookie_secure: bool = False
     camera_modules_path: str = "/data/camera-modules"
+    theme_modules_path: str = "/data/design-themes"
 
 
 def load_settings() -> Settings:
@@ -40,4 +41,5 @@ def load_settings() -> Settings:
         web_port=int(os.getenv("TBC_PORT", "8732")),
         cookie_secure=os.getenv("TBC_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"},
         camera_modules_path=os.getenv("TBC_CAMERA_MODULES_PATH", "/data/camera-modules"),
+        theme_modules_path=os.getenv("TBC_THEME_MODULES_PATH", "/data/design-themes"),
     )

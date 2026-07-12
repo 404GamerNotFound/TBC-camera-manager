@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from datetime import date, datetime, time, timedelta
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlencode, urlsplit
 
@@ -43,6 +43,13 @@ from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
 from .camera_plugins.reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
+from .themes import UnknownThemeError, get_theme_registration, list_theme_registrations, reload_themes
+from .themes.packages import (
+    ThemePackageError,
+    export_theme_archive,
+    install_theme_archive,
+    remove_external_theme,
+)
 
 LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
@@ -57,7 +64,18 @@ app.add_middleware(
     https_only=SETTINGS.cookie_secure,
 )
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+def _active_theme_context(request: Request) -> dict[str, Any]:
+    theme_key = database.get_active_theme_key(SETTINGS.database_path)
+    try:
+        registration = get_theme_registration(theme_key)
+    except UnknownThemeError:
+        return {"active_theme": None}
+    return {"active_theme": registration.manifest}
+
+
+templates = Jinja2Templates(directory=BASE_DIR / "templates", context_processors=[_active_theme_context])
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 templates.env.filters["tojson"] = lambda value: Markup(
     json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
@@ -99,6 +117,21 @@ async def startup() -> None:
 @app.get("/healthz")
 async def healthz() -> dict[str, str]:
     return {"status": "ok", "service": "tbc"}
+
+
+@app.get("/design/{theme_key}/static/{asset_path:path}", name="theme_asset")
+async def theme_asset(theme_key: str, asset_path: str):
+    try:
+        registration = get_theme_registration(theme_key)
+    except UnknownThemeError:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    relative = PurePosixPath(asset_path)
+    if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+        return JSONResponse({"error": "invalid path"}, status_code=status.HTTP_400_BAD_REQUEST)
+    file_path = registration.package.path / "static" / relative
+    if not file_path.is_file():
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(file_path)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -1592,6 +1625,94 @@ async def delete_camera_module(request: Request, module_key: str):
     except (CameraPluginError, OSError) as exc:
         _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
     return _redirect("/camera-modules")
+
+
+@app.get("/design", response_class=HTMLResponse)
+async def design_themes_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    active_theme_key = database.get_active_theme_key(SETTINGS.database_path)
+    return templates.TemplateResponse(
+        request,
+        "design.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "registrations": list_theme_registrations(),
+            "active_theme_key": active_theme_key,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/design/activate")
+async def activate_design_theme(request: Request, theme_key: str = Form(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        get_theme_registration(theme_key)
+    except UnknownThemeError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/design")
+    database.set_active_theme_key(SETTINGS.database_path, theme_key.strip().lower())
+    _set_flash(request, "Design wurde aktiviert")
+    return _redirect("/design")
+
+
+@app.post("/design/import")
+async def import_design_theme(request: Request, theme_file: UploadFile = File(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        archive = await theme_file.read(5 * 1024 * 1024 + 1)
+        package = install_theme_archive(archive, SETTINGS.theme_modules_path)
+        reload_themes()
+        _set_flash(request, f"Design {package.manifest.label} wurde installiert")
+    except (ThemePackageError, OSError) as exc:
+        _set_flash(request, f"Design-Import fehlgeschlagen: {exc}", "error")
+    finally:
+        await theme_file.close()
+    return _redirect("/design")
+
+
+@app.get("/design/{theme_key}/export")
+async def export_design_theme(request: Request, theme_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        registration = get_theme_registration(theme_key)
+    except UnknownThemeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=status.HTTP_404_NOT_FOUND)
+    archive = export_theme_archive(registration.package)
+    filename = f"tbc-design-{registration.manifest.key}-{registration.manifest.version}.zip"
+    return Response(
+        archive,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/design/{theme_key}/delete")
+async def delete_design_theme(request: Request, theme_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    active_theme_key = database.get_active_theme_key(SETTINGS.database_path)
+    if theme_key.strip().lower() == active_theme_key:
+        _set_flash(request, "Das aktive Design kann nicht entfernt werden", "error")
+        return _redirect("/design")
+    try:
+        remove_external_theme(theme_key, SETTINGS.theme_modules_path)
+        reload_themes()
+        _set_flash(request, "Design wurde entfernt")
+    except (ThemePackageError, OSError) as exc:
+        _set_flash(request, f"Design konnte nicht entfernt werden: {exc}", "error")
+    return _redirect("/design")
 
 
 @app.get("/api/debug-log")
