@@ -34,12 +34,20 @@
     return "Warte auf Stream";
   };
 
+  const destroyPlayer = (container) => {
+    if (container._tbcPlayer) {
+      container._tbcPlayer.destroy();
+      container._tbcPlayer = null;
+    }
+  };
+
   const ensurePlaceholder = (container, status) => {
     const current = container.querySelector(".live-placeholder");
     if (current) {
       current.textContent = placeholderText(status);
       return;
     }
+    destroyPlayer(container);
     container.innerHTML = "";
     const placeholder = document.createElement("div");
     placeholder.className = "live-placeholder";
@@ -49,19 +57,29 @@
 
   const ensureVideo = (container, item) => {
     const current = container.querySelector("video");
-    if (current && current.getAttribute("src") === item.playlist_url) {
+    if (current && current.dataset.tbcSrc === item.playlist_url) {
       return;
     }
+    destroyPlayer(container);
     container.innerHTML = "";
     const video = document.createElement("video");
     video.className = "live-video";
-    video.controls = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.autoplay = true;
-    video.src = item.playlist_url;
     container.append(video);
-    video.play().catch(() => {});
+    const cameraId = container.dataset.cameraId;
+    const ptzSupported = container.dataset.ptzSupported === "1";
+    container._tbcPlayer = new window.TBCPlayer(video, {
+      mode: "live",
+      src: item.playlist_url,
+      autoplay: true,
+      muted: true,
+      ptz: ptzSupported && cameraId
+        ? {
+            cameraId,
+            channel: Number(container.dataset.controlChannel || 0),
+            onError: () => {},
+          }
+        : null,
+    });
   };
 
   const renderItem = (item) => {

@@ -24,12 +24,14 @@
       </div>
       <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
     </div>
-    <div class="live-player-shell" data-live-player>
-      {% if item.status == 'running' %}
-      <video class="live-video" controls muted playsinline autoplay src="{{ item.playlist_url }}"></video>
-      {% else %}
+    <div
+      class="live-player-shell"
+      data-live-player
+      data-camera-id="{{ item.camera_id or '' }}"
+      data-control-channel="{{ item.control_channel or 0 }}"
+      data-ptz-supported="{{ '1' if (item.ptz_supported and role == 'admin') else '0' }}"
+    >
       <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
-      {% endif %}
     </div>
     <p class="clip-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
     <div class="live-actions">
@@ -46,5 +48,7 @@
 </section>
 {% endif %}
 
+<script src="{{ url_for('static', path='/vendor/hls.min.js') }}" defer></script>
+<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
 <script src="{{ url_for('static', path='/live.js') }}" defer></script>
 {% endblock %}

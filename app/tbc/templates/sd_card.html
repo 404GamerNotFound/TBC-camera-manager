@@ -53,7 +53,7 @@
       <h2 data-sd-preview-title>Vorschau</h2>
       <span data-sd-preview-meta></span>
     </div>
-    <video class="sd-preview-player" controls preload="none" data-sd-preview-player></video>
+    <video class="sd-preview-player" preload="none" data-sd-preview-player></video>
   </section>
 
   <section class="quiet-box" data-sd-loading>
@@ -88,5 +88,6 @@
   </section>
 </section>
 
+<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
 <script src="{{ url_for('static', path='/sd-card.js') }}" defer></script>
 {% endblock %}

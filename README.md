@@ -119,6 +119,8 @@ Die SD-Card-Dateien werden dabei nicht in die TBC-Aufnahmetabelle importiert und
 
 Der Bereich `Live` startet pro Kamera oder NVR-Kanal einen einfachen HLS-Proxy ueber `ffmpeg`. TBC schreibt die HLS-Playlist und TS-Segmente in `TBC_LIVE_PATH` und liefert sie authentifiziert ueber die Weboberflaeche aus. Der Proxy laeuft nur, wenn ein Stream gestartet wurde, und kann im UI wieder gestoppt werden.
 
+Wiedergabe erfolgt über einen eigenen, in TBC gebauten Video-Player ([video-player.js](app/tbc/static/video-player.js)) statt der nativen Browser-Steuerleiste: eigene Play/Stumm/Vollbild-Leiste sowie ein Scrub-Balken bei Aufnahmen (Timeline, SD-Karte, Clips). Für HLS wird zusätzlich das selbst gehostete [hls.js](app/tbc/static/vendor/hls.min.js) eingebunden, damit Live-Streams nicht nur in Safari, sondern in jedem gängigen Browser abspielbar sind. Unterstützt eine Kamera Steuerung (`CONTROL`), wird über dem Live-Bild ein PTZ-Steuerkreuz eingeblendet: Klicken/Halten oder Pfeiltasten bei fokussiertem Player bewegen die Kamera kontinuierlich (die Befehle werden dabei automatisch pro Bewegungsimpuls gedrosselt), Loslassen stoppt sofort. Dasselbe Steuerkreuz erscheint zusätzlich direkt über einer Live-Vorschau im „Steuerung"-Tab der Kameradetailseite, ergänzend zur bestehenden Button-Steuerung.
+
 ## Retention und Speicher-Explorer
 
 Im Bereich `Retention` koennen Admins automatische Speicherregeln anlegen:
@@ -195,7 +197,7 @@ Nicht jede Reolink-Kamera liefert alle Funktionen. TBC speichert deshalb pro Kam
 - Reolink: `reolink-aio` fuer modellabhaengige AI-/Smart-AI-Zustaende.
 - SD-Karte: `reolink-aio` VOD-Suche ueber `Search`, Wiedergabe ueber `Playback` und Download ueber `Download` bzw. `NvrDownload`.
 - Recording: `ffmpeg` fuer RTSP-Clips, Ringbuffer-Segmente fuer Vorlauf, Nachlaufsteuerung ueber aktive Events, optional `boto3` fuer S3-kompatible Uploads.
-- Live: HLS-Proxy ueber `ffmpeg` mit authentifizierten Playlist- und Segment-Routen.
+- Live: HLS-Proxy ueber `ffmpeg` mit authentifizierten Playlist- und Segment-Routen. Wiedergabe im Browser ueber einen selbst gebauten Player mit dem selbst gehosteten `hls.js` (Apache-2.0, `app/tbc/static/vendor/`) und optionalem PTZ-Overlay.
 - Dashboard-Snapshots: `DashboardSnapshotManager` erzeugt atomar ersetzte JPEG-Dateien per `ffmpeg`; ein Hintergrundjob prüft minütlich, ob der konfigurierbare 600-Sekunden-Zeitraum abgelaufen ist. Auslieferung erfolgt nur über eine authentifizierte, kamerabezogen autorisierte Route.
 - Debug Log: In-Memory-Ringbuffer fuer App- und ffmpeg-Meldungen, abrufbar als Admin-Pull-up auf jeder Seite und unter `Einstellungen`.
 - Retention: `app/tbc/maintenance.py` erzeugt Cleanup-Vorschau aus expliziten Regeln und Speicherziel-Limits und loescht lokale Dateien bzw. S3-Objekte ueber die vorhandene Recording-Abstraktion.

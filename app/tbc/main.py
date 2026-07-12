@@ -355,6 +355,14 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
         if control_channel is not None and control_channel in control_channel_options
         else (control_channel_options[0] if control_channel_options else 0)
     )
+    control_live_key = next(
+        (
+            f"channel-{int(channel['id'])}"
+            for channel in channels
+            if int(channel["channel_index"]) == selected_control_channel
+        ),
+        f"camera-{camera_id}",
+    )
     control_state = None
     if camera_module and camera_module.supports(CameraCapability.CONTROL):
         control_state = CONTROL_STATE_CACHE.get((camera_id, selected_control_channel))
@@ -387,6 +395,7 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "control_state": control_state,
             "control_channel_options": control_channel_options,
             "selected_control_channel": selected_control_channel,
+            "control_live_key": control_live_key,
             "flash": _pop_flash(request),
         },
     )
@@ -2169,6 +2178,7 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
         if not _camera_supports(camera, CameraCapability.LIVE):
             continue
         camera_id = int(camera["id"])
+        ptz_supported = _camera_supports(camera, CameraCapability.CONTROL)
         items.append(
             {
                 "key": f"camera-{camera_id}",
@@ -2176,6 +2186,8 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
                 "subtitle": str(camera.get("host") or ""),
                 "kind": "Kamera",
                 "camera_id": camera_id,
+                "control_channel": 0,
+                "ptz_supported": ptz_supported,
                 "stream_uri": stream_uri_for(camera),
             }
         )
@@ -2190,7 +2202,8 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
                     "subtitle": f"{camera['name']} · Kanal {int(channel['channel_index']) + 1}",
                     "kind": "Kanal",
                     "camera_id": camera_id,
-                    "channel_id": channel_id,
+                    "control_channel": int(channel["channel_index"]),
+                    "ptz_supported": ptz_supported,
                     "stream_uri": stream_uri_for(camera, channel),
                 }
             )
@@ -2233,6 +2246,9 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
         "status": live_status,
         "message": message,
         "playlist_url": f"/live/{live_key}/index.m3u8",
+        "camera_id": item.get("camera_id"),
+        "control_channel": item.get("control_channel", 0),
+        "ptz_supported": bool(item.get("ptz_supported")),
     }
 
 

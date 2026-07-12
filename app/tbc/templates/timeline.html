@@ -40,7 +40,7 @@
     <h2 data-timeline-title>{{ selected_camera.name }}</h2>
     <span data-timeline-meta></span>
   </div>
-  <video class="timeline-player" controls preload="metadata" data-timeline-player></video>
+  <video class="timeline-player" preload="metadata" data-timeline-player></video>
 </section>
 
 <section class="timeline-scrubber" data-timeline-root data-camera-id="{{ selected_camera_id }}">
@@ -93,5 +93,6 @@
 </section>
 {% endif %}
 
+<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
 <script src="{{ url_for('static', path='/timeline.js') }}" defer></script>
 {% endblock %}

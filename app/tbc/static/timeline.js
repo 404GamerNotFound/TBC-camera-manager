@@ -29,6 +29,9 @@
   const zoomLabel = root.querySelector("[data-timeline-zoom-label]");
 
   const player = document.querySelector("[data-timeline-player]");
+  if (player && window.TBCPlayer) {
+    new window.TBCPlayer(player, { mode: "vod" });
+  }
   const titleEl = document.querySelector("[data-timeline-title]");
   const metaEl = document.querySelector("[data-timeline-meta]");
   const listBody = document.querySelector("[data-timeline-list]");

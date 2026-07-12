@@ -66,6 +66,84 @@
     setTimeout(() => toast.remove(), 4500);
   }
 
+  const livePlayerContainer = panel.querySelector("[data-control-live-player]");
+  let livePreviewStarted = false;
+
+  function setLivePlaceholder(text) {
+    livePlayerContainer.innerHTML = "";
+    const placeholder = document.createElement("div");
+    placeholder.className = "live-placeholder";
+    placeholder.textContent = text;
+    livePlayerContainer.append(placeholder);
+  }
+
+  function showLiveVideo(playlistUrl) {
+    if (!window.TBCPlayer) return;
+    livePlayerContainer.innerHTML = "";
+    const video = document.createElement("video");
+    video.className = "live-video";
+    livePlayerContainer.append(video);
+    const cameraId = livePlayerContainer.dataset.cameraId;
+    const channel = Number(livePlayerContainer.dataset.controlChannel || 0);
+    new window.TBCPlayer(video, {
+      mode: "live",
+      src: playlistUrl,
+      autoplay: true,
+      muted: true,
+      ptz: cameraId ? { cameraId, channel, onError: (message) => showToast(message, false) } : null,
+    });
+  }
+
+  async function pollLivePreview(liveKey, attempt = 0) {
+    try {
+      const response = await fetch("/api/live/status", { credentials: "same-origin" });
+      const data = await response.json().catch(() => ({ items: [] }));
+      const item = (data.items || []).find((entry) => entry.key === liveKey);
+      if (item && item.status === "running") {
+        showLiveVideo(item.playlist_url);
+        return;
+      }
+      if (item && (item.status === "failed" || item.status === "missing")) {
+        setLivePlaceholder(item.message || "Stream nicht verfügbar");
+        return;
+      }
+    } catch (error) {
+      // ignored, retried below
+    }
+    if (attempt < 10) {
+      setTimeout(() => pollLivePreview(liveKey, attempt + 1), 1500);
+    } else {
+      setLivePlaceholder("Stream konnte nicht gestartet werden");
+    }
+  }
+
+  async function startLivePreview() {
+    if (livePreviewStarted || !livePlayerContainer) return;
+    livePreviewStarted = true;
+    const liveKey = livePlayerContainer.dataset.liveKey;
+    setLivePlaceholder("Stream wird gestartet…");
+    try {
+      const response = await fetch(`/api/live/${encodeURIComponent(liveKey)}/start`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = await response.json().catch(() => null);
+      if (data && data.item && data.item.status === "running") {
+        showLiveVideo(data.item.playlist_url);
+        return;
+      }
+    } catch (error) {
+      // fall through to polling below
+    }
+    pollLivePreview(liveKey);
+  }
+
+  if (livePlayerContainer) {
+    const controlTabButton = document.querySelector('[data-detail-tab="control"]');
+    controlTabButton?.addEventListener("click", startLivePreview, { once: true });
+    if (location.hash.slice(1) === "control") startLivePreview();
+  }
+
   panel.querySelectorAll("[data-control-form]").forEach((form) => {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();

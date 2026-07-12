@@ -377,6 +377,18 @@
 
   {% if not control_state or control_state.ptz_supported %}
   <section class="table-section">
+    <div class="section-title"><h2>Live-Vorschau</h2></div>
+    <div
+      class="live-player-shell"
+      data-control-live-player
+      data-camera-id="{{ camera.id }}"
+      data-control-channel="{{ selected_control_channel }}"
+      data-live-key="{{ control_live_key }}"
+    >
+      <div class="live-placeholder">Stream wird gestartet…</div>
+    </div>
+  </section>
+  <section class="table-section">
     <div class="section-title"><h2>Schwenk-/Neigekopf (PTZ)</h2></div>
     <div class="button-row ptz-controls">
       <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Up"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit">▲ Hoch</button></form>
@@ -498,5 +510,9 @@
   </div>
 </section>
 </div>
+{% if 'control' in module_capabilities %}
+<script src="{{ url_for('static', path='/vendor/hls.min.js') }}" defer></script>
+<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
+{% endif %}
 <script src="{{ url_for('static', path='/camera-detail.js') }}" defer></script>
 {% endblock %}

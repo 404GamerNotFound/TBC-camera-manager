@@ -2,6 +2,9 @@
   const root = document.querySelector("[data-sd-content]");
   const form = document.querySelector("[data-sd-filter-form]");
   const player = document.querySelector("[data-sd-preview-player]");
+  if (player && window.TBCPlayer) {
+    new window.TBCPlayer(player, { mode: "vod" });
+  }
   const previewPanel = document.querySelector("[data-sd-preview-panel]");
   const title = document.querySelector("[data-sd-preview-title]");
   const meta = document.querySelector("[data-sd-preview-meta]");
