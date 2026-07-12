@@ -1,6 +1,6 @@
 # Kamera-Module entwickeln
 
-TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink`, `tplink`, `standard_onvif`, `aqara`, `ubiquiti`, `sonoff` und `rtsp_only` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
+TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink`, `tplink`, `standard_onvif`, `aqara`, `ubiquiti`, `sonoff`, `rtsp_only`, `axis`, `foscam`, `hikvision` und `dahua` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
 
 ## Plugin-Datei
 

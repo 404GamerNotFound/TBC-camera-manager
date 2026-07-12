@@ -71,7 +71,20 @@ class CameraModuleTests(unittest.TestCase):
 
         self.assertEqual(
             [module.key for module in modules],
-            ["aqara", "reolink", "rtsp_only", "sonoff", "standard_onvif", "tplink", "ubiquiti", "acme"],
+            [
+                "aqara",
+                "axis",
+                "dahua",
+                "foscam",
+                "hikvision",
+                "reolink",
+                "rtsp_only",
+                "sonoff",
+                "standard_onvif",
+                "tplink",
+                "ubiquiti",
+                "acme",
+            ],
         )
         self.assertTrue(registry.get_camera_module("acme").supports(CameraCapability.LIVE))
 

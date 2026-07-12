@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "key": "hikvision",
+  "label": "Hikvision",
+  "version": "1.0.0",
+  "description": "Hikvision-Kameras und NVR über ONVIF und RTSP",
+  "entrypoint": "plugin.py",
+  "capabilities": ["live", "detections", "control"],
+  "ports": {"onvif": 80, "http": 80, "rtsp": 554}
+}

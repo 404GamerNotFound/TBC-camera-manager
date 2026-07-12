@@ -371,6 +371,8 @@
 
   {% if not control_state %}
   <div class="diagnostic-note diagnostic-warning" data-control-fallback-note>Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.</div>
+  {% elif not (control_state.ptz_supported or control_state.floodlight_supported or control_state.pir_supported or control_state.siren_supported or control_state.is_battery or control_state.reboot_supported) %}
+  <div class="diagnostic-note" data-control-none-note>Diese Kamera meldet über ONVIF keine der hier unterstützten Steuerfunktionen (PTZ, Flutlicht, PIR, Sirene, Akku, Neustart).</div>
   {% endif %}
 
   {% if not control_state or control_state.ptz_supported %}

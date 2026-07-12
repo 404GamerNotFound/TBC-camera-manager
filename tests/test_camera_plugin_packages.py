@@ -53,7 +53,19 @@ class CameraPluginPackageTests(unittest.TestCase):
 
         self.assertEqual(
             [package.manifest.key for package in packages],
-            ["aqara", "reolink", "rtsp_only", "sonoff", "standard_onvif", "tplink", "ubiquiti"],
+            [
+                "aqara",
+                "axis",
+                "dahua",
+                "foscam",
+                "hikvision",
+                "reolink",
+                "rtsp_only",
+                "sonoff",
+                "standard_onvif",
+                "tplink",
+                "ubiquiti",
+            ],
         )
         for package in packages:
             archive = export_plugin_archive(package)

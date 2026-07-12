@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "key": "foscam",
+  "label": "Foscam",
+  "version": "1.0.0",
+  "description": "Foscam-Kameras über ONVIF und RTSP",
+  "entrypoint": "plugin.py",
+  "capabilities": ["live", "detections", "control"],
+  "ports": {"onvif": 888, "http": 88, "rtsp": 554}
+}

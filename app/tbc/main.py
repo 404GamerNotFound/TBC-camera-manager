@@ -26,7 +26,6 @@ from .camera_modules import (
 )
 from .camera_modules.packages import (
     CameraPluginError,
-    _install_plugin_api,
     export_plugin_archive,
     install_plugin_archive,
     remove_external_plugin,
@@ -42,15 +41,6 @@ from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
-
-# Built-in plugins (camera_plugins/<key>/) resolve shared platform helpers through
-# the tbc_camera_api facade instead of relative imports into app.tbc, exactly like
-# externally installed plugins do (see docs/camera-modules.md). That facade is
-# normally installed as a side effect of loading a plugin through the registry;
-# the reolink import below reaches into the plugin package directly (for the
-# real-time TCP event monitor, which isn't part of the CameraModule contract), so
-# it must be installed explicitly first.
-_install_plugin_api()
 from .camera_plugins.reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
 
