@@ -18,15 +18,29 @@ class FakeCamera:
 
 class FakeApi:
     last_instance = None
+    instances = []
+    authenticate_callback = None
 
-    def __init__(self):
+    def __init__(self, email, password, session, country="US"):
         type(self).last_instance = self
+        type(self).instances.append(self)
+        self.email = email
+        self.password = password
+        self._session = session
+        self.country = country
         self.cameras = {
             "cam1": FakeCamera("cam1", "Eingang", "EufyCam 3", "192.168.1.25"),
             "cam2": FakeCamera("cam2", "Garten", "SoloCam S340"),
         }
         self.stations = {"station1": object()}
         self.requests = []
+
+    async def async_authenticate(self):
+        if type(self).authenticate_callback is not None:
+            await type(self).authenticate_callback(self)
+
+    async def async_update_device_info(self):
+        return None
 
     async def request(self, method, endpoint, **kwargs):
         self.requests.append((method, endpoint, kwargs))
@@ -105,16 +119,16 @@ class FakeVerifyCodeError(Exception):
 
 class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.login_calls = []
-
-        async def async_login(email, password, session, country="US"):
-            self.login_calls.append((email, password, session, country))
-            return FakeApi()
+        FakeApi.last_instance = None
+        FakeApi.instances = []
+        FakeApi.authenticate_callback = None
+        with eufy_plugin._PENDING_CHALLENGES_LOCK:
+            eufy_plugin._PENDING_CHALLENGES.clear()
 
         aiohttp_module = types.ModuleType("aiohttp")
         aiohttp_module.ClientSession = FakeClientSession
         eufy_module = types.ModuleType("eufy_security")
-        eufy_module.async_login = async_login
+        eufy_module.API = FakeApi
         eufy_module.InvalidCredentialsError = FakeInvalidCredentialsError
         eufy_module.CaptchaRequiredError = FakeCaptchaRequiredError
         errors_module = types.ModuleType("eufy_security.errors")
@@ -135,6 +149,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(self._patcher.stop)
         self.module = EufyCloudModule()
         self.account = {
+            "id": 7,
             "email": "guest@example.com",
             "password": "secret",
             "country": "DE",
@@ -147,7 +162,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("2 Kamera(s)", message)
         self.assertIn("1 Station(en)", message)
-        self.assertEqual(self.login_calls[0][3], "DE")
+        self.assertEqual(FakeApi.last_instance.country, "DE")
         self.assertTrue(FakeClientSession.last_instance.closed)
 
     async def test_discovery_only_exposes_stable_local_rtsp_urls(self):
@@ -169,46 +184,77 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(device.manual_stream_uri is None for device in devices))
 
     async def test_invalid_credentials_are_reported_in_german(self):
-        async def failing_login(*args, **kwargs):
+        async def failing_login(api):
             raise FakeInvalidCredentialsError("bad password")
 
-        with patch("eufy_security.async_login", failing_login):
-            with self.assertRaisesRegex(CloudConnectionError, "E-Mail-Adresse oder Passwort"):
-                await self.module.test_connection(self.account)
+        FakeApi.authenticate_callback = failing_login
+        with self.assertRaisesRegex(CloudConnectionError, "E-Mail-Adresse oder Passwort"):
+            await self.module.test_connection(self.account)
 
     async def test_invalid_country_is_rejected_before_login(self):
         with self.assertRaisesRegex(CloudConnectionError, "zwei Buchstaben"):
             await self.module.test_connection({**self.account, "country": "Germany"})
 
     async def test_verification_requirement_requests_email_code(self):
-        async def needs_verification(email, password, session, country="US"):
-            session.login_response = {"data": {"auth_token": "temporary-token"}}
-            session.api_base = "https://security-app-eu.eufylife.com"
+        async def needs_verification(api):
+            api._session.login_response = {"data": {"auth_token": "temporary-token"}}
+            api._session.api_base = "https://security-app-eu.eufylife.com"
             raise FakeNeedVerifyCodeError("need validate code")
 
+        FakeApi.authenticate_callback = needs_verification
         send_code = AsyncMock()
-        with (
-            patch("eufy_security.async_login", needs_verification),
-            patch.object(eufy_plugin, "_send_verification_code", send_code),
-        ):
+        with patch.object(eufy_plugin, "_send_verification_code", send_code):
             with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet"):
                 await self.module.test_connection(self.account)
 
         send_code.assert_awaited_once()
+        self.assertIsNotNone(
+            eufy_plugin._get_pending_challenge(
+                eufy_plugin._challenge_key(self.account, "guest@example.com", "DE")
+            )
+        )
 
     async def test_verification_code_is_used_and_device_is_trusted(self):
-        await self.module.test_connection({**self.account, "verification_code": "123456"})
+        async def authenticate(api):
+            if not api._session.verification_code:
+                api._session.login_response = {
+                    "data": {"auth_token": "temporary-token"}
+                }
+                api._session.api_base = "https://security-app-eu.eufylife.com"
+                raise FakeNeedVerifyCodeError("need validate code")
 
-        login_session = self.login_calls[0][2]
+        FakeApi.authenticate_callback = authenticate
+        with patch.object(eufy_plugin, "_send_verification_code", AsyncMock()):
+            with self.assertRaises(CloudConnectionError):
+                await self.module.test_connection(self.account)
+
+        pending_api = FakeApi.last_instance
+        await self.module.test_connection(
+            {**self.account, "verification_code": "123456"}
+        )
+
+        login_session = FakeApi.last_instance._session
+        self.assertIs(FakeApi.last_instance, pending_api)
         self.assertEqual(login_session.verification_code, "123456")
+        self.assertEqual(login_session.temporary_token, "temporary-token")
         self.assertEqual(FakeApi.last_instance.requests[0][1], "v1/app/trust_device/add")
         self.assertEqual(
             FakeApi.last_instance.requests[0][2]["json"]["verify_code"], "123456"
         )
 
+    async def test_verification_code_without_pending_session_requests_new_code(self):
+        with self.assertRaisesRegex(CloudConnectionError, "Code-Sitzung ist abgelaufen"):
+            await self.module.test_connection(
+                {**self.account, "verification_code": "123456"}
+            )
+
     def test_login_session_injects_verification_code_into_login_payload(self):
         raw_session = FakeClientSession()
-        login_session = eufy_plugin._EufyLoginSession(raw_session, "654321")
+        login_session = eufy_plugin._EufyLoginSession(
+            raw_session,
+            "654321",
+            temporary_token="temporary-token",
+        )
 
         login_session.post(
             "https://example.test/v2/passport/login_sec",
@@ -217,6 +263,10 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
 
         payload = raw_session.post_calls[0][1]["json"]
         self.assertEqual(payload["verify_code"], "654321")
+        self.assertEqual(
+            raw_session.post_calls[0][1]["headers"]["x-auth-token"],
+            "temporary-token",
+        )
 
     async def test_send_verification_code_uses_temporary_login_token(self):
         raw_session = FakeVerificationSession({"code": 0})

@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import dataclass
+from hashlib import sha256
 from secrets import token_hex
-from time import time
+from threading import Lock
+from time import monotonic, time
 from typing import Any
 from urllib.parse import quote
 
@@ -12,6 +15,18 @@ from tbc_cloud_api import CloudAccountModule, CloudConnectionError, CloudDevice
 
 LOGGER = logging.getLogger("tbc.cloud.eufy")
 EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w.-]+")
+CHALLENGE_TTL_SECONDS = 10 * 60
+
+
+@dataclass
+class _PendingChallenge:
+    api: Any
+    temporary_token: str
+    expires_at: float
+
+
+_PENDING_CHALLENGES: dict[str, _PendingChallenge] = {}
+_PENDING_CHALLENGES_LOCK = Lock()
 
 
 class EufyCloudModule(CloudAccountModule):
@@ -89,7 +104,7 @@ def _client_session():
 
 async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown") -> Any:
     try:
-        from eufy_security import InvalidCredentialsError, async_login
+        from eufy_security import API, InvalidCredentialsError
         from eufy_security.errors import NeedVerifyCodeError
     except ImportError as exc:
         raise CloudConnectionError("pyeufysecurity ist nicht installiert") from exc
@@ -101,9 +116,34 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
     if len(country) != 2 or not country.isalpha():
         raise CloudConnectionError("Der Ländercode muss aus zwei Buchstaben bestehen")
     verification_code = str(account.get("verification_code") or "").strip()
-    login_session = _EufyLoginSession(session, verification_code, debug_id)
+    challenge_key = _challenge_key(account, email, country)
+    pending = _get_pending_challenge(challenge_key) if verification_code else None
+    if verification_code and pending is None:
+        raise CloudConnectionError(
+            "Die Eufy-Code-Sitzung ist abgelaufen oder ging durch einen Neustart verloren. "
+            "Bitte den Bestätigungscode im Konto leeren, speichern und einen neuen Code anfordern."
+        )
+    if pending is None:
+        login_session = _EufyLoginSession(session, verification_code, debug_id)
+        api = API(email, password, login_session, country)
+    else:
+        api = pending.api
+        login_session = _EufyLoginSession(
+            session,
+            verification_code,
+            debug_id,
+            temporary_token=pending.temporary_token,
+        )
+        # pyeufysecurity does not expose a session setter. Rebinding here keeps
+        # the original ECDH key while replacing the closed HTTP session.
+        api._session = login_session
+        LOGGER.debug(
+            "Eufy-Code-Sitzung fortgesetzt | debug_id=%s challenge=%s",
+            debug_id,
+            challenge_key,
+        )
     try:
-        api = await async_login(email, password, login_session, country=country)
+        await api.async_authenticate()
     except InvalidCredentialsError as exc:
         if verification_code:
             raise CloudConnectionError(
@@ -116,22 +156,76 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
                 "Der Eufy-Bestätigungscode ist ungültig oder abgelaufen"
             ) from exc
         await _send_verification_code(login_session, country)
+        temporary_token = _temporary_token(login_session)
+        _store_pending_challenge(challenge_key, api, temporary_token)
+        LOGGER.debug(
+            "Eufy-Code-Sitzung gespeichert | debug_id=%s challenge=%s ttl_seconds=%s",
+            debug_id,
+            challenge_key,
+            CHALLENGE_TTL_SECONDS,
+        )
         raise CloudConnectionError(
             "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte unter "
             "Cloud-Konten → Konto bearbeiten eintragen und erneut verbinden."
         ) from exc
+    await api.async_update_device_info()
     if verification_code:
         await _trust_device(api, verification_code, debug_id)
+        _remove_pending_challenge(challenge_key)
     return api
+
+
+def _challenge_key(account: dict[str, Any], email: str, country: str) -> str:
+    account_id = str(account.get("id") or "new")
+    fingerprint = sha256(f"{email.lower()}|{country}".encode()).hexdigest()[:12]
+    return f"{account_id}:{fingerprint}"
+
+
+def _temporary_token(session: "_EufyLoginSession") -> str:
+    auth_data = session.login_response.get("data") or {}
+    token = str(auth_data.get("auth_token") or "")
+    if not token:
+        raise CloudConnectionError("Eufy hat für die Code-Sitzung keinen temporären Token geliefert")
+    return token
+
+
+def _store_pending_challenge(key: str, api: Any, temporary_token: str) -> None:
+    with _PENDING_CHALLENGES_LOCK:
+        _PENDING_CHALLENGES[key] = _PendingChallenge(
+            api=api,
+            temporary_token=temporary_token,
+            expires_at=monotonic() + CHALLENGE_TTL_SECONDS,
+        )
+
+
+def _get_pending_challenge(key: str) -> _PendingChallenge | None:
+    with _PENDING_CHALLENGES_LOCK:
+        pending = _PENDING_CHALLENGES.get(key)
+        if pending is not None and pending.expires_at <= monotonic():
+            _PENDING_CHALLENGES.pop(key, None)
+            return None
+        return pending
+
+
+def _remove_pending_challenge(key: str) -> None:
+    with _PENDING_CHALLENGES_LOCK:
+        _PENDING_CHALLENGES.pop(key, None)
 
 
 class _EufyLoginSession:
     """Injects Eufy's 2FA code without modifying the third-party package."""
 
-    def __init__(self, session: Any, verification_code: str, debug_id: str = "unknown") -> None:
+    def __init__(
+        self,
+        session: Any,
+        verification_code: str,
+        debug_id: str = "unknown",
+        temporary_token: str = "",
+    ) -> None:
         self.raw_session = session
         self.verification_code = verification_code
         self.debug_id = debug_id
+        self.temporary_token = temporary_token
         self.login_response: dict[str, Any] = {}
         self.api_base = ""
 
@@ -146,6 +240,10 @@ class _EufyLoginSession:
         payload = dict(kwargs.get("json") or {})
         if self.verification_code:
             payload["verify_code"] = self.verification_code
+        if self.temporary_token:
+            headers = dict(kwargs.get("headers") or {})
+            headers["x-auth-token"] = self.temporary_token
+            kwargs["headers"] = headers
         kwargs["json"] = payload
         return _CapturedLoginRequest(request(url, **kwargs), self, "login")
 
