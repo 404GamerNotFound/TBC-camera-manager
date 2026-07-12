@@ -247,6 +247,24 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["code"], 0)
         self.assertEqual(login_session.login_response, payload)
 
+    async def test_incomplete_login_response_has_actionable_error_and_debug_data(self):
+        login_session = eufy_plugin._EufyLoginSession(
+            FakeVerificationSession({}), "123456", "debug123"
+        )
+        response = FakeHttpResponse({"code": 0, "msg": "ok", "data": None})
+        response.headers = {}
+        captured = eufy_plugin._CapturedLoginResponse(response, login_session)
+
+        with self.assertLogs("tbc.cloud.eufy", level="DEBUG") as logs:
+            with self.assertRaisesRegex(CloudConnectionError, "keine Kontodaten"):
+                await captured.json()
+
+        output = "\n".join(logs.output)
+        self.assertIn("debug_id=debug123", output)
+        self.assertIn("content_type=<fehlt>", output)
+        self.assertIn("eufy_code=0", output)
+        self.assertIn("data_type=NoneType", output)
+
 
 if __name__ == "__main__":
     unittest.main()

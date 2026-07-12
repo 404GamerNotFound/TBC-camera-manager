@@ -93,6 +93,8 @@ Das eingebaute `eufy`-Plugin verwendet [`pyeufysecurity`](https://pypi.org/proje
 
 Die Eufy-Cloud liefert für einen gestarteten Stream nur eine sitzungsgebundene URL. `discover_devices()` startet deshalb keine Cloud-Streams und speichert keine kurzlebigen URLs. Hat eine Kamera eine lokale IP und wurden RTSP-Zugangsdaten hinterlegt, erzeugt das Plugin die dauerhafte lokale `rtsp://…/live0`-Adresse und markiert das Gerät mit `suggested_module_key="rtsp_only"`. Bei allen anderen Eufy-Kameras bleibt `manual_stream_uri` leer: Sie erscheinen in der Gerätesuche, können aber erst nach Aktivierung von NAS/RTSP in der Eufy-App als Kamera übernommen werden.
 
+Jeder Eufy-Verbindungstest und jede Gerätesuche erzeugt eine kurze Debug-ID. Fehlermeldungen zeigen diese ID an; im Admin-Debug-Log stehen dazu der API-Schritt, HTTP-Status, ursprünglicher Content-Type, Eufy-Fehlercode, bereinigte Eufy-Meldung und Datentyp der Antwort. Zugangsdaten, Auth-Tokens, Bestätigungscodes, verschlüsselte Payloads und vollständige API-Antworten werden nicht protokolliert.
+
 ## Import, Export und Admin-Oberfläche
 
 Administratoren verwalten Cloud-Plugins unter `Admin → Cloud-Anbieter` und Konten unter `Admin → Cloud-Konten`: Konto anlegen, Plugin-Felder bearbeiten, Verbindung testen und Geräte suchen. Ein Plugin mit zugeordneten Konten kann nicht entfernt werden; eingebaute Plugins können weder überschrieben noch entfernt werden. Der externe Speicherort wird mit `TBC_CLOUD_MODULES_PATH` konfiguriert.
