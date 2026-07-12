@@ -119,10 +119,13 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
     challenge_key = _challenge_key(account, email, country)
     pending = _get_pending_challenge(challenge_key) if verification_code else None
     if verification_code and pending is None:
-        raise CloudConnectionError(
-            "Die Eufy-Code-Sitzung ist abgelaufen oder ging durch einen Neustart verloren. "
-            "Bitte den Bestätigungscode im Konto leeren, speichern und einen neuen Code anfordern."
+        LOGGER.warning(
+            "Veralteter Eufy-Bestätigungscode verworfen; neue Challenge wird angefordert | "
+            "debug_id=%s challenge=%s",
+            debug_id,
+            challenge_key,
         )
+        verification_code = ""
     if pending is None:
         login_session = _EufyLoginSession(session, verification_code, debug_id)
         api = API(email, password, login_session, country)
@@ -166,7 +169,8 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
         )
         raise CloudConnectionError(
             "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte unter "
-            "Cloud-Konten → Konto bearbeiten eintragen und erneut verbinden."
+            "Cloud-Konten beim bereits konfigurierten Konto → Konto bearbeiten "
+            "eintragen (nicht im Formular 'Konto hinzufügen') und erneut verbinden."
         ) from exc
     await api.async_update_device_info()
     if verification_code:

@@ -2055,7 +2055,7 @@ async def update_cloud_account_route(request: Request, account_id: int):
         config=config,
     )
     _set_flash(request, "Cloud-Konto wurde aktualisiert")
-    return _redirect("/cloud-accounts")
+    return _redirect(f"/cloud-accounts#account-{account_id}")
 
 
 @app.post("/cloud-accounts/{account_id}/delete")
@@ -2077,31 +2077,33 @@ async def test_cloud_account_route(request: Request, account_id: int):
     if not account:
         _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
         return _redirect("/cloud-accounts")
+    account_url = f"/cloud-accounts#account-{account_id}"
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
         _set_flash(request, str(exc), "error")
-        return _redirect("/cloud-accounts")
+        return _redirect(account_url)
     try:
         message = await asyncio.wait_for(cloud_module.test_connection(account), timeout=CONTROL_TIMEOUT_SECONDS)
     except asyncio.TimeoutError:
         message = f"Verbindung antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
         _set_flash(request, message, "error")
-        return _redirect("/cloud-accounts")
+        return _redirect(account_url)
     except CloudConnectionError as exc:
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _clear_transient_cloud_account_fields(account_id, cloud_module)
         _set_flash(request, str(exc), "error")
-        return _redirect("/cloud-accounts")
+        return _redirect(account_url)
     except Exception as exc:
         LOGGER.info("Cloud account test failed for %s: %s", account_id, exc)
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
         _set_flash(request, f"Verbindung fehlgeschlagen: {exc}", "error")
-        return _redirect("/cloud-accounts")
+        return _redirect(account_url)
     database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
     _clear_transient_cloud_account_fields(account_id, cloud_module)
     _set_flash(request, message)
-    return _redirect("/cloud-accounts")
+    return _redirect(account_url)
 
 
 @app.get("/cloud-accounts/{account_id}/devices", response_class=HTMLResponse)
@@ -2126,6 +2128,7 @@ async def cloud_account_devices_page(request: Request, account_id: int):
     except asyncio.TimeoutError:
         error = f"Geräte-Suche antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
     except CloudConnectionError as exc:
+        _clear_transient_cloud_account_fields(account_id, cloud_module)
         error = str(exc)
     except Exception as exc:
         LOGGER.info("Cloud device discovery failed for %s: %s", account_id, exc)

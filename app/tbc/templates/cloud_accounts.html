@@ -80,7 +80,7 @@
     <span>{{ accounts | length }}</span>
   </div>
   {% for account in accounts %}
-  <article class="storage-item">
+  <article class="storage-item" id="account-{{ account.id }}">
     <div class="section-title">
       <div>
         <h3>{{ account.label }}</h3>

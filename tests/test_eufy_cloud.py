@@ -242,11 +242,22 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
             FakeApi.last_instance.requests[0][2]["json"]["verify_code"], "123456"
         )
 
-    async def test_verification_code_without_pending_session_requests_new_code(self):
-        with self.assertRaisesRegex(CloudConnectionError, "Code-Sitzung ist abgelaufen"):
-            await self.module.test_connection(
-                {**self.account, "verification_code": "123456"}
-            )
+    async def test_stale_verification_code_is_discarded_and_requests_new_code(self):
+        async def needs_verification(api):
+            self.assertEqual(api._session.verification_code, "")
+            api._session.login_response = {"data": {"auth_token": "new-token"}}
+            api._session.api_base = "https://security-app-eu.eufylife.com"
+            raise FakeNeedVerifyCodeError("need validate code")
+
+        FakeApi.authenticate_callback = needs_verification
+        send_code = AsyncMock()
+        with patch.object(eufy_plugin, "_send_verification_code", send_code):
+            with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet"):
+                await self.module.test_connection(
+                    {**self.account, "verification_code": "stale-code"}
+                )
+
+        send_code.assert_awaited_once()
 
     def test_login_session_injects_verification_code_into_login_payload(self):
         raw_session = FakeClientSession()
