@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Erweiterungen</p>
+    <h1>Cloud-Anbieter</h1>
+  </div>
+</section>
+
+<section class="plugin-manager">
+  <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
+    <div class="section-title">
+      <h2>Plugin importieren</h2>
+      <span>ZIP</span>
+    </div>
+    <div class="quiet-box">
+      Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.
+    </div>
+    <label>
+      <span>Plugin-Datei</span>
+      <input name="plugin_file" type="file" accept=".zip,application/zip" required>
+    </label>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Importieren</button>
+    </div>
+  </form>
+
+  <div class="plugin-search-bar">
+    <label class="visually-hidden" for="cloud-module-search">Plugins durchsuchen</label>
+    <input type="search" id="cloud-module-search" placeholder="Plugins durchsuchen…" autocomplete="off" data-plugin-search="#cloud-module-list">
+  </div>
+
+  <section class="storage-list plugin-grid" id="cloud-module-list">
+    <div class="section-title">
+      <h2>Installierte Plugins</h2>
+      <span>{{ registrations | length }}</span>
+    </div>
+    {% for registration in registrations %}
+    {% set cloud_module = registration.module %}
+    <article class="storage-item" data-plugin-search-item>
+      <div class="section-title">
+        <div>
+          <h3>{{ cloud_module.label }}</h3>
+          <p>{{ cloud_module.description }}</p>
+        </div>
+        <span>{{ registration.version }}</span>
+      </div>
+      <dl class="metric-row">
+        <div><dt>Schlüssel</dt><dd>{{ cloud_module.key }}</dd></div>
+        <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else 'ZIP-Import' }}</dd></div>
+        <div><dt>Konten</dt><dd>{{ account_counts[cloud_module.key] }}</dd></div>
+      </dl>
+      <p>
+        <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
+        {% if cloud_module.requires_host %}<span class="status-pill status-idle">Host erforderlich</span>{% endif %}
+      </p>
+      <div class="form-actions">
+        <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export">ZIP exportieren</a>
+        {% if registration.origin == 'uploaded' %}
+        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/delete">
+          <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %}>Entfernen</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+    <p class="quiet-box" data-plugin-search-empty hidden>Keine Plugins gefunden.</p>
+  </section>
+</section>
+<script src="{{ url_for('static', path='/plugin-search.js') }}" defer></script>
+{% endblock %}

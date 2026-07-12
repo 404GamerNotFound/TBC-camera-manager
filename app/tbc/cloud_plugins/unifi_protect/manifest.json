@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "key": "unifi_protect",
+  "label": "UniFi Protect",
+  "version": "1.0.0",
+  "description": "Ubiquiti UniFi Protect Controller (lokal oder über die ui.com-Cloud-Konsole) via uiprotect",
+  "entrypoint": "plugin.py",
+  "auth_type": "credentials",
+  "identifier_label": "Benutzername",
+  "secret_label": "Passwort",
+  "requires_host": true,
+  "default_port": 443
+}

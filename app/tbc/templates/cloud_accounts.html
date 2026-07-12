@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Erweiterungen</p>
+    <h1>Cloud-Konten</h1>
+  </div>
+  <a class="secondary-button" href="/cloud-modules">Cloud-Anbieter verwalten</a>
+</section>
+
+{% if not cloud_modules %}
+<div class="quiet-box">
+  Es ist noch kein Cloud-Anbieter installiert. Installiere zuerst ein <a href="/cloud-modules">Cloud-Plugin</a>, bevor du ein Konto hinzufügen kannst.
+</div>
+{% endif %}
+
+<form class="editor-form" method="post" action="/cloud-accounts" data-cloud-account-form>
+  <div class="section-title"><h2>Konto hinzufügen</h2></div>
+  <div class="form-grid">
+    <label class="span-2">
+      <span>Anbieter</span>
+      <select name="module_key" required data-cloud-account-provider>
+        {% for registration in cloud_modules %}
+        <option value="{{ registration.module.key }}"
+                data-requires-host="{{ 'true' if registration.module.requires_host else 'false' }}"
+                data-default-port="{{ registration.module.default_port }}"
+                data-identifier-label="{{ registration.module.identifier_label }}"
+                data-secret-label="{{ registration.module.secret_label }}">
+          {{ registration.module.label }} · {{ registration.module.description }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Bezeichnung</span>
+      <input name="label" placeholder="z. B. Zuhause">
+    </label>
+    <label class="cloud-host-field">
+      <span>Host</span>
+      <input name="host" placeholder="192.168.1.1 oder abc123.ui.com">
+    </label>
+    <label>
+      <span>Port</span>
+      <input name="port" type="number" min="1" max="65535" placeholder="443">
+    </label>
+    <label>
+      <span data-cloud-account-identifier-label>Benutzername</span>
+      <input name="identifier" required autocomplete="username">
+    </label>
+    <label>
+      <span data-cloud-account-secret-label>Passwort</span>
+      <input name="secret" type="password" required autocomplete="current-password">
+    </label>
+    <label class="check-row">
+      <input name="verify_ssl" type="checkbox">
+      <span>SSL-Zertifikat prüfen</span>
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit">Konto hinzufügen</button>
+  </div>
+</form>
+
+<section class="storage-list">
+  <div class="section-title">
+    <h2>Konfigurierte Konten</h2>
+    <span>{{ accounts | length }}</span>
+  </div>
+  {% for account in accounts %}
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>{{ account.label }}</h3>
+        <p>{{ account.module_key }}{% if account.host %} · {{ account.host }}{% endif %}</p>
+      </div>
+      <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'noch nicht getestet' }}</span>
+    </div>
+    <div class="form-actions">
+      <form method="post" action="/cloud-accounts/{{ account.id }}/test">
+        <button class="secondary-button" type="submit">Verbindung testen</button>
+      </form>
+      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices">Geräte suchen</a>
+      <form method="post" action="/cloud-accounts/{{ account.id }}/delete">
+        <button class="danger-button" type="submit">Entfernen</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <p class="quiet-box">Noch keine Cloud-Konten konfiguriert.</p>
+  {% endfor %}
+</section>
+<script src="{{ url_for('static', path='/cloud-account-form.js') }}" defer></script>
+{% endblock %}

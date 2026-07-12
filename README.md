@@ -78,6 +78,12 @@ Das visuelle Design der Weboberfläche ist genauso ausgelagert wie die Kamera-Mo
 
 Im Adminbereich `Design` wird das aktive Design ausgewählt sowie Design-ZIPs importiert, exportiert und entfernt. Importierte Pakete liegen dauerhaft unter `TBC_THEME_MODULES_PATH` (standardmäßig `/data/design-themes`) und erscheinen sofort in der Liste. Das aktive Design kann nicht entfernt werden, eingebaute Designs können weder überschrieben noch entfernt werden. Die technische Anleitung zur Entwicklung zusätzlicher Designs steht in [docs/design-themes.md](docs/design-themes.md).
 
+## Cloud-Konten
+
+Neben direkt verbundenen Kameras kann TBC auch Hersteller-Cloud-Konten anbinden, die mehrere Geräte gleichzeitig verwalten (z. B. UniFi Protect). Cloud-Konten sind als eigenes Plugin-System umgesetzt, getrennt von den Kamera-Modulen: Ein Cloud-Plugin meldet sich einmal am Konto an und listet dabei alle zugehörigen Kameras auf; gefundene Geräte werden anschließend als normale Kameras angelegt und nutzen ab dann dieselbe Live-/Steuerungs-Infrastruktur wie jede andere Kamera.
+
+Im Adminbereich `Cloud-Anbieter` werden Cloud-Plugins importiert, exportiert und entfernt (identisch zu `Kamera-Plugins`); unter `Cloud-Konten` werden tatsächliche Konten angelegt, die Verbindung getestet und Geräte gesucht. Ausgeliefert ist das Plugin `unifi_protect` für Ubiquiti UniFi Protect (lokal oder über die `ui.com`-Cloud-Konsole). Importierte Cloud-Plugins liegen dauerhaft unter `TBC_CLOUD_MODULES_PATH` (standardmäßig `/data/cloud-modules`). Die technische Anleitung zur Entwicklung zusätzlicher Cloud-Plugins steht in [docs/cloud-accounts.md](docs/cloud-accounts.md).
+
 ## Dashboard-Vorschaubilder
 
 Für jede aktivierte Kamera mit bekanntem Stream erzeugt TBC per `ffmpeg` ein JPEG-Vorschaubild. Der geschützte Cache wird standardmäßig spätestens nach zehn Minuten erneuert; fehlende Bilder werden beim ersten Aufruf der Kameraseite direkt erzeugt. Die Bildroute prüft dieselbe Kamera-Berechtigung wie Detail- und Live-Ansicht und liefert keine Zugangsdaten aus. Speicherort und Intervall können mit `TBC_DASHBOARD_SNAPSHOTS_PATH` und `TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS` angepasst werden.

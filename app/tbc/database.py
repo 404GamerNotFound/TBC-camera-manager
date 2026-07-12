@@ -245,6 +245,23 @@ CREATE TABLE IF NOT EXISTS live_layout (
     sort_order INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS cloud_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    module_key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    host TEXT,
+    port INTEGER,
+    verify_ssl INTEGER NOT NULL DEFAULT 0,
+    identifier TEXT NOT NULL,
+    secret TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    last_test_status TEXT,
+    last_test_message TEXT,
+    last_test_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -479,6 +496,71 @@ def count_cameras_by_module(database_path: str, module_key: str) -> int:
     with connect(database_path) as db:
         row = db.execute(
             "SELECT COUNT(*) AS total FROM cameras WHERE module_key = ?",
+            (module_key,),
+        ).fetchone()
+    return int(row["total"] if row else 0)
+
+
+def create_cloud_account(
+    database_path: str,
+    *,
+    module_key: str,
+    label: str,
+    host: str | None,
+    port: int | None,
+    verify_ssl: bool,
+    identifier: str,
+    secret: str,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO cloud_accounts (module_key, label, host, port, verify_ssl, identifier, secret)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (module_key, label, host, port, 1 if verify_ssl else 0, identifier, secret),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_cloud_accounts(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT * FROM cloud_accounts ORDER BY label COLLATE NOCASE").fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_cloud_account(database_path: str, account_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM cloud_accounts WHERE id = ?", (account_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def update_cloud_account_test_result(
+    database_path: str, account_id: int, *, status: str, message: str
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cloud_accounts
+               SET last_test_status = ?,
+                   last_test_message = ?,
+                   last_test_at = CURRENT_TIMESTAMP,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (status, message, account_id),
+        )
+
+
+def delete_cloud_account(database_path: str, account_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM cloud_accounts WHERE id = ?", (account_id,))
+
+
+def count_cloud_accounts_by_module(database_path: str, module_key: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM cloud_accounts WHERE module_key = ?",
             (module_key,),
         ).fetchone()
     return int(row["total"] if row else 0)

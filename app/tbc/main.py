@@ -33,6 +33,14 @@ from .camera_modules.packages import (
 from .camera_modules.registry import UnknownCameraModuleError
 from .camera_modules.streams import validate_manual_stream_uri
 from .channels import apply_channel_enabled_filter
+from .cloud_modules import CloudConnectionError, get_cloud_module, list_cloud_module_registrations, reload_cloud_modules
+from .cloud_modules.packages import (
+    CloudPluginError,
+    export_plugin_archive as export_cloud_plugin_archive,
+    install_plugin_archive as install_cloud_plugin_archive,
+    remove_external_plugin as remove_external_cloud_plugin,
+)
+from .cloud_modules.registry import UnknownCloudModuleError
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
@@ -1842,6 +1850,275 @@ async def delete_camera_module(request: Request, module_key: str):
     except (CameraPluginError, OSError) as exc:
         _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
     return _redirect("/camera-modules")
+
+
+@app.get("/cloud-modules", response_class=HTMLResponse)
+async def cloud_modules_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registrations = list_cloud_module_registrations()
+    return templates.TemplateResponse(
+        request,
+        "cloud_modules.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "registrations": registrations,
+            "account_counts": {
+                registration.module.key: database.count_cloud_accounts_by_module(
+                    SETTINGS.database_path, registration.module.key
+                )
+                for registration in registrations
+            },
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/cloud-modules/import")
+async def import_cloud_module(request: Request, plugin_file: UploadFile = File(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        archive = await plugin_file.read(10 * 1024 * 1024 + 1)
+        package = install_cloud_plugin_archive(archive, SETTINGS.cloud_modules_path)
+        reload_cloud_modules()
+        _set_flash(request, f"Cloud-Plugin {package.manifest.label} wurde installiert")
+    except (CloudPluginError, OSError) as exc:
+        _set_flash(request, f"Plugin-Import fehlgeschlagen: {exc}", "error")
+    finally:
+        await plugin_file.close()
+    return _redirect("/cloud-modules")
+
+
+@app.get("/cloud-modules/{module_key}/export")
+async def export_cloud_module(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registration = next(
+        (item for item in list_cloud_module_registrations() if item.module.key == module_key),
+        None,
+    )
+    if registration is None:
+        return JSONResponse({"error": "Plugin kann nicht exportiert werden"}, status_code=status.HTTP_404_NOT_FOUND)
+    archive = export_cloud_plugin_archive(registration.package)
+    filename = f"tbc-cloud-plugin-{registration.module.key}-{registration.version}.zip"
+    return Response(
+        archive,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/cloud-modules/{module_key}/delete")
+async def delete_cloud_module(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account_count = database.count_cloud_accounts_by_module(SETTINGS.database_path, module_key)
+    if account_count:
+        _set_flash(request, f"Plugin wird noch von {account_count} Cloud-Konto(s) verwendet", "error")
+        return _redirect("/cloud-modules")
+    try:
+        remove_external_cloud_plugin(module_key, SETTINGS.cloud_modules_path)
+        reload_cloud_modules()
+        _set_flash(request, "Cloud-Plugin wurde entfernt")
+    except (CloudPluginError, OSError) as exc:
+        _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
+    return _redirect("/cloud-modules")
+
+
+@app.get("/cloud-accounts", response_class=HTMLResponse)
+async def cloud_accounts_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "cloud_accounts.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "cloud_modules": list_cloud_module_registrations(),
+            "accounts": database.list_cloud_accounts(SETTINGS.database_path),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/cloud-accounts", response_class=HTMLResponse)
+async def create_cloud_account_route(
+    request: Request,
+    module_key: str = Form(...),
+    label: str = Form(""),
+    host: str = Form(""),
+    port: str = Form(""),
+    verify_ssl: str = Form(""),
+    identifier: str = Form(...),
+    secret: str = Form(...),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        cloud_module = get_cloud_module(module_key)
+    except UnknownCloudModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    normalized_host = host.strip()
+    if cloud_module.requires_host and not normalized_host:
+        _set_flash(request, f"{cloud_module.label} benötigt einen Host", "error")
+        return _redirect("/cloud-accounts")
+    try:
+        port_value = int(port) if port.strip() else cloud_module.default_port
+    except ValueError:
+        _set_flash(request, "Port muss eine Zahl sein", "error")
+        return _redirect("/cloud-accounts")
+    database.create_cloud_account(
+        SETTINGS.database_path,
+        module_key=cloud_module.key,
+        label=label.strip() or cloud_module.label,
+        host=normalized_host or None,
+        port=port_value,
+        verify_ssl=verify_ssl == "on",
+        identifier=identifier.strip(),
+        secret=secret,
+    )
+    _set_flash(request, "Cloud-Konto wurde hinzugefügt")
+    return _redirect("/cloud-accounts")
+
+
+@app.post("/cloud-accounts/{account_id}/delete")
+async def delete_cloud_account_route(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.delete_cloud_account(SETTINGS.database_path, account_id)
+    _set_flash(request, "Cloud-Konto wurde entfernt")
+    return _redirect("/cloud-accounts")
+
+
+@app.post("/cloud-accounts/{account_id}/test")
+async def test_cloud_account_route(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        return _redirect("/cloud-accounts")
+    try:
+        cloud_module = get_cloud_module(account["module_key"])
+    except UnknownCloudModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    try:
+        message = await asyncio.wait_for(cloud_module.test_connection(account), timeout=CONTROL_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        message = f"Verbindung antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
+        _set_flash(request, message, "error")
+        return _redirect("/cloud-accounts")
+    except CloudConnectionError as exc:
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    except Exception as exc:
+        LOGGER.info("Cloud account test failed for %s: %s", account_id, exc)
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _set_flash(request, f"Verbindung fehlgeschlagen: {exc}", "error")
+        return _redirect("/cloud-accounts")
+    database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
+    _set_flash(request, message)
+    return _redirect("/cloud-accounts")
+
+
+@app.get("/cloud-accounts/{account_id}/devices", response_class=HTMLResponse)
+async def cloud_account_devices_page(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        return _redirect("/cloud-accounts")
+    try:
+        cloud_module = get_cloud_module(account["module_key"])
+    except UnknownCloudModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    devices: list[Any] = []
+    error: str | None = None
+    try:
+        devices = await asyncio.wait_for(cloud_module.discover_devices(account), timeout=CONTROL_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        error = f"Geräte-Suche antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
+    except CloudConnectionError as exc:
+        error = str(exc)
+    except Exception as exc:
+        LOGGER.info("Cloud device discovery failed for %s: %s", account_id, exc)
+        error = f"Geräte-Suche fehlgeschlagen: {exc}"
+    existing_uris = {
+        camera.get("manual_stream_uri")
+        for camera in database.list_cameras(SETTINGS.database_path)
+        if camera.get("manual_stream_uri")
+    }
+    return templates.TemplateResponse(
+        request,
+        "cloud_account_devices.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "account": account,
+            "cloud_module": cloud_module,
+            "devices": devices,
+            "existing_uris": existing_uris,
+            "error": error,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/cloud-accounts/{account_id}/devices/import")
+async def import_cloud_device_route(
+    request: Request,
+    account_id: int,
+    name: str = Form(...),
+    manual_stream_uri: str = Form(...),
+    module_key: str = Form("rtsp_only"),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        normalized_uri = validate_manual_stream_uri(manual_stream_uri)
+    except ValueError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cloud-accounts/{account_id}/devices")
+    try:
+        camera_module = get_camera_module(module_key)
+    except UnknownCameraModuleError:
+        camera_module = get_camera_module("rtsp_only")
+    camera_id = database.create_camera(
+        SETTINGS.database_path,
+        name=name.strip() or "Cloud-Kamera",
+        host="",
+        onvif_port=camera_module.default_onvif_port,
+        http_port=camera_module.default_http_port,
+        username="",
+        password="",
+        module_key=camera_module.key,
+        rtsp_port=camera_module.default_rtsp_port,
+        manual_stream_uri=normalized_uri,
+    )
+    _set_flash(request, "Kamera wurde aus dem Cloud-Konto übernommen")
+    return _redirect(f"/cameras/{camera_id}")
 
 
 @app.get("/design", response_class=HTMLResponse)

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">{{ cloud_module.label }}</p>
+    <h1>Geräte von {{ account.label }}</h1>
+  </div>
+  <a class="secondary-button" href="/cloud-accounts">Zurück zu Cloud-Konten</a>
+</section>
+
+{% if error %}
+<div class="inline-error">{{ error }}</div>
+{% elif not devices %}
+<div class="quiet-box">Es wurden keine Geräte in diesem Cloud-Konto gefunden.</div>
+{% endif %}
+
+<section class="storage-list">
+  {% for device in devices %}
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>{{ device.name }}</h3>
+        <p>{{ device.model or '' }}{% if device.model and device.external_id %} · {% endif %}{{ device.external_id }}</p>
+      </div>
+      {% if device.online is not none %}
+      <span class="status-pill {{ 'status-active' if device.online else 'status-idle' }}">{{ 'online' if device.online else 'offline' }}</span>
+      {% endif %}
+    </div>
+    {% if device.manual_stream_uri %}
+    {% if device.manual_stream_uri in existing_uris %}
+    <p class="quiet-box">Bereits als Kamera importiert.</p>
+    {% endif %}
+    <form method="post" action="/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
+      <input type="hidden" name="manual_stream_uri" value="{{ device.manual_stream_uri }}">
+      <input type="hidden" name="module_key" value="{{ device.suggested_module_key }}">
+      <input type="hidden" name="name" value="{{ device.name }}">
+      <button class="primary-button" type="submit">Als Kamera hinzufügen</button>
+    </form>
+    {% else %}
+    <p class="quiet-box">Kein RTSP-Stream verfügbar. Bitte RTSP für dieses Gerät zuerst in der Herstelleroberfläche aktivieren.</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

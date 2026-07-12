@@ -21,6 +21,7 @@ class Settings:
     cookie_secure: bool = False
     camera_modules_path: str = "/data/camera-modules"
     theme_modules_path: str = "/data/design-themes"
+    cloud_modules_path: str = "/data/cloud-modules"
 
 
 def load_settings() -> Settings:
@@ -42,4 +43,5 @@ def load_settings() -> Settings:
         cookie_secure=os.getenv("TBC_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"},
         camera_modules_path=os.getenv("TBC_CAMERA_MODULES_PATH", "/data/camera-modules"),
         theme_modules_path=os.getenv("TBC_THEME_MODULES_PATH", "/data/design-themes"),
+        cloud_modules_path=os.getenv("TBC_CLOUD_MODULES_PATH", "/data/cloud-modules"),
     )
