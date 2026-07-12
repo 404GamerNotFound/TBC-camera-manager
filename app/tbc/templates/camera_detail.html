@@ -402,6 +402,20 @@
       <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Stop"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="text-button" type="submit">■ Stopp</button></form>
     </div>
   </section>
+  {% if control_state and control_state.ptz_presets %}
+  <section class="table-section">
+    <div class="section-title"><h2>PTZ-Positionen</h2></div>
+    <div class="button-row ptz-controls">
+      {% for preset_name, preset_id in control_state.ptz_presets.items() %}
+      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form>
+        <input type="hidden" name="preset" value="{{ preset_id }}">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="secondary-button" type="submit">{{ preset_name }}</button>
+      </form>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   {% endif %}
 
   {% if not control_state or control_state.floodlight_supported %}
@@ -462,6 +476,30 @@
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="danger-button" type="submit">Kamera neu starten</button>
     </form>
+  </section>
+  {% endif %}
+  {% if control_state and control_state.firmware_supported %}
+  <section
+    class="table-section"
+    data-firmware-section
+    data-camera-id="{{ camera.id }}"
+    data-control-channel="{{ selected_control_channel }}"
+  >
+    <div class="section-title">
+      <h2>Firmware</h2>
+      <span data-firmware-current>{{ control_state.firmware_current or 'unbekannt' }}</span>
+    </div>
+    <div class="quiet-box">
+      Firmware-Updates werden direkt von reolink.com heruntergeladen und auf die Kamera geschrieben. Die Kamera ist währenddessen nicht erreichbar und startet danach neu. Den Vorgang nicht unterbrechen.
+    </div>
+    <div class="diagnostic-note" data-firmware-result hidden></div>
+    <div class="progress-track" data-firmware-progress hidden>
+      <div class="progress-fill" data-firmware-progress-fill></div>
+    </div>
+    <div class="form-actions">
+      <button class="secondary-button" type="button" data-firmware-check>Auf Updates prüfen</button>
+      <button class="danger-button" type="button" data-firmware-update hidden>Jetzt aktualisieren</button>
+    </div>
   </section>
   {% endif %}
 </div>

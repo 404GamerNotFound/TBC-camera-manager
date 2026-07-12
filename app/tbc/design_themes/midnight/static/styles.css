@@ -338,6 +338,20 @@ section.diagnostic-note {
   background: rgba(46, 175, 122, 0.16);
 }
 
+.progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--brand);
+  transition: width 0.3s ease;
+}
+
 .auth-panel {
   display: grid;
   grid-template-columns: minmax(220px, 0.85fr) minmax(280px, 1fr);

@@ -196,7 +196,7 @@ Nicht jede Reolink-Kamera liefert alle Funktionen. TBC speichert deshalb pro Kam
 - Kamera-Module: `CameraModule`-Schnittstelle, Capability-Modell, validierte ZIP-Plugins und optional Python-Entry-Points; die Modulauswahl wird pro Kamera als `module_key` gespeichert.
 - Login: Cookie-Session mit PBKDF2-SHA256 gehashtem Admin-Passwort.
 - ONVIF: `onvif-zeep` fuer Device-, Media- und Event-Probe.
-- Reolink: `reolink-aio` fuer modellabhaengige AI-/Smart-AI-Zustaende.
+- Reolink: `reolink-aio` fuer modellabhaengige AI-/Smart-AI-Zustaende, gespeicherte PTZ-Positionen sowie Firmware-Pruefung/-Update (laeuft als Hintergrund-Task, siehe [docs/camera-modules.md](docs/camera-modules.md)).
 - SD-Karte: `reolink-aio` VOD-Suche ueber `Search`, Wiedergabe ueber `Playback` und Download ueber `Download` bzw. `NvrDownload`.
 - Recording: `ffmpeg` fuer RTSP-Clips, Ringbuffer-Segmente fuer Vorlauf, Nachlaufsteuerung ueber aktive Events, optional `boto3` fuer S3-kompatible Uploads.
 - Live: HLS-Proxy ueber `ffmpeg` mit authentifizierten Playlist- und Segment-Routen. Wiedergabe im Browser ueber einen selbst gebauten Player mit dem selbst gehosteten `hls.js` (Apache-2.0, `app/tbc/static/vendor/`) und optionalem PTZ-Overlay.

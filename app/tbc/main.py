@@ -105,6 +105,12 @@ CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 # (or the background cache refresh) far longer than any UI should keep a user
 # waiting on a single click.
 CONTROL_TIMEOUT_SECONDS = 20
+# Firmware updates run as a background task (they can take several minutes -
+# far longer than any request should block on) and are polled by the browser
+# via this in-memory state, keyed by (camera_id, channel). Not persisted: a
+# TBC restart mid-update just loses the progress display, not the update
+# itself, which keeps running on the camera independently of TBC.
+FIRMWARE_UPDATE_STATE: dict[tuple[int, int], dict[str, Any]] = {}
 
 
 @app.on_event("startup")
@@ -464,9 +470,18 @@ async def refresh_camera(request: Request, camera_id: int):
 
 @app.post("/cameras/{camera_id}/control/ptz")
 async def control_camera_ptz(
-    request: Request, camera_id: int, command: str = Form(...), speed: str = Form(""), channel: int = Form(0)
+    request: Request,
+    camera_id: int,
+    command: str = Form(""),
+    speed: str = Form(""),
+    preset: str = Form(""),
+    channel: int = Form(0),
 ):
-    params: dict[str, Any] = {"command": command}
+    params: dict[str, Any] = {}
+    if preset.strip():
+        params["preset"] = preset.strip()
+    elif command.strip():
+        params["command"] = command.strip()
     if speed.strip():
         try:
             params["speed"] = int(speed)
@@ -503,6 +518,108 @@ async def control_camera_siren(request: Request, camera_id: int, duration: int =
 @app.post("/cameras/{camera_id}/control/reboot")
 async def control_camera_reboot(request: Request, camera_id: int, channel: int = Form(0)):
     return await _execute_control(request, camera_id, action="reboot", params={}, channel=channel)
+
+
+@app.post("/cameras/{camera_id}/firmware/check")
+async def check_camera_firmware(request: Request, camera_id: int, channel: int = Form(0)):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    camera, camera_module, error = _firmware_camera_and_module(camera_id)
+    if error:
+        return error
+    key = (camera_id, channel)
+    FIRMWARE_UPDATE_STATE[key] = {"status": "checking", "progress": 0, "message": ""}
+    try:
+        result = await asyncio.wait_for(
+            camera_module.check_firmware(camera, channel=channel), timeout=CONTROL_TIMEOUT_SECONDS
+        )
+    except asyncio.TimeoutError:
+        FIRMWARE_UPDATE_STATE[key] = {"status": "failed", "progress": 0, "message": "Zeitüberschreitung bei der Firmware-Prüfung"}
+        return JSONResponse({"ok": False, "message": "Zeitüberschreitung bei der Firmware-Prüfung"}, status_code=status.HTTP_504_GATEWAY_TIMEOUT)
+    except Exception as exc:
+        FIRMWARE_UPDATE_STATE[key] = {"status": "failed", "progress": 0, "message": str(exc)}
+        return JSONResponse({"ok": False, "message": f"Prüfung fehlgeschlagen: {exc}"}, status_code=status.HTTP_502_BAD_GATEWAY)
+    FIRMWARE_UPDATE_STATE[key] = {
+        "status": "available" if result.get("update_available") else "up_to_date",
+        "progress": 0,
+        "message": "",
+        **result,
+    }
+    return {"ok": True, **result}
+
+
+@app.post("/cameras/{camera_id}/firmware/update")
+async def start_camera_firmware_update(request: Request, camera_id: int, channel: int = Form(0)):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    camera, camera_module, error = _firmware_camera_and_module(camera_id)
+    if error:
+        return error
+    key = (camera_id, channel)
+    current = FIRMWARE_UPDATE_STATE.get(key)
+    if not current or not current.get("update_available"):
+        return JSONResponse(
+            {"ok": False, "message": "Bitte zuerst auf Updates prüfen"}, status_code=status.HTTP_400_BAD_REQUEST
+        )
+    if current.get("status") == "updating":
+        return JSONResponse({"ok": False, "message": "Update läuft bereits"}, status_code=status.HTTP_409_CONFLICT)
+    FIRMWARE_UPDATE_STATE[key] = {**current, "status": "updating", "progress": 0, "message": "Update wird gestartet…"}
+    asyncio.create_task(_run_firmware_update_task(camera_id, camera, camera_module, channel))
+    return {"ok": True, "message": "Firmware-Update gestartet"}
+
+
+@app.get("/cameras/{camera_id}/firmware/status")
+async def camera_firmware_status(request: Request, camera_id: int, channel: int = Query(0)):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    state = FIRMWARE_UPDATE_STATE.get((camera_id, channel), {"status": "idle", "progress": 0, "message": ""})
+    return {"ok": True, **state}
+
+
+def _firmware_camera_and_module(camera_id: int) -> tuple[dict[str, Any] | None, Any, Any]:
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return None, None, JSONResponse({"ok": False, "message": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError as exc:
+        return None, None, JSONResponse({"ok": False, "message": str(exc)}, status_code=status.HTTP_404_NOT_FOUND)
+    if not camera_module.supports(CameraCapability.FIRMWARE):
+        return None, None, JSONResponse(
+            {"ok": False, "message": f"Das Modul {camera_module.label} unterstützt keine Firmware-Updates"},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    return camera, camera_module, None
+
+
+async def _run_firmware_update_task(camera_id: int, camera: dict[str, Any], camera_module: Any, channel: int) -> None:
+    key = (camera_id, channel)
+
+    def on_progress(progress: int) -> None:
+        entry = FIRMWARE_UPDATE_STATE.get(key, {})
+        FIRMWARE_UPDATE_STATE[key] = {**entry, "status": "updating", "progress": progress}
+
+    try:
+        await camera_module.update_firmware(camera, channel=channel, progress_callback=on_progress)
+    except Exception as exc:
+        LOGGER.exception("Firmware-Update fuer Kamera %s Kanal %s fehlgeschlagen", camera_id, channel)
+        entry = FIRMWARE_UPDATE_STATE.get(key, {})
+        FIRMWARE_UPDATE_STATE[key] = {**entry, "status": "failed", "progress": 0, "message": str(exc)}
+        return
+    entry = FIRMWARE_UPDATE_STATE.get(key, {})
+    FIRMWARE_UPDATE_STATE[key] = {
+        **entry,
+        "status": "done",
+        "progress": 100,
+        "message": "Firmware wurde aktualisiert",
+        "update_available": False,
+    }
+    for cache_key in [k for k in CONTROL_STATE_CACHE if k[0] == camera_id]:
+        CONTROL_STATE_CACHE.pop(cache_key, None)
+    _kick_off_control_probe(camera_id, camera, camera_module, channel=channel)
 
 
 async def _execute_control(request: Request, camera_id: int, *, action: str, params: dict[str, Any], channel: int = 0):

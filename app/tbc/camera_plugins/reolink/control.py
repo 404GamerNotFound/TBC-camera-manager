@@ -22,6 +22,7 @@ async def get_control_state(camera: dict[str, Any], *, channel: int = 0) -> dict
             "ptz_supported": any(
                 _supported(host_api, channel, cap) for cap in ("ptz", "pan_tilt", "pan", "tilt")
             ),
+            "ptz_presets": _ptz_presets(host_api, channel),
             "floodlight_supported": _supported(host_api, channel, "floodLight"),
             "floodlight_state": _value(host_api, "whiteled_state", channel),
             "pir_supported": _supported(host_api, channel, "PIR"),
@@ -32,6 +33,8 @@ async def get_control_state(camera: dict[str, Any], *, channel: int = 0) -> dict
             "battery_percentage": _value(host_api, "battery_percentage", channel),
             "battery_temperature": _value(host_api, "battery_temperature", channel),
             "battery_status": _battery_status_label(_value(host_api, "battery_status", channel)),
+            "firmware_supported": _supported(host_api, channel, "firmware"),
+            "firmware_current": _value(host_api, "camera_sw_version", channel),
         }
         return state
     finally:
@@ -62,7 +65,90 @@ async def send_control(camera: dict[str, Any], *, action: str, channel: int = 0,
         await _close_host(host_api)
 
 
+async def check_firmware(camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
+    """Read-only: ask the device and reolink.com whether a newer firmware exists.
+
+    Does not write anything to the camera.
+    """
+    host_api = _host(camera)
+    try:
+        await _call_if_available(host_api, "get_host_data")
+        channel = _resolve_channel(host_api, channel)
+        if not _supported(host_api, channel, "firmware"):
+            raise RuntimeError("Firmware-Prüfung wird von diesem Gerät nicht unterstützt")
+        current = _value(host_api, "camera_sw_version", channel)
+        try:
+            await host_api.check_new_firmware(ch_list=[channel])
+        except Exception as exc:
+            raise RuntimeError(f"Firmware-Prüfung fehlgeschlagen: {exc}") from exc
+        available = host_api.firmware_update_available(channel)
+        if available is False:
+            return {"current": current, "latest": current, "update_available": False, "release_notes": ""}
+        if isinstance(available, str):
+            return {"current": current, "latest": available, "update_available": True, "release_notes": ""}
+        return {
+            "current": current,
+            "latest": getattr(available, "version_string", None) or str(available),
+            "update_available": True,
+            "release_notes": getattr(available, "release_notes", "") or "",
+        }
+    finally:
+        await _close_host(host_api)
+
+
+async def run_firmware_update(camera: dict[str, Any], *, channel: int = 0, progress_callback: Any = None) -> None:
+    """Download and flash the firmware reolink.com reports as newer than the device's.
+
+    This writes to the camera and typically reboots it; callers must have
+    already confirmed with the user that an update is available (via
+    check_firmware) before calling this.
+    """
+    host_api = _host(camera)
+    poll_task: Any = None
+    try:
+        await _call_if_available(host_api, "get_host_data")
+        channel = _resolve_channel(host_api, channel)
+        if not _supported(host_api, channel, "firmware"):
+            raise RuntimeError("Firmware-Update wird von diesem Gerät nicht unterstützt")
+        try:
+            await host_api.check_new_firmware(ch_list=[channel])
+        except Exception as exc:
+            raise RuntimeError(f"Firmware-Prüfung fehlgeschlagen: {exc}") from exc
+        if host_api.firmware_update_available(channel) is False:
+            raise RuntimeError("Keine neue Firmware verfügbar; bitte zuerst prüfen")
+
+        if progress_callback is not None:
+
+            async def _poll_progress() -> None:
+                while True:
+                    # reolink-aio does not (yet) expose upload progress through a
+                    # public method, only this internal dict the library itself
+                    # writes to during update_firmware().
+                    progress = getattr(host_api, "_sw_upload_progress", {}).get(channel, 0)
+                    progress_callback(progress)
+                    if progress >= 100:
+                        return
+                    await asyncio.sleep(1)
+
+            poll_task = asyncio.create_task(_poll_progress())
+        await host_api.update_firmware(channel)
+    finally:
+        if poll_task is not None:
+            poll_task.cancel()
+        if progress_callback is not None:
+            progress_callback(100)
+        await _close_host(host_api)
+
+
 async def _send_ptz(host_api: Any, channel: int, params: dict[str, Any]) -> None:
+    preset = params.get("preset")
+    if preset is not None and str(preset).strip():
+        try:
+            preset_id = int(preset)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Ungültige Preset-ID: {preset}") from exc
+        await host_api.set_ptz_command(channel, preset=preset_id)
+        return
     command = str(params.get("command") or "").strip()
     if command not in PTZ_COMMANDS:
         raise ValueError(f"Unbekannter PTZ-Befehl: {command}")
@@ -78,6 +164,21 @@ async def _send_ptz(host_api: Any, channel: int, params: dict[str, Any]) -> None
             await host_api.set_ptz_command(channel, command="Stop")
         except Exception:
             LOGGER.debug("Reolink PTZ stop pulse failed", exc_info=True)
+
+
+def _ptz_presets(host_api: Any, channel: int) -> dict[str, int]:
+    getter = getattr(host_api, "ptz_presets", None)
+    if not callable(getter):
+        return {}
+    try:
+        presets = getter(channel)
+    except Exception:
+        LOGGER.debug("Reolink PTZ preset lookup failed", exc_info=True)
+        return {}
+    try:
+        return {str(name): int(preset_id) for name, preset_id in dict(presets).items()}
+    except (TypeError, ValueError):
+        return {}
 
 
 def _host(camera: dict[str, Any]) -> Any:

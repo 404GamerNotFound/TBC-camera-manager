@@ -1,6 +1,7 @@
 import sys
 import types
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.tbc.camera_plugins.reolink import control
@@ -25,18 +26,41 @@ class FakeControlHost:
             ("reboot", None): True,
             ("siren_play", 0): True,
             ("battery", 0): True,
+            ("firmware", 0): True,
         }
         self._floodlight_state = True
         self._pir_enabled = False
         self._battery_percentage = 77
         self._battery_temperature = 21
         self._battery_status = 1
+        self._ptz_presets_data = {0: {"Eingang": 1, "Garten": 2}}
+        self._sw_version = "v3.1.0.100_old"
+        self._new_firmware = False
+        self._sw_upload_progress: dict = {}
+        self.check_new_firmware_calls = []
+        self.update_firmware_calls = []
 
     async def get_host_data(self):
         return None
 
     async def get_states(self):
         return None
+
+    def ptz_presets(self, channel):
+        return self._ptz_presets_data.get(channel, {})
+
+    def camera_sw_version(self, channel):
+        return self._sw_version
+
+    async def check_new_firmware(self, ch_list=None):
+        self.check_new_firmware_calls.append(ch_list)
+
+    def firmware_update_available(self, channel=None):
+        return self._new_firmware
+
+    async def update_firmware(self, channel=None):
+        self.update_firmware_calls.append(channel)
+        self._sw_upload_progress[channel] = 100
 
     def supported(self, channel, capability):
         return self._supported.get((capability, channel), False)
@@ -112,6 +136,17 @@ class ReolinkControlTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(state["battery_status"], "charging")
         self.assertTrue(FakeControlHost.instance.closed)
 
+    async def test_get_control_state_reports_ptz_presets(self):
+        state = await control.get_control_state(self.camera)
+
+        self.assertEqual(state["ptz_presets"], {"Eingang": 1, "Garten": 2})
+
+    async def test_get_control_state_reports_firmware_info(self):
+        state = await control.get_control_state(self.camera)
+
+        self.assertTrue(state["firmware_supported"])
+        self.assertEqual(state["firmware_current"], "v3.1.0.100_old")
+
     async def test_send_control_floodlight_toggles_state(self):
         await control.send_control(self.camera, action="floodlight", state=True)
 
@@ -148,9 +183,66 @@ class ReolinkControlTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await control.send_control(self.camera, action="ptz", command="Sideways")
 
+    async def test_send_control_ptz_preset_moves_to_preset_without_pulsing(self):
+        await control.send_control(self.camera, action="ptz", preset=2)
+
+        self.assertEqual(FakeControlHost.instance.ptz_calls, [(0, {"preset": 2})])
+
+    async def test_send_control_ptz_preset_rejects_non_numeric_id(self):
+        with self.assertRaises(ValueError):
+            await control.send_control(self.camera, action="ptz", preset="not-a-number")
+
     async def test_send_control_rejects_unknown_action(self):
         with self.assertRaises(ValueError):
             await control.send_control(self.camera, action="levitate")
+
+    async def test_check_firmware_reports_up_to_date(self):
+        FakeControlHost.instance = None
+        result = await control.check_firmware(self.camera)
+
+        self.assertEqual(result["current"], "v3.1.0.100_old")
+        self.assertEqual(result["latest"], "v3.1.0.100_old")
+        self.assertFalse(result["update_available"])
+        self.assertEqual(FakeControlHost.instance.check_new_firmware_calls, [[0]])
+
+    async def test_check_firmware_reports_update_available(self):
+        # The fake Host is constructed fresh inside check_firmware(), so seed
+        # its "new firmware" response through a subclass instead of mutating
+        # an instance that does not exist yet.
+        available = SimpleNamespace(version_string="v3.2.0.200_new", release_notes="Bugfixes")
+
+        class HostWithUpdate(FakeControlHost):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._new_firmware = available
+
+        with patch.object(sys.modules["reolink_aio.api"], "Host", HostWithUpdate):
+            result = await control.check_firmware(self.camera)
+
+        self.assertTrue(result["update_available"])
+        self.assertEqual(result["latest"], "v3.2.0.200_new")
+        self.assertEqual(result["release_notes"], "Bugfixes")
+
+    async def test_run_firmware_update_calls_update_and_reports_completion(self):
+        available = SimpleNamespace(version_string="v3.2.0.200_new", release_notes="")
+
+        class HostWithUpdate(FakeControlHost):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._new_firmware = available
+
+        progress_values = []
+        with patch.object(sys.modules["reolink_aio.api"], "Host", HostWithUpdate):
+            await control.run_firmware_update(self.camera, progress_callback=progress_values.append)
+            instance = HostWithUpdate.instance
+
+        self.assertEqual(instance.update_firmware_calls, [0])
+        self.assertIn(100, progress_values)
+        self.assertTrue(instance.closed)
+
+    async def test_run_firmware_update_without_prior_check_raises(self):
+        with self.assertRaises(RuntimeError):
+            await control.run_firmware_update(self.camera)
 
     async def test_send_control_closes_host_even_on_failure(self):
         with self.assertRaises(ValueError):

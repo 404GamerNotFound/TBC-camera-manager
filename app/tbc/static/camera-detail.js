@@ -191,3 +191,118 @@
     });
   });
 })();
+
+(() => {
+  const section = document.querySelector("[data-firmware-section]");
+  if (!section) return;
+
+  const cameraId = section.dataset.cameraId;
+  const channel = Number(section.dataset.controlChannel || 0);
+  const currentEl = section.querySelector("[data-firmware-current]");
+  const resultEl = section.querySelector("[data-firmware-result]");
+  const checkButton = section.querySelector("[data-firmware-check]");
+  const updateButton = section.querySelector("[data-firmware-update]");
+  const progressWrap = section.querySelector("[data-firmware-progress]");
+  const progressFill = section.querySelector("[data-firmware-progress-fill]");
+
+  let pollTimer = null;
+
+  function showResult(message, kind) {
+    if (!resultEl) return;
+    resultEl.textContent = message;
+    resultEl.className = `diagnostic-note diagnostic-${kind}`;
+    resultEl.hidden = !message;
+  }
+
+  function setProgress(percent) {
+    if (!progressWrap || !progressFill) return;
+    const clamped = Math.max(0, Math.min(100, percent));
+    progressWrap.hidden = clamped <= 0 || clamped >= 100;
+    progressFill.style.width = `${clamped}%`;
+  }
+
+  async function postJson(path) {
+    const response = await fetch(path, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: new URLSearchParams({channel: String(channel)}),
+    });
+    const data = await response.json().catch(() => null);
+    return {ok: response.ok, data};
+  }
+
+  async function getJson(path) {
+    const response = await fetch(`${path}?channel=${encodeURIComponent(channel)}`, {credentials: "same-origin"});
+    const data = await response.json().catch(() => null);
+    return {ok: response.ok, data};
+  }
+
+  function stopPolling() {
+    window.clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
+  async function pollStatus() {
+    const {ok, data} = await getJson(`/cameras/${cameraId}/firmware/status`);
+    if (!ok || !data) return;
+    setProgress(data.progress || 0);
+    if (data.status === "updating") {
+      showResult(data.message || "Update läuft…", "warning");
+      return;
+    }
+    stopPolling();
+    if (data.status === "done") {
+      showResult("Firmware wurde aktualisiert. Die Kamera startet neu und ist kurz nicht erreichbar.", "ok");
+      if (updateButton) updateButton.hidden = true;
+      if (checkButton) checkButton.disabled = false;
+    } else if (data.status === "failed") {
+      showResult(`Update fehlgeschlagen: ${data.message || "unbekannter Fehler"}`, "error");
+      if (checkButton) checkButton.disabled = false;
+      if (updateButton) updateButton.disabled = false;
+    }
+  }
+
+  checkButton?.addEventListener("click", async () => {
+    checkButton.disabled = true;
+    if (updateButton) updateButton.hidden = true;
+    showResult("Prüfe auf Updates…", "warning");
+    const {ok, data} = await postJson(`/cameras/${cameraId}/firmware/check`);
+    checkButton.disabled = false;
+    if (!ok || !data || !data.ok) {
+      showResult((data && data.message) || "Prüfung fehlgeschlagen", "error");
+      return;
+    }
+    if (currentEl && data.current) currentEl.textContent = data.current;
+    if (data.update_available) {
+      showResult(`Neue Firmware verfügbar: ${data.latest}${data.release_notes ? " – " + data.release_notes : ""}`, "warning");
+      if (updateButton) updateButton.hidden = false;
+    } else {
+      showResult("Firmware ist aktuell.", "ok");
+    }
+  });
+
+  updateButton?.addEventListener("click", async () => {
+    const confirmed = window.confirm(
+      "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. " +
+      "Der Vorgang kann mehrere Minuten dauern und sollte nicht unterbrochen werden."
+    );
+    if (!confirmed) return;
+    updateButton.disabled = true;
+    checkButton.disabled = true;
+    showResult("Update wird gestartet…", "warning");
+    setProgress(1);
+    const {ok, data} = await postJson(`/cameras/${cameraId}/firmware/update`);
+    if (!ok || !data || !data.ok) {
+      showResult((data && data.message) || "Update konnte nicht gestartet werden", "error");
+      updateButton.disabled = false;
+      checkButton.disabled = false;
+      setProgress(0);
+      return;
+    }
+    updateButton.hidden = true;
+    stopPolling();
+    pollTimer = window.setInterval(pollStatus, 2000);
+    pollStatus();
+  });
+})();

@@ -83,7 +83,8 @@ Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Recht
 - `DETECTIONS`: Das Modul stellt Erkennungsdefinitionen und Zustände bereit.
 - `CHANNELS`: Das Modul unterstützt mehrere Kamera- oder NVR-Kanäle.
 - `ARCHIVE`: Das Modul implementiert Suche, Wiedergabe und Download des Kamera-Archivs.
-- `CONTROL`: Das Modul implementiert `get_control_state()` und `send_control()` für Live-Gerätesteuerung (z. B. PTZ, Flutlicht, PIR-Sensor, Sirene, Neustart, Akkustatus).
+- `CONTROL`: Das Modul implementiert `get_control_state()` und `send_control()` für Live-Gerätesteuerung (z. B. PTZ inkl. gespeicherter Positionen, Flutlicht, PIR-Sensor, Sirene, Neustart, Akkustatus).
+- `FIRMWARE`: Das Modul implementiert `check_firmware()` und `update_firmware()` für Firmware-Prüfung und -Aktualisierung.
 
 Die Implementierungen liegen in den Herstellerpaketen unter `app/tbc/camera_plugins/<schlüssel>/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet; `plugin.py` lädt sie über `import_tbc("camera_plugins.<schlüssel>.module")` — denselben Mechanismus, den auch extern installierte Plugins für den Zugriff auf die TBC-Basisklassen nutzen.
 
@@ -99,4 +100,18 @@ async def send_control(self, camera: dict, *, action: str, channel: int = 0, **p
     """Einen Steuerbefehl ausführen, z. B. action="floodlight", params={"state": True}."""
 ```
 
-Das eingebaute `reolink`-Modul (`app/tbc/camera_plugins/reolink/control.py`) implementiert darüber PTZ-Schwenk/Neige-Befehle, Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus über `reolink-aio`. `tplink`, `standard_onvif` und `aqara` bieten PTZ über den herstellerneutralen ONVIF-PTZ-Service (`app/tbc/camera_modules/onvif_control.py`) an, den ihre jeweiligen `camera_plugins/<schlüssel>/control.py`-Adapter nur mit dem passenden Standard-ONVIF-Port aufrufen. Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).
+Das eingebaute `reolink`-Modul (`app/tbc/camera_plugins/reolink/control.py`) implementiert darüber PTZ-Schwenk/Neige-Befehle (inkl. auf der Kamera gespeicherter PTZ-Positionen über `reolink-aio`s `ptz_presets()`/`set_ptz_command(preset=...)`), Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus. `tplink`, `standard_onvif` und `aqara` bieten PTZ über den herstellerneutralen ONVIF-PTZ-Service (`app/tbc/camera_modules/onvif_control.py`) an, den ihre jeweiligen `camera_plugins/<schlüssel>/control.py`-Adapter nur mit dem passenden Standard-ONVIF-Port aufrufen (ohne Positionsspeicher). Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).
+
+## Firmware-Updates (`FIRMWARE`)
+
+Module mit der Fähigkeit `FIRMWARE` implementieren zwei zusätzliche Methoden:
+
+```python
+async def check_firmware(self, camera: dict, *, channel: int = 0) -> dict:
+    """Nur lesend: aktuelle und bei reolink.com verfügbare Version liefern."""
+
+async def update_firmware(self, camera: dict, *, channel: int = 0, progress_callback=None) -> None:
+    """Firmware herunterladen und auf das Gerät schreiben; ruft progress_callback(0..100) auf."""
+```
+
+Das eingebaute `reolink`-Modul lädt dafür über `reolink-aio`s `check_new_firmware()`/`update_firmware()` direkt von reolink.com herunter und schreibt sie auf die Kamera; die Kamera ist währenddessen nicht erreichbar und startet danach neu. In der Weboberfläche liegt der Ablauf bewusst zweistufig: „Auf Updates prüfen“ (rein lesend) muss zuerst erfolgreich eine verfügbare Version melden, bevor „Jetzt aktualisieren“ überhaupt aktiv wird; der Update-Start verlangt zusätzlich eine JavaScript-Bestätigung. Der Update-Vorgang läuft als Hintergrund-Task in TBC und wird über einen Fortschritts-Endpunkt abgefragt, da er mehrere Minuten dauern kann.

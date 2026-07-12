@@ -14,6 +14,7 @@ class CameraCapability(str, Enum):
     CHANNELS = "channels"
     ARCHIVE = "archive"
     CONTROL = "control"
+    FIRMWARE = "firmware"
 
 
 @dataclass
@@ -93,3 +94,15 @@ class CameraModule(ABC):
 
     async def send_control(self, camera: dict[str, Any], *, action: str, channel: int = 0, **params: Any) -> dict[str, Any]:
         raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Kamerasteuerung")
+
+    async def check_firmware(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
+        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Firmware-Prüfung")
+
+    async def update_firmware(
+        self,
+        camera: dict[str, Any],
+        *,
+        channel: int = 0,
+        progress_callback: Any = None,
+    ) -> None:
+        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Firmware-Updates")

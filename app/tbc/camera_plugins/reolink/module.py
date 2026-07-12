@@ -5,7 +5,7 @@ from typing import Any
 
 from tbc_camera_api import CameraCapability, CameraModule, CameraSnapshot
 from .catalog import definitions
-from .control import get_control_state, send_control
+from .control import check_firmware, get_control_state, run_firmware_update, send_control
 from .sdcard import list_sd_card_recordings, open_sd_card_download
 from .service import probe_camera
 
@@ -22,6 +22,7 @@ class ReolinkCameraModule(CameraModule):
             CameraCapability.CHANNELS,
             CameraCapability.ARCHIVE,
             CameraCapability.CONTROL,
+            CameraCapability.FIRMWARE,
         }
     )
 
@@ -72,3 +73,15 @@ class ReolinkCameraModule(CameraModule):
 
     async def send_control(self, camera: dict[str, Any], *, action: str, channel: int = 0, **params: Any) -> dict[str, Any]:
         return await send_control(camera, action=action, channel=channel, **params)
+
+    async def check_firmware(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
+        return await check_firmware(camera, channel=channel)
+
+    async def update_firmware(
+        self,
+        camera: dict[str, Any],
+        *,
+        channel: int = 0,
+        progress_callback: Any = None,
+    ) -> None:
+        await run_firmware_update(camera, channel=channel, progress_callback=progress_callback)
