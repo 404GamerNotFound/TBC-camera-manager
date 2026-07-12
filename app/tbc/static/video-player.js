@@ -213,8 +213,10 @@
     _startPtzHold(command) {
       if (this._ptzActive === command) return;
       this._ptzActive = command;
+      this._ptzPulses = 0;
       const loop = async () => {
         while (this._ptzActive === command) {
+          this._ptzPulses += 1;
           await this._sendPtz(command);
           if (this._ptzActive !== command) break;
         }
@@ -225,7 +227,15 @@
     _stopPtzHold() {
       if (!this._ptzActive) return;
       this._ptzActive = null;
-      this._sendPtz(PTZ_STOP_ON_RELEASE);
+      // Each pulse already self-stops server-side after ~0.5s (ContinuousMove,
+      // sleep, Stop). Sending our own Stop here races that in-flight pulse: for
+      // a plain click (still on the first pulse) it lands almost immediately
+      // after the move started, cutting it short before it's visible. Only
+      // force a Stop once the hold has run long enough to start a second
+      // pulse - i.e. the button is genuinely being held down.
+      if (this._ptzPulses > 1) {
+        this._sendPtz(PTZ_STOP_ON_RELEASE);
+      }
     }
 
     _clearPtzHold() {

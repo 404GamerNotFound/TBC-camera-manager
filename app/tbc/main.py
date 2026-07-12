@@ -89,6 +89,16 @@ SNAPSHOT_MANAGER = DashboardSnapshotManager(
 )
 SNAPSHOT_SEMAPHORE = asyncio.Semaphore(2)
 CONTROL_STATE_CACHE: dict[int, dict[str, Any]] = {}
+# Tracks (camera_id, channel) probes currently in flight and, after a failed
+# attempt, the earliest time a new one may start. Without this, every page that
+# lazily kicks off a probe when the cache is empty (the live grid re-checks on
+# every ~3s poll, for every camera) would otherwise queue up a fresh concurrent
+# probe each cycle for any camera that hasn't answered yet - most cameras only
+# accept one ONVIF/vendor-API session at a time, so the flood itself prevents
+# the probe from ever completing.
+CONTROL_STATE_PROBES_IN_FLIGHT: set[tuple[int, int]] = set()
+CONTROL_STATE_PROBE_RETRY_AFTER: dict[tuple[int, int], float] = {}
+CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 # Upper bound for a single device round-trip. reolink-aio in particular can spend
 # 25-30s retrying multiple login/encryption strategies against an unreachable or
 # slow camera before it ever raises, which would otherwise hang a control button
@@ -372,9 +382,7 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             # on a live device round-trip, which can take many seconds for an
             # unreachable/slow camera. The page renders immediately with a
             # "status unknown" fallback and picks up fresh data on next visit.
-            asyncio.create_task(
-                _publish_control_state(camera_id, camera, camera_module, channel=selected_control_channel)
-            )
+            _kick_off_control_probe(camera_id, camera, camera_module, channel=selected_control_channel)
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -536,27 +544,49 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
     except Exception as exc:
         LOGGER.info("Control action %s failed for camera %s channel %s: %s", action, camera_id, channel, exc)
         return fail(f"Befehl fehlgeschlagen: {exc}", status_code=status.HTTP_502_BAD_GATEWAY)
-    asyncio.create_task(_publish_control_state(camera_id, camera, camera_module, channel=channel))
+    _kick_off_control_probe(camera_id, camera, camera_module, channel=channel)
     if is_ajax:
         return {"ok": True, "message": "Befehl wurde gesendet"}
     _set_flash(request, "Befehl wurde gesendet")
     return _redirect(f"/cameras/{camera_id}?control_channel={channel}#control")
 
 
+def _kick_off_control_probe(camera_id: int, camera: dict[str, Any], camera_module: Any, *, channel: int = 0) -> None:
+    key = (camera_id, channel)
+    if key in CONTROL_STATE_PROBES_IN_FLIGHT:
+        return
+    retry_after = CONTROL_STATE_PROBE_RETRY_AFTER.get(key)
+    if retry_after is not None and asyncio.get_running_loop().time() < retry_after:
+        return
+    CONTROL_STATE_PROBES_IN_FLIGHT.add(key)
+    asyncio.create_task(_publish_control_state(camera_id, camera, camera_module, channel=channel))
+
+
 async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_module: Any, *, channel: int = 0) -> None:
+    key = (camera_id, channel)
     try:
-        control_state = await asyncio.wait_for(
-            camera_module.get_control_state(camera, channel=channel),
-            timeout=CONTROL_TIMEOUT_SECONDS,
-        )
-    except asyncio.TimeoutError:
-        LOGGER.debug("Control state fetch timed out for camera %s channel %s", camera_id, channel)
-        return
-    except Exception:
-        LOGGER.debug("Control state fetch failed for camera %s channel %s", camera_id, channel, exc_info=True)
-        return
-    CONTROL_STATE_CACHE[(camera_id, channel)] = control_state
-    await asyncio.to_thread(mqtt.publish_control_state, SETTINGS.database_path, camera, control_state)
+        try:
+            control_state = await asyncio.wait_for(
+                camera_module.get_control_state(camera, channel=channel),
+                timeout=CONTROL_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            LOGGER.debug("Control state fetch timed out for camera %s channel %s", camera_id, channel)
+            CONTROL_STATE_PROBE_RETRY_AFTER[key] = (
+                asyncio.get_running_loop().time() + CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS
+            )
+            return
+        except Exception:
+            LOGGER.debug("Control state fetch failed for camera %s channel %s", camera_id, channel, exc_info=True)
+            CONTROL_STATE_PROBE_RETRY_AFTER[key] = (
+                asyncio.get_running_loop().time() + CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS
+            )
+            return
+        CONTROL_STATE_CACHE[key] = control_state
+        CONTROL_STATE_PROBE_RETRY_AFTER.pop(key, None)
+        await asyncio.to_thread(mqtt.publish_control_state, SETTINGS.database_path, camera, control_state)
+    finally:
+        CONTROL_STATE_PROBES_IN_FLIGHT.discard(key)
 
 
 @app.post("/cameras/{camera_id}/recording")
@@ -729,6 +759,8 @@ async def remove_camera(request: Request, camera_id: int):
     SNAPSHOT_MANAGER.delete(camera_id)
     for cache_key in [key for key in CONTROL_STATE_CACHE if key[0] == camera_id]:
         CONTROL_STATE_CACHE.pop(cache_key, None)
+    for cache_key in [key for key in CONTROL_STATE_PROBE_RETRY_AFTER if key[0] == camera_id]:
+        CONTROL_STATE_PROBE_RETRY_AFTER.pop(cache_key, None)
     _set_flash(request, "Kamera wurde entfernt")
     return _redirect("/cameras")
 
@@ -1353,7 +1385,7 @@ async def _refresh_camera(camera_id: int):
         database.upsert_camera_channels(SETTINGS.database_path, camera_id, snapshot.channels)
     _process_detection_states(camera_id, snapshot.detections, camera_module)
     if camera_module.supports(CameraCapability.CONTROL):
-        asyncio.create_task(_publish_control_state(camera_id, camera, camera_module))
+        _kick_off_control_probe(camera_id, camera, camera_module)
     return snapshot
 
 
@@ -2187,7 +2219,7 @@ def _control_ptz_supported(camera: dict[str, Any], camera_id: int, *, channel: i
             camera_module = get_camera_module(camera.get("module_key"))
         except UnknownCameraModuleError:
             return False
-        asyncio.create_task(_publish_control_state(camera_id, camera, camera_module, channel=channel))
+        _kick_off_control_probe(camera_id, camera, camera_module, channel=channel)
         return False
     return bool(control_state.get("ptz_supported"))
 
@@ -2199,29 +2231,41 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
         if not _camera_supports(camera, CameraCapability.LIVE):
             continue
         camera_id = int(camera["id"])
-        items.append(
-            {
-                "key": f"camera-{camera_id}",
-                "name": str(camera["name"]),
-                "subtitle": str(camera.get("host") or ""),
-                "kind": "Kamera",
-                "camera_id": camera_id,
-                "control_channel": 0,
-                "ptz_supported": _control_ptz_supported(camera, camera_id, channel=0),
-                "stream_uri": stream_uri_for(camera),
-            }
-        )
-        for channel in database.list_camera_channels(SETTINGS.database_path, camera_id):
-            if int(channel.get("enabled") or 0) != 1:
-                continue
+        enabled_channels = [
+            channel
+            for channel in database.list_camera_channels(SETTINGS.database_path, camera_id)
+            if int(channel.get("enabled") or 0) == 1
+        ]
+        if not enabled_channels:
+            items.append(
+                {
+                    "key": f"camera-{camera_id}",
+                    "name": str(camera["name"]),
+                    "subtitle": str(camera.get("host") or ""),
+                    "kind": "Kamera",
+                    "camera_id": camera_id,
+                    "control_channel": 0,
+                    "ptz_supported": _control_ptz_supported(camera, camera_id, channel=0),
+                    "stream_uri": stream_uri_for(camera),
+                }
+            )
+            continue
+        # A device with exactly one enabled channel (most non-NVR cameras that
+        # still report a "channel 0") only gets a single tile named after the
+        # camera itself, not a separate "camera" tile plus a redundant
+        # "Kanal 1" tile showing the identical stream. Multi-channel NVRs still
+        # get one tile per channel, each addressed by its real channel index
+        # instead of a guessed channel=0 for PTZ.
+        single_channel = len(enabled_channels) == 1
+        for channel in enabled_channels:
             channel_id = int(channel["id"])
             channel_index = int(channel["channel_index"])
             items.append(
                 {
                     "key": f"channel-{channel_id}",
-                    "name": str(channel.get("name") or f"Kanal {channel_index + 1}"),
-                    "subtitle": f"{camera['name']} · Kanal {channel_index + 1}",
-                    "kind": "Kanal",
+                    "name": str(camera["name"]) if single_channel else str(channel.get("name") or f"Kanal {channel_index + 1}"),
+                    "subtitle": str(camera.get("host") or "") if single_channel else f"{camera['name']} · Kanal {channel_index + 1}",
+                    "kind": "Kamera" if single_channel else "Kanal",
                     "camera_id": camera_id,
                     "control_channel": channel_index,
                     "ptz_supported": _control_ptz_supported(camera, camera_id, channel=channel_index),
