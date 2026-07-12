@@ -4,7 +4,7 @@ import unittest
 import zipfile
 from io import BytesIO
 
-from app.tbc.cloud_modules import CloudAuthType
+from app.tbc.cloud_modules import CloudAuthType, normalize_account_configuration
 from app.tbc.cloud_modules.packages import (
     CloudPluginError,
     discover_plugin_packages,
@@ -57,7 +57,7 @@ class CloudPluginPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as external_path:
             packages = discover_plugin_packages(external_path)
 
-        self.assertEqual([package.manifest.key for package in packages], ["unifi_protect"])
+        self.assertEqual([package.manifest.key for package in packages], ["eufy", "unifi_protect"])
         for package in packages:
             archive = export_plugin_archive(package)
             with zipfile.ZipFile(BytesIO(archive)) as bundle:
@@ -73,6 +73,26 @@ class CloudPluginPackageTests(unittest.TestCase):
         self.assertEqual(unifi.manifest.auth_type, CloudAuthType.CREDENTIALS)
         self.assertTrue(unifi.manifest.requires_host)
         self.assertEqual(unifi.manifest.default_port, 443)
+        self.assertEqual(
+            [field.key for field in unifi.manifest.account_fields],
+            ["host", "port", "identifier", "secret", "verify_ssl"],
+        )
+
+    def test_builtin_eufy_manifest_owns_its_account_fields(self):
+        with tempfile.TemporaryDirectory() as external_path:
+            packages = discover_plugin_packages(external_path)
+
+        eufy = next(package for package in packages if package.manifest.key == "eufy")
+        self.assertEqual(
+            [field.key for field in eufy.manifest.account_fields],
+            ["email", "password", "country", "rtsp_username", "rtsp_password"],
+        )
+        config = normalize_account_configuration(
+            eufy.manifest.account_fields,
+            {"email": "user@example.com", "password": "secret"},
+        )
+        self.assertEqual(config["country"], "DE")
+        self.assertEqual(config["rtsp_username"], "")
 
     def test_zip_plugin_can_be_installed_loaded_exported_and_removed(self):
         with tempfile.TemporaryDirectory() as external_path:

@@ -22,11 +22,7 @@
       <span>Anbieter</span>
       <select name="module_key" required data-cloud-account-provider>
         {% for registration in cloud_modules %}
-        <option value="{{ registration.module.key }}"
-                data-requires-host="{{ 'true' if registration.module.requires_host else 'false' }}"
-                data-default-port="{{ registration.module.default_port }}"
-                data-identifier-label="{{ registration.module.identifier_label }}"
-                data-secret-label="{{ registration.module.secret_label }}">
+        <option value="{{ registration.module.key }}">
           {{ registration.module.label }} · {{ registration.module.description }}
         </option>
         {% endfor %}
@@ -36,26 +32,42 @@
       <span>Bezeichnung</span>
       <input name="label" placeholder="z. B. Zuhause">
     </label>
-    <label class="cloud-host-field">
-      <span>Host</span>
-      <input name="host" placeholder="192.168.1.1 oder abc123.ui.com">
-    </label>
-    <label>
-      <span>Port</span>
-      <input name="port" type="number" min="1" max="65535" placeholder="443">
-    </label>
-    <label>
-      <span data-cloud-account-identifier-label>Benutzername</span>
-      <input name="identifier" required autocomplete="username">
-    </label>
-    <label>
-      <span data-cloud-account-secret-label>Passwort</span>
-      <input name="secret" type="password" required autocomplete="current-password">
-    </label>
-    <label class="check-row">
-      <input name="verify_ssl" type="checkbox">
-      <span>SSL-Zertifikat prüfen</span>
-    </label>
+    {% for registration in cloud_modules %}
+      {% set provider_loop = loop %}
+      {% for field in registration.module.account_fields %}
+        {% if field.field_type.value == 'checkbox' %}
+        <label class="check-row{% if field.full_width %} span-2{% endif %}"
+               data-cloud-account-fields="{{ registration.module.key }}"{% if not provider_loop.first %} hidden{% endif %}>
+          <input name="account_{{ field.key }}" type="checkbox"{% if field.default %} checked{% endif %}{% if field.required %} required{% endif %}{% if not provider_loop.first %} disabled{% endif %}>
+          <span>{{ field.label }}</span>
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        </label>
+        {% else %}
+        <label class="{% if field.full_width %}span-2{% endif %}"
+               data-cloud-account-fields="{{ registration.module.key }}"{% if not provider_loop.first %} hidden{% endif %}>
+          <span>{{ field.label }}</span>
+          {% if field.field_type.value == 'select' %}
+          <select name="account_{{ field.key }}"{% if field.required %} required{% endif %}{% if not provider_loop.first %} disabled{% endif %}>
+            {% for option in field.options %}
+            <option value="{{ option.value }}"{% if option.value == field.default %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input name="account_{{ field.key }}"
+                 type="{{ field.field_type.value }}"
+                 {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                 {% if field.default is not none %}value="{{ field.default }}"{% endif %}
+                 {% if field.minimum is not none %}min="{{ field.minimum }}"{% endif %}
+                 {% if field.maximum is not none %}max="{{ field.maximum }}"{% endif %}
+                 {% if field.autocomplete %}autocomplete="{{ field.autocomplete }}"{% endif %}
+                 {% if field.required %}required{% endif %}
+                 {% if not provider_loop.first %}disabled{% endif %}>
+          {% endif %}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        </label>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
   </div>
   <div class="form-actions">
     <button class="primary-button" type="submit">Konto hinzufügen</button>

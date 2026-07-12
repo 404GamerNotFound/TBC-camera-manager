@@ -47,6 +47,28 @@ class CloudAccountDatabaseTests(unittest.TestCase):
             database.initialize(handle.name)
             self.assertIsNone(database.get_cloud_account(handle.name, 999))
 
+    def test_plugin_owned_configuration_is_persisted_and_hydrated(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            account_id = database.create_cloud_account(
+                handle.name,
+                module_key="eufy",
+                label="Eufy Zuhause",
+                config={
+                    "email": "guest@example.com",
+                    "password": "secret",
+                    "country": "DE",
+                    "rtsp_username": "nas-user",
+                },
+            )
+
+            account = database.get_cloud_account(handle.name, account_id)
+
+            self.assertEqual(account["email"], "guest@example.com")
+            self.assertEqual(account["country"], "DE")
+            self.assertEqual(account["config"]["rtsp_username"], "nas-user")
+            self.assertEqual(account["identifier"], "")
+
 
 if __name__ == "__main__":
     unittest.main()

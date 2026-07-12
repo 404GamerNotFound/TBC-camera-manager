@@ -15,13 +15,35 @@ from io import BytesIO
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from .base import CloudAccountModule, CloudAuthType, CloudConnectionError, CloudDevice
+from .base import (
+    CloudAccountField,
+    CloudAccountFieldOption,
+    CloudAccountFieldType,
+    CloudAccountModule,
+    CloudAuthType,
+    CloudConnectionError,
+    CloudDevice,
+)
 
 PLUGIN_SCHEMA_VERSION = 1
 MAX_ARCHIVE_BYTES = 10 * 1024 * 1024
 MAX_EXTRACTED_BYTES = 25 * 1024 * 1024
 MAX_FILES = 200
 PLUGIN_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
+FIELD_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+RESERVED_FIELD_KEYS = {
+    "id",
+    "module_key",
+    "label",
+    "enabled",
+    "config",
+    "config_json",
+    "last_test_status",
+    "last_test_message",
+    "last_test_at",
+    "created_at",
+    "updated_at",
+}
 ALLOWED_SUFFIXES = {".py", ".json", ".yaml", ".yml", ".md", ".txt"}
 
 
@@ -42,6 +64,7 @@ class CloudPluginManifest:
     secret_label: str
     requires_host: bool
     default_port: int
+    account_fields: tuple[CloudAccountField, ...]
 
 
 @dataclass(frozen=True)
@@ -111,6 +134,15 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         raise CloudPluginError("default_port muss eine Zahl sein") from exc
     if not 1 <= default_port <= 65535:
         raise CloudPluginError("default_port muss zwischen 1 und 65535 liegen")
+    account_fields = _read_account_fields(raw.get("account_fields"))
+    if account_fields is None:
+        account_fields = _legacy_account_fields(
+            auth_type=auth_type,
+            identifier_label=str(raw.get("identifier_label") or "Benutzername").strip(),
+            secret_label=str(raw.get("secret_label") or "Passwort").strip(),
+            requires_host=bool(raw.get("requires_host", False)),
+            default_port=default_port,
+        )
     return CloudPluginManifest(
         schema_version=schema_version,
         key=key,
@@ -123,7 +155,140 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         secret_label=str(raw.get("secret_label") or "Passwort").strip(),
         requires_host=bool(raw.get("requires_host", False)),
         default_port=default_port,
+        account_fields=account_fields,
     )
+
+
+def _read_account_fields(raw_fields: Any) -> tuple[CloudAccountField, ...] | None:
+    if raw_fields is None:
+        return None
+    if not isinstance(raw_fields, list) or len(raw_fields) > 24:
+        raise CloudPluginError("account_fields muss eine Liste mit höchstens 24 Feldern sein")
+    fields: list[CloudAccountField] = []
+    seen: set[str] = set()
+    for raw in raw_fields:
+        if not isinstance(raw, dict):
+            raise CloudPluginError("Jedes Konto-Feld muss ein JSON-Objekt sein")
+        key = str(raw.get("key") or "").strip().lower()
+        label = str(raw.get("label") or "").strip()
+        if not FIELD_KEY_PATTERN.fullmatch(key) or key in seen or key in RESERVED_FIELD_KEYS:
+            raise CloudPluginError(f"Ungültiger oder doppelter Konto-Feldschlüssel: {key}")
+        if not label:
+            raise CloudPluginError(f"Konto-Feld {key} benötigt eine Beschriftung")
+        seen.add(key)
+        try:
+            field_type = CloudAccountFieldType(str(raw.get("type") or "text"))
+        except ValueError as exc:
+            raise CloudPluginError(f"Unbekannter Konto-Feldtyp für {key}") from exc
+        options = _read_field_options(key, raw.get("options"), field_type)
+        minimum = _optional_int(raw.get("min"), f"min von {key}")
+        maximum = _optional_int(raw.get("max"), f"max von {key}")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise CloudPluginError(f"min darf bei {key} nicht größer als max sein")
+        default = raw.get("default")
+        if default is not None and not isinstance(default, (str, int, bool)):
+            raise CloudPluginError(f"Ungültiger Standardwert für {key}")
+        if field_type == CloudAccountFieldType.SELECT and default is not None:
+            if str(default) not in {option.value for option in options}:
+                raise CloudPluginError(f"Standardwert von {key} fehlt in options")
+        fields.append(
+            CloudAccountField(
+                key=key,
+                label=label,
+                field_type=field_type,
+                required=bool(raw.get("required", False)),
+                placeholder=str(raw.get("placeholder") or "").strip(),
+                help_text=str(raw.get("help_text") or "").strip(),
+                autocomplete=str(raw.get("autocomplete") or "").strip(),
+                default=default,
+                minimum=minimum,
+                maximum=maximum,
+                full_width=bool(raw.get("full_width", False)),
+                options=options,
+            )
+        )
+    return tuple(fields)
+
+
+def _read_field_options(
+    key: str, raw_options: Any, field_type: CloudAccountFieldType
+) -> tuple[CloudAccountFieldOption, ...]:
+    if field_type != CloudAccountFieldType.SELECT:
+        if raw_options not in (None, []):
+            raise CloudPluginError(f"options ist nur bei Auswahlfeldern erlaubt ({key})")
+        return ()
+    if not isinstance(raw_options, list) or not raw_options:
+        raise CloudPluginError(f"Auswahlfeld {key} benötigt options")
+    options: list[CloudAccountFieldOption] = []
+    seen: set[str] = set()
+    for raw in raw_options:
+        if isinstance(raw, str):
+            value = label = raw.strip()
+        elif isinstance(raw, dict):
+            value = str(raw.get("value") or "").strip()
+            label = str(raw.get("label") or value).strip()
+        else:
+            raise CloudPluginError(f"Ungültige Auswahloption für {key}")
+        if not value or not label or value in seen:
+            raise CloudPluginError(f"Leere oder doppelte Auswahloption für {key}")
+        seen.add(value)
+        options.append(CloudAccountFieldOption(value=value, label=label))
+    return tuple(options)
+
+
+def _optional_int(value: Any, label: str) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise CloudPluginError(f"{label} muss eine Zahl sein") from exc
+
+
+def _legacy_account_fields(
+    *,
+    auth_type: CloudAuthType,
+    identifier_label: str,
+    secret_label: str,
+    requires_host: bool,
+    default_port: int,
+) -> tuple[CloudAccountField, ...]:
+    fields: list[CloudAccountField] = []
+    if requires_host:
+        fields.extend(
+            (
+                CloudAccountField("host", "Host", required=True, placeholder="192.168.1.1 oder cloud.example.com"),
+                CloudAccountField(
+                    "port",
+                    "Port",
+                    CloudAccountFieldType.NUMBER,
+                    default=default_port,
+                    minimum=1,
+                    maximum=65535,
+                ),
+            )
+        )
+    fields.extend(
+        (
+            CloudAccountField(
+                "identifier",
+                identifier_label,
+                CloudAccountFieldType.TEXT,
+                required=auth_type == CloudAuthType.CREDENTIALS,
+                autocomplete="username",
+            ),
+            CloudAccountField(
+                "secret",
+                secret_label,
+                CloudAccountFieldType.PASSWORD,
+                required=True,
+                autocomplete="current-password",
+            ),
+        )
+    )
+    if requires_host:
+        fields.append(CloudAccountField("verify_ssl", "SSL-Zertifikat prüfen", CloudAccountFieldType.CHECKBOX))
+    return tuple(fields)
 
 
 def load_plugin_module(package: CloudPluginPackage) -> CloudAccountModule:
@@ -162,12 +327,16 @@ def load_plugin_module(package: CloudPluginPackage) -> CloudAccountModule:
     module.secret_label = manifest.secret_label
     module.requires_host = manifest.requires_host
     module.default_port = manifest.default_port
+    module.account_fields = manifest.account_fields
     return module
 
 
 def _install_plugin_api() -> None:
     api = types.ModuleType("tbc_cloud_api")
     api.CloudAccountModule = CloudAccountModule
+    api.CloudAccountField = CloudAccountField
+    api.CloudAccountFieldOption = CloudAccountFieldOption
+    api.CloudAccountFieldType = CloudAccountFieldType
     api.CloudAuthType = CloudAuthType
     api.CloudConnectionError = CloudConnectionError
     api.CloudDevice = CloudDevice

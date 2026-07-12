@@ -33,7 +33,14 @@ from .camera_modules.packages import (
 from .camera_modules.registry import UnknownCameraModuleError
 from .camera_modules.streams import validate_manual_stream_uri
 from .channels import apply_channel_enabled_filter
-from .cloud_modules import CloudConnectionError, get_cloud_module, list_cloud_module_registrations, reload_cloud_modules
+from .cloud_modules import (
+    CloudAccountValidationError,
+    CloudConnectionError,
+    get_cloud_module,
+    list_cloud_module_registrations,
+    normalize_account_configuration,
+    reload_cloud_modules,
+)
 from .cloud_modules.packages import (
     CloudPluginError,
     export_plugin_archive as export_cloud_plugin_archive,
@@ -1952,42 +1959,34 @@ async def cloud_accounts_page(request: Request):
 
 
 @app.post("/cloud-accounts", response_class=HTMLResponse)
-async def create_cloud_account_route(
-    request: Request,
-    module_key: str = Form(...),
-    label: str = Form(""),
-    host: str = Form(""),
-    port: str = Form(""),
-    verify_ssl: str = Form(""),
-    identifier: str = Form(...),
-    secret: str = Form(...),
-):
+async def create_cloud_account_route(request: Request):
     guard = _require_admin(request)
     if guard:
         return guard
+    form = await request.form()
+    module_key = str(form.get("module_key") or "")
+    label = str(form.get("label") or "")
     try:
         cloud_module = get_cloud_module(module_key)
     except UnknownCloudModuleError as exc:
         _set_flash(request, str(exc), "error")
         return _redirect("/cloud-accounts")
-    normalized_host = host.strip()
-    if cloud_module.requires_host and not normalized_host:
-        _set_flash(request, f"{cloud_module.label} benötigt einen Host", "error")
-        return _redirect("/cloud-accounts")
     try:
-        port_value = int(port) if port.strip() else cloud_module.default_port
-    except ValueError:
-        _set_flash(request, "Port muss eine Zahl sein", "error")
+        config = normalize_account_configuration(
+            cloud_module.account_fields,
+            {
+                field.key: form.get(f"account_{field.key}")
+                for field in cloud_module.account_fields
+            },
+        )
+    except CloudAccountValidationError as exc:
+        _set_flash(request, str(exc), "error")
         return _redirect("/cloud-accounts")
     database.create_cloud_account(
         SETTINGS.database_path,
         module_key=cloud_module.key,
         label=label.strip() or cloud_module.label,
-        host=normalized_host or None,
-        port=port_value,
-        verify_ssl=verify_ssl == "on",
-        identifier=identifier.strip(),
-        secret=secret,
+        config=config,
     )
     _set_flash(request, "Cloud-Konto wurde hinzugefügt")
     return _redirect("/cloud-accounts")

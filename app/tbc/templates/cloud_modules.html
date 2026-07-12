@@ -53,7 +53,7 @@
       </dl>
       <p>
         <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
-        {% if cloud_module.requires_host %}<span class="status-pill status-idle">Host erforderlich</span>{% endif %}
+        <span class="status-pill status-idle">{{ cloud_module.account_fields | length }} Konto-Felder</span>
       </p>
       <div class="form-actions">
         <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export">ZIP exportieren</a>

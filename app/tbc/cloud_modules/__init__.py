@@ -1,4 +1,14 @@
-from .base import CloudAccountModule, CloudAuthType, CloudConnectionError, CloudDevice
+from .base import (
+    CloudAccountField,
+    CloudAccountFieldOption,
+    CloudAccountFieldType,
+    CloudAccountModule,
+    CloudAccountValidationError,
+    CloudAuthType,
+    CloudConnectionError,
+    CloudDevice,
+    normalize_account_configuration,
+)
 from .registry import (
     UnknownCloudModuleError,
     get_cloud_module,
@@ -9,6 +19,10 @@ from .registry import (
 
 __all__ = [
     "CloudAccountModule",
+    "CloudAccountField",
+    "CloudAccountFieldOption",
+    "CloudAccountFieldType",
+    "CloudAccountValidationError",
     "CloudAuthType",
     "CloudConnectionError",
     "CloudDevice",
@@ -17,4 +31,5 @@ __all__ = [
     "list_cloud_modules",
     "list_cloud_module_registrations",
     "reload_cloud_modules",
+    "normalize_account_configuration",
 ]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -255,6 +256,7 @@ CREATE TABLE IF NOT EXISTS cloud_accounts (
     verify_ssl INTEGER NOT NULL DEFAULT 0,
     identifier TEXT NOT NULL,
     secret TEXT NOT NULL,
+    config_json TEXT NOT NULL DEFAULT '{}',
     enabled INTEGER NOT NULL DEFAULT 1,
     last_test_status TEXT,
     last_test_message TEXT,
@@ -288,6 +290,7 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE ui_settings ADD COLUMN live_grid_columns INTEGER NOT NULL DEFAULT 3",
     "ALTER TABLE ui_settings ADD COLUMN live_rotation_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE ui_settings ADD COLUMN live_rotation_seconds INTEGER NOT NULL DEFAULT 15",
+    "ALTER TABLE cloud_accounts ADD COLUMN config_json TEXT NOT NULL DEFAULT '{}'",
 )
 
 
@@ -506,19 +509,46 @@ def create_cloud_account(
     *,
     module_key: str,
     label: str,
-    host: str | None,
-    port: int | None,
-    verify_ssl: bool,
-    identifier: str,
-    secret: str,
+    host: str | None = None,
+    port: int | None = None,
+    verify_ssl: bool = False,
+    identifier: str = "",
+    secret: str = "",
+    config: dict[str, Any] | None = None,
 ) -> int:
+    account_config = dict(config or {})
+    if not account_config:
+        account_config = {
+            "host": host or "",
+            "port": port or 443,
+            "verify_ssl": verify_ssl,
+            "identifier": identifier,
+            "secret": secret,
+        }
+    host = str(account_config.get("host") or host or "").strip() or None
+    raw_port = account_config.get("port", port)
+    port = int(raw_port) if raw_port not in (None, "") else None
+    verify_ssl = bool(account_config.get("verify_ssl", verify_ssl))
+    identifier = str(account_config.get("identifier") or identifier or "")
+    secret = str(account_config.get("secret") or secret or "")
     with connect(database_path) as db:
         cursor = db.execute(
             """
-            INSERT INTO cloud_accounts (module_key, label, host, port, verify_ssl, identifier, secret)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO cloud_accounts (
+                module_key, label, host, port, verify_ssl, identifier, secret, config_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (module_key, label, host, port, 1 if verify_ssl else 0, identifier, secret),
+            (
+                module_key,
+                label,
+                host,
+                port,
+                1 if verify_ssl else 0,
+                identifier,
+                secret,
+                json.dumps(account_config, ensure_ascii=False, separators=(",", ":")),
+            ),
         )
         return int(cursor.lastrowid)
 
@@ -526,13 +556,32 @@ def create_cloud_account(
 def list_cloud_accounts(database_path: str) -> list[dict[str, Any]]:
     with connect(database_path) as db:
         rows = db.execute("SELECT * FROM cloud_accounts ORDER BY label COLLATE NOCASE").fetchall()
-    return [dict(row) for row in rows]
+    return [_hydrate_cloud_account(row) for row in rows]
 
 
 def get_cloud_account(database_path: str, account_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute("SELECT * FROM cloud_accounts WHERE id = ?", (account_id,)).fetchone()
-    return dict(row) if row else None
+    return _hydrate_cloud_account(row) if row else None
+
+
+def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
+    account = dict(row)
+    try:
+        config = json.loads(account.get("config_json") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        config = {}
+    if not isinstance(config, dict) or not config:
+        config = {
+            "host": account.get("host") or "",
+            "port": account.get("port") or 443,
+            "verify_ssl": bool(account.get("verify_ssl")),
+            "identifier": account.get("identifier") or "",
+            "secret": account.get("secret") or "",
+        }
+    account["config"] = config
+    account.update(config)
+    return account
 
 
 def update_cloud_account_test_result(
