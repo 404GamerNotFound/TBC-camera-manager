@@ -126,6 +126,17 @@ CREATE TABLE IF NOT EXISTS camera_recording_triggers (
     UNIQUE(camera_id, detection_key)
 );
 
+CREATE TABLE IF NOT EXISTS camera_detection_settings (
+    camera_id INTEGER PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    backend TEXT NOT NULL DEFAULT 'cpu',
+    confidence_threshold REAL NOT NULL DEFAULT 0.5,
+    sample_fps REAL NOT NULL DEFAULT 2.0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS camera_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     camera_id INTEGER NOT NULL,
@@ -1168,6 +1179,44 @@ def list_camera_recording_triggers(database_path: str, camera_id: int) -> list[s
             (camera_id,),
         ).fetchall()
     return [str(row["detection_key"]) for row in rows]
+
+
+def get_camera_detection_settings(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM camera_detection_settings WHERE camera_id = ?",
+            (camera_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    settings = dict(row)
+    settings["enabled"] = bool(settings["enabled"])
+    return settings
+
+
+def update_camera_detection_settings(
+    database_path: str,
+    camera_id: int,
+    *,
+    enabled: bool,
+    backend: str,
+    confidence_threshold: float,
+    sample_fps: float,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO camera_detection_settings (camera_id, enabled, backend, confidence_threshold, sample_fps, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(camera_id) DO UPDATE SET
+                enabled = excluded.enabled,
+                backend = excluded.backend,
+                confidence_threshold = excluded.confidence_threshold,
+                sample_fps = excluded.sample_fps,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (camera_id, 1 if enabled else 0, backend, confidence_threshold, sample_fps),
+        )
 
 
 def mark_recording_started(database_path: str, camera_id: int) -> None:

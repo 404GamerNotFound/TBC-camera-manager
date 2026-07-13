@@ -10,3 +10,6 @@ pyeufysecurity==0.4.4
 ewelink==0.2.1
 boto3>=1.43.46,<2
 paho-mqtt==2.1.0
+numpy>=1.26,<3
+Pillow>=10.4,<12
+onnxruntime>=1.18,<2

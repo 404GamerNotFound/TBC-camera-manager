@@ -320,6 +320,38 @@
       <button class="primary-button" type="submit">Speichern</button>
     </div>
   </form>
+
+  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/detection">
+    <div class="section-title">
+      <h2>Lokale KI-Erkennung</h2>
+      {% if detection_settings and detection_settings.enabled %}
+      <span class="status-pill status-active">aktiv</span>
+      {% else %}
+      <span class="status-pill status-idle">aus</span>
+      {% endif %}
+    </div>
+    <p class="hint-text">
+      Erkennt Personen, Fahrzeuge und Tiere direkt aus dem Videostream, unabhängig davon, was die Kamera selbst meldet.
+      Läuft auf der CPU des TBC-Servers und kann je nach Kamera-Auflösung spürbar Rechenleistung benötigen.
+    </p>
+    <label class="check-row">
+      <input name="detection_enabled" type="checkbox" {% if detection_settings and detection_settings.enabled %}checked{% endif %}>
+      <span>Lokale KI-Erkennung für diese Kamera aktivieren</span>
+    </label>
+    <div class="form-grid">
+      <label>
+        <span>Bilder pro Sekunde</span>
+        <input name="detection_sample_fps" type="number" min="0.2" max="10" step="0.1" value="{{ detection_settings.sample_fps if detection_settings else detection_default_sample_fps }}" required>
+      </label>
+      <label>
+        <span>Mindest-Konfidenz</span>
+        <input name="detection_confidence_threshold" type="number" min="0.05" max="1" step="0.05" value="{{ detection_settings.confidence_threshold if detection_settings else detection_default_confidence_threshold }}" required>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Speichern</button>
+    </div>
+  </form>
   </div>
 
   <section class="event-panel">

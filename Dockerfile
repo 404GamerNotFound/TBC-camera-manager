@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TBC_RECORDINGS_PATH=/recordings \
     TBC_CAMERA_MODULES_PATH=/data/camera-modules \
     TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
+    TBC_DETECTION_MODELS_PATH=/data/detection-models \
     TBC_PORT=8732
 
 WORKDIR /app

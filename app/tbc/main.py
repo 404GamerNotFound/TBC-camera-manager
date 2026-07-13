@@ -31,6 +31,7 @@ from .camera_modules.packages import (
     install_plugin_archive,
     remove_external_plugin,
 )
+from .camera_modules.detections import DetectionDefinition
 from .camera_modules.registry import UnknownCameraModuleError
 from .camera_modules.streams import validate_manual_stream_uri
 from .channels import apply_channel_enabled_filter
@@ -54,6 +55,10 @@ from .cloud_modules.registry import UnknownCloudModuleError
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
+from .detection import factory as detection_factory
+from .detection.classes import DETECTION_KEY_LABELS
+from .detection.model_provisioning import ensure_default_model
+from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
@@ -153,6 +158,27 @@ PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
 # TBC restart mid-update just loses the progress display, not the update
 # itself, which keeps running on the camera independently of TBC.
 FIRMWARE_UPDATE_STATE: dict[tuple[int, int], dict[str, Any]] = {}
+LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
+    DetectionDefinition(key=key, label=label, category="ai") for key, label in DETECTION_KEY_LABELS.items()
+)
+DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
+DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
+
+
+def _detection_backend_factory(settings: dict[str, Any]):
+    return detection_factory.build_backend(
+        settings,
+        model_path=str(DETECTION_MODEL_PATH),
+        metadata_path=str(DETECTION_MODEL_METADATA_PATH),
+    )
+
+
+async def _detection_supervisor_loop() -> None:
+    await detection_supervisor(
+        SETTINGS.database_path,
+        on_detections=_process_detection_states,
+        backend_factory=_detection_backend_factory,
+    )
 
 
 @app.on_event("startup")
@@ -171,6 +197,8 @@ async def startup() -> None:
     asyncio.create_task(_continuous_recording_loop())
     asyncio.create_task(_plugin_source_update_check_loop())
     asyncio.create_task(mqtt.run_control_listener(SETTINGS.database_path))
+    asyncio.create_task(asyncio.to_thread(ensure_default_model, DETECTION_MODEL_PATH, DETECTION_MODEL_METADATA_PATH))
+    asyncio.create_task(_detection_supervisor_loop())
 
 
 @app.get("/healthz")
@@ -425,6 +453,12 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
         camera_module = None
     module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
     available_triggers = camera_module.detection_definitions() if camera_module else ()
+    detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
+    if detection_settings and detection_settings.get("enabled"):
+        existing_trigger_keys = {trigger.key for trigger in available_triggers}
+        available_triggers = tuple(available_triggers) + tuple(
+            trigger for trigger in LOCAL_AI_TRIGGER_DEFINITIONS if trigger.key not in existing_trigger_keys
+        )
     control_channel_options = [int(channel["channel_index"]) for channel in channels]
     selected_control_channel = (
         control_channel
@@ -466,6 +500,9 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "available_triggers": available_triggers,
             "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},
             "active_trigger_keys": active_trigger_keys,
+            "detection_settings": detection_settings,
+            "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
+            "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
             "control_state": control_state,
             "control_channel_options": control_channel_options,
             "selected_control_channel": selected_control_channel,
@@ -825,6 +862,33 @@ async def update_camera_recording(
         trigger_keys=trigger_keys or ["motion"],
     )
     _set_flash(request, "Aufnahmeeinstellungen wurden gespeichert")
+    return _redirect(f"/cameras/{camera_id}")
+
+
+@app.post("/cameras/{camera_id}/detection")
+async def update_camera_detection(
+    request: Request,
+    camera_id: int,
+    detection_confidence_threshold: float = Form(0.5),
+    detection_sample_fps: float = Form(2.0),
+    detection_enabled: str | None = Form(None),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        return _redirect("/cameras")
+    database.update_camera_detection_settings(
+        SETTINGS.database_path,
+        camera_id,
+        enabled=detection_enabled == "on",
+        backend="cpu",
+        confidence_threshold=min(1.0, max(0.05, detection_confidence_threshold)),
+        sample_fps=min(10.0, max(0.2, detection_sample_fps)),
+    )
+    _set_flash(request, "Einstellungen für lokale KI-Erkennung wurden gespeichert")
     return _redirect(f"/cameras/{camera_id}")
 
 
