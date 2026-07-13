@@ -7,6 +7,7 @@ import urllib.request
 import zipfile
 from dataclasses import dataclass
 from io import BytesIO
+from pathlib import PurePosixPath
 
 GITHUB_REPO_PATTERN = re.compile(
     r"^https://github\.com/(?P<owner>[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/"
@@ -15,6 +16,13 @@ GITHUB_REPO_PATTERN = re.compile(
 SHA_PATTERN = re.compile(r"[0-9a-f]{7,40}")
 MAX_ARCHIVE_BYTES = 25 * 1024 * 1024
 FETCH_TIMEOUT_SECONDS = 30
+IGNORED_REPOSITORY_FILES = frozenset(
+    {".DS_Store", ".dockerignore", ".editorconfig", ".gitattributes", ".gitignore", ".gitmodules"}
+)
+IGNORED_REPOSITORY_DIRECTORIES = frozenset(
+    {".git", ".github", ".mypy_cache", ".pytest_cache", ".ruff_cache", "__pycache__"}
+)
+IGNORED_REPOSITORY_SUFFIXES = frozenset({".pyc", ".pyo"})
 
 
 class PluginSourceError(ValueError):
@@ -141,7 +149,10 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
     folder; this strips that (and, if given, descends into `subdirectory`)
     and re-zips the contents under one synthetic top-level folder - the same
     "one shared top folder" shape every install_*_archive() already
-    validates, so a GitHub-sourced install goes through the exact same
+    validates. Repository-only metadata such as `.gitattributes` and
+    `.github/`, as well as generated caches such as `__pycache__/`, is
+    intentionally omitted because it is not part of the runtime plugin
+    package. A GitHub-sourced install still goes through the exact same
     security checks (path traversal, allowed file types, size limits) as a
     manually uploaded ZIP. Nothing here is a substitute for that validation.
     """
@@ -171,6 +182,13 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
                     continue
                 relative = name[len(prefix):]
                 if not relative:
+                    continue
+                relative_path = PurePosixPath(relative)
+                if (
+                    relative_path.name in IGNORED_REPOSITORY_FILES
+                    or relative_path.suffix.lower() in IGNORED_REPOSITORY_SUFFIXES
+                    or any(part in IGNORED_REPOSITORY_DIRECTORIES for part in relative_path.parts)
+                ):
                     continue
                 rewritten.writestr(f"plugin/{relative}", bundle.read(name))
         return output.getvalue()

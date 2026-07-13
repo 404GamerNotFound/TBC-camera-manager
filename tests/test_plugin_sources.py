@@ -127,6 +127,24 @@ class ExtractPluginArchiveTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(result)) as bundle:
             self.assertIn("plugin/tests/test_plugin.py", bundle.namelist())
 
+    def test_repository_metadata_is_not_added_to_the_plugin_package(self):
+        archive = _fake_github_zip(
+            entries={
+                ".gitattributes": "* text=auto",
+                ".gitignore": "__pycache__/",
+                ".github/workflows/tests.yml": "name: tests",
+                "__pycache__/plugin.cpython-311.pyc": b"compiled",
+                "module.pyc": b"compiled",
+                "manifest.json": "{}",
+                "plugin.py": "x = 1",
+            }
+        )
+
+        result = extract_plugin_archive(archive, "")
+
+        with zipfile.ZipFile(io.BytesIO(result)) as bundle:
+            self.assertEqual(sorted(bundle.namelist()), ["plugin/manifest.json", "plugin/plugin.py"])
+
 
 class FetchGithubRepoArchiveTests(unittest.TestCase):
     def test_404_is_reported_as_plugin_source_error(self):
