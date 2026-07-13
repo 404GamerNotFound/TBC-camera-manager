@@ -4,7 +4,7 @@ import unittest
 import zipfile
 from io import BytesIO
 
-from app.tbc.cloud_modules import CloudAuthType, normalize_account_configuration
+from app.tbc.cloud_modules import CloudAuthType, CloudVerificationSupport, normalize_account_configuration
 from app.tbc.cloud_modules.packages import (
     CloudPluginError,
     discover_plugin_packages,
@@ -57,7 +57,7 @@ class CloudPluginPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as external_path:
             packages = discover_plugin_packages(external_path)
 
-        self.assertEqual([package.manifest.key for package in packages], ["eufy", "unifi_protect"])
+        self.assertEqual([package.manifest.key for package in packages], ["eufy", "ewelink", "unifi_protect"])
         for package in packages:
             archive = export_plugin_archive(package)
             with zipfile.ZipFile(BytesIO(archive)) as bundle:
@@ -73,9 +73,21 @@ class CloudPluginPackageTests(unittest.TestCase):
         self.assertEqual(unifi.manifest.auth_type, CloudAuthType.CREDENTIALS)
         self.assertTrue(unifi.manifest.requires_host)
         self.assertEqual(unifi.manifest.default_port, 443)
+        self.assertEqual(unifi.manifest.verification_support, CloudVerificationSupport.NOT_APPLICABLE)
         self.assertEqual(
             [field.key for field in unifi.manifest.account_fields],
             ["host", "port", "identifier", "secret", "verify_ssl"],
+        )
+
+    def test_builtin_ewelink_manifest_requires_coolkit_app_credentials(self):
+        with tempfile.TemporaryDirectory() as external_path:
+            packages = discover_plugin_packages(external_path)
+
+        ewelink = next(package for package in packages if package.manifest.key == "ewelink")
+        self.assertEqual(ewelink.manifest.verification_support, CloudVerificationSupport.NOT_APPLICABLE)
+        self.assertEqual(
+            [field.key for field in ewelink.manifest.account_fields],
+            ["app_id", "app_secret", "email", "password"],
         )
 
     def test_builtin_eufy_manifest_owns_its_account_fields(self):
@@ -83,6 +95,7 @@ class CloudPluginPackageTests(unittest.TestCase):
             packages = discover_plugin_packages(external_path)
 
         eufy = next(package for package in packages if package.manifest.key == "eufy")
+        self.assertEqual(eufy.manifest.verification_support, CloudVerificationSupport.SUPPORTED)
         self.assertEqual(
             [field.key for field in eufy.manifest.account_fields],
             [

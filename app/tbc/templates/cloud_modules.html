@@ -54,6 +54,11 @@
       <p>
         <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
         <span class="status-pill status-idle">{{ cloud_module.account_fields | length }} Konto-Felder</span>
+        {% if cloud_module.verification_support.value == 'supported' %}
+        <span class="status-pill status-active">2FA-fähig</span>
+        {% else %}
+        <span class="status-pill status-idle">Kein 2FA</span>
+        {% endif %}
       </p>
       <div class="form-actions">
         <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export">ZIP exportieren</a>

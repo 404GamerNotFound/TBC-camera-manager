@@ -3,7 +3,7 @@ import types
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from app.tbc.cloud_modules import CloudConnectionError
+from app.tbc.cloud_modules import CloudConnectionError, CloudVerificationRequired
 from app.tbc.cloud_plugins.eufy import module as eufy_plugin
 from app.tbc.cloud_plugins.eufy.module import EufyCloudModule
 
@@ -204,10 +204,12 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         FakeApi.authenticate_callback = needs_verification
         send_code = AsyncMock()
         with patch.object(eufy_plugin, "_send_verification_code", send_code):
-            with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet"):
+            with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet") as cm:
                 await self.module.test_connection(self.account)
 
         send_code.assert_awaited_once()
+        self.assertIsInstance(cm.exception, CloudVerificationRequired)
+        self.assertEqual(cm.exception.field_key, "verification_code")
         self.assertIsNotNone(
             eufy_plugin._get_pending_challenge(
                 eufy_plugin._challenge_key(self.account, "guest@example.com", "DE")

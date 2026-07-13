@@ -10,6 +10,7 @@
   "secret_label": "Passwort",
   "requires_host": false,
   "default_port": 443,
+  "verification_support": "supported",
   "account_fields": [
     {
       "key": "email",

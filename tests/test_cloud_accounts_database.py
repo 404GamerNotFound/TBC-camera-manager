@@ -42,6 +42,56 @@ class CloudAccountDatabaseTests(unittest.TestCase):
             database.delete_cloud_account(handle.name, account_id)
             self.assertEqual(database.list_cloud_accounts(handle.name), [])
 
+    def test_pending_verification_is_set_and_cleared(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            account_id = database.create_cloud_account(
+                handle.name,
+                module_key="eufy",
+                label="Eufy Zuhause",
+                config={"email": "guest@example.com", "password": "secret", "country": "DE"},
+            )
+
+            database.set_cloud_account_pending_verification(
+                handle.name,
+                account_id,
+                field_key="verification_code",
+                message="Eufy hat einen Bestätigungscode per E-Mail gesendet.",
+            )
+            pending = database.get_cloud_account(handle.name, account_id)
+            self.assertEqual(pending["pending_verification_field"], "verification_code")
+            self.assertIn("Bestätigungscode", pending["pending_verification_message"])
+            self.assertIsNotNone(pending["pending_verification_at"])
+
+            database.clear_cloud_account_pending_verification(handle.name, account_id)
+            cleared = database.get_cloud_account(handle.name, account_id)
+            self.assertIsNone(cleared["pending_verification_field"])
+            self.assertIsNone(cleared["pending_verification_message"])
+
+    def test_updating_configuration_clears_stale_pending_verification(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            account_id = database.create_cloud_account(
+                handle.name,
+                module_key="eufy",
+                label="Eufy Zuhause",
+                config={"email": "guest@example.com", "password": "secret", "country": "DE"},
+            )
+            database.set_cloud_account_pending_verification(
+                handle.name, account_id, field_key="verification_code", message="Code angefordert"
+            )
+
+            database.update_cloud_account_configuration(
+                handle.name,
+                account_id,
+                label="Eufy Zuhause",
+                config={"email": "guest@example.com", "password": "secret", "country": "DE", "verification_code": "123456"},
+            )
+
+            account = database.get_cloud_account(handle.name, account_id)
+            self.assertIsNone(account["pending_verification_field"])
+            self.assertEqual(account["verification_code"], "123456")
+
     def test_get_unknown_cloud_account_returns_none(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
             database.initialize(handle.name)

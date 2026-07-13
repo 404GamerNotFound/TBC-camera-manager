@@ -7,5 +7,6 @@ onvif-zeep==0.2.12
 reolink-aio==0.21.3
 uiprotect==8.1.1
 pyeufysecurity==0.4.4
+ewelink==0.2.1
 boto3>=1.43.46,<2
 paho-mqtt==2.1.0

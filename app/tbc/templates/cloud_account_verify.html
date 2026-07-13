@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">{{ cloud_module.label }} · {{ account.label }}</p>
+    <h1>Bestätigung erforderlich</h1>
+  </div>
+  <a class="secondary-button" href="/cloud-accounts">Zurück zu Cloud-Konten</a>
+</section>
+
+<div class="quiet-box">{{ account.pending_verification_message }}</div>
+
+<form class="editor-form" method="post" action="/cloud-accounts/{{ account.id }}/verify">
+  <div class="form-grid">
+    <label class="span-2">
+      <span>{{ field.label if field else 'Bestätigungscode' }}</span>
+      <input name="code"
+             type="{{ field.field_type.value if field else 'text' }}"
+             {% if field and field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+             {% if field and field.autocomplete %}autocomplete="{{ field.autocomplete }}"{% endif %}
+             autofocus required>
+      {% if field and field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit">Bestätigen</button>
+  </div>
+</form>
+{% endblock %}

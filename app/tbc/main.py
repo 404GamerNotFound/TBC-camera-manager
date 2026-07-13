@@ -37,6 +37,7 @@ from .cloud_modules import (
     CloudAccountFieldType,
     CloudAccountValidationError,
     CloudConnectionError,
+    CloudVerificationRequired,
     get_cloud_module,
     list_cloud_module_registrations,
     normalize_account_configuration,
@@ -2083,27 +2084,79 @@ async def test_cloud_account_route(request: Request, account_id: int):
     except UnknownCloudModuleError as exc:
         _set_flash(request, str(exc), "error")
         return _redirect(account_url)
+    return await _perform_cloud_account_login_attempt(
+        request, account_id, cloud_module, account, success_redirect=account_url
+    )
+
+
+@app.get("/cloud-accounts/{account_id}/verify", response_class=HTMLResponse)
+async def cloud_account_verify_page(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        return _redirect("/cloud-accounts")
+    field_key = account.get("pending_verification_field")
+    if not field_key:
+        _set_flash(request, "Für dieses Konto ist aktuell keine Bestätigung ausstehend", "error")
+        return _redirect("/cloud-accounts")
     try:
-        message = await asyncio.wait_for(cloud_module.test_connection(account), timeout=CONTROL_TIMEOUT_SECONDS)
-    except asyncio.TimeoutError:
-        message = f"Verbindung antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
-        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
-        _set_flash(request, message, "error")
-        return _redirect(account_url)
-    except CloudConnectionError as exc:
-        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
-        _clear_transient_cloud_account_fields(account_id, cloud_module)
+        cloud_module = get_cloud_module(account["module_key"])
+    except UnknownCloudModuleError as exc:
         _set_flash(request, str(exc), "error")
-        return _redirect(account_url)
-    except Exception as exc:
-        LOGGER.info("Cloud account test failed for %s: %s", account_id, exc)
-        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
-        _set_flash(request, f"Verbindung fehlgeschlagen: {exc}", "error")
-        return _redirect(account_url)
-    database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
-    _clear_transient_cloud_account_fields(account_id, cloud_module)
-    _set_flash(request, message)
-    return _redirect(account_url)
+        return _redirect("/cloud-accounts")
+    field = next((item for item in cloud_module.account_fields if item.key == field_key), None)
+    return templates.TemplateResponse(
+        request,
+        "cloud_account_verify.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "account": account,
+            "cloud_module": cloud_module,
+            "field": field,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/cloud-accounts/{account_id}/verify")
+async def submit_cloud_account_verification_route(request: Request, account_id: int, code: str = Form(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        return _redirect("/cloud-accounts")
+    field_key = account.get("pending_verification_field")
+    if not field_key:
+        _set_flash(request, "Für dieses Konto ist aktuell keine Bestätigung ausstehend", "error")
+        return _redirect("/cloud-accounts")
+    try:
+        cloud_module = get_cloud_module(account["module_key"])
+    except UnknownCloudModuleError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/cloud-accounts")
+    if not code.strip():
+        _set_flash(request, "Bitte einen Code eingeben", "error")
+        return _redirect(f"/cloud-accounts/{account_id}/verify")
+    config = dict(account.get("config") or {})
+    config[field_key] = code.strip()
+    database.update_cloud_account_configuration(
+        SETTINGS.database_path, account_id, label=str(account["label"]), config=config
+    )
+    account = database.get_cloud_account(SETTINGS.database_path, account_id)
+    return await _perform_cloud_account_login_attempt(
+        request,
+        account_id,
+        cloud_module,
+        account,
+        success_redirect=f"/cloud-accounts#account-{account_id}",
+    )
 
 
 @app.get("/cloud-accounts/{account_id}/devices", response_class=HTMLResponse)
@@ -2127,6 +2180,12 @@ async def cloud_account_devices_page(request: Request, account_id: int):
         _clear_transient_cloud_account_fields(account_id, cloud_module)
     except asyncio.TimeoutError:
         error = f"Geräte-Suche antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
+    except CloudVerificationRequired as exc:
+        database.set_cloud_account_pending_verification(
+            SETTINGS.database_path, account_id, field_key=exc.field_key, message=str(exc)
+        )
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cloud-accounts/{account_id}/verify")
     except CloudConnectionError as exc:
         _clear_transient_cloud_account_fields(account_id, cloud_module)
         error = str(exc)
@@ -2883,6 +2942,51 @@ def _clear_transient_cloud_account_fields(account_id: int, cloud_module: Any) ->
         database.clear_cloud_account_configuration_fields(
             SETTINGS.database_path, account_id, keys
         )
+
+
+async def _perform_cloud_account_login_attempt(
+    request: Request,
+    account_id: int,
+    cloud_module: Any,
+    account: dict[str, Any],
+    *,
+    success_redirect: str,
+) -> Any:
+    """Run test_connection() and translate the outcome into a redirect.
+
+    Shared by the plain "Verbindung testen" action and the verification-code
+    submission, since both are just different ways of retrying the same
+    login attempt - a CloudVerificationRequired here always means routing the
+    admin to the dedicated /verify page instead of a plain error redirect.
+    """
+    try:
+        message = await asyncio.wait_for(cloud_module.test_connection(account), timeout=CONTROL_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        message = f"Verbindung antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
+        _set_flash(request, message, "error")
+        return _redirect(success_redirect)
+    except CloudVerificationRequired as exc:
+        database.set_cloud_account_pending_verification(
+            SETTINGS.database_path, account_id, field_key=exc.field_key, message=str(exc)
+        )
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _set_flash(request, str(exc), "error")
+        return _redirect(f"/cloud-accounts/{account_id}/verify")
+    except CloudConnectionError as exc:
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _clear_transient_cloud_account_fields(account_id, cloud_module)
+        _set_flash(request, str(exc), "error")
+        return _redirect(success_redirect)
+    except Exception as exc:
+        LOGGER.info("Cloud account test failed for %s: %s", account_id, exc)
+        database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _set_flash(request, f"Verbindung fehlgeschlagen: {exc}", "error")
+        return _redirect(success_redirect)
+    database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
+    _clear_transient_cloud_account_fields(account_id, cloud_module)
+    _set_flash(request, message)
+    return _redirect(success_redirect)
 
 
 def _set_flash(request: Request, message: str, level: str = "success") -> None:

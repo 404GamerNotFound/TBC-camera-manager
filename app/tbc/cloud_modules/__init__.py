@@ -7,6 +7,8 @@ from .base import (
     CloudAuthType,
     CloudConnectionError,
     CloudDevice,
+    CloudVerificationRequired,
+    CloudVerificationSupport,
     normalize_account_configuration,
 )
 from .registry import (
@@ -26,6 +28,8 @@ __all__ = [
     "CloudAuthType",
     "CloudConnectionError",
     "CloudDevice",
+    "CloudVerificationRequired",
+    "CloudVerificationSupport",
     "UnknownCloudModuleError",
     "get_cloud_module",
     "list_cloud_modules",

@@ -10,7 +10,7 @@ from time import monotonic, time
 from typing import Any
 from urllib.parse import quote
 
-from tbc_cloud_api import CloudAccountModule, CloudConnectionError, CloudDevice
+from tbc_cloud_api import CloudAccountModule, CloudConnectionError, CloudDevice, CloudVerificationRequired
 
 
 LOGGER = logging.getLogger("tbc.cloud.eufy")
@@ -51,6 +51,10 @@ class EufyCloudModule(CloudAccountModule):
                 api = await _login(account, session, debug_id)
                 camera_count = len(api.cameras)
                 station_count = len(api.stations)
+        except CloudVerificationRequired:
+            # Not a failure: propagate unchanged so the web layer can route to
+            # the dedicated confirmation page instead of showing a plain error.
+            raise
         except Exception as exc:
             LOGGER.exception(
                 "Eufy-Verbindungstest fehlgeschlagen | debug_id=%s error_type=%s",
@@ -78,6 +82,8 @@ class EufyCloudModule(CloudAccountModule):
             async with _client_session() as session:
                 api = await _login(account, session, debug_id)
                 devices = [_device(camera, account) for camera in api.cameras.values()]
+        except CloudVerificationRequired:
+            raise
         except Exception as exc:
             LOGGER.exception(
                 "Eufy-Gerätesuche fehlgeschlagen | debug_id=%s error_type=%s",
@@ -167,10 +173,10 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
             challenge_key,
             CHALLENGE_TTL_SECONDS,
         )
-        raise CloudConnectionError(
-            "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte unter "
-            "Cloud-Konten beim bereits konfigurierten Konto → Konto bearbeiten "
-            "eintragen (nicht im Formular 'Konto hinzufügen') und erneut verbinden."
+        raise CloudVerificationRequired(
+            "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte eingeben, "
+            "um die Anmeldung abzuschließen.",
+            field_key="verification_code",
         ) from exc
     await api.async_update_device_info()
     if verification_code:

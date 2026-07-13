@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "key": "ewelink",
+  "label": "eWeLink (SONOFF)",
+  "version": "1.0.0",
+  "description": "SONOFF-Geräte über das offizielle eWeLink/CoolKit-Open-Platform-Cloud-Konto",
+  "entrypoint": "plugin.py",
+  "auth_type": "credentials",
+  "requires_host": false,
+  "default_port": 443,
+  "verification_support": "not_applicable",
+  "account_fields": [
+    {
+      "key": "app_id",
+      "label": "CoolKit App-ID",
+      "type": "text",
+      "required": true,
+      "help_text": "Kostenlose Registrierung unter dev.ewelink.cc liefert App-ID und App-Secret; das eigene eWeLink-App-Konto reicht dafür nicht aus."
+    },
+    {
+      "key": "app_secret",
+      "label": "CoolKit App-Secret",
+      "type": "password",
+      "required": true
+    },
+    {
+      "key": "email",
+      "label": "E-Mail-Adresse",
+      "type": "email",
+      "required": true,
+      "autocomplete": "username",
+      "placeholder": "name@example.com"
+    },
+    {
+      "key": "password",
+      "label": "Passwort",
+      "type": "password",
+      "required": true,
+      "autocomplete": "current-password"
+    }
+  ]
+}

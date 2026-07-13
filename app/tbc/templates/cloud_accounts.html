@@ -88,12 +88,19 @@
       </div>
       <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'noch nicht getestet' }}</span>
     </div>
+    {% if account.pending_verification_field %}
+    <div class="quiet-box">{{ account.pending_verification_message }}</div>
+    {% endif %}
     <div class="form-actions">
       <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Konto bearbeiten</a>
+      {% if account.pending_verification_field %}
+      <a class="primary-button" href="/cloud-accounts/{{ account.id }}/verify">Bestätigungscode eingeben</a>
+      {% else %}
       <form method="post" action="/cloud-accounts/{{ account.id }}/test">
         <button class="secondary-button" type="submit">Verbindung testen</button>
       </form>
       <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices">Geräte suchen</a>
+      {% endif %}
       <form method="post" action="/cloud-accounts/{{ account.id }}/delete">
         <button class="danger-button" type="submit">Entfernen</button>
       </form>

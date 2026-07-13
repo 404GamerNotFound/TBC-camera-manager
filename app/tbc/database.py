@@ -261,6 +261,9 @@ CREATE TABLE IF NOT EXISTS cloud_accounts (
     last_test_status TEXT,
     last_test_message TEXT,
     last_test_at TEXT,
+    pending_verification_field TEXT,
+    pending_verification_message TEXT,
+    pending_verification_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -291,6 +294,9 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE ui_settings ADD COLUMN live_rotation_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE ui_settings ADD COLUMN live_rotation_seconds INTEGER NOT NULL DEFAULT 15",
     "ALTER TABLE cloud_accounts ADD COLUMN config_json TEXT NOT NULL DEFAULT '{}'",
+    "ALTER TABLE cloud_accounts ADD COLUMN pending_verification_field TEXT",
+    "ALTER TABLE cloud_accounts ADD COLUMN pending_verification_message TEXT",
+    "ALTER TABLE cloud_accounts ADD COLUMN pending_verification_at TEXT",
 )
 
 
@@ -584,6 +590,9 @@ def update_cloud_account_configuration(
             UPDATE cloud_accounts
                SET label = ?, host = ?, port = ?, verify_ssl = ?,
                    identifier = ?, secret = ?, config_json = ?,
+                   pending_verification_field = NULL,
+                   pending_verification_message = NULL,
+                   pending_verification_at = NULL,
                    updated_at = CURRENT_TIMESTAMP
              WHERE id = ?
             """,
@@ -597,6 +606,38 @@ def update_cloud_account_configuration(
                 json.dumps(config, ensure_ascii=False, separators=(",", ":")),
                 account_id,
             ),
+        )
+
+
+def set_cloud_account_pending_verification(
+    database_path: str, account_id: int, *, field_key: str, message: str
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cloud_accounts
+               SET pending_verification_field = ?,
+                   pending_verification_message = ?,
+                   pending_verification_at = CURRENT_TIMESTAMP,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (field_key, message, account_id),
+        )
+
+
+def clear_cloud_account_pending_verification(database_path: str, account_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cloud_accounts
+               SET pending_verification_field = NULL,
+                   pending_verification_message = NULL,
+                   pending_verification_at = NULL,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (account_id,),
         )
 
 

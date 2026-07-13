@@ -23,6 +23,8 @@ from .base import (
     CloudAuthType,
     CloudConnectionError,
     CloudDevice,
+    CloudVerificationRequired,
+    CloudVerificationSupport,
 )
 
 PLUGIN_SCHEMA_VERSION = 1
@@ -41,6 +43,9 @@ RESERVED_FIELD_KEYS = {
     "last_test_status",
     "last_test_message",
     "last_test_at",
+    "pending_verification_field",
+    "pending_verification_message",
+    "pending_verification_at",
     "created_at",
     "updated_at",
 }
@@ -65,6 +70,7 @@ class CloudPluginManifest:
     requires_host: bool
     default_port: int
     account_fields: tuple[CloudAccountField, ...]
+    verification_support: CloudVerificationSupport
 
 
 @dataclass(frozen=True)
@@ -143,6 +149,12 @@ def read_manifest(path: Path) -> CloudPluginManifest:
             requires_host=bool(raw.get("requires_host", False)),
             default_port=default_port,
         )
+    try:
+        verification_support = CloudVerificationSupport(
+            str(raw.get("verification_support") or "not_applicable")
+        )
+    except ValueError as exc:
+        raise CloudPluginError(f"Unbekannter Wert für verification_support: {exc}") from exc
     return CloudPluginManifest(
         schema_version=schema_version,
         key=key,
@@ -156,6 +168,7 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         requires_host=bool(raw.get("requires_host", False)),
         default_port=default_port,
         account_fields=account_fields,
+        verification_support=verification_support,
     )
 
 
@@ -329,6 +342,7 @@ def load_plugin_module(package: CloudPluginPackage) -> CloudAccountModule:
     module.requires_host = manifest.requires_host
     module.default_port = manifest.default_port
     module.account_fields = manifest.account_fields
+    module.verification_support = manifest.verification_support
     return module
 
 
@@ -340,6 +354,8 @@ def _install_plugin_api() -> None:
     api.CloudAccountFieldType = CloudAccountFieldType
     api.CloudAuthType = CloudAuthType
     api.CloudConnectionError = CloudConnectionError
+    api.CloudVerificationRequired = CloudVerificationRequired
+    api.CloudVerificationSupport = CloudVerificationSupport
     api.CloudDevice = CloudDevice
     tbc_package = __package__.rsplit(".cloud_modules", 1)[0]
     api.import_tbc = lambda module_path: importlib.import_module(f"{tbc_package}.{module_path}")

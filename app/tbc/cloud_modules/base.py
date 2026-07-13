@@ -11,6 +11,22 @@ class CloudAuthType(str, Enum):
     TOKEN = "token"
 
 
+class CloudVerificationSupport(str, Enum):
+    """A plugin's declared stance on out-of-band verification codes.
+
+    Every plugin manifest must set `verification_support` explicitly (see
+    docs/cloud-accounts.md) so the admin UI can show whether a provider may
+    ever prompt for a 2FA/e-mail/SMS code, instead of leaving it ambiguous
+    whether the plugin simply never got around to raising
+    CloudVerificationRequired. `NOT_APPLICABLE` is the honest default for a
+    manifest that omits the field: it reports what the framework actually
+    knows (no declared support), not a guess.
+    """
+
+    SUPPORTED = "supported"
+    NOT_APPLICABLE = "not_applicable"
+
+
 class CloudAccountFieldType(str, Enum):
     TEXT = "text"
     EMAIL = "email"
@@ -22,6 +38,21 @@ class CloudAccountFieldType(str, Enum):
 
 class CloudConnectionError(RuntimeError):
     """Raised by test_connection()/discover_devices() on any login or API failure."""
+
+
+class CloudVerificationRequired(CloudConnectionError):
+    """Raised when the vendor demands an out-of-band code (2FA/e-mail/SMS) before login can proceed.
+
+    The web layer reacts to this by sending the admin to a dedicated
+    confirmation page instead of treating it as a plain failure - see
+    docs/cloud-accounts.md. `field_key` must name one of the module's own
+    `account_fields` (normally one marked `transient=True`) that the
+    submitted code should be written into before the module is called again.
+    """
+
+    def __init__(self, message: str, *, field_key: str) -> None:
+        super().__init__(message)
+        self.field_key = field_key
 
 
 class CloudAccountValidationError(ValueError):
@@ -125,6 +156,7 @@ class CloudAccountModule(ABC):
     requires_host: bool = False
     default_port: int = 443
     account_fields: tuple[CloudAccountField, ...] = ()
+    verification_support: CloudVerificationSupport = CloudVerificationSupport.NOT_APPLICABLE
 
     @abstractmethod
     async def test_connection(self, account: dict[str, Any]) -> str:

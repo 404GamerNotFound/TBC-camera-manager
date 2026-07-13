@@ -77,7 +77,12 @@ def _error_message(exc: Exception) -> str:
     except ImportError:
         return f"Verbindung fehlgeschlagen: {exc}"
     if isinstance(exc, NotAuthorized):
-        return "Anmeldung fehlgeschlagen: Benutzername oder Passwort falsch"
+        return (
+            "Anmeldung fehlgeschlagen: Benutzername oder Passwort falsch. Falls für "
+            "dieses Konto die Zwei-Faktor-Authentifizierung aktiviert ist: Dieses Plugin "
+            "unterstützt keine 2FA-Codes (die zugrunde liegende uiprotect-Bibliothek bietet "
+            "dafür keine Schnittstelle) - bitte ein separates lokales Konto ohne 2FA anlegen."
+        )
     return f"Verbindung fehlgeschlagen: {exc}"
 
 
