@@ -91,6 +91,7 @@
       autoplay: true,
       muted: true,
       ptz: ptzSupported && cameraId ? { cameraId, channel, onError: (message) => showToast(message, false) } : null,
+      detection: cameraId ? { cameraId } : null,
     });
   }
 

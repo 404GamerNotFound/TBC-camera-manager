@@ -93,6 +93,7 @@
             onError: () => {},
           }
         : null,
+      detection: cameraId ? { cameraId } : null,
     });
   };
 
@@ -233,6 +234,7 @@
       ptz: canControl && cameraId
         ? { cameraId, channel: Number(player.dataset.controlChannel || 0), onError: () => {} }
         : null,
+      detection: cameraId ? { cameraId } : null,
     });
     soloOverlay.hidden = false;
   };

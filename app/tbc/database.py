@@ -1231,6 +1231,25 @@ def update_camera_detection_settings(
         )
 
 
+def list_enabled_camera_detection_settings(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT c.id AS camera_id,
+                   c.name AS camera_name,
+                   s.backend,
+                   s.confidence_threshold,
+                   s.sample_fps,
+                   (SELECT COUNT(*) FROM camera_detection_zones z WHERE z.camera_id = c.id) AS zone_count
+              FROM camera_detection_settings s
+              JOIN cameras c ON c.id = s.camera_id
+             WHERE s.enabled = 1
+             ORDER BY c.name COLLATE NOCASE
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def list_camera_detection_zones(database_path: str, camera_id: int) -> list[dict[str, Any]]:
     with connect(database_path) as db:
         rows = db.execute(

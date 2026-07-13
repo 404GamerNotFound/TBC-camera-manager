@@ -42,13 +42,18 @@
 <section class="clip-grid">
   {% for clip in recordings %}
   <article class="clip-card">
-    <a class="clip-media" href="/recordings/{{ clip.id }}/media">
-      {% if clip.snapshot_path or clip.snapshot_remote_key %}
-      <img src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
-      {% else %}
-      <div class="clip-placeholder">{{ clip.detection_key }}</div>
-      {% endif %}
-    </a>
+    {% if clip.status == 'ready' %}
+    <video
+      class="clip-media-video"
+      preload="none"
+      data-clip-video="/recordings/{{ clip.id }}/media"
+      {% if clip.snapshot_path or clip.snapshot_remote_key %}poster="/recordings/{{ clip.id }}/snapshot"{% endif %}
+    ></video>
+    {% elif clip.snapshot_path or clip.snapshot_remote_key %}
+    <img class="clip-media-still" src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
+    {% else %}
+    <div class="clip-placeholder">{{ clip.detection_key }}</div>
+    {% endif %}
     <div class="clip-body">
       <div class="card-header">
         <div>
@@ -57,9 +62,7 @@
         </div>
         <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
       </div>
-      {% if clip.status == 'ready' %}
-      <video preload="none" data-clip-video="/recordings/{{ clip.id }}/media"></video>
-      {% elif clip.message %}
+      {% if clip.message %}
       <p class="clip-message">{{ clip.message }}</p>
       {% endif %}
       <div class="card-footer">

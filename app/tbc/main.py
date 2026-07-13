@@ -897,6 +897,37 @@ async def update_camera_detection(
     return _redirect(f"/cameras/{camera_id}")
 
 
+@app.get("/api/cameras/{camera_id}/detections/live")
+async def camera_live_detections(request: Request, camera_id: int):
+    guard = _require_camera_access(request, camera_id)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    detections = database.list_detections(SETTINGS.database_path, camera_id)
+    boxes: list[dict[str, Any]] = []
+    for detection in detections:
+        if detection.get("source") != "local_ai" or not detection.get("active"):
+            continue
+        raw_value = detection.get("raw_value")
+        if not raw_value:
+            continue
+        try:
+            payload = json.loads(raw_value)
+        except (TypeError, ValueError):
+            continue
+        box = payload.get("box")
+        if not isinstance(box, list) or len(box) != 4:
+            continue
+        boxes.append(
+            {
+                "key": detection["detection_key"],
+                "label": detection["label"],
+                "confidence": payload.get("confidence"),
+                "box": box,
+            }
+        )
+    return {"ok": True, "detections": boxes}
+
+
 @app.get("/cameras/{camera_id}/detection/zones")
 async def list_camera_detection_zones_route(request: Request, camera_id: int):
     guard = _require_admin(request)
@@ -1944,6 +1975,31 @@ async def settings_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "debug_count": len(list_debug_log_entries(limit=600)),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/detection", response_class=HTMLResponse)
+async def detection_overview_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    model_ready = DETECTION_MODEL_PATH.exists() and DETECTION_MODEL_PATH.stat().st_size > 0
+    return templates.TemplateResponse(
+        request,
+        "detection.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "backend_status": detection_factory.backend_status(),
+            "model_ready": model_ready,
+            "model_size_mb": round(DETECTION_MODEL_PATH.stat().st_size / (1024 * 1024), 1) if model_ready else None,
+            "model_path": str(DETECTION_MODEL_PATH),
+            "default_sample_fps": SETTINGS.detection_default_sample_fps,
+            "default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
+            "cameras": database.list_enabled_camera_detection_settings(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
     )

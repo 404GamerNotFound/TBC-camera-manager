@@ -22,6 +22,7 @@
       this._buildShell();
       this._buildBar();
       if (options.ptz) this._buildPtzOverlay(options.ptz);
+      if (options.detection && options.detection.cameraId) this._buildDetectionOverlay(options.detection);
       this._wireVideoEvents();
       if (options.src) this.load(options.src);
     }
@@ -50,6 +51,7 @@
     destroy() {
       this._teardownHls();
       this._clearPtzHold();
+      this._stopDetectionOverlay();
     }
 
     _teardownHls() {
@@ -208,6 +210,93 @@
         this._stopPtzHold();
       });
       this.shell.addEventListener("blur", () => this._stopPtzHold());
+    }
+
+    _buildDetectionOverlay(detection) {
+      this.detection = detection;
+      const canvas = document.createElement("canvas");
+      canvas.className = "tbc-bbox-overlay";
+      this.shell.appendChild(canvas);
+      this._detectionCanvas = canvas;
+      this._lastDetections = [];
+      const poll = () => this._pollDetections();
+      poll();
+      this._detectionTimer = window.setInterval(poll, 1000);
+      this._detectionResizeHandler = () => this._drawDetections(this._lastDetections);
+      window.addEventListener("resize", this._detectionResizeHandler);
+    }
+
+    _stopDetectionOverlay() {
+      if (this._detectionTimer) window.clearInterval(this._detectionTimer);
+      this._detectionTimer = null;
+      if (this._detectionResizeHandler) window.removeEventListener("resize", this._detectionResizeHandler);
+      this._detectionResizeHandler = null;
+    }
+
+    async _pollDetections() {
+      if (!this.detection || !this.detection.cameraId) return;
+      try {
+        const response = await fetch(`/api/cameras/${this.detection.cameraId}/detections/live`, {
+          credentials: "same-origin",
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        this._lastDetections = (data && data.detections) || [];
+      } catch (error) {
+        return;
+      }
+      this._drawDetections(this._lastDetections);
+    }
+
+    _drawDetections(detections) {
+      const canvas = this._detectionCanvas;
+      if (!canvas) return;
+      const rect = this.shell.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!detections.length || !this.video.videoWidth || !this.video.videoHeight) return;
+
+      const content = this._videoContentRect(rect);
+      const styles = getComputedStyle(document.documentElement);
+      const color = styles.getPropertyValue("--accent").trim() || "#e3a558";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.font = "12px sans-serif";
+      ctx.textBaseline = "bottom";
+
+      detections.forEach((item) => {
+        const [xmin, ymin, xmax, ymax] = item.box;
+        const x = content.offsetX + xmin * content.width;
+        const y = content.offsetY + ymin * content.height;
+        const width = (xmax - xmin) * content.width;
+        const height = (ymax - ymin) * content.height;
+        ctx.strokeRect(x, y, width, height);
+        const label = item.label || item.key;
+        const textWidth = ctx.measureText(label).width + 8;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, Math.max(0, y - 16), textWidth, 16);
+        ctx.fillStyle = "#111817";
+        ctx.fillText(label, x + 4, Math.max(16, y));
+      });
+    }
+
+    _videoContentRect(rect) {
+      const videoRatio = this.video.videoWidth / this.video.videoHeight;
+      const boxRatio = rect.width / rect.height;
+      let width = rect.width;
+      let height = rect.height;
+      let offsetX = 0;
+      let offsetY = 0;
+      if (videoRatio > boxRatio) {
+        height = rect.width / videoRatio;
+        offsetY = (rect.height - height) / 2;
+      } else {
+        width = rect.height * videoRatio;
+        offsetX = (rect.width - width) / 2;
+      }
+      return { width, height, offsetX, offsetY };
     }
 
     _startPtzHold(command) {
