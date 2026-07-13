@@ -137,6 +137,18 @@ CREATE TABLE IF NOT EXISTS camera_detection_settings (
     FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS camera_detection_zones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    camera_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'include',
+    classes_json TEXT,
+    points_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS camera_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     camera_id INTEGER NOT NULL,
@@ -1217,6 +1229,66 @@ def update_camera_detection_settings(
             """,
             (camera_id, 1 if enabled else 0, backend, confidence_threshold, sample_fps),
         )
+
+
+def list_camera_detection_zones(database_path: str, camera_id: int) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT * FROM camera_detection_zones WHERE camera_id = ? ORDER BY id",
+            (camera_id,),
+        ).fetchall()
+    return [_detection_zone_row(row) for row in rows]
+
+
+def get_camera_detection_zone(database_path: str, zone_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM camera_detection_zones WHERE id = ?", (zone_id,)).fetchone()
+    return _detection_zone_row(row) if row is not None else None
+
+
+def create_camera_detection_zone(
+    database_path: str,
+    camera_id: int,
+    *,
+    name: str,
+    mode: str,
+    classes: list[str] | None,
+    points: list[tuple[float, float]],
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO camera_detection_zones (camera_id, name, mode, classes_json, points_json)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                camera_id,
+                name,
+                _valid_zone_mode(mode),
+                json.dumps(list(classes)) if classes else None,
+                json.dumps([list(point) for point in points]),
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
+def delete_camera_detection_zone(database_path: str, camera_id: int, zone_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "DELETE FROM camera_detection_zones WHERE id = ? AND camera_id = ?",
+            (zone_id, camera_id),
+        )
+
+
+def _detection_zone_row(row: sqlite3.Row) -> dict[str, Any]:
+    zone = dict(row)
+    zone["classes"] = json.loads(zone["classes_json"]) if zone["classes_json"] else None
+    zone["points"] = json.loads(zone["points_json"])
+    return zone
+
+
+def _valid_zone_mode(mode: str) -> str:
+    return "exclude" if mode == "exclude" else "include"
 
 
 def mark_recording_started(database_path: str, camera_id: int) -> None:

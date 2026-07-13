@@ -2850,3 +2850,77 @@ tr:last-child td {
     margin: 0 0 14px;
   }
 }
+
+.hint-text {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 4px 0 12px;
+}
+
+.zone-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.zone-editor-canvas-wrap {
+  position: relative;
+  max-width: 720px;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  line-height: 0;
+}
+
+.zone-editor-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.zone-editor-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.zone-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.zone-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zone-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.zone-list-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zone-list li > span {
+  flex: 1;
+  color: var(--muted);
+  font-size: 0.82rem;
+}

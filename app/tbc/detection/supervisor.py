@@ -10,6 +10,7 @@ from .. import database
 from .backend import Detection, DetectionBackend
 from .classes import DETECTION_KEY_LABELS
 from .frame_source import FrameGrabber
+from .zones import filter_detections_by_zones
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ async def run_camera_detection_worker(
         if settings is None or not settings.get("enabled") or not camera.get("stream_uri"):
             return
         try:
-            await _run_worker_once(camera_id, camera["stream_uri"], settings, backend_factory, on_detections)
+            await _run_worker_once(database_path, camera_id, camera["stream_uri"], settings, backend_factory, on_detections)
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -85,6 +86,7 @@ async def run_camera_detection_worker(
 
 
 async def _run_worker_once(
+    database_path: str,
     camera_id: int,
     stream_uri: str,
     settings: dict[str, Any],
@@ -95,6 +97,7 @@ async def _run_worker_once(
     grabber = FrameGrabber(stream_uri, sample_fps=sample_fps)
     tracker = ActiveObjectTracker(active_timeout_seconds=max(3.0, 3.0 / sample_fps))
     backend = backend_factory(settings)
+    zones = database.list_camera_detection_zones(database_path, camera_id)
     grabber.start()
     try:
         consecutive_failures = 0
@@ -108,6 +111,7 @@ async def _run_worker_once(
                 continue
             consecutive_failures = 0
             detections = await asyncio.to_thread(backend.infer, frame)
+            detections = filter_detections_by_zones(detections, zones)
             tracker.update(detections)
             on_detections(camera_id, tracker.detection_rows())
     finally:
@@ -138,11 +142,17 @@ async def detection_supervisor(
                 settings = database.get_camera_detection_settings(database_path, camera_id)
                 if not settings or not settings.get("enabled"):
                     continue
+                zones = database.list_camera_detection_zones(database_path, camera_id)
+                zones_fingerprint = tuple(
+                    (zone["id"], zone["mode"], zone["classes_json"], zone["points_json"], zone["updated_at"])
+                    for zone in zones
+                )
                 wanted[camera_id] = (
                     camera.get("stream_uri"),
                     settings.get("sample_fps"),
                     settings.get("confidence_threshold"),
                     settings.get("backend"),
+                    zones_fingerprint,
                 )
             for camera_id, (fingerprint, task) in list(workers.items()):
                 if task.done() or wanted.get(camera_id) != fingerprint:

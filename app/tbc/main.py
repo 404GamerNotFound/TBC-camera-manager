@@ -454,6 +454,7 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
     module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
     available_triggers = camera_module.detection_definitions() if camera_module else ()
     detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
+    detection_zones = database.list_camera_detection_zones(SETTINGS.database_path, camera_id)
     if detection_settings and detection_settings.get("enabled"):
         existing_trigger_keys = {trigger.key for trigger in available_triggers}
         available_triggers = tuple(available_triggers) + tuple(
@@ -503,6 +504,8 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "detection_settings": detection_settings,
             "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
             "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
+            "detection_zones": detection_zones,
+            "detection_key_labels": DETECTION_KEY_LABELS,
             "control_state": control_state,
             "control_channel_options": control_channel_options,
             "selected_control_channel": selected_control_channel,
@@ -890,6 +893,59 @@ async def update_camera_detection(
     )
     _set_flash(request, "Einstellungen für lokale KI-Erkennung wurden gespeichert")
     return _redirect(f"/cameras/{camera_id}")
+
+
+@app.get("/cameras/{camera_id}/detection/zones")
+async def list_camera_detection_zones_route(request: Request, camera_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    zones = database.list_camera_detection_zones(SETTINGS.database_path, camera_id)
+    return {"ok": True, "zones": zones}
+
+
+@app.post("/cameras/{camera_id}/detection/zones")
+async def create_camera_detection_zone_route(request: Request, camera_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"ok": False, "message": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+    payload = await request.json()
+    name = str(payload.get("name") or "").strip() or "Zone"
+    mode = "exclude" if payload.get("mode") == "exclude" else "include"
+    classes = payload.get("classes")
+    classes = [key for key in classes if key in DETECTION_KEY_LABELS] if isinstance(classes, list) else None
+    raw_points = payload.get("points")
+    if not isinstance(raw_points, list) or len(raw_points) < 3:
+        return JSONResponse({"ok": False, "message": "Eine Zone braucht mindestens drei Punkte"}, status_code=status.HTTP_400_BAD_REQUEST)
+    try:
+        points = [
+            (max(0.0, min(1.0, float(point[0]))), max(0.0, min(1.0, float(point[1]))))
+            for point in raw_points
+        ]
+    except (TypeError, ValueError, IndexError):
+        return JSONResponse({"ok": False, "message": "Ungültige Punktkoordinaten"}, status_code=status.HTTP_400_BAD_REQUEST)
+    zone_id = database.create_camera_detection_zone(
+        SETTINGS.database_path,
+        camera_id,
+        name=name,
+        mode=mode,
+        classes=classes,
+        points=points,
+    )
+    zone = database.get_camera_detection_zone(SETTINGS.database_path, zone_id)
+    return {"ok": True, "zone": zone}
+
+
+@app.delete("/cameras/{camera_id}/detection/zones/{zone_id}")
+async def delete_camera_detection_zone_route(request: Request, camera_id: int, zone_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    database.delete_camera_detection_zone(SETTINGS.database_path, camera_id, zone_id)
+    return {"ok": True}
 
 
 @app.post("/cameras/{camera_id}/continuous-recording")

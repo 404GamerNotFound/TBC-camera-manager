@@ -306,3 +306,229 @@
     pollStatus();
   });
 })();
+
+(() => {
+  const editor = document.querySelector("[data-zone-editor]");
+  if (!editor) return;
+
+  const cameraId = editor.dataset.cameraId;
+  const image = editor.querySelector("[data-zone-image]");
+  const canvas = editor.querySelector("[data-zone-canvas]");
+  const startButton = editor.querySelector("[data-zone-start-draw]");
+  const cancelDrawButton = editor.querySelector("[data-zone-cancel-draw]");
+  const hint = editor.querySelector("[data-zone-hint]");
+  const form = editor.querySelector("[data-zone-form]");
+  const nameInput = editor.querySelector("[data-zone-name-input]");
+  const modeInput = editor.querySelector("[data-zone-mode-input]");
+  const classInputs = Array.from(editor.querySelectorAll("[data-zone-class-input]"));
+  const discardButton = editor.querySelector("[data-zone-discard]");
+  const list = editor.querySelector("[data-zone-list]");
+  const initialData = editor.querySelector("[data-zone-initial]");
+  const ctx = canvas.getContext("2d");
+
+  const classLabels = {};
+  classInputs.forEach((input) => {
+    const label = input.closest("label");
+    classLabels[input.value] = label ? label.textContent.trim() : input.value;
+  });
+
+  let zones = [];
+  try {
+    zones = initialData ? JSON.parse(initialData.textContent) : [];
+  } catch (error) {
+    zones = [];
+  }
+  let drawingPoints = null;
+  let pendingPoints = null;
+
+  function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    draw();
+  }
+
+  function toCanvasPoints(points) {
+    return points.map(([x, y]) => [x * canvas.width, y * canvas.height]);
+  }
+
+  function drawPolygon(points, color, close) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (const [x, y] of points.slice(1)) ctx.lineTo(x, y);
+    if (close) ctx.closePath();
+    if (close) {
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    points.forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  function zoneColor(mode) {
+    const styles = getComputedStyle(document.documentElement);
+    return mode === "exclude" ? styles.getPropertyValue("--danger").trim() : styles.getPropertyValue("--accent").trim();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    zones.forEach((zone) => drawPolygon(toCanvasPoints(zone.points), zoneColor(zone.mode), true));
+    if (drawingPoints && drawingPoints.length) {
+      drawPolygon(toCanvasPoints(drawingPoints), zoneColor(modeInput.value), false);
+    }
+  }
+
+  function renderList() {
+    list.innerHTML = "";
+    if (!zones.length) {
+      const empty = document.createElement("li");
+      empty.className = "quiet-box";
+      empty.textContent = "Noch keine Zonen definiert";
+      list.appendChild(empty);
+      return;
+    }
+    zones.forEach((zone) => {
+      const item = document.createElement("li");
+      item.dataset.zoneId = zone.id;
+      const classText = zone.classes && zone.classes.length
+        ? zone.classes.map((key) => classLabels[key] || key).join(", ")
+        : "Alle Klassen";
+      item.innerHTML = `
+        <div class="zone-list-heading">
+          <strong></strong>
+          <span class="status-pill ${zone.mode === "exclude" ? "status-idle" : "status-active"}"></span>
+        </div>
+        <span class="zone-classes"></span>
+        <button class="text-button" type="button" data-zone-delete="${zone.id}">Löschen</button>
+      `;
+      item.querySelector(".zone-list-heading strong").textContent = zone.name;
+      item.querySelector(".status-pill").textContent = zone.mode === "exclude" ? "Ausschluss" : "Einschluss";
+      item.querySelector(".zone-classes").textContent = classText;
+      list.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    form.hidden = true;
+    form.reset();
+    pendingPoints = null;
+  }
+
+  function stopDrawing() {
+    drawingPoints = null;
+    cancelDrawButton.hidden = true;
+    hint.hidden = true;
+    startButton.hidden = false;
+    draw();
+  }
+
+  startButton.addEventListener("click", () => {
+    resetForm();
+    drawingPoints = [];
+    startButton.hidden = true;
+    cancelDrawButton.hidden = false;
+    hint.hidden = false;
+  });
+
+  cancelDrawButton.addEventListener("click", stopDrawing);
+
+  canvas.addEventListener("click", (event) => {
+    if (!drawingPoints) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width;
+    const y = (event.clientY - rect.top) / rect.height;
+    drawingPoints.push([Math.max(0, Math.min(1, x)), Math.max(0, Math.min(1, y))]);
+    draw();
+  });
+
+  canvas.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    if (!drawingPoints || drawingPoints.length < 3) return;
+    pendingPoints = drawingPoints;
+    drawingPoints = null;
+    cancelDrawButton.hidden = true;
+    hint.hidden = true;
+    startButton.hidden = false;
+    form.hidden = false;
+    nameInput.focus();
+  });
+
+  discardButton.addEventListener("click", () => {
+    resetForm();
+    draw();
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!pendingPoints || pendingPoints.length < 3) return;
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    try {
+      const response = await fetch(`/cameras/${cameraId}/detection/zones`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: nameInput.value,
+          mode: modeInput.value,
+          classes: classInputs.filter((input) => input.checked).map((input) => input.value),
+          points: pendingPoints,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data || !data.ok) {
+        window.alert((data && data.message) || "Zone konnte nicht gespeichert werden");
+        return;
+      }
+      zones.push(data.zone);
+      resetForm();
+      renderList();
+      draw();
+    } catch (error) {
+      window.alert("Zone konnte nicht gespeichert werden: Netzwerkfehler");
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  list.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-zone-delete]");
+    if (!button) return;
+    const zoneId = button.dataset.zoneDelete;
+    button.disabled = true;
+    try {
+      const response = await fetch(`/cameras/${cameraId}/detection/zones/${zoneId}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      if (!response.ok) {
+        window.alert("Zone konnte nicht gelöscht werden");
+        button.disabled = false;
+        return;
+      }
+      zones = zones.filter((zone) => String(zone.id) !== String(zoneId));
+      renderList();
+      draw();
+    } catch (error) {
+      window.alert("Zone konnte nicht gelöscht werden: Netzwerkfehler");
+      button.disabled = false;
+    }
+  });
+
+  if (image.complete) {
+    resizeCanvas();
+  } else {
+    image.addEventListener("load", resizeCanvas);
+    image.addEventListener("error", resizeCanvas);
+  }
+  window.addEventListener("resize", resizeCanvas);
+})();
