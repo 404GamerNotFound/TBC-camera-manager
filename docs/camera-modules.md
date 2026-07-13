@@ -1,6 +1,6 @@
 # Kamera-Module entwickeln
 
-TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `reolink`, `tplink`, `standard_onvif`, `aqara`, `ubiquiti`, `sonoff`, `rtsp_only`, `axis`, `foscam`, `hikvision` und `dahua` sind Referenzimplementierungen. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
+TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Die eingebauten Module `tplink`, `standard_onvif`, `ubiquiti`, `sonoff`, `rtsp_only`, `axis`, `foscam`, `hikvision` und `dahua` sind Referenzimplementierungen. `reolink` und `aqara` werden als direkt installierbare Standard-Repositories angeboten. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
 
 ## Plugin-Datei
 
@@ -60,6 +60,8 @@ def create_module():
 
 `plugin.py` stellt entweder `create_module()` oder eine Variable `MODULE` bereit. Metadaten und Fähigkeiten werden aus dem Manifest auf die Modulinstanz übertragen. `probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()`, `open_archive_download()`, `get_control_state()` und `send_control()` implementieren. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
 
+Für Echtzeit-Ereignisse kann die Modulinstanz zusätzlich eine asynchrone Methode `monitor_events(camera, callback)` anbieten. Alternativ erkennt TBC dieselbe Funktion in der zum Plugin gehörenden `service.py`. Der Callback erhält die aktuellen Erkennungszeilen; fällt die dauerhafte Verbindung aus, bleibt die reguläre Abfrage über `probe()` als Rückfallebene aktiv. Dadurch benötigt der Anwendungskern keinen direkten Import aus einem bestimmten Hersteller-Plugin.
+
 Module, die eine vollständige Stream-URL statt separater ONVIF-Zugangsdaten erwarten, setzen `supports_manual_stream_uri = True`, `requires_manual_stream_uri = True` und `requires_credentials = False`. TBC speichert diese URL getrennt in `manual_stream_uri`, validiert ausschließlich `rtsp://` und `rtsps://` und rendert sie nie unzensiert in HTML. `ubiquiti`, `sonoff` und `rtsp_only` verwenden die gemeinsame Implementierung `manual_rtsp/`.
 
 Die einheitliche Momentaufnahme `CameraSnapshot` enthält Gerätestatus, Herstellerdaten, RTSP-URI, Erkennungszustände und Kanäle. Erkennungszeilen verwenden die Felder `key`, `label`, `category`, `channel`, `supported`, `active`, `source` und optional `raw_value`.
@@ -88,7 +90,7 @@ Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Recht
 - `CONTROL`: Das Modul implementiert `get_control_state()` und `send_control()` für Live-Gerätesteuerung (z. B. PTZ inkl. gespeicherter Positionen, Flutlicht, PIR-Sensor, Sirene, Neustart, Akkustatus).
 - `FIRMWARE`: Das Modul implementiert `check_firmware()` und `update_firmware()` für Firmware-Prüfung und -Aktualisierung.
 
-Die Implementierungen liegen in den Herstellerpaketen unter `app/tbc/camera_plugins/<schlüssel>/`. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet; `plugin.py` lädt sie über `import_tbc("camera_plugins.<schlüssel>.module")` — denselben Mechanismus, den auch extern installierte Plugins für den Zugriff auf die TBC-Basisklassen nutzen.
+Eingebaute Implementierungen liegen in den Herstellerpaketen unter `app/tbc/camera_plugins/<schlüssel>/`; externe Implementierungen liegen im konfigurierten Plugin-Verzeichnis. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet. Externe Plugins greifen über `tbc_camera_api` auf die öffentlichen TBC-Basisklassen und herstellerneutralen Hilfsfunktionen zu.
 
 ## Kamerasteuerung (`CONTROL`)
 
@@ -102,7 +104,7 @@ async def send_control(self, camera: dict, *, action: str, channel: int = 0, **p
     """Einen Steuerbefehl ausführen, z. B. action="floodlight", params={"state": True}."""
 ```
 
-Das eingebaute `reolink`-Modul (`app/tbc/camera_plugins/reolink/control.py`) implementiert darüber PTZ-Schwenk/Neige-Befehle (inkl. auf der Kamera gespeicherter PTZ-Positionen über `reolink-aio`s `ptz_presets()`/`set_ptz_command(preset=...)`), Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus. `tplink`, `standard_onvif` und `aqara` bieten PTZ über den herstellerneutralen ONVIF-PTZ-Service (`app/tbc/camera_modules/onvif_control.py`) an, den ihre jeweiligen `camera_plugins/<schlüssel>/control.py`-Adapter nur mit dem passenden Standard-ONVIF-Port aufrufen (ohne Positionsspeicher). Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).
+Das externe [Reolink-Plugin](https://github.com/404GamerNotFound/TBC-reolink) implementiert darüber PTZ-Schwenk/Neige-Befehle (inkl. auf der Kamera gespeicherter PTZ-Positionen über `reolink-aio`s `ptz_presets()`/`set_ptz_command(preset=...)`), Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus. `tplink`, `standard_onvif` und das externe Aqara-Plugin bieten PTZ über den herstellerneutralen ONVIF-PTZ-Service (`app/tbc/camera_modules/onvif_control.py`) an. Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).
 
 Für Modelle mit optischem Zoom (z. B. RLC-823A, Trackmix-Serie) meldet `get_control_state()` zusätzlich `zoom_supported`/`focus_supported` mit aktueller Position und Wertebereich (`reolink-aio`s `zoom_range()`/`get_zoom()`/`get_focus()`); die Steuerung erfolgt absolut über `send_control(action="zoom"|"focus", position=...)` (`set_zoom()`/`set_focus()`), nicht relativ wie die digitalen `ZoomInc`/`ZoomDec`-PTZ-Befehle. Für Video-Doorbell-Modelle meldet `is_doorbell`/`quick_reply_supported`/`quick_reply_options` die auf der Kamera hinterlegten Audioclips (`quick_reply_dict()`); `send_control(action="quick_reply", file_id=...)` spielt einen Clip über den Lautsprecher ab (`play_quick_reply()`). Beide Fähigkeiten hängen weiterhin nur von `CONTROL` ab, nicht von einer eigenen Manifest-Fähigkeit.
 
@@ -118,4 +120,4 @@ async def update_firmware(self, camera: dict, *, channel: int = 0, progress_call
     """Firmware herunterladen und auf das Gerät schreiben; ruft progress_callback(0..100) auf."""
 ```
 
-Das eingebaute `reolink`-Modul lädt dafür über `reolink-aio`s `check_new_firmware()`/`update_firmware()` direkt von reolink.com herunter und schreibt sie auf die Kamera; die Kamera ist währenddessen nicht erreichbar und startet danach neu. In der Weboberfläche liegt der Ablauf bewusst zweistufig: „Auf Updates prüfen“ (rein lesend) muss zuerst erfolgreich eine verfügbare Version melden, bevor „Jetzt aktualisieren“ überhaupt aktiv wird; der Update-Start verlangt zusätzlich eine JavaScript-Bestätigung. Der Update-Vorgang läuft als Hintergrund-Task in TBC und wird über einen Fortschritts-Endpunkt abgefragt, da er mehrere Minuten dauern kann.
+Das externe Reolink-Plugin lädt dafür über `reolink-aio`s `check_new_firmware()`/`update_firmware()` direkt von reolink.com herunter und schreibt sie auf die Kamera; die Kamera ist währenddessen nicht erreichbar und startet danach neu. In der Weboberfläche liegt der Ablauf bewusst zweistufig: „Auf Updates prüfen“ (rein lesend) muss zuerst erfolgreich eine verfügbare Version melden, bevor „Jetzt aktualisieren“ überhaupt aktiv wird; der Update-Start verlangt zusätzlich eine JavaScript-Bestätigung. Der Update-Vorgang läuft als Hintergrund-Task in TBC und wird über einen Fortschritts-Endpunkt abgefragt, da er mehrere Minuten dauern kann.

@@ -54,6 +54,13 @@ STANDARD_PLUGIN_SOURCES = (
         description="Aqara-Kameras sowie kompatible Video-Türklingeln",
         repo_url="https://github.com/404GamerNotFound/TBC-aqara",
     ),
+    StandardPluginSource(
+        key="reolink",
+        plugin_kind="camera",
+        label="Reolink",
+        description="Reolink-Kameras und NVR via ONVIF und reolink-aio",
+        repo_url="https://github.com/404GamerNotFound/TBC-reolink",
+    ),
 )
 
 

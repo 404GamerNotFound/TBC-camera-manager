@@ -76,7 +76,6 @@ class CameraModuleTests(unittest.TestCase):
                 "dahua",
                 "foscam",
                 "hikvision",
-                "reolink",
                 "rtsp_only",
                 "sonoff",
                 "standard_onvif",
@@ -112,13 +111,6 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(camera["performance_cpu"], 27)
         self.assertEqual(camera["performance_codec_rate"], 6794)
         self.assertEqual(camera["performance_net_throughput"], 42)
-
-    def test_reolink_declares_current_application_features(self):
-        module = registry.get_camera_module("reolink")
-
-        self.assertTrue(module.supports(CameraCapability.DETECTIONS))
-        self.assertTrue(module.supports(CameraCapability.CHANNELS))
-        self.assertTrue(module.supports(CameraCapability.ARCHIVE))
 
     def test_tplink_declares_only_reliably_supported_features(self):
         module = registry.get_camera_module("tplink")

@@ -77,6 +77,16 @@ class StandardPluginSourceTests(unittest.TestCase):
     def test_unknown_standard_repository_returns_none(self):
         self.assertIsNone(get_standard_plugin_source("unknown"))
 
+    def test_reolink_is_available_as_camera_standard_repository(self):
+        source = get_standard_plugin_source("reolink")
+
+        self.assertIsNotNone(source)
+        self.assertEqual(source.plugin_kind, "camera")
+        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-reolink")
+        self.assertEqual(source.ref, "main")
+        self.assertEqual(source.subdirectory, "")
+        self.assertIn(source, STANDARD_PLUGIN_SOURCES)
+
 
 class ExtractPluginArchiveTests(unittest.TestCase):
     def test_extracts_repo_root_when_no_subdirectory(self):

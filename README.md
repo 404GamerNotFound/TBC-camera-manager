@@ -1,6 +1,6 @@
 # TBC - TB Camera
 
-TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink, TP-Link/Tapo, Aqara, Axis, Foscam, Hikvision, Dahua (inkl. Amcrest/Annke-OEMs), Ubiquiti/UniFi Protect, SONOFF, ein reines RTSP-Profil und ein herstellerneutraler Standard-ONVIF-Fallback sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, Dashboard-Vorschaubilder, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
+TBC ist ein modularer, Docker-basierter Kamera-Manager. Hersteller werden über installierbare Kamera-Module angebunden; Reolink und Aqara stehen als direkt installierbare Standard-Repositories bereit. TP-Link/Tapo, Axis, Foscam, Hikvision, Dahua (inkl. Amcrest/Annke-OEMs), Ubiquiti/UniFi Protect, SONOFF, ein reines RTSP-Profil und ein herstellerneutraler Standard-ONVIF-Fallback sind eingebaut. Die aktuelle Version bringt Login, Kamera-Verwaltung, RTSP-Stream-Ermittlung, Dashboard-Vorschaubilder, ereignisbasierte Aufnahmen, Clip-Browser, Rollen, MQTT/Home-Assistant-Anbindung, Live-HLS, Retention, Benachrichtigungen, Health-Monitoring und NVR-Kanalverwaltung mit.
 
 ## Start
 
@@ -49,7 +49,7 @@ Hinweise fuer typische Portainer-Probleme:
 
 ## Kamera einbinden
 
-„Kamera hinzufügen“ fragt zuerst, ob es sich um eine lokale Kamera oder ein Cloud-Konto handelt. Bei „Lokale Kamera“ wird wie gewohnt das installierte Kameramodul ausgewählt und die Kamera mit Host/IP, Ports und Zugangsdaten angelegt. Bei „Cloud-Konto“ geht es direkt zu `Cloud-Konten` (siehe unten), wo ein Herstellerkonto verbunden und Geräte automatisch gesucht werden. Das Modul bestimmt danach, welche Hersteller-API abgefragt und welche Funktionen angeboten werden. Das enthaltene Reolink-Modul prueft:
+„Kamera hinzufügen“ fragt zuerst, ob es sich um eine lokale Kamera oder ein Cloud-Konto handelt. Bei „Lokale Kamera“ wird wie gewohnt das installierte Kameramodul ausgewählt und die Kamera mit Host/IP, Ports und Zugangsdaten angelegt. Bei „Cloud-Konto“ geht es direkt zu `Cloud-Konten` (siehe unten), wo ein Herstellerkonto verbunden und Geräte automatisch gesucht werden. Das Modul bestimmt danach, welche Hersteller-API abgefragt und welche Funktionen angeboten werden. Das über `Admin → Externe Quellen` installierbare Reolink-Modul prüft:
 
 - ONVIF Device-Informationen
 - ONVIF Media-Profile und RTSP-Stream-URI
@@ -59,6 +59,8 @@ Hinweise fuer typische Portainer-Probleme:
 ## Installierbare Kamera-Module
 
 Die Weboberfläche und die zentralen Kamera-Routen greifen nur auf eine herstellerunabhängige Modulschnittstelle zu. Module deklarieren Fähigkeiten für Live-Ansicht, Ereignisaufnahme, Erkennungen, Multi-Kanal-Geräte und Kamera-Archive. Im Adminbereich `Kamera-Plugins` können Plugin-ZIPs direkt importiert und installierte Plugins exportiert werden. Importierte Pakete liegen dauerhaft unter `TBC_CAMERA_MODULES_PATH` (standardmäßig `/data/camera-modules`) und erscheinen sofort in der Modulauswahl.
+
+Unter `Admin → Externe Quellen` können die Standard-Repositories [Reolink](https://github.com/404GamerNotFound/TBC-reolink) und [Aqara](https://github.com/404GamerNotFound/TBC-aqara) mit einem Klick registriert und installiert werden.
 
 Bestehende Datenbanken werden automatisch migriert; vorhandene Kameras erhalten das Modul `reolink`. Die technische Anleitung zur Entwicklung zusätzlicher Module steht in [docs/camera-modules.md](docs/camera-modules.md).
 

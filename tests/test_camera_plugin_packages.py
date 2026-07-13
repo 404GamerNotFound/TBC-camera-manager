@@ -58,7 +58,6 @@ class CameraPluginPackageTests(unittest.TestCase):
                 "dahua",
                 "foscam",
                 "hikvision",
-                "reolink",
                 "rtsp_only",
                 "sonoff",
                 "standard_onvif",
@@ -80,11 +79,11 @@ class CameraPluginPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as external_path:
             packages = discover_plugin_packages(external_path)
 
-        reolink = next(package for package in packages if package.manifest.key == "reolink")
-        archive = export_plugin_archive(reolink)
+        tplink = next(package for package in packages if package.manifest.key == "tplink")
+        archive = export_plugin_archive(tplink)
         with zipfile.ZipFile(BytesIO(archive)) as bundle:
             names = set(bundle.namelist())
-        self.assertTrue({"module.py", "service.py", "catalog.py", "control.py", "sdcard.py"} <= names)
+        self.assertTrue({"module.py", "service.py", "catalog.py", "control.py"} <= names)
 
     def test_zip_plugin_can_be_installed_loaded_exported_and_removed(self):
         with tempfile.TemporaryDirectory() as external_path:
@@ -113,7 +112,7 @@ class CameraPluginPackageTests(unittest.TestCase):
     def test_builtin_plugin_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory() as external_path:
             with self.assertRaisesRegex(CameraPluginError, "nicht überschrieben"):
-                install_plugin_archive(plugin_archive(key="reolink"), external_path)
+                install_plugin_archive(plugin_archive(key="tplink"), external_path)
 
     def test_invalid_zip_is_reported_as_plugin_error(self):
         with tempfile.TemporaryDirectory() as external_path:

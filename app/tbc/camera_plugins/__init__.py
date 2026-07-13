@@ -11,10 +11,7 @@ That facade must exist in sys.modules before any such file is imported.
 Python always imports a package's __init__.py before any of its submodules,
 so installing it here - rather than relying on callers to install it first,
 or on it having been installed as a side effect of an unrelated earlier
-import - guarantees it is in place for every possible import path: the
-plugin registry, a direct `from app.tbc.camera_plugins.reolink import
-service` (as tests and app/tbc/main.py's real-time event monitor do), or
-anything else that reaches into a built-in plugin's package.
+import - guarantees it is in place for every possible built-in plugin import.
 """
 
 from ..camera_modules.packages import _install_plugin_api

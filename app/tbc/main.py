@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import logging
 from datetime import date, datetime, time, timedelta
@@ -74,7 +75,6 @@ from .plugin_templates import (
 from .plugin_testing import run_plugin_tests
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
-from .camera_plugins.reolink.service import monitor_events as monitor_reolink_events
 from .snapshots import DashboardSnapshotManager
 from .themes import UnknownThemeError, get_theme_registration, list_theme_registrations, reload_themes
 from .themes.packages import (
@@ -164,7 +164,7 @@ async def startup() -> None:
         SETTINGS.admin_password,
     )
     asyncio.create_task(_poll_loop())
-    asyncio.create_task(_reolink_event_supervisor())
+    asyncio.create_task(_camera_event_supervisor())
     asyncio.create_task(_health_loop())
     asyncio.create_task(_cleanup_loop())
     asyncio.create_task(_snapshot_loop())
@@ -2840,20 +2840,25 @@ async def _poll_loop() -> None:
         await asyncio.sleep(SETTINGS.poll_interval_seconds)
 
 
-async def _reolink_event_supervisor() -> None:
-    """Keep one real-time Reolink event connection per enabled camera."""
+async def _camera_event_supervisor() -> None:
+    """Keep one real-time event connection per enabled camera whose plugin provides one."""
     workers: dict[int, tuple[tuple[Any, ...], asyncio.Task[Any]]] = {}
     await asyncio.sleep(2)
     try:
         while True:
-            cameras = {
-                int(camera["id"]): camera
-                for camera in database.list_cameras(SETTINGS.database_path)
-                if int(camera.get("enabled") or 0) == 1 and camera.get("module_key") == "reolink"
-            }
+            cameras: dict[int, dict[str, Any]] = {}
+            for camera in database.list_cameras(SETTINGS.database_path):
+                if int(camera.get("enabled") or 0) != 1:
+                    continue
+                try:
+                    module = get_camera_module(camera.get("module_key"))
+                except UnknownCameraModuleError:
+                    continue
+                if _event_monitor_for_module(module) is not None:
+                    cameras[int(camera["id"])] = camera
             for camera_id, (_, task) in list(workers.items()):
                 camera = cameras.get(camera_id)
-                fingerprint = _reolink_connection_fingerprint(camera) if camera else None
+                fingerprint = _event_connection_fingerprint(camera) if camera else None
                 if task.done() or fingerprint != workers[camera_id][0]:
                     task.cancel()
                     await asyncio.gather(task, return_exceptions=True)
@@ -2861,8 +2866,8 @@ async def _reolink_event_supervisor() -> None:
             for camera_id, camera in cameras.items():
                 if camera_id not in workers:
                     workers[camera_id] = (
-                        _reolink_connection_fingerprint(camera),
-                        asyncio.create_task(_monitor_reolink_camera(camera_id)),
+                        _event_connection_fingerprint(camera),
+                        asyncio.create_task(_monitor_camera_events(camera_id)),
                     )
             await asyncio.sleep(10)
     finally:
@@ -2872,10 +2877,11 @@ async def _reolink_event_supervisor() -> None:
             await asyncio.gather(*(task for _, task in workers.values()), return_exceptions=True)
 
 
-def _reolink_connection_fingerprint(camera: dict[str, Any] | None) -> tuple[Any, ...]:
+def _event_connection_fingerprint(camera: dict[str, Any] | None) -> tuple[Any, ...]:
     if camera is None:
         return ()
     return (
+        camera.get("module_key"),
         camera.get("host"),
         camera.get("http_port"),
         camera.get("username"),
@@ -2883,20 +2889,42 @@ def _reolink_connection_fingerprint(camera: dict[str, Any] | None) -> tuple[Any,
     )
 
 
-async def _monitor_reolink_camera(camera_id: int) -> None:
+def _event_monitor_for_module(module: Any):
+    monitor = getattr(module, "monitor_events", None)
+    if callable(monitor):
+        return monitor
+    module_package = module.__class__.__module__.rpartition(".")[0]
+    if not module_package:
+        return None
+    try:
+        service = importlib.import_module(f"{module_package}.service")
+    except (ImportError, ValueError):
+        return None
+    monitor = getattr(service, "monitor_events", None)
+    return monitor if callable(monitor) else None
+
+
+async def _monitor_camera_events(camera_id: int) -> None:
     while True:
         camera = database.get_camera(SETTINGS.database_path, camera_id)
-        if camera is None or int(camera.get("enabled") or 0) != 1 or camera.get("module_key") != "reolink":
+        if camera is None or int(camera.get("enabled") or 0) != 1:
             return
         try:
-            await monitor_reolink_events(
+            module = get_camera_module(camera.get("module_key"))
+        except UnknownCameraModuleError:
+            return
+        monitor_events = _event_monitor_for_module(module)
+        if monitor_events is None:
+            return
+        try:
+            await monitor_events(
                 camera,
                 lambda detections: _process_detection_states(camera_id, detections),
             )
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            LOGGER.warning("Reolink real-time events unavailable for camera %s: %s", camera_id, exc)
+            LOGGER.warning("Real-time events unavailable for camera %s: %s", camera_id, exc)
             await asyncio.sleep(15)
 
 
