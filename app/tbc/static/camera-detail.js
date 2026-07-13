@@ -32,8 +32,7 @@
 
   activate(location.hash.slice(1), false);
 
-  const triggerFieldset = document.querySelector("[data-trigger-fieldset]");
-  if (triggerFieldset) {
+  document.querySelectorAll("[data-trigger-fieldset]").forEach((triggerFieldset) => {
     triggerFieldset.querySelectorAll("[data-trigger-selection]").forEach((button) => {
       button.addEventListener("click", () => {
         const checked = button.dataset.triggerSelection === "all";
@@ -42,7 +41,7 @@
         });
       });
     });
-  }
+  });
 })();
 
 (() => {

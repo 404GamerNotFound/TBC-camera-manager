@@ -303,13 +303,16 @@
           {% endfor %}
         </select>
       </label>
+      {% set camera_triggers = available_triggers | rejectattr('category', 'equalto', 'ai') | list %}
+      {% set ai_triggers = available_triggers | selectattr('category', 'equalto', 'ai') | list %}
+      {% if camera_triggers %}
       <fieldset class="span-2 checkbox-field" data-trigger-fieldset>
-        <legend>Ereignistypen aufnehmen</legend>
+        <legend>Kamera-Ereignisse</legend>
         <div class="button-row trigger-actions">
           <button class="text-button" type="button" data-trigger-selection="all">Alle auswählen</button>
         </div>
         <div class="checkbox-grid">
-          {% for trigger in available_triggers %}
+          {% for trigger in camera_triggers %}
           <label class="check-row">
             <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %}>
             <span>{{ trigger.label }}</span>
@@ -317,6 +320,24 @@
           {% endfor %}
         </div>
       </fieldset>
+      {% endif %}
+      {% if ai_triggers %}
+      <fieldset class="span-2 checkbox-field" data-trigger-fieldset>
+        <legend>Lokale KI-Erkennung (TBC)</legend>
+        <p class="hint-text">Erkennungen aus dem eigenen Bild-Modell des TBC-Servers, unabhängig davon, was die Kamera selbst meldet.</p>
+        <div class="button-row trigger-actions">
+          <button class="text-button" type="button" data-trigger-selection="all">Alle auswählen</button>
+        </div>
+        <div class="checkbox-grid">
+          {% for trigger in ai_triggers %}
+          <label class="check-row">
+            <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %}>
+            <span>{{ trigger.label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endif %}
     </div>
     <div class="form-actions">
       <a class="secondary-button" href="/storage">Speicher verwalten</a>

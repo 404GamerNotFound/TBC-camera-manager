@@ -33,12 +33,12 @@ class DecodeDetectionOutputTests(unittest.TestCase):
         detections = decode_detection_output(outputs, metadata, confidence_threshold=0.5)
         self.assertEqual(len(detections), 2)
         self.assertEqual(detections[0].label, "person")
-        self.assertEqual(detections[0].detection_key, "person")
+        self.assertEqual(detections[0].detection_key, "ai_person")
         self.assertAlmostEqual(detections[0].confidence, 0.9)
         # box is (xmin, ymin, xmax, ymax) - decoded from (ymin, xmin, ymax, xmax)
         for actual, expected in zip(detections[0].box, (0.2, 0.1, 0.6, 0.5)):
             self.assertAlmostEqual(actual, expected, places=5)
-        self.assertEqual(detections[1].detection_key, "vehicle")
+        self.assertEqual(detections[1].detection_key, "ai_vehicle")
 
     def test_filters_below_confidence_threshold(self):
         metadata = _metadata()
@@ -103,9 +103,9 @@ class PreprocessFrameTests(unittest.TestCase):
 
 class CanonicalDetectionKeyTests(unittest.TestCase):
     def test_maps_known_coco_labels(self):
-        self.assertEqual(canonical_detection_key("person"), "person")
-        self.assertEqual(canonical_detection_key("truck"), "vehicle")
-        self.assertEqual(canonical_detection_key("giraffe"), "animal")
+        self.assertEqual(canonical_detection_key("person"), "ai_person")
+        self.assertEqual(canonical_detection_key("truck"), "ai_vehicle")
+        self.assertEqual(canonical_detection_key("giraffe"), "ai_animal")
 
     def test_returns_none_for_unmapped_labels(self):
         self.assertIsNone(canonical_detection_key("bottle"))
