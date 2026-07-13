@@ -19,7 +19,7 @@
       <span>Bezeichnung</span>
       <input name="label" value="{{ account.label }}" required>
     </label>
-    {% for field in cloud_module.account_fields %}
+    {% for field in cloud_module.account_fields if not field.transient %}
       {% set current_value = account.config.get(field.key, field.default) %}
       {% if field.field_type.value == 'checkbox' %}
       <label class="check-row{% if field.full_width %} span-2{% endif %}">

@@ -34,7 +34,7 @@
     </label>
     {% for registration in cloud_modules %}
       {% set provider_loop = loop %}
-      {% for field in registration.module.account_fields %}
+      {% for field in registration.module.account_fields if not field.transient %}
         {% if field.field_type.value == 'checkbox' %}
         <label class="check-row{% if field.full_width %} span-2{% endif %}"
                data-cloud-account-fields="{{ registration.module.key }}"{% if not provider_loop.first %} hidden{% endif %}>
