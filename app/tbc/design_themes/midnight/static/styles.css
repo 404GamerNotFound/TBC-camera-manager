@@ -2230,6 +2230,351 @@ tr:last-child td {
   margin: 12px 0 0;
   color: var(--muted);
 }
+/* Dense application layout. Live pages deliberately do not receive the
+   compact-app body class, so player sizing and live controls stay unchanged. */
+.compact-app .topbar {
+  min-height: 60px;
+  padding-block: 7px;
+}
+
+.compact-app .brand-mark {
+  width: 38px;
+  height: 38px;
+}
+
+.compact-app .app-nav-list .nav-link,
+.compact-app .nav-logout .icon-button {
+  min-height: 38px;
+}
+
+.compact-app .shell {
+  width: min(1480px, calc(100vw - 28px));
+  max-width: none;
+  padding: 24px 0 48px;
+}
+
+.compact-app .page-heading {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.compact-app .page-heading h1 {
+  font-size: clamp(2rem, 3.6vw, 3.35rem);
+  line-height: 1;
+}
+
+.compact-app .eyebrow {
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+}
+
+.compact-app main input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+.compact-app main select {
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.compact-app main button:not(.tbc-player-btn):not(.tbc-ptz-btn),
+.compact-app main .primary-button,
+.compact-app main .secondary-button,
+.compact-app main .danger-button,
+.compact-app main .icon-button {
+  min-height: 38px;
+  padding: 8px 13px;
+  font-size: 0.9rem;
+}
+
+.compact-app main .icon-button {
+  width: 38px;
+  padding: 0;
+}
+
+.compact-app .editor-form {
+  gap: 14px;
+  padding: 16px;
+}
+
+.compact-app .form-grid {
+  gap: 12px;
+}
+
+.compact-app .button-row,
+.compact-app .form-actions {
+  gap: 7px;
+}
+
+.compact-app .camera-grid {
+  gap: 12px;
+}
+
+.compact-app .camera-card {
+  gap: 12px;
+  padding: 15px;
+}
+
+.compact-app .metric-row div,
+.compact-app .details-strip div {
+  padding: 10px;
+}
+
+.compact-app .metric-row dd {
+  font-size: 1.15rem;
+}
+
+.compact-app .status-pill {
+  min-height: 24px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+}
+
+.compact-app .settings-layout,
+.compact-app .storage-grid {
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.compact-app .event-panel,
+.compact-app .storage-list {
+  padding: 14px;
+}
+
+.compact-app .storage-list {
+  gap: 10px;
+}
+
+.compact-app .storage-item {
+  gap: 9px;
+  padding: 13px;
+}
+
+.compact-app .quiet-box {
+  padding: 13px;
+}
+
+.compact-app .plugin-manager {
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.plugin-import-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.plugin-import-panel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.plugin-import-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.plugin-import-panel > summary::after {
+  content: "+";
+  flex: 0 0 auto;
+  color: var(--brand);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.plugin-import-panel[open] > summary::after {
+  content: "−";
+}
+
+.plugin-import-panel > summary > span:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.plugin-import-panel > summary strong {
+  font-size: 0.96rem;
+}
+
+.plugin-import-panel > summary small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.plugin-import-panel .editor-form {
+  margin: 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+.compact-app .plugin-search-bar input[type="search"] {
+  max-width: 420px;
+}
+
+.compact-app .storage-list.plugin-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.plugin-card {
+  min-width: 0;
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.plugin-card > .section-title {
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+}
+
+.plugin-card .section-title > div {
+  min-width: 0;
+}
+
+.plugin-card .section-title h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+.plugin-card .section-title p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.plugin-card .section-title > span {
+  flex: 0 0 auto;
+  font-size: 0.76rem;
+}
+
+.plugin-card-meta {
+  display: flex;
+  gap: 0;
+  padding: 8px 0;
+  overflow: visible;
+  border-width: 1px 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.compact-app .plugin-card-meta div {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 9px;
+  border-left: 1px solid var(--line);
+  background: transparent;
+}
+
+.compact-app .plugin-card-meta div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.compact-app .plugin-card-meta div:last-child {
+  padding-right: 0;
+}
+
+.plugin-card-meta dt {
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+
+.compact-app .plugin-card-meta dd {
+  margin-top: 2px;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.plugin-card-capabilities {
+  display: flex;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.plugin-card-actions {
+  align-self: end;
+  margin-top: 2px;
+}
+
+.plugin-card-actions form {
+  margin: 0;
+}
+
+.compact-app .plugin-card-actions .primary-button,
+.compact-app .plugin-card-actions .secondary-button,
+.compact-app .plugin-card-actions .danger-button,
+.compact-app .plugin-card-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.compact-app .filter-bar {
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.compact-app .table-section {
+  margin-top: 16px;
+}
+
+.compact-app th,
+.compact-app td {
+  padding: 9px 11px;
+}
+
+.compact-app .performance-grid {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.compact-app .performance-card {
+  gap: 9px;
+  padding: 13px;
+}
+
+.compact-app .performance-card-head strong {
+  font-size: 1.65rem;
+}
+
+.compact-app .detail-tabs {
+  margin: 16px 0 14px;
+}
+
+.compact-app .detail-tabs button {
+  min-height: 36px;
+  padding: 7px 12px;
+}
+
+.compact-app .overview-metrics {
+  margin-bottom: 14px;
+}
+
+.compact-app .overview-metric {
+  min-height: 92px;
+  padding: 13px;
+}
+
+.compact-app .recording-tab-layout,
+.compact-app .recording-stack {
+  gap: 12px;
+}
+
+.compact-app .empty-state {
+  min-height: 200px;
+  padding: 22px;
+}
+
 
 @media (max-width: 1199.98px) {
   .overview-metrics {
@@ -2302,6 +2647,27 @@ tr:last-child td {
   .page-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .compact-app .shell {
+    width: calc(100vw - 20px);
+    padding: 18px 0 36px;
+  }
+
+  .compact-app .page-heading {
+    margin-bottom: 14px;
+  }
+
+  .compact-app .storage-list.plugin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plugin-import-panel > summary {
+    flex-wrap: wrap;
+  }
+
+  .plugin-import-panel > summary::after {
+    margin-left: auto;
   }
 
   .live-grid {

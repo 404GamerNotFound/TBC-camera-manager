@@ -9,22 +9,27 @@
 </section>
 
 <section class="plugin-manager">
-  <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
-    <div class="section-title">
-      <h2>Plugin importieren</h2>
-      <span>ZIP</span>
-    </div>
-    <div class="quiet-box">
-      Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.
-    </div>
-    <label>
-      <span>Plugin-Datei</span>
-      <input name="plugin_file" type="file" accept=".zip,application/zip" required>
-    </label>
-    <div class="form-actions">
-      <button class="primary-button" type="submit">Importieren</button>
-    </div>
-  </form>
+  <details class="plugin-import-panel">
+    <summary>
+      <span>
+        <strong>Plugin importieren</strong>
+        <small>Plugin-Datei</small>
+      </span>
+      <span class="status-pill status-idle">ZIP</span>
+    </summary>
+    <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
+      <div class="quiet-box">
+        Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.
+      </div>
+      <label>
+        <span>Plugin-Datei</span>
+        <input name="plugin_file" type="file" accept=".zip,application/zip" required>
+      </label>
+      <div class="form-actions">
+        <button class="primary-button" type="submit">Importieren</button>
+      </div>
+    </form>
+  </details>
 
   <div class="plugin-search-bar">
     <label class="visually-hidden" for="cloud-module-search">Plugins durchsuchen</label>
@@ -38,7 +43,7 @@
     </div>
     {% for registration in registrations %}
     {% set cloud_module = registration.module %}
-    <article class="storage-item" data-plugin-search-item>
+    <article class="storage-item plugin-card" data-plugin-search-item>
       <div class="section-title">
         <div>
           <h3>{{ cloud_module.label }}</h3>
@@ -46,12 +51,12 @@
         </div>
         <span>{{ registration.version }}</span>
       </div>
-      <dl class="metric-row">
+      <dl class="metric-row plugin-card-meta">
         <div><dt>Schlüssel</dt><dd>{{ cloud_module.key }}</dd></div>
         <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else 'ZIP-Import' }}</dd></div>
         <div><dt>Konten</dt><dd>{{ account_counts[cloud_module.key] }}</dd></div>
       </dl>
-      <p>
+      <p class="plugin-card-capabilities">
         <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
         <span class="status-pill status-idle">{{ cloud_module.account_fields | length }} Konto-Felder</span>
         {% if cloud_module.verification_support.value == 'supported' %}
@@ -60,7 +65,7 @@
         <span class="status-pill status-idle">Kein 2FA</span>
         {% endif %}
       </p>
-      <div class="form-actions">
+      <div class="form-actions plugin-card-actions">
         <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export">ZIP exportieren</a>
         {% if has_tests[cloud_module.key] %}
         <form method="post" action="/cloud-modules/{{ cloud_module.key }}/run-tests">

@@ -9,22 +9,27 @@
 </section>
 
 <section class="plugin-manager">
-  <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
-    <div class="section-title">
-      <h2>Design importieren</h2>
-      <span>ZIP</span>
-    </div>
-    <div class="quiet-box">
-      Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.
-    </div>
-    <label>
-      <span>Design-Datei</span>
-      <input name="theme_file" type="file" accept=".zip,application/zip" required>
-    </label>
-    <div class="form-actions">
-      <button class="primary-button" type="submit">Importieren</button>
-    </div>
-  </form>
+  <details class="plugin-import-panel">
+    <summary>
+      <span>
+        <strong>Design importieren</strong>
+        <small>Design-Datei</small>
+      </span>
+      <span class="status-pill status-idle">ZIP</span>
+    </summary>
+    <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
+      <div class="quiet-box">
+        Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.
+      </div>
+      <label>
+        <span>Design-Datei</span>
+        <input name="theme_file" type="file" accept=".zip,application/zip" required>
+      </label>
+      <div class="form-actions">
+        <button class="primary-button" type="submit">Importieren</button>
+      </div>
+    </form>
+  </details>
 
   <div class="plugin-search-bar">
     <label class="visually-hidden" for="design-theme-search">Designs durchsuchen</label>
@@ -38,7 +43,7 @@
     </div>
     {% for registration in registrations %}
     {% set manifest = registration.manifest %}
-    <article class="storage-item" data-plugin-search-item>
+    <article class="storage-item plugin-card" data-plugin-search-item>
       <div class="section-title">
         <div>
           <h3>{{ manifest.label }}</h3>
@@ -46,12 +51,12 @@
         </div>
         <span>{{ manifest.version }}</span>
       </div>
-      <dl class="metric-row">
+      <dl class="metric-row plugin-card-meta">
         <div><dt>Schlüssel</dt><dd>{{ manifest.key }}</dd></div>
         <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else 'ZIP-Import' }}</dd></div>
         <div><dt>Status</dt><dd>{{ 'Aktiv' if manifest.key == active_theme_key else 'Inaktiv' }}</dd></div>
       </dl>
-      <div class="form-actions">
+      <div class="form-actions plugin-card-actions">
         {% if manifest.key != active_theme_key %}
         <form method="post" action="/design/activate">
           <input type="hidden" name="theme_key" value="{{ manifest.key }}">

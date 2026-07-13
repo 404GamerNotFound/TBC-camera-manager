@@ -10,7 +10,8 @@
     {% endif %}
     <script src="{{ url_for('static', path='/i18n.js') }}"></script>
   </head>
-  <body>
+  {% set path = request.url.path %}
+  <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else 'compact-app' }}"{% endif %}>
     <header class="topbar navbar navbar-expand-xl">
       <div class="container-fluid app-nav-container">
         <a class="brand navbar-brand" href="/cameras" aria-label="TBC Dashboard">
@@ -18,7 +19,6 @@
           <span class="brand-name">TB Camera</span>
         </a>
       {% if username %}
-      {% set path = request.url.path %}
       {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') or path.startswith('/cloud-accounts') %}
       {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
