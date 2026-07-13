@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -53,7 +54,7 @@ class ActiveObjectTracker:
                     "active": active,
                     "source": "local_ai",
                     "raw_value": (
-                        {"confidence": round(detection.confidence, 3), "box": list(detection.box)}
+                        json.dumps({"confidence": round(detection.confidence, 3), "box": list(detection.box)})
                         if detection is not None
                         else None
                     ),

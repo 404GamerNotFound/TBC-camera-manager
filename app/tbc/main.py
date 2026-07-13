@@ -848,7 +848,9 @@ async def update_camera_recording(
     except UnknownCameraModuleError as exc:
         _set_flash(request, str(exc), "error")
         return _redirect(f"/cameras/{camera_id}")
-    if not camera_module.supports(CameraCapability.RECORDING):
+    detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
+    local_ai_enabled = bool(detection_settings and detection_settings.get("enabled"))
+    if not local_ai_enabled and not camera_module.supports(CameraCapability.RECORDING):
         _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Ereignisaufnahmen", "error")
         return _redirect(f"/cameras/{camera_id}")
     storage_id = int(recording_storage_id) if recording_storage_id else None
@@ -1711,8 +1713,12 @@ def _process_detection_states(camera_id: int, detections: list[dict[str, Any]], 
     if camera is None:
         return
     asyncio.create_task(asyncio.to_thread(mqtt.publish_detection_states, SETTINGS.database_path, camera, detections))
+    # Local AI detections are TBC's own inference over the raw stream, not a vendor
+    # capability - recording for them uses plain ffmpeg against camera["stream_uri"]
+    # and works regardless of what the assigned camera module declares.
+    is_local_ai_source = any(detection.get("source") == "local_ai" for detection in detections)
     camera_module = camera_module or get_camera_module(camera.get("module_key"))
-    if camera_module.supports(CameraCapability.RECORDING):
+    if is_local_ai_source or camera_module.supports(CameraCapability.RECORDING):
         RECORDING_MANAGER.maybe_start_event_recordings(camera, detections)
 
 

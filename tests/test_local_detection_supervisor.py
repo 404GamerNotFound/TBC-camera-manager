@@ -1,5 +1,8 @@
+import json
+import tempfile
 import unittest
 
+from app.tbc import database
 from app.tbc.detection.backend import Detection
 from app.tbc.detection.supervisor import ActiveObjectTracker
 
@@ -22,7 +25,8 @@ class ActiveObjectTrackerTests(unittest.TestCase):
         rows = {row["key"]: row for row in tracker.detection_rows(now=10.0)}
         self.assertTrue(rows["person"]["active"])
         self.assertFalse(rows["vehicle"]["active"])
-        self.assertEqual(rows["person"]["raw_value"]["confidence"], 0.87)
+        self.assertIsInstance(rows["person"]["raw_value"], str)
+        self.assertEqual(json.loads(rows["person"]["raw_value"])["confidence"], 0.87)
 
     def test_stays_active_within_timeout_after_last_sighting(self):
         tracker = ActiveObjectTracker(active_timeout_seconds=3.0)
@@ -51,6 +55,38 @@ class ActiveObjectTrackerTests(unittest.TestCase):
         rows = {row["key"]: row for row in tracker.detection_rows(now=5.0)}
         self.assertFalse(rows["person"]["active"])
         self.assertTrue(rows["vehicle"]["active"])
+
+
+class ActiveObjectTrackerDatabaseIntegrationTests(unittest.TestCase):
+    """Locks in that tracker rows are actually storable by database.replace_detections.
+
+    A prior bug put a raw dict in raw_value, which passed the pure-tracker tests above
+    (they never touched sqlite) but crashed with "Error binding parameter" once real
+    detections reached the database - only caught by an end-to-end run against a real
+    camera stream. This test exercises the same contract without needing ffmpeg/a model.
+    """
+
+    def test_rows_with_an_active_detection_are_storable(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Test",
+                host="192.0.2.10",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            tracker = ActiveObjectTracker(active_timeout_seconds=3.0)
+            tracker.update([Detection(label="cat", detection_key="animal", confidence=0.9, box=(0.1, 0.1, 0.4, 0.4))])
+            rows = tracker.detection_rows()
+
+            database.replace_detections(handle.name, camera_id, rows)
+
+            stored = {row["detection_key"]: row for row in database.list_detections(handle.name, camera_id)}
+            self.assertTrue(bool(stored["animal"]["active"]))
+            self.assertEqual(json.loads(stored["animal"]["raw_value"])["confidence"], 0.9)
 
 
 if __name__ == "__main__":

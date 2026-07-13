@@ -42,7 +42,7 @@
 <nav class="detail-tabs" aria-label="Kamerabereiche" role="tablist" data-detail-tabs>
   <button type="button" role="tab" aria-selected="true" aria-controls="camera-overview" data-detail-tab="overview">Übersicht</button>
   {% if role == 'admin' %}
-  {% if 'recording' in module_capabilities %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Aufnahme <span class="tab-count">{{ events | length }}</span></button>{% endif %}
+  {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Aufnahme <span class="tab-count">{{ events | length }}</span></button>{% endif %}
   {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones">KI-Erkennung <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
   {% if 'control' in module_capabilities %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-control" data-detail-tab="control">Steuerung</button>{% endif %}
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-connection" data-detail-tab="connection">Verbindung</button>
@@ -217,9 +217,10 @@
   </form>
 </div>
 
-  {% if 'recording' in module_capabilities %}
+  {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}
 <div class="detail-tab-panel recording-tab-layout" id="camera-recording" role="tabpanel" data-detail-panel="recording" hidden>
   <div class="recording-stack">
+  {% if 'recording' in module_capabilities %}
   <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/continuous-recording">
     <div class="section-title">
       <h2>Daueraufzeichnung</h2>
@@ -255,6 +256,7 @@
       <button class="primary-button" type="submit">Speichern</button>
     </div>
   </form>
+  {% endif %}
 
   <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/recording">
     <div class="section-title">
