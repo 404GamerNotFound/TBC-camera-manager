@@ -131,6 +131,8 @@ Die offizielle API meldet Region-Fehlschläge selbst (Fehlercode `10004` liefert
 
 Administratoren verwalten Cloud-Plugins unter `Admin → Cloud-Anbieter` und Konten unter `Admin → Cloud-Konten`: Konto anlegen, Plugin-Felder bearbeiten, Verbindung testen und Geräte suchen. Verlangt ein Plugin einen Bestätigungscode, ersetzt die Kontokarte „Verbindung testen“ durch „Bestätigungscode eingeben“ und führt auf eine eigene, plugin-neutrale Seite mit genau einem Eingabefeld - unabhängig davon, welches Plugin den Code verlangt. Ein Plugin mit zugeordneten Konten kann nicht entfernt werden; eingebaute Plugins können weder überschrieben noch entfernt werden. Der externe Speicherort wird mit `TBC_CLOUD_MODULES_PATH` konfiguriert.
 
+Statt eines manuellen ZIP-Uploads kann ein Cloud-Plugin auch direkt aus einem öffentlichen GitHub-Repository installiert werden (`Admin → Externe Quellen`), und ein Plugin darf einen eigenen `tests/`-Ordner mitbringen, der über einen „Tests ausführen“-Knopf direkt in der Weboberfläche gestartet werden kann - siehe [plugin-sources.md](plugin-sources.md).
+
 ## Sicherheit
 
 Cloud-Zugangsdaten werden wie Kamera-Zugangsdaten unverschlüsselt in der TBC-Datenbank gespeichert. Ein Cloud-Plugin enthält ausführbaren Python-Code und besitzt dieselben Rechte wie der TBC-Prozess; importiert werden dürfen deshalb nur Plugins aus vertrauenswürdigen Quellen.

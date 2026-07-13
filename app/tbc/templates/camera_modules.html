@@ -60,6 +60,11 @@
         {% if registration.package %}
         <a class="secondary-button" href="/camera-modules/{{ camera_module.key }}/export">ZIP exportieren</a>
         {% endif %}
+        {% if has_tests[camera_module.key] %}
+        <form method="post" action="/camera-modules/{{ camera_module.key }}/run-tests">
+          <button class="secondary-button" type="submit">Tests ausführen</button>
+        </form>
+        {% endif %}
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/camera-modules/{{ camera_module.key }}/delete">
           <button class="danger-button" type="submit" {% if camera_counts[camera_module.key] %}disabled{% endif %}>Entfernen</button>

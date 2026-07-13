@@ -62,6 +62,11 @@
       </p>
       <div class="form-actions">
         <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export">ZIP exportieren</a>
+        {% if has_tests[cloud_module.key] %}
+        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/run-tests">
+          <button class="secondary-button" type="submit">Tests ausführen</button>
+        </form>
+        {% endif %}
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/cloud-modules/{{ cloud_module.key }}/delete">
           <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %}>Entfernen</button>

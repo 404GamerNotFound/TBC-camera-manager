@@ -267,6 +267,21 @@ CREATE TABLE IF NOT EXISTS cloud_accounts (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS plugin_sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plugin_kind TEXT NOT NULL,
+    label TEXT NOT NULL,
+    repo_url TEXT NOT NULL,
+    ref TEXT NOT NULL DEFAULT 'main',
+    subdirectory TEXT NOT NULL DEFAULT '',
+    installed_key TEXT,
+    last_sync_status TEXT,
+    last_sync_message TEXT,
+    last_sync_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -707,6 +722,66 @@ def count_cloud_accounts_by_module(database_path: str, module_key: str) -> int:
             (module_key,),
         ).fetchone()
     return int(row["total"] if row else 0)
+
+
+def create_plugin_source(
+    database_path: str,
+    *,
+    plugin_kind: str,
+    label: str,
+    repo_url: str,
+    ref: str,
+    subdirectory: str,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO plugin_sources (plugin_kind, label, repo_url, ref, subdirectory)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (plugin_kind, label, repo_url, ref or "main", subdirectory or ""),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_plugin_sources(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT * FROM plugin_sources ORDER BY label COLLATE NOCASE").fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_plugin_source(database_path: str, source_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM plugin_sources WHERE id = ?", (source_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def update_plugin_source_sync_result(
+    database_path: str,
+    source_id: int,
+    *,
+    status: str,
+    message: str,
+    installed_key: str | None = None,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE plugin_sources
+               SET last_sync_status = ?,
+                   last_sync_message = ?,
+                   last_sync_at = CURRENT_TIMESTAMP,
+                   installed_key = COALESCE(?, installed_key),
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (status, message, installed_key, source_id),
+        )
+
+
+def delete_plugin_source(database_path: str, source_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM plugin_sources WHERE id = ?", (source_id,))
 
 
 def get_storage_target(database_path: str, storage_id: int) -> dict[str, Any] | None:

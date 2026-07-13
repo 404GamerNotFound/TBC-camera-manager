@@ -72,6 +72,8 @@ Jedes dateibasierte Plugin kann über dieselbe Seite wieder als ZIP exportiert w
 
 Alternativ bleiben Python-Distributionen mit dem Entry-Point `tbc.camera_modules` unterstützt. Diese werden außerhalb der ZIP-Verwaltung über den Image-Build installiert.
 
+Statt eines manuellen ZIP-Uploads kann ein Plugin auch direkt aus einem öffentlichen GitHub-Repository installiert werden (`Admin → Externe Quellen`), und ein Plugin darf einen eigenen `tests/`-Ordner mitbringen, der über einen „Tests ausführen“-Knopf direkt in der Weboberfläche gestartet werden kann - siehe [plugin-sources.md](plugin-sources.md).
+
 ## Sicherheit
 
 Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Rechte wie der TBC-Prozess. Die ZIP-Prüfung verhindert technische Archivangriffe, kann aber keinen absichtlich schädlichen Python-Code sicher erkennen. Deshalb dürfen ausschließlich Plugins aus vertrauenswürdigen Quellen importiert werden. Zugangsdaten werden pro Kamera in TBC gespeichert und gehören niemals in eine exportierte Plugin-Datei.

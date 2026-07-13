@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Erweiterungen</p>
+    <h1>Externe Quellen</h1>
+  </div>
+</section>
+
+<div class="quiet-box">
+  Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Das Repository muss dieselbe Struktur wie ein manueller Plugin-Import haben (<code>manifest.json</code> plus Einstiegspunkt, optional ein <code>tests/</code>-Ordner) - liegt das Plugin nicht im Repository-Hauptverzeichnis, gib den Unterordner an. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt.
+</div>
+
+<form class="editor-form" method="post" action="/plugin-sources">
+  <div class="section-title"><h2>Quelle hinzufügen</h2></div>
+  <div class="form-grid">
+    <label>
+      <span>Plugin-Art</span>
+      <select name="plugin_kind" required>
+        <option value="camera">Kamera-Plugin</option>
+        <option value="cloud">Cloud-Anbieter</option>
+        <option value="design">Design</option>
+      </select>
+    </label>
+    <label>
+      <span>Bezeichnung</span>
+      <input name="label" placeholder="z. B. Acme Kamera-Plugin">
+    </label>
+    <label class="span-2">
+      <span>GitHub-Repository-URL</span>
+      <input name="repo_url" type="url" required placeholder="https://github.com/besitzer/repository">
+    </label>
+    <label>
+      <span>Branch/Tag</span>
+      <input name="ref" value="main" placeholder="main">
+    </label>
+    <label>
+      <span>Unterordner (optional)</span>
+      <input name="subdirectory" placeholder="z. B. plugins/acme">
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit">Quelle hinzufügen</button>
+  </div>
+</form>
+
+<section class="storage-list">
+  <div class="section-title">
+    <h2>Registrierte Quellen</h2>
+    <span>{{ sources | length }}</span>
+  </div>
+  {% for source in sources %}
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>{{ source.label }}</h3>
+        <p>{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
+      </div>
+      <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}">{{ source.last_sync_message if source.last_sync_status else 'noch nicht synchronisiert' }}</span>
+    </div>
+    <dl class="metric-row">
+      <div><dt>Plugin-Art</dt><dd>{{ {'camera': 'Kamera-Plugin', 'cloud': 'Cloud-Anbieter', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
+      {% if source.installed_key %}
+      <div><dt>Installiert als</dt><dd>{{ source.installed_key }}</dd></div>
+      {% endif %}
+    </dl>
+    <div class="form-actions">
+      <form method="post" action="/plugin-sources/{{ source.id }}/sync">
+        <button class="secondary-button" type="submit">Synchronisieren</button>
+      </form>
+      {% if source.plugin_kind == 'camera' %}
+      <a class="secondary-button" href="/camera-modules">Kamera-Plugins verwalten</a>
+      {% elif source.plugin_kind == 'cloud' %}
+      <a class="secondary-button" href="/cloud-modules">Cloud-Anbieter verwalten</a>
+      {% else %}
+      <a class="secondary-button" href="/design">Designs verwalten</a>
+      {% endif %}
+      <form method="post" action="/plugin-sources/{{ source.id }}/delete">
+        <button class="danger-button" type="submit">Quelle entfernen</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <p class="quiet-box">Noch keine externen Quellen registriert.</p>
+  {% endfor %}
+</section>
+{% endblock %}

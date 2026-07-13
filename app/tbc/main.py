@@ -56,6 +56,8 @@ from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
+from .plugin_sources import PluginSourceError, fetch_and_repackage_plugin, parse_github_repo_url
+from .plugin_testing import run_plugin_tests
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
 from .camera_plugins.reolink.service import monitor_events as monitor_reolink_events
@@ -122,6 +124,7 @@ CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 # (or the background cache refresh) far longer than any UI should keep a user
 # waiting on a single click.
 CONTROL_TIMEOUT_SECONDS = 20
+PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS = 30
 # Firmware updates run as a background task (they can take several minutes -
 # far longer than any request should block on) and are polled by the browser
 # via this in-memory state, keyed by (camera_id, channel). Not persisted: a
@@ -1801,6 +1804,10 @@ async def camera_modules_page(request: Request):
                 )
                 for registration in registrations
             },
+            "has_tests": {
+                registration.module.key: _plugin_has_tests(registration.package)
+                for registration in registrations
+            },
             "flash": _pop_flash(request),
         },
     )
@@ -1861,6 +1868,27 @@ async def delete_camera_module(request: Request, module_key: str):
     return _redirect("/camera-modules")
 
 
+@app.post("/camera-modules/{module_key}/run-tests")
+async def run_camera_module_tests(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registration = next(
+        (item for item in list_camera_module_registrations() if item.module.key == module_key),
+        None,
+    )
+    if registration is None or registration.package is None:
+        _set_flash(request, "Für dieses Plugin sind keine Tests verfügbar", "error")
+        return _redirect("/camera-modules")
+    result = await run_plugin_tests(registration.package.path)
+    if not result.ran:
+        _set_flash(request, result.summary, "error")
+    else:
+        LOGGER.info("Plugin-Tests für %s: %s\n%s", module_key, result.summary, result.output)
+        _set_flash(request, f"{module_key}: {result.summary}", "success" if result.passed else "error")
+    return _redirect("/camera-modules")
+
+
 @app.get("/cloud-modules", response_class=HTMLResponse)
 async def cloud_modules_page(request: Request):
     guard = _require_admin(request)
@@ -1879,6 +1907,10 @@ async def cloud_modules_page(request: Request):
                 registration.module.key: database.count_cloud_accounts_by_module(
                     SETTINGS.database_path, registration.module.key
                 )
+                for registration in registrations
+            },
+            "has_tests": {
+                registration.module.key: _plugin_has_tests(registration.package)
                 for registration in registrations
             },
             "flash": _pop_flash(request),
@@ -1938,6 +1970,27 @@ async def delete_cloud_module(request: Request, module_key: str):
         _set_flash(request, "Cloud-Plugin wurde entfernt")
     except (CloudPluginError, OSError) as exc:
         _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
+    return _redirect("/cloud-modules")
+
+
+@app.post("/cloud-modules/{module_key}/run-tests")
+async def run_cloud_module_tests(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registration = next(
+        (item for item in list_cloud_module_registrations() if item.module.key == module_key),
+        None,
+    )
+    if registration is None:
+        _set_flash(request, "Für dieses Plugin sind keine Tests verfügbar", "error")
+        return _redirect("/cloud-modules")
+    result = await run_plugin_tests(registration.package.path)
+    if not result.ran:
+        _set_flash(request, result.summary, "error")
+    else:
+        LOGGER.info("Plugin-Tests für %s: %s\n%s", module_key, result.summary, result.output)
+        _set_flash(request, f"{module_key}: {result.summary}", "success" if result.passed else "error")
     return _redirect("/cloud-modules")
 
 
@@ -2336,6 +2389,103 @@ async def delete_design_theme(request: Request, theme_key: str):
     except (ThemePackageError, OSError) as exc:
         _set_flash(request, f"Design konnte nicht entfernt werden: {exc}", "error")
     return _redirect("/design")
+
+
+@app.get("/plugin-sources", response_class=HTMLResponse)
+async def plugin_sources_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "plugin_sources.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "sources": database.list_plugin_sources(SETTINGS.database_path),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/plugin-sources")
+async def create_plugin_source_route(
+    request: Request,
+    plugin_kind: str = Form(...),
+    label: str = Form(""),
+    repo_url: str = Form(...),
+    ref: str = Form("main"),
+    subdirectory: str = Form(""),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    if plugin_kind not in ("camera", "cloud", "design"):
+        _set_flash(request, "Ungültige Plugin-Art", "error")
+        return _redirect("/plugin-sources")
+    try:
+        parse_github_repo_url(repo_url)
+    except PluginSourceError as exc:
+        _set_flash(request, str(exc), "error")
+        return _redirect("/plugin-sources")
+    database.create_plugin_source(
+        SETTINGS.database_path,
+        plugin_kind=plugin_kind,
+        label=label.strip() or repo_url.strip(),
+        repo_url=repo_url.strip(),
+        ref=ref.strip() or "main",
+        subdirectory=subdirectory.strip(),
+    )
+    _set_flash(request, "Externe Quelle wurde hinzugefügt")
+    return _redirect("/plugin-sources")
+
+
+@app.post("/plugin-sources/{source_id}/sync")
+async def sync_plugin_source_route(request: Request, source_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    source = database.get_plugin_source(SETTINGS.database_path, source_id)
+    if not source:
+        _set_flash(request, "Externe Quelle wurde nicht gefunden", "error")
+        return _redirect("/plugin-sources")
+    try:
+        archive = await asyncio.wait_for(
+            asyncio.to_thread(
+                fetch_and_repackage_plugin, source["repo_url"], source["ref"], source["subdirectory"]
+            ),
+            timeout=PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS,
+        )
+        installed_key = _install_plugin_for_kind(source["plugin_kind"], archive)
+    except asyncio.TimeoutError:
+        message = f"GitHub antwortet nicht innerhalb von {PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS}s"
+        database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=message)
+        _set_flash(request, message, "error")
+        return _redirect("/plugin-sources")
+    except (PluginSourceError, ValueError, OSError) as exc:
+        database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=str(exc))
+        _set_flash(request, str(exc), "error")
+        return _redirect("/plugin-sources")
+    database.update_plugin_source_sync_result(
+        SETTINGS.database_path,
+        source_id,
+        status="ok",
+        message=f"Installiert als '{installed_key}'",
+        installed_key=installed_key,
+    )
+    _set_flash(request, f"Plugin '{installed_key}' wurde installiert/aktualisiert")
+    return _redirect("/plugin-sources")
+
+
+@app.post("/plugin-sources/{source_id}/delete")
+async def delete_plugin_source_route(request: Request, source_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.delete_plugin_source(SETTINGS.database_path, source_id)
+    _set_flash(request, "Externe Quelle wurde entfernt")
+    return _redirect("/plugin-sources")
 
 
 @app.get("/api/debug-log")
@@ -2934,6 +3084,30 @@ def _camera_supports(camera: dict[str, Any], capability: CameraCapability) -> bo
 
 def _redirect(path: str) -> RedirectResponse:
     return RedirectResponse(path, status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _plugin_has_tests(package: Any) -> bool:
+    if package is None:
+        return False
+    tests_dir = package.path / "tests"
+    return tests_dir.is_dir() and any(tests_dir.glob("test_*.py"))
+
+
+def _install_plugin_for_kind(plugin_kind: str, archive: bytes) -> str:
+    """Install a fetched plugin archive into the given plugin kind's registry, returning the installed key."""
+    if plugin_kind == "camera":
+        package = install_plugin_archive(archive, SETTINGS.camera_modules_path)
+        reload_camera_modules()
+        return package.manifest.key
+    if plugin_kind == "cloud":
+        package = install_cloud_plugin_archive(archive, SETTINGS.cloud_modules_path)
+        reload_cloud_modules()
+        return package.manifest.key
+    if plugin_kind == "design":
+        package = install_theme_archive(archive, SETTINGS.theme_modules_path)
+        reload_themes()
+        return package.manifest.key
+    raise ValueError(f"Unbekannte Plugin-Art: {plugin_kind}")
 
 
 def _clear_transient_cloud_account_fields(account_id: int, cloud_module: Any) -> None:

@@ -42,6 +42,8 @@ Administratoren öffnen `Admin → Design` und importieren dort eine Design-ZIP-
 
 Über dieselbe Seite wird ein Design aktiviert (`Aktivieren`-Button) oder als ZIP exportiert. Das aktive Design kann nicht entfernt werden. Der Speicherort externer Designs wird mit `TBC_THEME_MODULES_PATH` konfiguriert (Vorgabe `/data/design-themes`) und liegt im Docker-Setup im persistenten `/data`-Volume.
 
+Statt eines manuellen ZIP-Uploads kann ein Design auch direkt aus einem öffentlichen GitHub-Repository installiert werden (`Admin → Externe Quellen`) - siehe [plugin-sources.md](plugin-sources.md). Da Designs keinen ausführbaren Code enthalten, entfällt dort die Testfunktion.
+
 ## Sicherheit
 
 Ein Design-Paket enthält keinen ausführbaren Code, sondern nur Stylesheets, Metadaten und Bilder. Die ZIP-Prüfung verhindert Pfad- und Dateityp-Angriffe. Trotzdem sollten nur Designs aus vertrauenswürdigen Quellen importiert werden, da ein Stylesheet die gesamte Oberfläche verändern kann.
