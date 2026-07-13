@@ -283,10 +283,10 @@
   });
 
   updateButton?.addEventListener("click", async () => {
-    const confirmed = window.confirm(
+    const confirmationText =
       "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. " +
-      "Der Vorgang kann mehrere Minuten dauern und sollte nicht unterbrochen werden."
-    );
+      "Der Vorgang kann mehrere Minuten dauern und sollte nicht unterbrochen werden.";
+    const confirmed = window.confirm(window.tbcI18n ? window.tbcI18n.t(confirmationText) : confirmationText);
     if (!confirmed) return;
     updateButton.disabled = true;
     checkButton.disabled = true;
