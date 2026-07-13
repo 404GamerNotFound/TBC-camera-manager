@@ -1190,6 +1190,74 @@ code {
   grid-column: 1 / -1;
 }
 
+.storage-list.standard-source-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.standard-source-grid > .section-title,
+.standard-source-grid > .standard-source-intro {
+  grid-column: 1 / -1;
+}
+
+.standard-source-intro {
+  margin: -3px 0 2px;
+  color: var(--muted);
+}
+
+.standard-source-card {
+  min-width: 0;
+  grid-template-rows: auto 1fr auto;
+  gap: 10px;
+  padding: 14px;
+}
+
+.standard-source-card > .section-title {
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+}
+
+.standard-source-card-title {
+  min-width: 0;
+}
+
+.standard-source-card-title h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.standard-source-linkline {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.standard-source-description {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.standard-source-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.standard-source-card-footer form {
+  margin-left: auto;
+}
+
+.standard-source-card-footer button {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
+}
+
 .filter-bar {
   display: grid;
   grid-template-columns: repeat(4, minmax(140px, 1fr)) auto;
@@ -2246,6 +2314,10 @@ tr:last-child td {
 
   .metric-row {
     grid-template-columns: repeat(3, minmax(82px, 1fr));
+  }
+
+  .storage-list.standard-source-grid {
+    grid-template-columns: 1fr;
   }
 
   .recording-tab-layout {

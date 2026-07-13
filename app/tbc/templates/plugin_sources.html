@@ -12,26 +12,24 @@
   Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe <code>Admin → Updates</code>.
 </div>
 
-<section class="storage-list">
+<section class="storage-list standard-source-grid">
   <div class="section-title">
     <h2>Standard-Repositories</h2>
     <span>{{ standard_sources | length }}</span>
   </div>
-  <p>Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.</p>
+  <p class="standard-source-intro">Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.</p>
   {% for entry in standard_sources %}
-  <article class="storage-item">
+  <article class="storage-item standard-source-card">
     <div class="section-title">
-      <div>
+      <div class="standard-source-card-title">
         <h3>{{ entry.source.label }}</h3>
-        <p><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer">{{ entry.source.repo_url }}</a> · {{ entry.source.ref }}</p>
+        <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer">{{ entry.source.repo_url }}</a> · {{ entry.source.ref }}</p>
       </div>
       <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}">{{ 'bereits registriert' if entry.registered_source else 'bereit zur Installation' }}</span>
     </div>
-    <dl class="metric-row">
-      <div><dt>Plugin-Art</dt><dd>{{ {'camera': 'Kamera-Plugin', 'cloud': 'Cloud-Anbieter', 'design': 'Design'}[entry.source.plugin_kind] }}</dd></div>
-      <div><dt>Beschreibung</dt><dd>{{ entry.source.description }}</dd></div>
-    </dl>
-    <div class="form-actions">
+    <p class="standard-source-description">{{ entry.source.description }}</p>
+    <div class="standard-source-card-footer">
+      <span class="status-pill status-idle">{{ {'camera': 'Kamera-Plugin', 'cloud': 'Cloud-Anbieter', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
       {% if entry.registered_source %}
       <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
         <button class="primary-button" type="submit">Installieren / aktualisieren</button>
