@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<div class="quiet-box">
+<div class="quiet-box source-page-intro">
   Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe <code>Admin → Updates</code>.
 </div>
 
@@ -20,19 +20,17 @@
   <p class="standard-source-intro">Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.</p>
   {% for entry in standard_sources %}
   <article class="storage-item standard-source-card">
-    <div class="section-title">
-      <div class="standard-source-card-title">
-        <h3>{{ entry.source.label }}</h3>
-        <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer">{{ entry.source.repo_url }}</a> · {{ entry.source.ref }}</p>
-      </div>
+    <div class="standard-source-card-head">
+      <h3>{{ entry.source.label }}</h3>
       <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}">{{ 'bereits registriert' if entry.registered_source else 'bereit zur Installation' }}</span>
     </div>
+    <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a> · {{ entry.source.ref }}</p>
     <p class="standard-source-description">{{ entry.source.description }}</p>
     <div class="standard-source-card-footer">
       <span class="status-pill status-idle">{{ {'camera': 'Kamera-Plugin', 'cloud': 'Cloud-Anbieter', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
       {% if entry.registered_source %}
       <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
-        <button class="primary-button" type="submit">Installieren / aktualisieren</button>
+        <button class="primary-button" type="submit">Synchronisieren</button>
       </form>
       {% else %}
       <form method="post" action="/plugin-sources/standard/{{ entry.source.key }}/install">
@@ -44,76 +42,78 @@
   {% endfor %}
 </section>
 
-<section class="table-section">
-  <div class="section-title"><h2>Erforderliche Plugin-Struktur</h2></div>
-  <p>Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:</p>
-  <dl class="metric-row">
-    <div><dt>Kamera-Plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> und <code>tests/test_*.py</code></dd></div>
-    <div><dt>Cloud-Anbieter</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
-    <div><dt>Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - kein Code, keine Tests</dd></div>
-  </dl>
-  <p><code>manifest.json</code> muss <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> und (außer bei Designs) <code>entrypoint</code> enthalten; <code>plugin.py</code> stellt <code>create_module()</code> bereit, das eine <code>CameraModule</code>- bzw. <code>CloudAccountModule</code>-Instanz zurückgibt. Ein optionaler <code>tests/</code>-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in <code>docs/plugin-sources.md</code> im TBC-Repository sowie <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
-  <div class="form-actions">
-    <a class="secondary-button" href="/plugin-sources/template/camera">Vorlage: Kamera-Plugin</a>
-    <a class="secondary-button" href="/plugin-sources/template/cloud">Vorlage: Cloud-Anbieter</a>
-    <a class="secondary-button" href="/plugin-sources/template/design">Vorlage: Design</a>
-  </div>
-</section>
+<details class="source-disclosure">
+  <summary><strong>Erforderliche Plugin-Struktur</strong></summary>
+  <section class="source-disclosure-body">
+    <p>Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:</p>
+    <dl class="metric-row">
+      <div><dt>Kamera-Plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> und <code>tests/test_*.py</code></dd></div>
+      <div><dt>Cloud-Anbieter</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
+      <div><dt>Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - kein Code, keine Tests</dd></div>
+    </dl>
+    <p><code>manifest.json</code> muss <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> und (außer bei Designs) <code>entrypoint</code> enthalten; <code>plugin.py</code> stellt <code>create_module()</code> bereit, das eine <code>CameraModule</code>- bzw. <code>CloudAccountModule</code>-Instanz zurückgibt. Ein optionaler <code>tests/</code>-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in <code>docs/plugin-sources.md</code> im TBC-Repository sowie <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
+    <div class="form-actions">
+      <a class="secondary-button" href="/plugin-sources/template/camera">Vorlage: Kamera-Plugin</a>
+      <a class="secondary-button" href="/plugin-sources/template/cloud">Vorlage: Cloud-Anbieter</a>
+      <a class="secondary-button" href="/plugin-sources/template/design">Vorlage: Design</a>
+    </div>
+  </section>
+</details>
 
-<form class="editor-form" method="post" action="/plugin-sources">
-  <div class="section-title"><h2>Quelle hinzufügen</h2></div>
-  <div class="form-grid">
-    <label>
-      <span>Plugin-Art</span>
-      <select name="plugin_kind" required>
-        <option value="camera">Kamera-Plugin</option>
-        <option value="cloud">Cloud-Anbieter</option>
-        <option value="design">Design</option>
-      </select>
-    </label>
-    <label>
-      <span>Bezeichnung</span>
-      <input name="label" placeholder="z. B. Acme Kamera-Plugin">
-    </label>
-    <label class="span-2">
-      <span>GitHub-Repository-URL</span>
-      <input name="repo_url" type="url" required placeholder="https://github.com/besitzer/repository">
-    </label>
-    <label>
-      <span>Branch/Tag</span>
-      <input name="ref" value="main" placeholder="main">
-    </label>
-    <label>
-      <span>Unterordner (optional)</span>
-      <input name="subdirectory" placeholder="z. B. plugins/acme">
-    </label>
-  </div>
-  <div class="form-actions">
-    <button class="primary-button" type="submit">Quelle hinzufügen</button>
-  </div>
-</form>
+<details class="source-disclosure">
+  <summary><strong>Quelle hinzufügen</strong></summary>
+  <form class="editor-form compact-form" method="post" action="/plugin-sources">
+    <div class="form-grid">
+      <label>
+        <span>Plugin-Art</span>
+        <select name="plugin_kind" required>
+          <option value="camera">Kamera-Plugin</option>
+          <option value="cloud">Cloud-Anbieter</option>
+          <option value="design">Design</option>
+        </select>
+      </label>
+      <label>
+        <span>Bezeichnung</span>
+        <input name="label" placeholder="z. B. Acme Kamera-Plugin">
+      </label>
+      <label class="span-2">
+        <span>GitHub-Repository-URL</span>
+        <input name="repo_url" type="url" required placeholder="https://github.com/besitzer/repository">
+      </label>
+      <label>
+        <span>Branch/Tag</span>
+        <input name="ref" value="main" placeholder="main">
+      </label>
+      <label>
+        <span>Unterordner (optional)</span>
+        <input name="subdirectory" placeholder="z. B. plugins/acme">
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit">Quelle hinzufügen</button>
+    </div>
+  </form>
+</details>
 
-<section class="storage-list">
+<section class="storage-list source-registration-grid">
   <div class="section-title">
     <h2>Registrierte Quellen</h2>
     <span>{{ sources | length }}</span>
   </div>
   {% for source in sources %}
-  <article class="storage-item">
-    <div class="section-title">
-      <div>
-        <h3>{{ source.label }}</h3>
-        <p>{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
-      </div>
+  <article class="storage-item source-registration-card">
+    <div class="source-registration-card-head">
+      <h3>{{ source.label }}</h3>
       <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}">{{ source.last_sync_message if source.last_sync_status else 'noch nicht synchronisiert' }}</span>
     </div>
-    <dl class="metric-row">
+    <p class="standard-source-linkline">{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
+    <dl class="metric-row source-registration-meta">
       <div><dt>Plugin-Art</dt><dd>{{ {'camera': 'Kamera-Plugin', 'cloud': 'Cloud-Anbieter', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
       {% if source.installed_key %}
       <div><dt>Installiert als</dt><dd>{{ source.installed_key }}</dd></div>
       {% endif %}
     </dl>
-    <div class="form-actions">
+    <div class="form-actions source-registration-actions">
       <form method="post" action="/plugin-sources/{{ source.id }}/sync">
         <button class="secondary-button" type="submit">Synchronisieren</button>
       </form>
