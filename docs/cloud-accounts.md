@@ -125,7 +125,7 @@ Das eingebaute `ewelink`-Plugin verwendet die [`ewelink`](https://pypi.org/proje
 
 Die offizielle API meldet Region-Fehlschläge selbst (Fehlercode `10004` liefert die zuständige Region mit); das Plugin muss deshalb keine Region konfigurieren oder erraten. Für Zwei-Faktor-Codes bietet die Bibliothek keinerlei Schnittstelle - `verification_support` steht deshalb auf `not_applicable`.
 
-`discover_devices()` listet alle Geräte des Kontos mit Name, Modell und Online-Status auf, liefert aber **keine** RTSP-URL: Die offizielle eWeLink-Cloud-API gibt weder eine lokale IP-Adresse noch einen Stream-Link zurück. Sonoff-Kameras erzeugen den RTSP-Link weiterhin ausschließlich in der eWeLink-App selbst (Kamera → RTSP aktivieren → Link kopieren), der dann wie gehabt manuell im bestehenden `sonoff`-Kameramodul eingetragen wird. Die Gerätesuche dient hier also nur der Bestandsübersicht, nicht dem automatischen Kamera-Import - im Gegensatz zu UniFi Protect und (teilweise) Eufy bietet TBC deshalb bei eWeLink-Geräten keinen „Als Kamera hinzufügen“-Knopf an.
+`discover_devices()` listet alle Geräte des Kontos mit Name, Modell und Online-Status auf, liefert aber **keine** RTSP-URL: Die offizielle eWeLink-Cloud-API gibt weder eine lokale IP-Adresse noch einen Stream-Link zurück. Sonoff-Kameras erzeugen den RTSP-Link weiterhin ausschließlich in der eWeLink-App selbst (Kamera → RTSP aktivieren → Link kopieren), der dann wie gehabt manuell im installierten `sonoff`-Kameramodul eingetragen wird. Die Gerätesuche dient hier also nur der Bestandsübersicht, nicht dem automatischen Kamera-Import - im Gegensatz zu UniFi Protect und (teilweise) Eufy bietet TBC deshalb bei eWeLink-Geräten keinen „Als Kamera hinzufügen“-Knopf an.
 
 ## Import, Export und Admin-Oberfläche
 

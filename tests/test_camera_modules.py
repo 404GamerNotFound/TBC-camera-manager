@@ -72,15 +72,8 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(
             [module.key for module in modules],
             [
-                "axis",
-                "dahua",
-                "foscam",
-                "hikvision",
                 "rtsp_only",
-                "sonoff",
                 "standard_onvif",
-                "tplink",
-                "ubiquiti",
                 "acme",
             ],
         )
@@ -112,30 +105,18 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(camera["performance_codec_rate"], 6794)
         self.assertEqual(camera["performance_net_throughput"], 42)
 
-    def test_tplink_declares_only_reliably_supported_features(self):
-        module = registry.get_camera_module("tplink")
-
-        self.assertEqual(module.default_onvif_port, 2020)
-        self.assertTrue(module.supports(CameraCapability.LIVE))
-        self.assertTrue(module.supports(CameraCapability.DETECTIONS))
-        self.assertFalse(module.supports(CameraCapability.ARCHIVE))
-        self.assertFalse(module.supports(CameraCapability.RECORDING))
-
     def test_standard_onvif_module_is_available(self):
         standard = registry.get_camera_module("standard_onvif")
 
         self.assertEqual(standard.default_onvif_port, 80)
         self.assertTrue(standard.supports(CameraCapability.LIVE))
 
-    def test_manual_rtsp_profiles_are_available(self):
-        for key in ("rtsp_only", "sonoff", "ubiquiti"):
-            module = registry.get_camera_module(key)
-            self.assertTrue(module.supports(CameraCapability.LIVE))
-            self.assertTrue(module.supports_manual_stream_uri)
-            self.assertTrue(module.requires_manual_stream_uri)
-            self.assertFalse(module.requires_credentials)
-
-        self.assertEqual(registry.get_camera_module("ubiquiti").default_rtsp_port, 7447)
+    def test_manual_rtsp_profile_is_available(self):
+        module = registry.get_camera_module("rtsp_only")
+        self.assertTrue(module.supports(CameraCapability.LIVE))
+        self.assertTrue(module.supports_manual_stream_uri)
+        self.assertTrue(module.requires_manual_stream_uri)
+        self.assertFalse(module.requires_credentials)
 
 
 if __name__ == "__main__":

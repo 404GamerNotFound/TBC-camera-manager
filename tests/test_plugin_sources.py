@@ -64,29 +64,32 @@ class ParseGithubRepoUrlTests(unittest.TestCase):
 
 
 class StandardPluginSourceTests(unittest.TestCase):
-    def test_aqara_is_available_as_camera_standard_repository(self):
-        source = get_standard_plugin_source("AQARA")
+    def test_camera_standard_repositories_are_available(self):
+        expected_repositories = {
+            "aqara": "TBC-aqara",
+            "axis": "TBC-axis",
+            "dahua": "TBC-dahua",
+            "foscam": "TBC-foscam",
+            "hikvision": "TBC-hikvision",
+            "reolink": "TBC-reolink",
+            "sonoff": "TBC-sonoff",
+            "tplink": "TBC-tplink",
+            "ubiquiti": "TBC-ubiquiti",
+        }
 
-        self.assertIsNotNone(source)
-        self.assertEqual(source.plugin_kind, "camera")
-        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-aqara")
-        self.assertEqual(source.ref, "main")
-        self.assertEqual(source.subdirectory, "")
-        self.assertIn(source, STANDARD_PLUGIN_SOURCES)
+        self.assertEqual({source.key for source in STANDARD_PLUGIN_SOURCES}, set(expected_repositories))
+        for key, repository in expected_repositories.items():
+            with self.subTest(key=key):
+                source = get_standard_plugin_source(key.upper())
+                self.assertIsNotNone(source)
+                self.assertEqual(source.plugin_kind, "camera")
+                self.assertEqual(source.repo_url, f"https://github.com/404GamerNotFound/{repository}")
+                self.assertEqual(source.ref, "main")
+                self.assertEqual(source.subdirectory, "")
+                self.assertIn(source, STANDARD_PLUGIN_SOURCES)
 
     def test_unknown_standard_repository_returns_none(self):
         self.assertIsNone(get_standard_plugin_source("unknown"))
-
-    def test_reolink_is_available_as_camera_standard_repository(self):
-        source = get_standard_plugin_source("reolink")
-
-        self.assertIsNotNone(source)
-        self.assertEqual(source.plugin_kind, "camera")
-        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-reolink")
-        self.assertEqual(source.ref, "main")
-        self.assertEqual(source.subdirectory, "")
-        self.assertIn(source, STANDARD_PLUGIN_SOURCES)
-
 
 class ExtractPluginArchiveTests(unittest.TestCase):
     def test_extracts_repo_root_when_no_subdirectory(self):

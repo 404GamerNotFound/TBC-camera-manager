@@ -1,14 +1,6 @@
 import unittest
-from unittest.mock import patch
 
 from app.tbc.camera_modules.streams import validate_manual_stream_uri
-from app.tbc.camera_plugins.sonoff.module import SonoffCameraModule
-from app.tbc.camera_plugins.ubiquiti.module import UbiquitiCameraModule
-
-
-CAMERA = {
-    "manual_stream_uri": "rtsps://user:secret@nvr.example:7441/camera-id",
-}
 
 
 class ManualRtspProfileTests(unittest.IsolatedAsyncioTestCase):
@@ -21,21 +13,6 @@ class ManualRtspProfileTests(unittest.IsolatedAsyncioTestCase):
             validate_manual_stream_uri("https://camera/stream")
         with self.assertRaises(ValueError):
             validate_manual_stream_uri("rtsp://camera/stream\nInjected")
-
-    async def test_ubiquiti_uses_the_exact_protect_stream_link(self):
-        with patch("app.tbc.manual_rtsp.module.probe_rtsp_stream", return_value=("ok", "RTSP-Stream erreichbar")):
-            snapshot = await UbiquitiCameraModule().probe(CAMERA)
-
-        self.assertEqual(snapshot.status, "ok")
-        self.assertEqual(snapshot.stream_uri, CAMERA["manual_stream_uri"])
-        self.assertEqual(snapshot.manufacturer, "Ubiquiti")
-
-    async def test_sonoff_explains_how_to_generate_a_missing_link(self):
-        snapshot = await SonoffCameraModule().probe({"manual_stream_uri": ""})
-
-        self.assertEqual(snapshot.status, "error")
-        self.assertIn("eWeLink", snapshot.message)
-
 
 if __name__ == "__main__":
     unittest.main()
