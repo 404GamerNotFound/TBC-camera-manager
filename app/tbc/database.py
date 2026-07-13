@@ -276,9 +276,13 @@ CREATE TABLE IF NOT EXISTS plugin_sources (
     ref TEXT NOT NULL DEFAULT 'main',
     subdirectory TEXT NOT NULL DEFAULT '',
     installed_key TEXT,
+    installed_ref_sha TEXT,
+    latest_ref_sha TEXT,
+    update_available INTEGER NOT NULL DEFAULT 0,
     last_sync_status TEXT,
     last_sync_message TEXT,
     last_sync_at TEXT,
+    last_checked_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -312,6 +316,10 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE cloud_accounts ADD COLUMN pending_verification_field TEXT",
     "ALTER TABLE cloud_accounts ADD COLUMN pending_verification_message TEXT",
     "ALTER TABLE cloud_accounts ADD COLUMN pending_verification_at TEXT",
+    "ALTER TABLE plugin_sources ADD COLUMN installed_ref_sha TEXT",
+    "ALTER TABLE plugin_sources ADD COLUMN latest_ref_sha TEXT",
+    "ALTER TABLE plugin_sources ADD COLUMN update_available INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE plugin_sources ADD COLUMN last_checked_at TEXT",
 )
 
 
@@ -763,6 +771,7 @@ def update_plugin_source_sync_result(
     status: str,
     message: str,
     installed_key: str | None = None,
+    installed_ref_sha: str | None = None,
 ) -> None:
     with connect(database_path) as db:
         db.execute(
@@ -772,11 +781,42 @@ def update_plugin_source_sync_result(
                    last_sync_message = ?,
                    last_sync_at = CURRENT_TIMESTAMP,
                    installed_key = COALESCE(?, installed_key),
+                   installed_ref_sha = COALESCE(?, installed_ref_sha),
+                   update_available = CASE WHEN ? = 'ok' THEN 0 ELSE update_available END,
                    updated_at = CURRENT_TIMESTAMP
              WHERE id = ?
             """,
-            (status, message, installed_key, source_id),
+            (status, message, installed_key, installed_ref_sha, status, source_id),
         )
+
+
+def update_plugin_source_check_result(
+    database_path: str,
+    source_id: int,
+    *,
+    latest_ref_sha: str | None,
+    update_available: bool,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE plugin_sources
+               SET latest_ref_sha = ?,
+                   update_available = ?,
+                   last_checked_at = CURRENT_TIMESTAMP,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (latest_ref_sha, 1 if update_available else 0, source_id),
+        )
+
+
+def count_plugin_sources_with_update(database_path: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM plugin_sources WHERE update_available = 1"
+        ).fetchone()
+    return int(row["total"] if row else 0)
 
 
 def delete_plugin_source(database_path: str, source_id: int) -> None:

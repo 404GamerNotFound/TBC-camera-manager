@@ -7,9 +7,10 @@ from unittest.mock import MagicMock, patch
 from app.tbc.plugin_sources import (
     PluginSourceError,
     extract_plugin_archive,
-    fetch_and_repackage_plugin,
     fetch_github_repo_archive,
+    fetch_latest_commit_sha,
     parse_github_repo_url,
+    resolve_and_fetch_plugin,
 )
 
 
@@ -121,19 +122,46 @@ class FetchGithubRepoArchiveTests(unittest.TestCase):
         self.assertEqual(data, b"zipbytes")
 
 
-class FetchAndRepackagePluginTests(unittest.TestCase):
+class FetchLatestCommitShaTests(unittest.TestCase):
+    def test_returns_the_sha_from_the_response_body(self):
+        with patch(
+            "app.tbc.plugin_sources.urllib.request.urlopen",
+            return_value=_mock_response(b"3184c5a626d4cecdc11cd90e0e3f4cd645393fa6"),
+        ):
+            sha = fetch_latest_commit_sha("owner", "repo", "main")
+
+        self.assertEqual(sha, "3184c5a626d4cecdc11cd90e0e3f4cd645393fa6")
+
+    def test_422_for_unknown_ref_is_reported_as_not_found(self):
+        with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
+            urlopen.side_effect = urllib.error.HTTPError("url", 422, "Unprocessable", {}, None)
+            with self.assertRaisesRegex(PluginSourceError, "nicht gefunden"):
+                fetch_latest_commit_sha("owner", "repo", "no-such-branch")
+
+    def test_malformed_response_is_rejected(self):
+        with patch("app.tbc.plugin_sources.urllib.request.urlopen", return_value=_mock_response(b"not a sha")):
+            with self.assertRaisesRegex(PluginSourceError, "keine gültige Commit-SHA"):
+                fetch_latest_commit_sha("owner", "repo", "main")
+
+
+class ResolveAndFetchPluginTests(unittest.TestCase):
     def test_end_to_end_with_mocked_network(self):
         archive = _fake_github_zip(entries={"manifest.json": "{}", "plugin.py": "x=1"})
-        with patch("app.tbc.plugin_sources.urllib.request.urlopen", return_value=_mock_response(archive)):
-            result = fetch_and_repackage_plugin("https://github.com/owner/repo", "main", "")
+        sha = "3184c5a626d4cecdc11cd90e0e3f4cd645393fa6"
+        with patch(
+            "app.tbc.plugin_sources.urllib.request.urlopen",
+            side_effect=[_mock_response(sha.encode()), _mock_response(archive)],
+        ):
+            result, resolved_sha = resolve_and_fetch_plugin("https://github.com/owner/repo", "main", "")
 
+        self.assertEqual(resolved_sha, sha)
         with zipfile.ZipFile(io.BytesIO(result)) as bundle:
             self.assertIn("plugin/manifest.json", bundle.namelist())
 
     def test_invalid_repo_url_is_rejected_before_any_network_call(self):
         with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
             with self.assertRaises(PluginSourceError):
-                fetch_and_repackage_plugin("https://example.com/owner/repo", "main", "")
+                resolve_and_fetch_plugin("https://example.com/owner/repo", "main", "")
             urlopen.assert_not_called()
 
 

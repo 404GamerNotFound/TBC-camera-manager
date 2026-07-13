@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Erweiterungen</p>
+    <h1>Updates</h1>
+  </div>
+  <a class="secondary-button" href="/plugin-sources">Externe Quellen verwalten</a>
+</section>
+
+<div class="quiet-box">
+  Jede registrierte externe Quelle wird stündlich darauf geprüft, ob sich der Branch/Tag seit der letzten Installation weiterbewegt hat (Vergleich der Commit-SHA, ohne das ganze Repository herunterzuladen). Hier erscheinen nur Quellen mit einem tatsächlich verfügbaren Update.
+</div>
+
+{% if sources %}
+<section class="storage-list">
+  <div class="section-title">
+    <h2>Verfügbare Updates</h2>
+    <span>{{ sources | length }}</span>
+  </div>
+  {% for source in sources %}
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>{{ source.label }}</h3>
+        <p>{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
+      </div>
+      <span class="status-pill status-active">Update verfügbar</span>
+    </div>
+    <dl class="metric-row">
+      <div><dt>Installiert</dt><dd>{{ source.installed_ref_sha[:7] if source.installed_ref_sha else 'unbekannt' }}</dd></div>
+      <div><dt>Verfügbar</dt><dd>{{ source.latest_ref_sha[:7] if source.latest_ref_sha else 'unbekannt' }}</dd></div>
+      <div><dt>Zuletzt geprüft</dt><dd>{{ source.last_checked_at or 'noch nicht geprüft' }}</dd></div>
+    </dl>
+    <div class="form-actions">
+      <form method="post" action="/plugin-sources/{{ source.id }}/sync">
+        <input type="hidden" name="return_to" value="/updates">
+        <button class="primary-button" type="submit">Jetzt aktualisieren</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<p class="quiet-box">Alle externen Quellen sind aktuell.</p>
+{% endif %}
+{% endblock %}

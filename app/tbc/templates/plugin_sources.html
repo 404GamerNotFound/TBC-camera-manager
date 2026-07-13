@@ -9,8 +9,24 @@
 </section>
 
 <div class="quiet-box">
-  Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Das Repository muss dieselbe Struktur wie ein manueller Plugin-Import haben (<code>manifest.json</code> plus Einstiegspunkt, optional ein <code>tests/</code>-Ordner) - liegt das Plugin nicht im Repository-Hauptverzeichnis, gib den Unterordner an. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt.
+  Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe <code>Admin → Updates</code>.
 </div>
+
+<section class="table-section">
+  <div class="section-title"><h2>Erforderliche Plugin-Struktur</h2></div>
+  <p>Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:</p>
+  <dl class="metric-row">
+    <div><dt>Kamera-Plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> und <code>tests/test_*.py</code></dd></div>
+    <div><dt>Cloud-Anbieter</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
+    <div><dt>Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - kein Code, keine Tests</dd></div>
+  </dl>
+  <p><code>manifest.json</code> muss <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> und (außer bei Designs) <code>entrypoint</code> enthalten; <code>plugin.py</code> stellt <code>create_module()</code> bereit, das eine <code>CameraModule</code>- bzw. <code>CloudAccountModule</code>-Instanz zurückgibt. Ein optionaler <code>tests/</code>-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in <code>docs/plugin-sources.md</code> im TBC-Repository sowie <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
+  <div class="form-actions">
+    <a class="secondary-button" href="/plugin-sources/template/camera">Vorlage: Kamera-Plugin</a>
+    <a class="secondary-button" href="/plugin-sources/template/cloud">Vorlage: Cloud-Anbieter</a>
+    <a class="secondary-button" href="/plugin-sources/template/design">Vorlage: Design</a>
+  </div>
+</section>
 
 <form class="editor-form" method="post" action="/plugin-sources">
   <div class="section-title"><h2>Quelle hinzufügen</h2></div>

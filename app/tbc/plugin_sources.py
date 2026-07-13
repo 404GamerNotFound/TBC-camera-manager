@@ -12,6 +12,7 @@ GITHUB_REPO_PATTERN = re.compile(
     r"^https://github\.com/(?P<owner>[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/"
     r"(?P<repo>[A-Za-z0-9._-]+?)(?:\.git)?/?$"
 )
+SHA_PATTERN = re.compile(r"[0-9a-f]{7,40}")
 MAX_ARCHIVE_BYTES = 25 * 1024 * 1024
 FETCH_TIMEOUT_SECONDS = 30
 
@@ -53,17 +54,48 @@ def fetch_github_repo_archive(owner: str, repo: str, ref: str) -> bytes:
     try:
         with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
             data = response.read(MAX_ARCHIVE_BYTES + 1)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            raise PluginSourceError(
-                f"Repository oder Branch/Tag nicht gefunden (ist '{owner}/{repo}' öffentlich, existiert '{ref}'?)"
-            ) from exc
-        raise PluginSourceError(f"GitHub-Anfrage fehlgeschlagen: HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
-        raise PluginSourceError(f"GitHub konnte nicht erreicht werden: {exc.reason}") from exc
+        raise _translate_urllib_error(exc, owner, repo, ref) from exc
     if len(data) > MAX_ARCHIVE_BYTES:
         raise PluginSourceError("Repository-Archiv ist größer als 25 MB")
     return data
+
+
+def fetch_latest_commit_sha(owner: str, repo: str, ref: str) -> str:
+    """Look up the current commit SHA a branch/tag points to, without downloading the archive.
+
+    Used for periodic update checks: comparing this to the SHA recorded at
+    install time is far cheaper than re-downloading and re-diffing the whole
+    repository archive every 60 minutes.
+    """
+    ref = ref.strip() or "main"
+    url = f"https://api.github.com/repos/{urllib.parse.quote(owner)}/{urllib.parse.quote(repo)}/commits/{urllib.parse.quote(ref)}"
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "TBC-camera-manager", "Accept": "application/vnd.github.sha"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
+            data = response.read(200)
+    except urllib.error.URLError as exc:
+        raise _translate_urllib_error(exc, owner, repo, ref) from exc
+    sha = data.decode("ascii", errors="replace").strip()
+    if not SHA_PATTERN.fullmatch(sha):
+        raise PluginSourceError("GitHub hat keine gültige Commit-SHA geliefert")
+    return sha
+
+
+def _translate_urllib_error(exc: urllib.error.URLError, owner: str, repo: str, ref: str) -> PluginSourceError:
+    if isinstance(exc, urllib.error.HTTPError):
+        # The zipball endpoint answers an unknown repo/ref with 404; the
+        # commits endpoint (used for update checks) answers an unknown ref
+        # with 422 instead - both mean the same thing to an admin here.
+        if exc.code in (404, 422):
+            return PluginSourceError(
+                f"Repository oder Branch/Tag nicht gefunden (ist '{owner}/{repo}' öffentlich, existiert '{ref}'?)"
+            )
+        return PluginSourceError(f"GitHub-Anfrage fehlgeschlagen: HTTP {exc.code}")
+    return PluginSourceError(f"GitHub konnte nicht erreicht werden: {exc.reason}")
 
 
 def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
@@ -108,12 +140,20 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
         return output.getvalue()
 
 
-def fetch_and_repackage_plugin(url: str, ref: str, subdirectory: str) -> bytes:
+def resolve_and_fetch_plugin(url: str, ref: str, subdirectory: str) -> tuple[bytes, str]:
     """Fetch a public GitHub repo and repackage it as an installable plugin ZIP.
+
+    Resolves `ref` (a branch or tag name) to a concrete commit SHA first and
+    fetches the archive at that exact SHA, so the returned SHA is precisely
+    what was packaged - not just "whatever the branch pointed to a moment
+    earlier" if it moved between two separate requests. Callers use the
+    returned SHA to record what was actually installed (see
+    database.update_plugin_source_sync_result) and to detect updates later.
 
     Synchronous and network-bound; callers on the request path must run this
     via asyncio.to_thread() to avoid blocking the event loop.
     """
     github_repo = parse_github_repo_url(url)
-    archive = fetch_github_repo_archive(github_repo.owner, github_repo.repo, ref)
-    return extract_plugin_archive(archive, subdirectory)
+    sha = fetch_latest_commit_sha(github_repo.owner, github_repo.repo, ref)
+    archive = fetch_github_repo_archive(github_repo.owner, github_repo.repo, sha)
+    return extract_plugin_archive(archive, subdirectory), sha

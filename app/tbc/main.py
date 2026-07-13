@@ -56,7 +56,17 @@ from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
-from .plugin_sources import PluginSourceError, fetch_and_repackage_plugin, parse_github_repo_url
+from .plugin_sources import (
+    PluginSourceError,
+    fetch_latest_commit_sha,
+    parse_github_repo_url,
+    resolve_and_fetch_plugin,
+)
+from .plugin_templates import (
+    build_camera_plugin_template,
+    build_cloud_plugin_template,
+    build_design_theme_template,
+)
 from .plugin_testing import run_plugin_tests
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
@@ -94,7 +104,14 @@ def _active_theme_context(request: Request) -> dict[str, Any]:
     return {"active_theme": registration.manifest}
 
 
-templates = Jinja2Templates(directory=BASE_DIR / "templates", context_processors=[_active_theme_context])
+def _pending_plugin_updates_context(request: Request) -> dict[str, Any]:
+    return {"pending_plugin_update_count": database.count_plugin_sources_with_update(SETTINGS.database_path)}
+
+
+templates = Jinja2Templates(
+    directory=BASE_DIR / "templates",
+    context_processors=[_active_theme_context, _pending_plugin_updates_context],
+)
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 templates.env.filters["tojson"] = lambda value: Markup(
     json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
@@ -125,6 +142,7 @@ CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 # waiting on a single click.
 CONTROL_TIMEOUT_SECONDS = 20
 PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS = 30
+PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
 # Firmware updates run as a background task (they can take several minutes -
 # far longer than any request should block on) and are polled by the browser
 # via this in-memory state, keyed by (camera_id, channel). Not persisted: a
@@ -147,6 +165,7 @@ async def startup() -> None:
     asyncio.create_task(_cleanup_loop())
     asyncio.create_task(_snapshot_loop())
     asyncio.create_task(_continuous_recording_loop())
+    asyncio.create_task(_plugin_source_update_check_loop())
     asyncio.create_task(mqtt.run_control_listener(SETTINGS.database_path))
 
 
@@ -242,6 +261,23 @@ async def cameras(request: Request):
 
 
 @app.get("/cameras/new", response_class=HTMLResponse)
+async def new_camera_choice(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "camera_new_choice.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/cameras/new/local", response_class=HTMLResponse)
 async def new_camera(request: Request):
     guard = _require_admin(request)
     if guard:
@@ -1880,7 +1916,7 @@ async def run_camera_module_tests(request: Request, module_key: str):
     if registration is None or registration.package is None:
         _set_flash(request, "Für dieses Plugin sind keine Tests verfügbar", "error")
         return _redirect("/camera-modules")
-    result = await run_plugin_tests(registration.package.path)
+    result = await run_plugin_tests(registration.package.path, "camera")
     if not result.ran:
         _set_flash(request, result.summary, "error")
     else:
@@ -1985,7 +2021,7 @@ async def run_cloud_module_tests(request: Request, module_key: str):
     if registration is None:
         _set_flash(request, "Für dieses Plugin sind keine Tests verfügbar", "error")
         return _redirect("/cloud-modules")
-    result = await run_plugin_tests(registration.package.path)
+    result = await run_plugin_tests(registration.package.path, "cloud")
     if not result.ran:
         _set_flash(request, result.summary, "error")
     else:
@@ -2391,6 +2427,29 @@ async def delete_design_theme(request: Request, theme_key: str):
     return _redirect("/design")
 
 
+_PLUGIN_TEMPLATE_BUILDERS = {
+    "camera": (build_camera_plugin_template, "acme_camera"),
+    "cloud": (build_cloud_plugin_template, "acme_cloud"),
+    "design": (build_design_theme_template, "acme_design"),
+}
+
+
+@app.get("/plugin-sources/template/{plugin_kind}")
+async def download_plugin_template(request: Request, plugin_kind: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    entry = _PLUGIN_TEMPLATE_BUILDERS.get(plugin_kind)
+    if entry is None:
+        return JSONResponse({"error": "Unbekannte Plugin-Art"}, status_code=status.HTTP_404_NOT_FOUND)
+    builder, name = entry
+    return Response(
+        builder(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="tbc-plugin-vorlage-{name}.zip"'},
+    )
+
+
 @app.get("/plugin-sources", response_class=HTMLResponse)
 async def plugin_sources_page(request: Request):
     guard = _require_admin(request)
@@ -2442,18 +2501,19 @@ async def create_plugin_source_route(
 
 
 @app.post("/plugin-sources/{source_id}/sync")
-async def sync_plugin_source_route(request: Request, source_id: int):
+async def sync_plugin_source_route(request: Request, source_id: int, return_to: str = Form("/plugin-sources")):
     guard = _require_admin(request)
     if guard:
         return guard
+    redirect_target = return_to if return_to in ("/plugin-sources", "/updates") else "/plugin-sources"
     source = database.get_plugin_source(SETTINGS.database_path, source_id)
     if not source:
         _set_flash(request, "Externe Quelle wurde nicht gefunden", "error")
-        return _redirect("/plugin-sources")
+        return _redirect(redirect_target)
     try:
-        archive = await asyncio.wait_for(
+        archive, resolved_sha = await asyncio.wait_for(
             asyncio.to_thread(
-                fetch_and_repackage_plugin, source["repo_url"], source["ref"], source["subdirectory"]
+                resolve_and_fetch_plugin, source["repo_url"], source["ref"], source["subdirectory"]
             ),
             timeout=PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS,
         )
@@ -2462,20 +2522,21 @@ async def sync_plugin_source_route(request: Request, source_id: int):
         message = f"GitHub antwortet nicht innerhalb von {PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS}s"
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=message)
         _set_flash(request, message, "error")
-        return _redirect("/plugin-sources")
+        return _redirect(redirect_target)
     except (PluginSourceError, ValueError, OSError) as exc:
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=str(exc))
         _set_flash(request, str(exc), "error")
-        return _redirect("/plugin-sources")
+        return _redirect(redirect_target)
     database.update_plugin_source_sync_result(
         SETTINGS.database_path,
         source_id,
         status="ok",
         message=f"Installiert als '{installed_key}'",
         installed_key=installed_key,
+        installed_ref_sha=resolved_sha,
     )
     _set_flash(request, f"Plugin '{installed_key}' wurde installiert/aktualisiert")
-    return _redirect("/plugin-sources")
+    return _redirect(redirect_target)
 
 
 @app.post("/plugin-sources/{source_id}/delete")
@@ -2486,6 +2547,29 @@ async def delete_plugin_source_route(request: Request, source_id: int):
     database.delete_plugin_source(SETTINGS.database_path, source_id)
     _set_flash(request, "Externe Quelle wurde entfernt")
     return _redirect("/plugin-sources")
+
+
+@app.get("/updates", response_class=HTMLResponse)
+async def plugin_updates_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    pending_sources = [
+        source
+        for source in database.list_plugin_sources(SETTINGS.database_path)
+        if source.get("update_available")
+    ]
+    return templates.TemplateResponse(
+        request,
+        "plugin_updates.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "sources": pending_sources,
+            "flash": _pop_flash(request),
+        },
+    )
 
 
 @app.get("/api/debug-log")
@@ -2757,6 +2841,36 @@ async def _monitor_reolink_camera(camera_id: int) -> None:
         except Exception as exc:
             LOGGER.warning("Reolink real-time events unavailable for camera %s: %s", camera_id, exc)
             await asyncio.sleep(15)
+
+
+async def _plugin_source_update_check_loop() -> None:
+    await asyncio.sleep(30)
+    while True:
+        try:
+            for source in database.list_plugin_sources(SETTINGS.database_path):
+                await _check_plugin_source_for_update(source)
+        except Exception:
+            LOGGER.exception("Prüfung auf Plugin-Updates fehlgeschlagen")
+        await asyncio.sleep(PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS)
+
+
+async def _check_plugin_source_for_update(source: dict[str, Any]) -> None:
+    try:
+        github_repo = parse_github_repo_url(source["repo_url"])
+        latest_sha = await asyncio.to_thread(
+            fetch_latest_commit_sha, github_repo.owner, github_repo.repo, source["ref"]
+        )
+    except Exception as exc:
+        LOGGER.info("Update-Prüfung für Quelle %s (%s) fehlgeschlagen: %s", source["id"], source["label"], exc)
+        return
+    installed_sha = source.get("installed_ref_sha")
+    update_available = bool(installed_sha) and installed_sha != latest_sha
+    database.update_plugin_source_check_result(
+        SETTINGS.database_path,
+        source["id"],
+        latest_ref_sha=latest_sha,
+        update_available=update_available,
+    )
 
 
 async def _snapshot_loop() -> None:

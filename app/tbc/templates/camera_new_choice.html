@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Kamera</p>
+    <h1>Kamera hinzufügen</h1>
+  </div>
+</section>
+
+<section class="storage-list">
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>Lokale Kamera</h3>
+        <p>Host/IP, ONVIF und Zugangsdaten direkt eintragen - für eine einzelne Kamera oder ein NVR im lokalen Netzwerk.</p>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="primary-button" href="/cameras/new/local">Lokale Kamera einrichten</a>
+    </div>
+  </article>
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>Cloud-Konto</h3>
+        <p>Bei einem Hersteller-Cloud-Konto (z. B. UniFi Protect, Eufy Security, eWeLink) anmelden und Geräte automatisch suchen.</p>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="primary-button" href="/cloud-accounts">Cloud-Konto verbinden</a>
+    </div>
+  </article>
+</section>
+{% endblock %}
