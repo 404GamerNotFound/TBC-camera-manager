@@ -72,7 +72,6 @@ class CameraModuleTests(unittest.TestCase):
         self.assertEqual(
             [module.key for module in modules],
             [
-                "aqara",
                 "axis",
                 "dahua",
                 "foscam",
@@ -130,16 +129,11 @@ class CameraModuleTests(unittest.TestCase):
         self.assertFalse(module.supports(CameraCapability.ARCHIVE))
         self.assertFalse(module.supports(CameraCapability.RECORDING))
 
-    def test_standard_onvif_and_aqara_modules_are_available(self):
+    def test_standard_onvif_module_is_available(self):
         standard = registry.get_camera_module("standard_onvif")
-        aqara = registry.get_camera_module("aqara")
 
         self.assertEqual(standard.default_onvif_port, 80)
         self.assertTrue(standard.supports(CameraCapability.LIVE))
-        self.assertEqual(aqara.default_onvif_port, 5000)
-        self.assertEqual(aqara.default_rtsp_port, 8554)
-        self.assertTrue(aqara.supports(CameraCapability.CHANNELS))
-        self.assertFalse(aqara.supports(CameraCapability.ARCHIVE))
 
     def test_manual_rtsp_profiles_are_available(self):
         for key in ("rtsp_only", "sonoff", "ubiquiti"):

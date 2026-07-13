@@ -12,6 +12,40 @@
   Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe <code>Admin → Updates</code>.
 </div>
 
+<section class="storage-list">
+  <div class="section-title">
+    <h2>Standard-Repositories</h2>
+    <span>{{ standard_sources | length }}</span>
+  </div>
+  <p>Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.</p>
+  {% for entry in standard_sources %}
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3>{{ entry.source.label }}</h3>
+        <p><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer">{{ entry.source.repo_url }}</a> · {{ entry.source.ref }}</p>
+      </div>
+      <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}">{{ 'bereits registriert' if entry.registered_source else 'bereit zur Installation' }}</span>
+    </div>
+    <dl class="metric-row">
+      <div><dt>Plugin-Art</dt><dd>{{ {'camera': 'Kamera-Plugin', 'cloud': 'Cloud-Anbieter', 'design': 'Design'}[entry.source.plugin_kind] }}</dd></div>
+      <div><dt>Beschreibung</dt><dd>{{ entry.source.description }}</dd></div>
+    </dl>
+    <div class="form-actions">
+      {% if entry.registered_source %}
+      <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
+        <button class="primary-button" type="submit">Installieren / aktualisieren</button>
+      </form>
+      {% else %}
+      <form method="post" action="/plugin-sources/standard/{{ entry.source.key }}/install">
+        <button class="primary-button" type="submit">Direkt installieren</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
 <section class="table-section">
   <div class="section-title"><h2>Erforderliche Plugin-Struktur</h2></div>
   <p>Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:</p>

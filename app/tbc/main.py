@@ -57,8 +57,12 @@ from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .plugin_sources import (
+    STANDARD_PLUGIN_SOURCES,
     PluginSourceError,
+    StandardPluginSource,
     fetch_latest_commit_sha,
+    get_standard_plugin_source,
+    github_repositories_match,
     parse_github_repo_url,
     resolve_and_fetch_plugin,
 )
@@ -2455,6 +2459,7 @@ async def plugin_sources_page(request: Request):
     guard = _require_admin(request)
     if guard:
         return guard
+    sources = database.list_plugin_sources(SETTINGS.database_path)
     return templates.TemplateResponse(
         request,
         "plugin_sources.html",
@@ -2462,7 +2467,14 @@ async def plugin_sources_page(request: Request):
             "app_name": SETTINGS.app_name,
             "username": request.session.get("username"),
             "role": "admin",
-            "sources": database.list_plugin_sources(SETTINGS.database_path),
+            "sources": sources,
+            "standard_sources": [
+                {
+                    "source": standard_source,
+                    "registered_source": _find_registered_standard_source(standard_source, sources),
+                }
+                for standard_source in STANDARD_PLUGIN_SOURCES
+            ],
             "flash": _pop_flash(request),
         },
     )
@@ -2500,12 +2512,22 @@ async def create_plugin_source_route(
     return _redirect("/plugin-sources")
 
 
-@app.post("/plugin-sources/{source_id}/sync")
-async def sync_plugin_source_route(request: Request, source_id: int, return_to: str = Form("/plugin-sources")):
-    guard = _require_admin(request)
-    if guard:
-        return guard
-    redirect_target = return_to if return_to in ("/plugin-sources", "/updates") else "/plugin-sources"
+def _find_registered_standard_source(
+    standard_source: StandardPluginSource, sources: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    for source in sources:
+        if source["plugin_kind"] != standard_source.plugin_kind:
+            continue
+        try:
+            matches = github_repositories_match(standard_source.repo_url, source["repo_url"])
+        except PluginSourceError:
+            continue
+        if matches:
+            return source
+    return None
+
+
+async def _sync_plugin_source(request: Request, source_id: int, redirect_target: str):
     source = database.get_plugin_source(SETTINGS.database_path, source_id)
     if not source:
         _set_flash(request, "Externe Quelle wurde nicht gefunden", "error")
@@ -2537,6 +2559,41 @@ async def sync_plugin_source_route(request: Request, source_id: int, return_to: 
     )
     _set_flash(request, f"Plugin '{installed_key}' wurde installiert/aktualisiert")
     return _redirect(redirect_target)
+
+
+@app.post("/plugin-sources/standard/{source_key}/install")
+async def install_standard_plugin_source_route(request: Request, source_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    standard_source = get_standard_plugin_source(source_key)
+    if standard_source is None:
+        _set_flash(request, "Standard-Repository wurde nicht gefunden", "error")
+        return _redirect("/plugin-sources")
+    registered_source = _find_registered_standard_source(
+        standard_source, database.list_plugin_sources(SETTINGS.database_path)
+    )
+    if registered_source is None:
+        source_id = database.create_plugin_source(
+            SETTINGS.database_path,
+            plugin_kind=standard_source.plugin_kind,
+            label=standard_source.label,
+            repo_url=standard_source.repo_url,
+            ref=standard_source.ref,
+            subdirectory=standard_source.subdirectory,
+        )
+    else:
+        source_id = int(registered_source["id"])
+    return await _sync_plugin_source(request, source_id, "/plugin-sources")
+
+
+@app.post("/plugin-sources/{source_id}/sync")
+async def sync_plugin_source_route(request: Request, source_id: int, return_to: str = Form("/plugin-sources")):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    redirect_target = return_to if return_to in ("/plugin-sources", "/updates") else "/plugin-sources"
+    return await _sync_plugin_source(request, source_id, redirect_target)
 
 
 @app.post("/plugin-sources/{source_id}/delete")

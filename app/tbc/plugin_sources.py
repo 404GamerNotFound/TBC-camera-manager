@@ -27,6 +27,33 @@ class GithubRepo:
     repo: str
 
 
+@dataclass(frozen=True)
+class StandardPluginSource:
+    key: str
+    plugin_kind: str
+    label: str
+    description: str
+    repo_url: str
+    ref: str = "main"
+    subdirectory: str = ""
+
+
+STANDARD_PLUGIN_SOURCES = (
+    StandardPluginSource(
+        key="aqara",
+        plugin_kind="camera",
+        label="Aqara",
+        description="Aqara-Kameras sowie kompatible Video-Türklingeln",
+        repo_url="https://github.com/404GamerNotFound/TBC-aqara",
+    ),
+)
+
+
+def get_standard_plugin_source(key: str) -> StandardPluginSource | None:
+    normalized_key = key.strip().lower()
+    return next((source for source in STANDARD_PLUGIN_SOURCES if source.key == normalized_key), None)
+
+
 def parse_github_repo_url(url: str) -> GithubRepo:
     match = GITHUB_REPO_PATTERN.match(url.strip())
     if not match:
@@ -35,6 +62,15 @@ def parse_github_repo_url(url: str) -> GithubRepo:
             "(nur öffentliche GitHub-Repositories werden unterstützt)."
         )
     return GithubRepo(owner=match.group("owner"), repo=match.group("repo"))
+
+
+def github_repositories_match(first_url: str, second_url: str) -> bool:
+    first = parse_github_repo_url(first_url)
+    second = parse_github_repo_url(second_url)
+    return (first.owner.casefold(), first.repo.casefold()) == (
+        second.owner.casefold(),
+        second.repo.casefold(),
+    )
 
 
 def fetch_github_repo_archive(owner: str, repo: str, ref: str) -> bytes:

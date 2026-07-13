@@ -54,7 +54,6 @@ class CameraPluginPackageTests(unittest.TestCase):
         self.assertEqual(
             [package.manifest.key for package in packages],
             [
-                "aqara",
                 "axis",
                 "dahua",
                 "foscam",

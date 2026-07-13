@@ -5,10 +5,13 @@ import zipfile
 from unittest.mock import MagicMock, patch
 
 from app.tbc.plugin_sources import (
+    STANDARD_PLUGIN_SOURCES,
     PluginSourceError,
     extract_plugin_archive,
     fetch_github_repo_archive,
     fetch_latest_commit_sha,
+    get_standard_plugin_source,
+    github_repositories_match,
     parse_github_repo_url,
     resolve_and_fetch_plugin,
 )
@@ -50,6 +53,29 @@ class ParseGithubRepoUrlTests(unittest.TestCase):
     def test_rejects_malformed_url(self):
         with self.assertRaises(PluginSourceError):
             parse_github_repo_url("not a url")
+
+    def test_repository_comparison_normalizes_case_suffix_and_slash(self):
+        self.assertTrue(
+            github_repositories_match(
+                "https://github.com/404gamernotfound/tbc-AQARA.git/",
+                "https://github.com/404GamerNotFound/TBC-aqara",
+            )
+        )
+
+
+class StandardPluginSourceTests(unittest.TestCase):
+    def test_aqara_is_available_as_camera_standard_repository(self):
+        source = get_standard_plugin_source("AQARA")
+
+        self.assertIsNotNone(source)
+        self.assertEqual(source.plugin_kind, "camera")
+        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-aqara")
+        self.assertEqual(source.ref, "main")
+        self.assertEqual(source.subdirectory, "")
+        self.assertIn(source, STANDARD_PLUGIN_SOURCES)
+
+    def test_unknown_standard_repository_returns_none(self):
+        self.assertIsNone(get_standard_plugin_source("unknown"))
 
 
 class ExtractPluginArchiveTests(unittest.TestCase):

@@ -27,6 +27,12 @@ Statt eine ZIP-Datei manuell hochzuladen, kann ein Plugin direkt aus einem öffe
 
 Das Entfernen einer Quelle (`Quelle entfernen`) löscht nur die Registrierung, nicht das bereits installierte Plugin - das bereits installierte Plugin wird weiterhin über die jeweilige Plugin-Verwaltungsseite entfernt (dort greift auch weiterhin der Schutz vor dem Entfernen eingebauter oder noch verwendeter Plugins).
 
+### Standard-Repositories
+
+TBC kann häufig verwendete öffentliche Plugins als vorkonfigurierte Standard-Repositories anbieten. Sie erscheinen oberhalb der manuellen Quellenverwaltung und werden erst nach einem ausdrücklichen Klick eines Administrators registriert und installiert. Derzeit ist das Kamera-Plugin [Aqara](https://github.com/404GamerNotFound/TBC-aqara) mit dem Branch `main` hinterlegt.
+
+Die Direktinstallation verwendet keinen gesonderten oder weniger strengen Installationsweg: Nach der einmaligen Registrierung wird dieselbe GitHub-Auflösung, Archivaufbereitung und Paketvalidierung wie bei einer manuell angelegten externen Quelle ausgeführt. Ist dasselbe Repository bereits als Kamera-Quelle registriert - auch mit optionalem `.git`-Suffix, abweichender Groß-/Kleinschreibung oder abschließendem Slash -, wird die vorhandene Registrierung synchronisiert und keine zweite angelegt. Eine fehlgeschlagene Erstinstallation lässt die Registrierung mit dem Fehlerstatus bestehen, damit der Administrator den Vorgang über „Synchronisieren“ wiederholen kann.
+
 ### Struktur-Vorgabe
 
 Ein per externer Quelle installiertes Plugin muss dieselbe Struktur wie ein manuell hochgeladenes ZIP erfüllen: `manifest.json` im angegebenen Verzeichnis, der im Manifest genannte Einstiegspunkt, und bei Kamera-/Cloud-Plugins optional ein `tests/`-Ordner. Tests sind keine Voraussetzung für die Installation - ein Plugin ohne `tests/` wird genauso akzeptiert wie eines mit, zeigt in der Plugin-Übersicht aber auch keinen „Tests ausführen“-Knopf. Für neue, extern beigesteuerte Plugins ist ein mitgelieferter `tests/`-Ordner dennoch der empfohlene Weg, damit ein Administrator ein unbekanntes Plugin vor dem produktiven Einsatz gegen seine eigenen Tests prüfen kann.
