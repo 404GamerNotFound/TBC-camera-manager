@@ -121,3 +121,30 @@ async def update_firmware(self, camera: dict, *, channel: int = 0, progress_call
 ```
 
 Das externe Reolink-Plugin lädt dafür über `reolink-aio`s `check_new_firmware()`/`update_firmware()` direkt von reolink.com herunter und schreibt sie auf die Kamera; die Kamera ist währenddessen nicht erreichbar und startet danach neu. In der Weboberfläche liegt der Ablauf bewusst zweistufig: „Auf Updates prüfen“ (rein lesend) muss zuerst erfolgreich eine verfügbare Version melden, bevor „Jetzt aktualisieren“ überhaupt aktiv wird; der Update-Start verlangt zusätzlich eine JavaScript-Bestätigung. Der Update-Vorgang läuft als Hintergrund-Task in TBC und wird über einen Fortschritts-Endpunkt abgefragt, da er mehrere Minuten dauern kann.
+
+## Eigenes Modell für die lokale KI-Erkennung (`detection_model.json`)
+
+TBC erkennt Personen/Fahrzeuge/Tiere standardmäßig mit einem herstellerneutralen Standardmodell (siehe `Admin → KI-Erkennung`). Ein Kamera-Plugin kann optional ein eigenes, besser zur eigenen Zielgruppe passendes Modell mitbringen, das für Kameras dieses Moduls automatisch **statt** des Standardmodells verwendet wird. Dafür genügt eine `detection_model.json` im Plugin-Hauptverzeichnis, neben `manifest.json`:
+
+```json
+{
+  "model_url": "https://example.com/mein-modell.onnx",
+  "input_name": "image_tensor:0",
+  "input_size": [300, 300],
+  "input_dtype": "uint8",
+  "output_boxes": "detection_boxes:0",
+  "output_scores": "detection_scores:0",
+  "output_classes": "detection_classes:0",
+  "output_num": "num_detections:0",
+  "classes": {
+    "1": "person",
+    "3": "car"
+  }
+}
+```
+
+- `model_url` verweist auf die eigentliche ONNX-Datei; TBC lädt sie beim ersten Gebrauch in ein Cache-Verzeichnis (`TBC_DETECTION_MODELS_PATH/plugins/<schlüssel>/`) und merkt sich diese Kopie. Die Modell-Datei selbst gehört **nicht** ins Plugin-Repository/ZIP (Größe, Dateityp-Beschränkung beim Plugin-Import) — nur diese kleine JSON-Metadatendatei.
+- Alle übrigen Felder folgen demselben Ausgabeformat wie das Standardmodell (TF-Object-Detection-API-Stil: nachverarbeitete Boxen/Scores/Klassen, keine rohen YOLO-Grid-Ausgaben). Ein Modell mit einem anderen Ausgabeformat benötigt zusätzlichen Code in `app/tbc/detection/onnx_backend.py` und ist über diese Datei allein nicht einsetzbar.
+- `classes` bildet die eigenen Klassen-Indizes auf COCO-ähnliche Label-Strings ab (`person`, `car`, `dog`, …), die TBC intern auf `ai_person`/`ai_vehicle`/`ai_animal` normalisiert (siehe `app/tbc/detection/classes.py`).
+- Ändert sich `model_url` oder ein anderes Feld in einer neuen Plugin-Version, lädt TBC das Modell automatisch neu herunter.
+- Ändert der Nutzer den Modul-Schlüssel einer Kamera nachträglich, wird beim nächsten Start des Erkennungs-Workers automatisch neu aufgelöst, welches Modell zuständig ist.

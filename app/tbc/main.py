@@ -17,7 +17,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import database, mqtt
+from . import __version__, database, mqtt
+from .app_updates import AppUpdateCheckError, fetch_latest_release, is_newer
 from .camera_modules import (
     CameraCapability,
     get_camera_module,
@@ -58,6 +59,7 @@ from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .detection import factory as detection_factory
 from .detection.classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection.model_provisioning import ensure_default_model
+from .detection.plugin_models import resolve_plugin_model
 from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
@@ -117,9 +119,18 @@ def _pending_plugin_updates_context(request: Request) -> dict[str, Any]:
     return {"pending_plugin_update_count": database.count_plugin_sources_with_update(SETTINGS.database_path)}
 
 
+def _app_update_context(request: Request) -> dict[str, Any]:
+    return {
+        "app_version": __version__,
+        "app_update_available": APP_UPDATE_STATE["update_available"],
+        "app_latest_version": APP_UPDATE_STATE["latest_version"],
+        "app_update_url": APP_UPDATE_STATE["html_url"],
+    }
+
+
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates",
-    context_processors=[_active_theme_context, _pending_plugin_updates_context],
+    context_processors=[_active_theme_context, _pending_plugin_updates_context, _app_update_context],
 )
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 templates.env.filters["tojson"] = lambda value: Markup(
@@ -152,12 +163,24 @@ CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 CONTROL_TIMEOUT_SECONDS = 20
 PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS = 30
 PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
+APP_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
 # Firmware updates run as a background task (they can take several minutes -
 # far longer than any request should block on) and are polled by the browser
 # via this in-memory state, keyed by (camera_id, channel). Not persisted: a
 # TBC restart mid-update just loses the progress display, not the update
 # itself, which keeps running on the camera independently of TBC.
 FIRMWARE_UPDATE_STATE: dict[tuple[int, int], dict[str, Any]] = {}
+# Whether a newer TBC release exists on GitHub. Re-checked hourly in the
+# background (see _app_update_check_loop) and shown in the nav - unlike plugin
+# updates, applying this requires pulling a new image/commit by hand, so it is
+# only ever a notice, never a one-click install.
+APP_UPDATE_STATE: dict[str, Any] = {
+    "latest_version": None,
+    "update_available": False,
+    "html_url": "",
+    "checked_at": None,
+    "error": None,
+}
 LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
     DetectionDefinition(key=key, label=label, category="ai")
     for key, label in {**DETECTION_KEY_LABELS, **LOITERING_KEY_LABELS}.items()
@@ -166,7 +189,11 @@ DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
 
 
-def _detection_backend_factory(settings: dict[str, Any]):
+def _detection_backend_factory(settings: dict[str, Any], module_key: str | None = None):
+    plugin_model = resolve_plugin_model(module_key, cache_root=Path(SETTINGS.detection_models_path))
+    if plugin_model:
+        model_path, metadata_path = plugin_model
+        return detection_factory.build_backend(settings, model_path=str(model_path), metadata_path=str(metadata_path))
     return detection_factory.build_backend(
         settings,
         model_path=str(DETECTION_MODEL_PATH),
@@ -197,6 +224,7 @@ async def startup() -> None:
     asyncio.create_task(_snapshot_loop())
     asyncio.create_task(_continuous_recording_loop())
     asyncio.create_task(_plugin_source_update_check_loop())
+    asyncio.create_task(_app_update_check_loop())
     asyncio.create_task(mqtt.run_control_listener(SETTINGS.database_path))
     asyncio.create_task(asyncio.to_thread(ensure_default_model, DETECTION_MODEL_PATH, DETECTION_MODEL_METADATA_PATH))
     asyncio.create_task(_detection_supervisor_loop())
@@ -3125,6 +3153,25 @@ async def _plugin_source_update_check_loop() -> None:
         except Exception:
             LOGGER.exception("Prüfung auf Plugin-Updates fehlgeschlagen")
         await asyncio.sleep(PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS)
+
+
+async def _app_update_check_loop() -> None:
+    await asyncio.sleep(30)
+    while True:
+        try:
+            release = await asyncio.to_thread(fetch_latest_release)
+            APP_UPDATE_STATE.update(
+                latest_version=release.version,
+                update_available=is_newer(release.version, __version__),
+                html_url=release.html_url,
+                checked_at=datetime.utcnow().isoformat(timespec="seconds"),
+                error=None,
+            )
+        except AppUpdateCheckError as exc:
+            APP_UPDATE_STATE.update(error=str(exc), checked_at=datetime.utcnow().isoformat(timespec="seconds"))
+        except Exception:
+            LOGGER.exception("Prüfung auf TBC-Updates fehlgeschlagen")
+        await asyncio.sleep(APP_UPDATE_CHECK_INTERVAL_SECONDS)
 
 
 async def _check_plugin_source_for_update(source: dict[str, Any]) -> None:

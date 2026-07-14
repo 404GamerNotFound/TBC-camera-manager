@@ -17,7 +17,7 @@ from .zones import filter_detections_by_zones
 LOGGER = logging.getLogger(__name__)
 
 DetectionCallback = Callable[[int, list[dict[str, Any]]], None]
-BackendFactory = Callable[[dict[str, Any]], DetectionBackend]
+BackendFactory = Callable[[dict[str, Any], str | None], DetectionBackend]
 
 
 @dataclass
@@ -96,7 +96,15 @@ async def run_camera_detection_worker(
         if settings is None or not settings.get("enabled") or not camera.get("stream_uri"):
             return
         try:
-            await _run_worker_once(database_path, camera_id, camera["stream_uri"], settings, backend_factory, on_detections)
+            await _run_worker_once(
+                database_path,
+                camera_id,
+                camera["stream_uri"],
+                camera.get("module_key"),
+                settings,
+                backend_factory,
+                on_detections,
+            )
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -108,6 +116,7 @@ async def _run_worker_once(
     database_path: str,
     camera_id: int,
     stream_uri: str,
+    module_key: str | None,
     settings: dict[str, Any],
     backend_factory: BackendFactory,
     on_detections: DetectionCallback,
@@ -116,7 +125,10 @@ async def _run_worker_once(
     grabber = FrameGrabber(stream_uri, sample_fps=sample_fps)
     tracker = ActiveObjectTracker(active_timeout_seconds=max(3.0, 3.0 / sample_fps))
     loiter_tracker = LoiterTracker()
-    backend = backend_factory(settings)
+    # A plugin-bundled model may need downloading on first use - keep that (and the
+    # rest of backend construction) off the event loop so it doesn't stall other
+    # cameras' workers.
+    backend = await asyncio.to_thread(backend_factory, settings, module_key)
     zones = database.list_camera_detection_zones(database_path, camera_id)
     grabber.start()
     try:

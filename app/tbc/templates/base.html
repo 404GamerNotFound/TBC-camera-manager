@@ -165,10 +165,11 @@
                     <span>Externe Quellen</span>
                   </a>
                 </li>
+                {% set total_update_count = pending_plugin_update_count + (1 if app_update_available else 0) %}
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates">
+                  <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update auf {{ app_latest_version }} verfügbar{% endif %}">
                     <span class="nav-shortcut" aria-hidden="true">U</span>
-                    <span>Updates{% if pending_plugin_update_count %} ({{ pending_plugin_update_count }}){% endif %}</span>
+                    <span>Updates{% if total_update_count %} ({{ total_update_count }}){% endif %}</span>
                   </a>
                 </li>
                 <li>

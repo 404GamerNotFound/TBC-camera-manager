@@ -44,6 +44,26 @@ DEFAULT_MODEL_METADATA: dict[str, object] = {
 }
 
 
+def download_model_if_missing(url: str, model_path: Path) -> bool:
+    """Downloads a model binary to model_path unless it is already present.
+
+    Used both for the app's own default model and for models that a camera plugin
+    declares via detection_model.json - a failed download is logged and returns False
+    rather than raising, so callers can fall back to another model instead of crashing
+    a detection worker.
+    """
+    if model_path.exists() and model_path.stat().st_size > 0:
+        return True
+    try:
+        LOGGER.info("Lade Erkennungsmodell herunter: %s", url)
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        urllib.request.urlretrieve(url, model_path)  # noqa: S310
+        return True
+    except OSError as exc:
+        LOGGER.warning("Erkennungsmodell konnte nicht geladen werden (%s): %s", url, exc)
+        return False
+
+
 def ensure_default_model(model_path: Path, metadata_path: Path) -> bool:
     """Provisions the bundled default ONNX model on first start.
 
@@ -55,13 +75,4 @@ def ensure_default_model(model_path: Path, metadata_path: Path) -> bool:
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
     if not metadata_path.exists():
         metadata_path.write_text(json.dumps(DEFAULT_MODEL_METADATA, ensure_ascii=False, indent=2), encoding="utf-8")
-    if model_path.exists() and model_path.stat().st_size > 0:
-        return True
-    try:
-        LOGGER.info("Lade Standard-Erkennungsmodell herunter: %s", DEFAULT_MODEL_URL)
-        model_path.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(DEFAULT_MODEL_URL, model_path)  # noqa: S310
-        return True
-    except OSError as exc:
-        LOGGER.warning("Standard-Erkennungsmodell konnte nicht geladen werden: %s", exc)
-        return False
+    return download_model_if_missing(DEFAULT_MODEL_URL, model_path)
