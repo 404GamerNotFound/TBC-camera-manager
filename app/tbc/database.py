@@ -254,6 +254,16 @@ CREATE TABLE IF NOT EXISTS mqtt_config (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS api_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled INTEGER NOT NULL DEFAULT 0,
+    require_api_key INTEGER NOT NULL DEFAULT 1,
+    api_key_hash TEXT,
+    api_key_prefix TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS ui_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_theme_key TEXT NOT NULL DEFAULT 'standard',
@@ -1990,6 +2000,58 @@ def update_mqtt_config(
                 1 if discovery_enabled else 0,
                 discovery_prefix,
             ),
+        )
+
+
+def get_api_config(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM api_config WHERE id = 1").fetchone()
+        if row is None:
+            db.execute(
+                "INSERT INTO api_config (id, enabled, require_api_key) VALUES (1, 0, 1)"
+            )
+            row = db.execute("SELECT * FROM api_config WHERE id = 1").fetchone()
+    return dict(row)
+
+
+def update_api_config(database_path: str, *, enabled: bool, require_api_key: bool) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO api_config (id, enabled, require_api_key)
+            VALUES (1, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                enabled = excluded.enabled,
+                require_api_key = excluded.require_api_key,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if enabled else 0, 1 if require_api_key else 0),
+        )
+
+
+def set_api_key(database_path: str, *, key_hash: str, key_prefix: str) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO api_config (id, api_key_hash, api_key_prefix)
+            VALUES (1, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                api_key_hash = excluded.api_key_hash,
+                api_key_prefix = excluded.api_key_prefix,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (key_hash, key_prefix),
+        )
+
+
+def clear_api_key(database_path: str) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE api_config
+               SET api_key_hash = NULL, api_key_prefix = NULL, updated_at = CURRENT_TIMESTAMP
+             WHERE id = 1
+            """
         )
 
 

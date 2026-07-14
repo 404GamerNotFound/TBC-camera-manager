@@ -82,6 +82,7 @@ from .plugin_templates import (
 from .plugin_testing import run_plugin_tests
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
+from .security import generate_api_key, hash_api_key, verify_api_key
 from .snapshots import DashboardSnapshotManager
 from .themes import UnknownThemeError, get_theme_registration, list_theme_registrations, reload_themes
 from .themes.packages import (
@@ -2080,9 +2081,52 @@ async def settings_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "debug_count": len(list_debug_log_entries(limit=600)),
+            "api_config": database.get_api_config(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.post("/settings/api")
+async def update_api_settings(
+    request: Request,
+    enabled: str | None = Form(None),
+    require_api_key: str | None = Form(None),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.update_api_config(
+        SETTINGS.database_path,
+        enabled=enabled == "on",
+        require_api_key=require_api_key == "on",
+    )
+    _set_flash(request, "API-Einstellungen wurden gespeichert")
+    return _redirect("/settings")
+
+
+@app.post("/settings/api-key/generate")
+async def generate_api_key_route(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    key = generate_api_key()
+    database.set_api_key(SETTINGS.database_path, key_hash=hash_api_key(key), key_prefix=key[:12])
+    _set_flash(
+        request,
+        f"Neuer API-Key erzeugt (wird nur jetzt angezeigt, danach nicht mehr abrufbar): {key}",
+    )
+    return _redirect("/settings")
+
+
+@app.post("/settings/api-key/revoke")
+async def revoke_api_key_route(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.clear_api_key(SETTINGS.database_path)
+    _set_flash(request, "API-Key wurde widerrufen")
+    return _redirect("/settings")
 
 
 @app.get("/detection", response_class=HTMLResponse)
@@ -2974,6 +3018,263 @@ async def health_refresh_api(request: Request):
     }
 
 
+# --- Öffentliche, API-Key-gesicherte Read-API für externe Integrationen (/api/v1/...) ---
+# Getrennt von den internen /api/...-Routen oben, die Session-Cookie-Auth für die eigene
+# Web-UI nutzen. Siehe docs/api.md.
+
+
+def _camera_public_dict(camera: dict[str, Any]) -> dict[str, Any]:
+    try:
+        camera_module = get_camera_module(camera.get("module_key"))
+    except UnknownCameraModuleError:
+        camera_module = None
+    return {
+        "id": int(camera["id"]),
+        "name": camera["name"],
+        "module_key": camera.get("module_key"),
+        "module_label": camera_module.label if camera_module else None,
+        "capabilities": sorted(c.value for c in camera_module.capabilities) if camera_module else [],
+        "enabled": bool(camera.get("enabled")),
+        "manufacturer": camera.get("manufacturer"),
+        "model": camera.get("model"),
+        "firmware": camera.get("firmware"),
+        "status": camera.get("last_probe_status"),
+        "status_message": camera.get("last_probe_message"),
+        "stream_uri": redact_rtsp_credentials(camera["stream_uri"]) if camera.get("stream_uri") else None,
+        "recording_enabled": bool(camera.get("recording_enabled")),
+        "continuous_recording_enabled": bool(camera.get("continuous_recording_enabled")),
+        "snapshot_enabled": bool(camera.get("snapshot_enabled")),
+        "detection_count": camera.get("detection_count"),
+        "supported_count": camera.get("supported_count"),
+        "active_count": camera.get("active_count"),
+        "snapshot_url": f"/api/v1/cameras/{camera['id']}/snapshot",
+        "created_at": camera.get("created_at"),
+        "updated_at": camera.get("updated_at"),
+    }
+
+
+def _recording_public_dict(recording: dict[str, Any]) -> dict[str, Any]:
+    has_snapshot = bool(recording.get("snapshot_path") or recording.get("snapshot_remote_key"))
+    return {
+        "id": int(recording["id"]),
+        "camera_id": int(recording["camera_id"]),
+        "camera_name": recording.get("camera_name"),
+        "detection_key": recording.get("detection_key"),
+        "label": recording.get("event_label"),
+        "status": recording.get("status"),
+        "started_at": recording.get("started_at"),
+        "ended_at": recording.get("ended_at"),
+        "duration_seconds": recording.get("duration_seconds"),
+        "size_bytes": recording.get("size_bytes"),
+        "mime_type": recording.get("mime_type"),
+        "media_url": f"/api/v1/recordings/{recording['id']}/media",
+        "snapshot_url": f"/api/v1/recordings/{recording['id']}/snapshot" if has_snapshot else None,
+    }
+
+
+def _storage_public_dict(target: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": int(target["id"]),
+        "name": target.get("name"),
+        "kind": target.get("kind"),
+        "local_path": target.get("local_path"),
+        "s3_bucket": target.get("s3_bucket"),
+        "s3_region": target.get("s3_region"),
+        "retention_days": target.get("retention_days"),
+        "retention_max_gb": target.get("retention_max_gb"),
+    }
+
+
+@app.get("/api/v1/status")
+async def api_v1_status(request: Request):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    cameras = database.list_cameras(SETTINGS.database_path)
+    return {
+        "app_name": SETTINGS.app_name,
+        "app_version": __version__,
+        "update_available": APP_UPDATE_STATE["update_available"],
+        "latest_version": APP_UPDATE_STATE["latest_version"],
+        "camera_count": len(cameras),
+    }
+
+
+@app.get("/api/v1/cameras")
+async def api_v1_cameras(request: Request):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    cameras = database.list_cameras(SETTINGS.database_path)
+    return {"cameras": [_camera_public_dict(camera) for camera in cameras]}
+
+
+@app.get("/api/v1/cameras/{camera_id}")
+async def api_v1_camera_detail(request: Request, camera_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    return _camera_public_dict(camera)
+
+
+@app.get("/api/v1/cameras/{camera_id}/snapshot")
+async def api_v1_camera_snapshot(request: Request, camera_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    stream_uri = stream_uri_for(camera) if camera else None
+    if not stream_uri:
+        return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
+    async with SNAPSHOT_SEMAPHORE:
+        snapshot_path = await asyncio.to_thread(SNAPSHOT_MANAGER.refresh_if_due, camera_id, stream_uri)
+    if snapshot_path is None or not snapshot_path.exists():
+        return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(
+        snapshot_path,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "private, no-store, max-age=0"},
+    )
+
+
+@app.get("/api/v1/cameras/{camera_id}/detections")
+async def api_v1_camera_detections(request: Request, camera_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    detections = database.list_detections(SETTINGS.database_path, camera_id)
+    return {"camera_id": camera_id, "detections": detections}
+
+
+@app.get("/api/v1/recordings")
+async def api_v1_recordings(
+    request: Request,
+    camera_id: int | None = Query(None),
+    detection_key: str | None = Query(None),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
+    limit: int = Query(200, ge=1, le=1000),
+):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    recordings = database.list_recordings(
+        SETTINGS.database_path,
+        camera_id=camera_id,
+        detection_key=detection_key,
+        date_from=date_from,
+        date_to=date_to,
+        role="admin",
+        limit=limit,
+    )
+    return {"recordings": [_recording_public_dict(recording) for recording in recordings]}
+
+
+@app.get("/api/v1/recordings/{recording_id}")
+async def api_v1_recording_detail(request: Request, recording_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    recording = database.get_recording(SETTINGS.database_path, recording_id)
+    if not recording:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    return _recording_public_dict(recording)
+
+
+@app.get("/api/v1/recordings/{recording_id}/media")
+async def api_v1_recording_media(request: Request, recording_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    recording = database.get_recording(SETTINGS.database_path, recording_id)
+    if not recording:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    local_path = recording.get("local_path")
+    if local_path and Path(local_path).exists():
+        return FileResponse(local_path, media_type="video/mp4", filename=recording.get("file_name") or "clip.mp4")
+    url = presigned_url(recording)
+    if url:
+        return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    return JSONResponse({"error": "media not available"}, status_code=status.HTTP_404_NOT_FOUND)
+
+
+@app.get("/api/v1/recordings/{recording_id}/snapshot")
+async def api_v1_recording_snapshot(request: Request, recording_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    recording = database.get_recording(SETTINGS.database_path, recording_id)
+    if not recording:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    snapshot_path = recording.get("snapshot_path")
+    if snapshot_path and Path(snapshot_path).exists():
+        return FileResponse(snapshot_path, media_type="image/jpeg")
+    url = presigned_url(recording, snapshot=True)
+    if url:
+        return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
+
+
+@app.get("/api/v1/activity")
+async def api_v1_activity(request: Request, day: str | None = Query(None)):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    selected_day = _parse_date(day, date.today())
+    cameras = database.list_cameras(SETTINGS.database_path)
+    camera_ids = [int(camera["id"]) for camera in cameras]
+    start_at = f"{selected_day.isoformat()}T00:00:00"
+    end_at = f"{(selected_day + timedelta(days=1)).isoformat()}T00:00:00"
+    rows = database.list_event_recordings_for_cameras_range(
+        SETTINGS.database_path,
+        camera_ids=camera_ids,
+        start_at=start_at,
+        end_at=end_at,
+    )
+    events_by_camera: dict[int, list[dict[str, Any]]] = {camera_id: [] for camera_id in camera_ids}
+    for row in rows:
+        events_by_camera.setdefault(int(row["camera_id"]), []).append(row)
+    return {
+        "day": selected_day.isoformat(),
+        "cameras": [
+            {
+                "id": int(camera["id"]),
+                "name": camera["name"],
+                "events": [_recording_public_dict(row) for row in events_by_camera.get(int(camera["id"]), [])],
+            }
+            for camera in cameras
+        ],
+    }
+
+
+@app.get("/api/v1/storage")
+async def api_v1_storage(request: Request):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    targets = database.list_storage_targets(SETTINGS.database_path)
+    return {"storage_targets": [_storage_public_dict(target) for target in targets]}
+
+
+@app.get("/api/v1/health")
+async def api_v1_health(request: Request):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    system_usage = await asyncio.to_thread(current_system_usage)
+    return {
+        "system_usage": system_usage,
+        "items": database.list_health_status(SETTINGS.database_path),
+        "events": database.list_health_events(SETTINGS.database_path),
+    }
+
+
 @app.get("/storage/explorer", response_class=HTMLResponse)
 async def storage_explorer(request: Request):
     guard = _require_admin(request)
@@ -3375,6 +3676,31 @@ def _require_admin(request: Request):
     if user.get("role") != "admin":
         _set_flash(request, "Dafür werden Admin-Rechte benötigt", "error")
         return _redirect("/cameras")
+    return None
+
+
+def _api_auth_error(
+    config: dict[str, Any], auth_header: str | None, api_key_header: str | None
+) -> tuple[int, str] | None:
+    if not config["enabled"]:
+        return (404, "API ist deaktiviert")
+    if not config["require_api_key"]:
+        return None
+    token = ""
+    if auth_header and auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+    token = token or (api_key_header or "").strip()
+    if not token or not config.get("api_key_hash") or not verify_api_key(token, config["api_key_hash"]):
+        return (401, "ungültiger oder fehlender API-Key")
+    return None
+
+
+def _require_api_key(request: Request) -> JSONResponse | None:
+    config = database.get_api_config(SETTINGS.database_path)
+    error = _api_auth_error(config, request.headers.get("Authorization"), request.headers.get("X-API-Key"))
+    if error:
+        code, message = error
+        return JSONResponse({"error": message}, status_code=code)
     return None
 
 

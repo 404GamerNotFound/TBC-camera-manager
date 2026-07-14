@@ -11,6 +11,47 @@
 <section class="settings-layout">
   <section class="event-panel">
     <div class="section-title">
+      <h2>API-Zugriff</h2>
+    </div>
+    <div class="quiet-box">
+      Stellt schreibgeschützte TBC-Inhalte (Kameras, Aufnahmen, Aktivität, Status) unter
+      <code>/api/v1/...</code> für externe Skripte, Dashboards oder Home Assistant bereit.
+      Standardmäßig deaktiviert. Details siehe <code>docs/api.md</code>.
+    </div>
+    <form class="editor-form" method="post" action="/settings/api">
+      <label class="check-row">
+        <input name="enabled" type="checkbox" {% if api_config.enabled %}checked{% endif %}>
+        <span>API aktivieren</span>
+      </label>
+      <label class="check-row">
+        <input name="require_api_key" type="checkbox" {% if api_config.require_api_key %}checked{% endif %}>
+        <span>API-Key erforderlich</span>
+      </label>
+      <div class="form-actions">
+        <button class="primary-button" type="submit">Speichern</button>
+      </div>
+    </form>
+    <div class="quiet-box">
+      {% if api_config.api_key_prefix %}
+      Aktiver Key: <code>{{ api_config.api_key_prefix }}…</code>
+      {% else %}
+      Kein API-Key erzeugt.
+      {% endif %}
+    </div>
+    <div class="form-actions">
+      <form method="post" action="/settings/api-key/generate">
+        <button class="primary-button" type="submit">Neuen Key erzeugen</button>
+      </form>
+      {% if api_config.api_key_prefix %}
+      <form method="post" action="/settings/api-key/revoke">
+        <button class="secondary-button" type="submit">Key widerrufen</button>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="event-panel">
+    <div class="section-title">
       <h2>Debug Log</h2>
       <span>{{ debug_count }}</span>
     </div>

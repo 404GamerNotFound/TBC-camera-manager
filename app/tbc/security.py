@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import os
+import secrets
 from dataclasses import dataclass
 
 
@@ -58,4 +59,18 @@ def verify_password(password: str, stored_hash: str) -> bool:
         parsed.iterations,
     )
     return hmac.compare_digest(candidate, parsed.digest)
+
+
+def generate_api_key() -> str:
+    return "tbc_" + secrets.token_urlsafe(32)
+
+
+def hash_api_key(key: str) -> str:
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def verify_api_key(key: str, stored_hash: str) -> bool:
+    if not key or not stored_hash:
+        return False
+    return hmac.compare_digest(hash_api_key(key), stored_hash)
 
