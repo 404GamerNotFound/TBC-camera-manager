@@ -178,7 +178,7 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update auf {{ app_latest_version }} verfügbar{% endif %}">
                     <span class="nav-shortcut" aria-hidden="true">U</span>
-                    <span>Updates{% if total_update_count %} ({{ total_update_count }}){% endif %}</span>
+                    <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} Update(s) verfügbar">{{ total_update_count }}</span>{% endif %}</span>
                   </a>
                 </li>
                 <li>
