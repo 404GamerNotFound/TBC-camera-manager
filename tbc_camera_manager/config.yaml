@@ -7,8 +7,6 @@ arch:
   - amd64
   - aarch64
 init: false
-startup: application
-boot: auto
 stage: experimental
 image: "ghcr.io/404gamernotfound/tbc-camera-manager-ha"
 webui: "http://[HOST]:[PORT:8732]"

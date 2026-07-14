@@ -23,6 +23,8 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
         self.assertEqual(config["image"], "ghcr.io/404gamernotfound/tbc-camera-manager-ha")
         self.assertEqual(config["ports"]["8732/tcp"], 8732)
         self.assertIsNone(config["options"]["admin_password"])
+        self.assertNotIn("boot", config)
+        self.assertNotIn("startup", config)
 
     def test_release_workflow_links_and_publicly_verifies_the_image(self):
         workflow = (ROOT / ".github" / "workflows" / "home-assistant-app.yml").read_text(
