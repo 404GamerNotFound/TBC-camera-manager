@@ -130,9 +130,13 @@
                 </li>
               </ul>
             </li>
+            {% set total_update_count = pending_plugin_update_count + (1 if app_update_available else 0) %}
             <li class="nav-item dropdown{% if admin_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if admin_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
                 Admin
+                {% if total_update_count %}
+                <span class="nav-update-badge" title="{{ total_update_count }} Update(s) verfügbar">{{ total_update_count }}</span>
+                {% endif %}
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
@@ -171,7 +175,6 @@
                     <span>Externe Quellen</span>
                   </a>
                 </li>
-                {% set total_update_count = pending_plugin_update_count + (1 if app_update_available else 0) %}
                 <li>
                   <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update auf {{ app_latest_version }} verfügbar{% endif %}">
                     <span class="nav-shortcut" aria-hidden="true">U</span>

@@ -158,6 +158,22 @@ a {
   box-shadow: 0 0 0 0.2rem rgba(17, 97, 92, 0.18);
 }
 
+.nav-update-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .dropdown-menu {
   min-width: 230px;
   padding: 8px;
