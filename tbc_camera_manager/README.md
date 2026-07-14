@@ -1,7 +1,7 @@
 # Home Assistant App: TBC Camera Manager
 
-TBC ist ein modularer Kamera-Manager für ONVIF- und RTSP-Kameras. Die App stellt
-die vollständige TBC-Weboberfläche bereit und kann Zustände und Steuerungen per
-MQTT Discovery an Home Assistant melden.
+TBC is a modular camera manager for ONVIF and RTSP cameras. The app provides the
+complete TBC web interface and can publish states and controls to Home Assistant
+through MQTT Discovery.
 
-Unterstützte Architekturen: `amd64` und `aarch64`.
+Supported architectures: `amd64` and `aarch64`.

@@ -2,6 +2,6 @@
 
 ## 0.2.0
 
-- Erste Home-Assistant-App-Verpackung für `amd64` und `aarch64`.
-- Persistente App-Daten und getrennt eingebundener Aufnahmebereich.
-- Gemeinsames Container-Image für Home Assistant und Standalone-Docker.
+- Initial Home Assistant app packaging for `amd64` and `aarch64`.
+- Persistent app data and a separately mounted recording directory.
+- Shared application image for Home Assistant and standalone Docker deployments.

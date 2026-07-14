@@ -88,6 +88,7 @@ jobs:
             io.hass.name=${{ needs.prepare.outputs.name }}
             io.hass.description=${{ needs.prepare.outputs.description }}
             io.hass.url=${{ needs.prepare.outputs.url }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           push: true
           version: ${{ needs.prepare.outputs.version }}
 
@@ -112,3 +113,14 @@ jobs:
             ${{ needs.prepare.outputs.version }}
             latest
           registry-prefix: ${{ needs.prepare.outputs.registry_prefix }}
+
+      - name: Verify anonymous image pull
+        env:
+          IMAGE: ${{ needs.prepare.outputs.registry_prefix }}/${{ needs.prepare.outputs.image_name }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          docker logout ghcr.io || true
+          if ! docker pull "${IMAGE}:${VERSION}"; then
+            echo "::error title=GHCR image is not public::Home Assistant requires anonymous pull access. Open the package settings, change its visibility to Public, and rerun this workflow."
+            exit 1
+          fi

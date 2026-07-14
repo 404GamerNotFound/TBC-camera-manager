@@ -24,6 +24,19 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
         self.assertEqual(config["ports"]["8732/tcp"], 8732)
         self.assertIsNone(config["options"]["admin_password"])
 
+    def test_release_workflow_links_and_publicly_verifies_the_image(self):
+        workflow = (ROOT / ".github" / "workflows" / "home-assistant-app.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}",
+            workflow,
+        )
+        self.assertIn("docker logout ghcr.io", workflow)
+        self.assertIn('docker pull "${IMAGE}:${VERSION}"', workflow)
+        self.assertIn("change its visibility to Public", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
