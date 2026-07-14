@@ -18,6 +18,12 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import __version__, database, mqtt
+from .api_common import (
+    api_auth_error,
+    camera_public_dict as _camera_public_dict,
+    recording_public_dict as _recording_public_dict,
+    storage_public_dict as _storage_public_dict,
+)
 from .app_updates import AppUpdateCheckError, fetch_latest_release, is_newer
 from .camera_modules import (
     CameraCapability,
@@ -64,6 +70,7 @@ from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
+from .mcp_server import build_mcp_app
 from .plugin_sources import (
     STANDARD_PLUGIN_SOURCES,
     PluginSourceError,
@@ -82,7 +89,7 @@ from .plugin_templates import (
 from .plugin_testing import run_plugin_tests
 from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
-from .security import generate_api_key, hash_api_key, verify_api_key
+from .security import generate_api_key, hash_api_key
 from .snapshots import DashboardSnapshotManager
 from .themes import UnknownThemeError, get_theme_registration, list_theme_registrations, reload_themes
 from .themes.packages import (
@@ -182,6 +189,32 @@ APP_UPDATE_STATE: dict[str, Any] = {
     "checked_at": None,
     "error": None,
 }
+# MCP-Server (KI-Schnittstelle, siehe docs/mcp.md) - teilt sich Aktivieren-Schalter und
+# API-Key mit der /api/v1/...-Read-API (app/tbc/api_common.py). Der Session-Manager braucht
+# einen eigenen laufenden Task-Group-Kontext, den ein einfaches app.mount() nicht startet -
+# deshalb wird er unten explizit in zusätzlichen on_event-Handlern geöffnet/geschlossen.
+MCP_APP, MCP_SESSION_MANAGER_CM = build_mcp_app(
+    database_path=SETTINGS.database_path,
+    app_name=SETTINGS.app_name,
+    app_version=__version__,
+    app_update_state=APP_UPDATE_STATE,
+    snapshot_manager=SNAPSHOT_MANAGER,
+    snapshot_semaphore=SNAPSHOT_SEMAPHORE,
+    stream_uri_for=stream_uri_for,
+)
+app.mount("/mcp", MCP_APP)
+
+
+@app.on_event("startup")
+async def _start_mcp_session_manager() -> None:
+    await MCP_SESSION_MANAGER_CM.__aenter__()
+
+
+@app.on_event("shutdown")
+async def _stop_mcp_session_manager() -> None:
+    await MCP_SESSION_MANAGER_CM.__aexit__(None, None, None)
+
+
 LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
     DetectionDefinition(key=key, label=label, category="ai")
     for key, label in {**DETECTION_KEY_LABELS, **LOITERING_KEY_LABELS}.items()
@@ -2082,6 +2115,7 @@ async def settings_page(request: Request):
             "role": "admin",
             "debug_count": len(list_debug_log_entries(limit=600)),
             "api_config": database.get_api_config(SETTINGS.database_path),
+            "mcp_endpoint_url": f"{str(request.base_url).rstrip('/')}/mcp/mcp",
             "flash": _pop_flash(request),
         },
     )
@@ -3020,69 +3054,8 @@ async def health_refresh_api(request: Request):
 
 # --- Öffentliche, API-Key-gesicherte Read-API für externe Integrationen (/api/v1/...) ---
 # Getrennt von den internen /api/...-Routen oben, die Session-Cookie-Auth für die eigene
-# Web-UI nutzen. Siehe docs/api.md.
-
-
-def _camera_public_dict(camera: dict[str, Any]) -> dict[str, Any]:
-    try:
-        camera_module = get_camera_module(camera.get("module_key"))
-    except UnknownCameraModuleError:
-        camera_module = None
-    return {
-        "id": int(camera["id"]),
-        "name": camera["name"],
-        "module_key": camera.get("module_key"),
-        "module_label": camera_module.label if camera_module else None,
-        "capabilities": sorted(c.value for c in camera_module.capabilities) if camera_module else [],
-        "enabled": bool(camera.get("enabled")),
-        "manufacturer": camera.get("manufacturer"),
-        "model": camera.get("model"),
-        "firmware": camera.get("firmware"),
-        "status": camera.get("last_probe_status"),
-        "status_message": camera.get("last_probe_message"),
-        "stream_uri": redact_rtsp_credentials(camera["stream_uri"]) if camera.get("stream_uri") else None,
-        "recording_enabled": bool(camera.get("recording_enabled")),
-        "continuous_recording_enabled": bool(camera.get("continuous_recording_enabled")),
-        "snapshot_enabled": bool(camera.get("snapshot_enabled")),
-        "detection_count": camera.get("detection_count"),
-        "supported_count": camera.get("supported_count"),
-        "active_count": camera.get("active_count"),
-        "snapshot_url": f"/api/v1/cameras/{camera['id']}/snapshot",
-        "created_at": camera.get("created_at"),
-        "updated_at": camera.get("updated_at"),
-    }
-
-
-def _recording_public_dict(recording: dict[str, Any]) -> dict[str, Any]:
-    has_snapshot = bool(recording.get("snapshot_path") or recording.get("snapshot_remote_key"))
-    return {
-        "id": int(recording["id"]),
-        "camera_id": int(recording["camera_id"]),
-        "camera_name": recording.get("camera_name"),
-        "detection_key": recording.get("detection_key"),
-        "label": recording.get("event_label"),
-        "status": recording.get("status"),
-        "started_at": recording.get("started_at"),
-        "ended_at": recording.get("ended_at"),
-        "duration_seconds": recording.get("duration_seconds"),
-        "size_bytes": recording.get("size_bytes"),
-        "mime_type": recording.get("mime_type"),
-        "media_url": f"/api/v1/recordings/{recording['id']}/media",
-        "snapshot_url": f"/api/v1/recordings/{recording['id']}/snapshot" if has_snapshot else None,
-    }
-
-
-def _storage_public_dict(target: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "id": int(target["id"]),
-        "name": target.get("name"),
-        "kind": target.get("kind"),
-        "local_path": target.get("local_path"),
-        "s3_bucket": target.get("s3_bucket"),
-        "s3_region": target.get("s3_region"),
-        "retention_days": target.get("retention_days"),
-        "retention_max_gb": target.get("retention_max_gb"),
-    }
+# Web-UI nutzen. Siehe docs/api.md. Die Serialisierungs-/Auth-Helfer liegen in api_common.py,
+# damit auch mcp_server.py sie ohne Zirkelimport auf main.py nutzen kann.
 
 
 @app.get("/api/v1/status")
@@ -3679,25 +3652,9 @@ def _require_admin(request: Request):
     return None
 
 
-def _api_auth_error(
-    config: dict[str, Any], auth_header: str | None, api_key_header: str | None
-) -> tuple[int, str] | None:
-    if not config["enabled"]:
-        return (404, "API ist deaktiviert")
-    if not config["require_api_key"]:
-        return None
-    token = ""
-    if auth_header and auth_header.lower().startswith("bearer "):
-        token = auth_header[7:].strip()
-    token = token or (api_key_header or "").strip()
-    if not token or not config.get("api_key_hash") or not verify_api_key(token, config["api_key_hash"]):
-        return (401, "ungültiger oder fehlender API-Key")
-    return None
-
-
 def _require_api_key(request: Request) -> JSONResponse | None:
     config = database.get_api_config(SETTINGS.database_path)
-    error = _api_auth_error(config, request.headers.get("Authorization"), request.headers.get("X-API-Key"))
+    error = api_auth_error(config, request.headers.get("Authorization"), request.headers.get("X-API-Key"))
     if error:
         code, message = error
         return JSONResponse({"error": message}, status_code=code)

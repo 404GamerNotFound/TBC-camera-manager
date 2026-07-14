@@ -38,6 +38,11 @@
       Kein API-Key erzeugt.
       {% endif %}
     </div>
+    <div class="quiet-box">
+      MCP-Endpunkt (KI-Schnittstelle, z. B. Claude Desktop/Code) - nutzt denselben
+      Aktivieren-Schalter und Key wie oben: <code>{{ mcp_endpoint_url }}</code>. Details siehe
+      <code>docs/mcp.md</code>.
+    </div>
     <div class="form-actions">
       <form method="post" action="/settings/api-key/generate">
         <button class="primary-button" type="submit">Neuen Key erzeugen</button>

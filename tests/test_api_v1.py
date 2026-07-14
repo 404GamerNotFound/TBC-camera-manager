@@ -1,20 +1,14 @@
-import os
 import tempfile
 import unittest
 
 from app.tbc import database
+from app.tbc.api_common import (
+    api_auth_error,
+    camera_public_dict,
+    recording_public_dict,
+    storage_public_dict,
+)
 from app.tbc.security import generate_api_key, hash_api_key, verify_api_key
-
-_TMP_ROOT = tempfile.mkdtemp()
-os.environ.setdefault("TBC_DATABASE_PATH", os.path.join(_TMP_ROOT, "tbc.sqlite3"))
-os.environ.setdefault("TBC_RECORDINGS_PATH", os.path.join(_TMP_ROOT, "recordings"))
-os.environ.setdefault("TBC_LIVE_PATH", os.path.join(_TMP_ROOT, "live"))
-os.environ.setdefault("TBC_CAMERA_MODULES_PATH", os.path.join(_TMP_ROOT, "camera-modules"))
-os.environ.setdefault("TBC_DASHBOARD_SNAPSHOTS_PATH", os.path.join(_TMP_ROOT, "dashboard-snapshots"))
-os.environ.setdefault("TBC_DETECTION_MODELS_PATH", os.path.join(_TMP_ROOT, "detection-models"))
-os.environ.setdefault("TBC_SECRET_KEY", "test-secret-key-for-api-v1-tests")
-
-from app.tbc.main import _api_auth_error  # noqa: E402  (import after env setup, see above)
 
 
 class ApiKeySecurityTests(unittest.TestCase):
@@ -85,43 +79,136 @@ class ApiConfigDatabaseTests(unittest.TestCase):
 class ApiAuthGateTests(unittest.TestCase):
     def test_disabled_api_returns_404_regardless_of_key(self):
         config = {"enabled": False, "require_api_key": True, "api_key_hash": None}
-        self.assertEqual(_api_auth_error(config, None, None), (404, "API ist deaktiviert"))
+        self.assertEqual(api_auth_error(config, None, None), (404, "API ist deaktiviert"))
 
     def test_enabled_without_key_requirement_allows_no_credentials(self):
         config = {"enabled": True, "require_api_key": False, "api_key_hash": None}
-        self.assertIsNone(_api_auth_error(config, None, None))
+        self.assertIsNone(api_auth_error(config, None, None))
 
     def test_enabled_with_key_required_rejects_missing_key(self):
         key_hash = hash_api_key(generate_api_key())
         config = {"enabled": True, "require_api_key": True, "api_key_hash": key_hash}
-        self.assertEqual(_api_auth_error(config, None, None), (401, "ungültiger oder fehlender API-Key"))
+        self.assertEqual(api_auth_error(config, None, None), (401, "ungültiger oder fehlender API-Key"))
 
     def test_enabled_with_key_required_rejects_wrong_key(self):
         key_hash = hash_api_key(generate_api_key())
         config = {"enabled": True, "require_api_key": True, "api_key_hash": key_hash}
-        error = _api_auth_error(config, "Bearer wrong-key", None)
+        error = api_auth_error(config, "Bearer wrong-key", None)
         self.assertEqual(error, (401, "ungültiger oder fehlender API-Key"))
 
     def test_enabled_with_key_required_accepts_correct_bearer_token(self):
         key = generate_api_key()
         config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
-        self.assertIsNone(_api_auth_error(config, f"Bearer {key}", None))
+        self.assertIsNone(api_auth_error(config, f"Bearer {key}", None))
 
     def test_enabled_with_key_required_accepts_correct_x_api_key_header(self):
         key = generate_api_key()
         config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
-        self.assertIsNone(_api_auth_error(config, None, key))
+        self.assertIsNone(api_auth_error(config, None, key))
 
     def test_bearer_token_takes_precedence_over_x_api_key_header(self):
         key = generate_api_key()
         config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
-        error = _api_auth_error(config, "Bearer wrong-key", key)
+        error = api_auth_error(config, "Bearer wrong-key", key)
         self.assertEqual(error, (401, "ungültiger oder fehlender API-Key"))
 
     def test_no_key_ever_generated_always_rejects(self):
         config = {"enabled": True, "require_api_key": True, "api_key_hash": None}
-        error = _api_auth_error(config, "Bearer anything", None)
+        error = api_auth_error(config, "Bearer anything", None)
         self.assertEqual(error, (401, "ungültiger oder fehlender API-Key"))
+
+
+class CameraPublicDictTests(unittest.TestCase):
+    def test_unknown_module_key_yields_empty_capabilities(self):
+        camera = {
+            "id": 1,
+            "name": "Einfahrt",
+            "module_key": "does-not-exist",
+            "enabled": 1,
+            "stream_uri": None,
+        }
+        result = camera_public_dict(camera)
+        self.assertIsNone(result["module_label"])
+        self.assertEqual(result["capabilities"], [])
+        self.assertEqual(result["snapshot_url"], "/api/v1/cameras/1/snapshot")
+
+    def test_stream_uri_credentials_are_redacted(self):
+        camera = {
+            "id": 2,
+            "name": "Garten",
+            "module_key": "rtsp_only",
+            "enabled": 1,
+            "stream_uri": "rtsp://admin:secret@192.0.2.10:554/stream1",
+        }
+        result = camera_public_dict(camera)
+        self.assertNotIn("secret", result["stream_uri"])
+
+    def test_missing_stream_uri_stays_none(self):
+        camera = {"id": 3, "name": "Flur", "module_key": None, "enabled": 0}
+        result = camera_public_dict(camera)
+        self.assertIsNone(result["stream_uri"])
+        self.assertFalse(result["enabled"])
+
+
+class RecordingPublicDictTests(unittest.TestCase):
+    def test_snapshot_url_present_when_local_snapshot_exists(self):
+        recording = {
+            "id": 5,
+            "camera_id": 1,
+            "detection_key": "ai_person",
+            "event_label": "Person",
+            "status": "ready",
+            "started_at": "2026-01-01T08:00:00",
+            "snapshot_path": "/data/recordings/5.jpg",
+        }
+        result = recording_public_dict(recording)
+        self.assertEqual(result["snapshot_url"], "/api/v1/recordings/5/snapshot")
+        self.assertEqual(result["media_url"], "/api/v1/recordings/5/media")
+
+    def test_snapshot_url_none_without_any_snapshot(self):
+        recording = {
+            "id": 6,
+            "camera_id": 1,
+            "detection_key": "motion",
+            "event_label": "Bewegung",
+            "status": "ready",
+            "started_at": "2026-01-01T08:00:00",
+        }
+        result = recording_public_dict(recording)
+        self.assertIsNone(result["snapshot_url"])
+
+    def test_remote_snapshot_key_also_counts(self):
+        recording = {
+            "id": 7,
+            "camera_id": 1,
+            "detection_key": "motion",
+            "event_label": "Bewegung",
+            "status": "ready",
+            "started_at": "2026-01-01T08:00:00",
+            "snapshot_remote_key": "recordings/7.jpg",
+        }
+        result = recording_public_dict(recording)
+        self.assertEqual(result["snapshot_url"], "/api/v1/recordings/7/snapshot")
+
+
+class StoragePublicDictTests(unittest.TestCase):
+    def test_s3_secrets_are_never_included(self):
+        target = {
+            "id": 1,
+            "name": "Cloud",
+            "kind": "s3",
+            "local_path": None,
+            "s3_bucket": "my-bucket",
+            "s3_region": "eu-central-1",
+            "s3_access_key_id": "AKIA...",
+            "s3_secret_access_key": "super-secret",
+            "retention_days": 30,
+            "retention_max_gb": 100,
+        }
+        result = storage_public_dict(target)
+        self.assertNotIn("s3_access_key_id", result)
+        self.assertNotIn("s3_secret_access_key", result)
+        self.assertEqual(result["s3_bucket"], "my-bucket")
 
 
 if __name__ == "__main__":
