@@ -1106,6 +1106,53 @@ code {
   font-size: 0.86rem;
 }
 
+.code-block {
+  margin: 6px 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.code-block code {
+  color: var(--text);
+  font-size: inherit;
+}
+
+.api-example-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 14px;
+}
+
+.api-example {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.api-example-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.api-example-method {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .table-section {
   margin-top: 22px;
 }

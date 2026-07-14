@@ -2114,8 +2114,27 @@ async def settings_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "debug_count": len(list_debug_log_entries(limit=600)),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/api-access", response_class=HTMLResponse)
+async def api_access_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "api_access.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
             "api_config": database.get_api_config(SETTINGS.database_path),
             "mcp_endpoint_url": f"{str(request.base_url).rstrip('/')}/mcp/mcp",
+            "api_examples": _api_examples(),
+            "mcp_tools": _mcp_tool_examples(),
             "flash": _pop_flash(request),
         },
     )
@@ -2136,7 +2155,7 @@ async def update_api_settings(
         require_api_key=require_api_key == "on",
     )
     _set_flash(request, "API-Einstellungen wurden gespeichert")
-    return _redirect("/settings")
+    return _redirect("/api-access")
 
 
 @app.post("/settings/api-key/generate")
@@ -2150,7 +2169,7 @@ async def generate_api_key_route(request: Request):
         request,
         f"Neuer API-Key erzeugt (wird nur jetzt angezeigt, danach nicht mehr abrufbar): {key}",
     )
-    return _redirect("/settings")
+    return _redirect("/api-access")
 
 
 @app.post("/settings/api-key/revoke")
@@ -2160,7 +2179,7 @@ async def revoke_api_key_route(request: Request):
         return guard
     database.clear_api_key(SETTINGS.database_path)
     _set_flash(request, "API-Key wurde widerrufen")
-    return _redirect("/settings")
+    return _redirect("/api-access")
 
 
 @app.get("/detection", response_class=HTMLResponse)
@@ -3056,6 +3075,254 @@ async def health_refresh_api(request: Request):
 # Getrennt von den internen /api/...-Routen oben, die Session-Cookie-Auth für die eigene
 # Web-UI nutzen. Siehe docs/api.md. Die Serialisierungs-/Auth-Helfer liegen in api_common.py,
 # damit auch mcp_server.py sie ohne Zirkelimport auf main.py nutzen kann.
+
+
+def _example_camera() -> dict[str, Any]:
+    return {
+        "id": 1,
+        "name": "Einfahrt",
+        "module_key": "reolink",
+        "module_label": "Reolink",
+        "capabilities": ["archive", "channels", "control", "detections", "firmware", "live", "recording"],
+        "enabled": True,
+        "manufacturer": "Reolink",
+        "model": "RLC-823A",
+        "firmware": "v3.1.0.4171",
+        "status": "ok",
+        "status_message": "ONVIF-Verbindung erfolgreich",
+        "stream_uri": "rtsp://192.168.1.50:554/h264Preview_01_main",
+        "recording_enabled": True,
+        "continuous_recording_enabled": False,
+        "snapshot_enabled": True,
+        "detection_count": 12,
+        "supported_count": 5,
+        "active_count": 1,
+        "snapshot_url": "/api/v1/cameras/1/snapshot",
+        "created_at": "2026-05-02 08:11:04",
+        "updated_at": "2026-07-14 09:32:51",
+    }
+
+
+def _example_recording() -> dict[str, Any]:
+    return {
+        "id": 512,
+        "camera_id": 1,
+        "camera_name": "Einfahrt",
+        "detection_key": "ai_person",
+        "label": "Person",
+        "status": "ready",
+        "started_at": "2026-07-14T08:15:03",
+        "ended_at": "2026-07-14T08:15:48",
+        "duration_seconds": 45,
+        "size_bytes": 4213880,
+        "mime_type": "video/mp4",
+        "media_url": "/api/v1/recordings/512/media",
+        "snapshot_url": "/api/v1/recordings/512/snapshot",
+    }
+
+
+def _example_storage_target() -> dict[str, Any]:
+    return {
+        "id": 1,
+        "name": "Lokaler Speicher",
+        "kind": "local",
+        "local_path": "/recordings",
+        "s3_bucket": None,
+        "s3_region": None,
+        "retention_days": 30,
+        "retention_max_gb": 500,
+    }
+
+
+def _api_examples() -> list[dict[str, Any]]:
+    camera = _example_camera()
+    recording = _example_recording()
+    storage_target = _example_storage_target()
+    curl_prefix = 'curl -H "Authorization: Bearer tbc_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"'
+
+    def _json(value: Any) -> str:
+        return json.dumps(value, indent=2, ensure_ascii=False)
+
+    return [
+        {
+            "method": "GET",
+            "path": "/api/v1/status",
+            "description": "App-Name, Version, Update-Verfügbarkeit, Kamera-Anzahl.",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/status",
+            "response": _json(
+                {
+                    "app_name": "TBC",
+                    "app_version": __version__,
+                    "update_available": False,
+                    "latest_version": None,
+                    "camera_count": 3,
+                }
+            ),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/cameras",
+            "description": "Alle Kameras mit Fähigkeiten, Status und Erkennungs-Zählern.",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/cameras",
+            "response": _json({"cameras": [camera]}),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/cameras/{id}",
+            "description": "Einzelne Kamera nach ID.",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/cameras/1",
+            "response": _json(camera),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/cameras/{id}/snapshot",
+            "description": "Aktuelles Vorschaubild der Kamera - Binärdaten, kein JSON.",
+            "curl": f"{curl_prefix} -o snapshot.jpg https://tbc.example.com/api/v1/cameras/1/snapshot",
+            "response": None,
+            "response_note": "Antwort: Bilddaten mit Content-Type: image/jpeg",
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/cameras/{id}/detections",
+            "description": "Aktueller Erkennungszustand der Kamera (jede konfigurierte Erkennungsart).",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/cameras/1/detections",
+            "response": _json(
+                {
+                    "camera_id": 1,
+                    "detections": [
+                        {
+                            "id": 7,
+                            "camera_id": 1,
+                            "detection_key": "ai_person",
+                            "label": "Person",
+                            "category": "ai",
+                            "channel": None,
+                            "supported": 1,
+                            "active": 1,
+                            "source": "local_ai",
+                            "last_seen": "2026-07-14 08:15:03",
+                            "raw_value": '{"confidence": 0.94, "box": [0.31, 0.12, 0.58, 0.87]}',
+                            "updated_at": "2026-07-14 08:15:03",
+                        }
+                    ],
+                }
+            ),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/recordings",
+            "description": (
+                "Aufnahmenliste. Query-Parameter: camera_id, detection_key, date_from, date_to, "
+                "limit (Standard 200, max. 1000)."
+            ),
+            "curl": f"{curl_prefix} \"https://tbc.example.com/api/v1/recordings?camera_id=1&limit=20\"",
+            "response": _json({"recordings": [recording]}),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/recordings/{id}",
+            "description": "Metadaten einer einzelnen Aufnahme.",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/recordings/512",
+            "response": _json(recording),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/recordings/{id}/media",
+            "description": "Video-Clip - Binärdaten (MP4), unterstützt HTTP-Range für Seeking.",
+            "curl": f"{curl_prefix} -o clip.mp4 https://tbc.example.com/api/v1/recordings/512/media",
+            "response": None,
+            "response_note": "Antwort: Video-Daten mit Content-Type: video/mp4",
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/recordings/{id}/snapshot",
+            "description": "Ereignis-Vorschaubild der Aufnahme - Binärdaten, kein JSON.",
+            "curl": f"{curl_prefix} -o event.jpg https://tbc.example.com/api/v1/recordings/512/snapshot",
+            "response": None,
+            "response_note": "Antwort: Bilddaten mit Content-Type: image/jpeg",
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/activity",
+            "description": "Ereignis-Aufnahmen über alle Kameras für einen Tag. Query-Parameter: day (YYYY-MM-DD, Standard heute).",
+            "curl": f"{curl_prefix} \"https://tbc.example.com/api/v1/activity?day=2026-07-14\"",
+            "response": _json(
+                {
+                    "day": "2026-07-14",
+                    "cameras": [
+                        {"id": 1, "name": "Einfahrt", "events": [recording]},
+                        {"id": 2, "name": "Garten", "events": []},
+                    ],
+                }
+            ),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/storage",
+            "description": "Konfigurierte Speicherziele (ohne Zugangsdaten).",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/storage",
+            "response": _json({"storage_targets": [storage_target]}),
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/health",
+            "description": "Systemauslastung sowie Health-Status/-Ereignisse (Kameras, Speicher, MQTT).",
+            "curl": f"{curl_prefix} https://tbc.example.com/api/v1/health",
+            "response": _json(
+                {
+                    "system_usage": {
+                        "checked_at": "2026-07-14 09:32:51",
+                        "cpu_percent": 12.4,
+                        "cpu_label": "12.4%",
+                        "cpu_cores": 8,
+                        "load_label": "Load 0.42, 0.38, 0.31",
+                        "memory_percent": 47.1,
+                        "memory_label": "47.1%",
+                        "memory_used_mb": 3782.5,
+                        "memory_total_mb": 8038.0,
+                        "memory_detail": "3.7 GB von 7.9 GB belegt",
+                    },
+                    "items": [
+                        {
+                            "id": 1,
+                            "component_type": "camera",
+                            "component_id": "1",
+                            "status": "ok",
+                            "message": "Einfahrt: erreichbar",
+                            "checked_at": "2026-07-14 09:32:51",
+                        }
+                    ],
+                    "events": [
+                        {
+                            "id": 1,
+                            "component_type": "camera",
+                            "component_id": "1",
+                            "previous_status": "error",
+                            "status": "ok",
+                            "message": "Einfahrt: erreichbar",
+                            "created_at": "2026-07-14 09:32:51",
+                        }
+                    ],
+                }
+            ),
+        },
+    ]
+
+
+def _mcp_tool_examples() -> list[dict[str, str]]:
+    return [
+        ("list_cameras", "Alle Kameras mit Fähigkeiten und Status."),
+        ("get_camera", "Einzelne Kamera nach ID."),
+        ("get_camera_detections", "Aktueller Erkennungszustand einer Kamera."),
+        ("get_camera_snapshot", "Aktuelles Live-Vorschaubild einer Kamera - als Bild, nicht nur als URL."),
+        ("list_recordings", "Aufnahmenliste, filterbar nach Kamera, Erkennungstyp, Datumsbereich."),
+        ("get_recording", "Metadaten einer einzelnen Aufnahme."),
+        ("get_recording_snapshot", "Ereignis-Vorschaubild einer Aufnahme (nur bei lokalem Snapshot)."),
+        ("get_activity", "Ereignis-Aufnahmen über alle Kameras für einen Tag."),
+        ("get_storage", "Konfigurierte Speicherziele (ohne Zugangsdaten)."),
+        ("get_health", "Systemauslastung und Health-Status/-Ereignisse."),
+        ("get_status", "App-Name, Version, Update-Verfügbarkeit, Kamera-Anzahl."),
+    ]
 
 
 @app.get("/api/v1/status")

@@ -23,7 +23,7 @@
       {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') or path.startswith('/activity') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
-      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/plugin-sources') or path.startswith('/updates') %}
+      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/api-access') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/plugin-sources') or path.startswith('/updates') %}
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Navigation umschalten" data-menu-toggle>
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -185,6 +185,12 @@
                   <a class="dropdown-item{% if path.startswith('/settings') %} active{% endif %}" href="/settings">
                     <span class="nav-shortcut" aria-hidden="true">A</span>
                     <span>Einstellungen</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
+                    <span class="nav-shortcut" aria-hidden="true">I</span>
+                    <span>API-Zugriff</span>
                   </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
