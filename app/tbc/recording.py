@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 import shutil
@@ -35,6 +36,7 @@ class RecordingJob:
     post_seconds: int
     snapshot_enabled: bool
     storage_target: dict[str, Any]
+    bbox: tuple[float, float, float, float] | None = None
 
 
 @dataclass
@@ -125,6 +127,7 @@ class RecordingManager:
                 post_seconds=post_seconds,
                 snapshot_enabled=bool(int(camera.get("snapshot_enabled") or 0)),
                 storage_target=storage_target,
+                bbox=_bbox_for_active_event(detections, detection_key),
             )
             self._active[active_key] = active
             self._last_started[active_key] = now
@@ -503,7 +506,7 @@ def _record_clip(job: RecordingJob, active: ActiveRecording) -> dict[str, Any]:
         filename = f"{active.started_at:%Y%m%d-%H%M%S}-{_slug(job.camera_name)}-{_slug(job.detection_key)}.mp4"
         output_file = local_base_path / filename
         _build_mp4(pre_segments, body_ts, output_file, work_dir)
-        snapshot_path = _create_snapshot(output_file, job.snapshot_enabled)
+        snapshot_path = _create_snapshot(output_file, job.snapshot_enabled, bbox=job.bbox)
 
         ended_at = datetime.utcnow()
         size_bytes = output_file.stat().st_size if output_file.exists() else 0
@@ -616,7 +619,12 @@ def _build_mp4(pre_segments: list[Path], body_ts: Path, output_file: Path, work_
         raise RuntimeError("ffmpeg konnte den MP4-Clip nicht erzeugen")
 
 
-def _create_snapshot(video_file: Path, enabled: bool) -> Path | None:
+def _create_snapshot(
+    video_file: Path,
+    enabled: bool,
+    *,
+    bbox: tuple[float, float, float, float] | None = None,
+) -> Path | None:
     if not enabled:
         return None
     snapshot_file = video_file.with_suffix(".jpg")
@@ -630,6 +638,11 @@ def _create_snapshot(video_file: Path, enabled: bool) -> Path | None:
         str(video_file),
         "-frames:v",
         "1",
+    ]
+    drawbox = _drawbox_filter(bbox)
+    if drawbox:
+        command += ["-vf", drawbox]
+    command += [
         "-q:v",
         "3",
         str(snapshot_file),
@@ -638,6 +651,22 @@ def _create_snapshot(video_file: Path, enabled: bool) -> Path | None:
     if result.returncode != 0 or not snapshot_file.exists() or snapshot_file.stat().st_size == 0:
         return None
     return snapshot_file
+
+
+def _drawbox_filter(bbox: tuple[float, float, float, float] | None) -> str | None:
+    """Builds an ffmpeg drawbox expression from a normalized (xmin, ymin, xmax, ymax) box.
+
+    Uses ffmpeg's iw/ih (input width/height) expressions so no ffprobe call is needed
+    to learn the actual pixel resolution first. The box reflects where the object was
+    at the moment the event triggered, not necessarily the exact snapshot frame - it is
+    approximate whenever a pre-roll shifts the snapshot away from that moment.
+    """
+    if not bbox:
+        return None
+    xmin, ymin, xmax, ymax = (max(0.0, min(1.0, value)) for value in bbox)
+    width = max(0.01, xmax - xmin)
+    height = max(0.01, ymax - ymin)
+    return f"drawbox=x=iw*{xmin:.4f}:y=ih*{ymin:.4f}:w=iw*{width:.4f}:h=ih*{height:.4f}:color=red@0.9:thickness=4"
 
 
 def _copy_prebuffer_segments(camera_id: int, pre_seconds: int, work_dir: Path) -> list[Path]:
@@ -735,6 +764,32 @@ def _active_events(detections: list[dict[str, Any]], trigger_keys: list[str]) ->
 
 def _motion_is_active(detections: list[dict[str, Any]]) -> bool:
     return bool(_active_events(detections, ["motion"]))
+
+
+def _bbox_for_active_event(detections: list[dict[str, Any]], detection_key: str) -> tuple[float, float, float, float] | None:
+    """Extracts the local-AI bounding box for the detection that triggered this event, if any.
+
+    Only local_ai-sourced detections carry a box in raw_value; camera-native events
+    (ONVIF/vendor) have no box to draw, so this returns None for them.
+    """
+    for detection in detections:
+        raw_key = str(detection.get("key") or "")
+        base_key = raw_key.split(":", 1)[-1]
+        if base_key != detection_key or not detection.get("active"):
+            continue
+        if detection.get("source") != "local_ai":
+            continue
+        raw_value = detection.get("raw_value")
+        if not raw_value:
+            continue
+        try:
+            payload = json.loads(raw_value)
+        except (TypeError, ValueError):
+            continue
+        box = payload.get("box")
+        if isinstance(box, list) and len(box) == 4:
+            return tuple(float(value) for value in box)
+    return None
 
 
 def _first_storage_target(database_path: str) -> dict[str, Any] | None:

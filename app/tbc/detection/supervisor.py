@@ -9,8 +9,9 @@ from typing import Any, Callable
 
 from .. import database
 from .backend import Detection, DetectionBackend
-from .classes import DETECTION_KEY_LABELS
+from .classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .frame_source import FrameGrabber
+from .loitering import LoiterTracker
 from .zones import filter_detections_by_zones
 
 LOGGER = logging.getLogger(__name__)
@@ -63,6 +64,23 @@ class ActiveObjectTracker:
         return rows
 
 
+def _loitering_rows(loiter_tracker: LoiterTracker, zones: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    active_keys = loiter_tracker.active_loitering_keys(zones)
+    return [
+        {
+            "key": key,
+            "label": label,
+            "category": "ai",
+            "channel": None,
+            "supported": True,
+            "active": key in active_keys,
+            "source": "local_ai",
+            "raw_value": None,
+        }
+        for key, label in LOITERING_KEY_LABELS.items()
+    ]
+
+
 async def run_camera_detection_worker(
     database_path: str,
     camera_id: int,
@@ -97,6 +115,7 @@ async def _run_worker_once(
     sample_fps = float(settings.get("sample_fps") or 2.0)
     grabber = FrameGrabber(stream_uri, sample_fps=sample_fps)
     tracker = ActiveObjectTracker(active_timeout_seconds=max(3.0, 3.0 / sample_fps))
+    loiter_tracker = LoiterTracker()
     backend = backend_factory(settings)
     zones = database.list_camera_detection_zones(database_path, camera_id)
     grabber.start()
@@ -112,9 +131,13 @@ async def _run_worker_once(
                 continue
             consecutive_failures = 0
             detections = await asyncio.to_thread(backend.infer, frame)
-            detections = filter_detections_by_zones(detections, zones)
-            tracker.update(detections)
-            on_detections(camera_id, tracker.detection_rows())
+            # Loitering uses the raw, pre-zone-filter detections - it is its own
+            # zone type independent of include/exclude filtering below.
+            loiter_tracker.update(detections, zones)
+            filtered_detections = filter_detections_by_zones(detections, zones)
+            tracker.update(filtered_detections)
+            rows = tracker.detection_rows() + _loitering_rows(loiter_tracker, zones)
+            on_detections(camera_id, rows)
     finally:
         grabber.stop()
 

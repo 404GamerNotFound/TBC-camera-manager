@@ -320,6 +320,8 @@
   const form = editor.querySelector("[data-zone-form]");
   const nameInput = editor.querySelector("[data-zone-name-input]");
   const modeInput = editor.querySelector("[data-zone-mode-input]");
+  const dwellField = editor.querySelector("[data-zone-dwell-field]");
+  const dwellInput = editor.querySelector("[data-zone-dwell-input]");
   const classInputs = Array.from(editor.querySelectorAll("[data-zone-class-input]"));
   const discardButton = editor.querySelector("[data-zone-discard]");
   const list = editor.querySelector("[data-zone-list]");
@@ -376,7 +378,25 @@
 
   function zoneColor(mode) {
     const styles = getComputedStyle(document.documentElement);
-    return mode === "exclude" ? styles.getPropertyValue("--danger").trim() : styles.getPropertyValue("--accent").trim();
+    if (mode === "exclude") return styles.getPropertyValue("--danger").trim();
+    if (mode === "loiter") return styles.getPropertyValue("--warn").trim();
+    return styles.getPropertyValue("--accent").trim();
+  }
+
+  function zoneModeLabel(zone) {
+    if (zone.mode === "exclude") return "Ausschluss";
+    if (zone.mode === "loiter") return `Verweilzone (${zone.min_dwell_seconds}s)`;
+    return "Einschluss";
+  }
+
+  function zoneStatusClass(mode) {
+    if (mode === "exclude") return "status-idle";
+    if (mode === "loiter") return "status-warning";
+    return "status-active";
+  }
+
+  function updateDwellFieldVisibility() {
+    dwellField.hidden = modeInput.value !== "loiter";
   }
 
   function draw() {
@@ -405,13 +425,13 @@
       item.innerHTML = `
         <div class="zone-list-heading">
           <strong></strong>
-          <span class="status-pill ${zone.mode === "exclude" ? "status-idle" : "status-active"}"></span>
+          <span class="status-pill ${zoneStatusClass(zone.mode)}"></span>
         </div>
         <span class="zone-classes"></span>
         <button class="text-button" type="button" data-zone-delete="${zone.id}">Löschen</button>
       `;
       item.querySelector(".zone-list-heading strong").textContent = zone.name;
-      item.querySelector(".status-pill").textContent = zone.mode === "exclude" ? "Ausschluss" : "Einschluss";
+      item.querySelector(".status-pill").textContent = zoneModeLabel(zone);
       item.querySelector(".zone-classes").textContent = classText;
       list.appendChild(item);
     });
@@ -459,8 +479,11 @@
     hint.hidden = true;
     startButton.hidden = false;
     form.hidden = false;
+    updateDwellFieldVisibility();
     nameInput.focus();
   });
+
+  modeInput.addEventListener("change", updateDwellFieldVisibility);
 
   discardButton.addEventListener("click", () => {
     resetForm();
@@ -482,6 +505,7 @@
           mode: modeInput.value,
           classes: classInputs.filter((input) => input.checked).map((input) => input.value),
           points: pendingPoints,
+          min_dwell_seconds: Number(dwellInput.value) || 10,
         }),
       });
       const data = await response.json().catch(() => null);

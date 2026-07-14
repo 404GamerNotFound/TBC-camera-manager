@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS camera_detection_zones (
     mode TEXT NOT NULL DEFAULT 'include',
     classes_json TEXT,
     points_json TEXT NOT NULL,
+    min_dwell_seconds INTEGER NOT NULL DEFAULT 10,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
@@ -343,6 +344,7 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE plugin_sources ADD COLUMN latest_ref_sha TEXT",
     "ALTER TABLE plugin_sources ADD COLUMN update_available INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE plugin_sources ADD COLUMN last_checked_at TEXT",
+    "ALTER TABLE camera_detection_zones ADD COLUMN min_dwell_seconds INTEGER NOT NULL DEFAULT 10",
 )
 
 
@@ -1273,12 +1275,13 @@ def create_camera_detection_zone(
     mode: str,
     classes: list[str] | None,
     points: list[tuple[float, float]],
+    min_dwell_seconds: int = 10,
 ) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
             """
-            INSERT INTO camera_detection_zones (camera_id, name, mode, classes_json, points_json)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO camera_detection_zones (camera_id, name, mode, classes_json, points_json, min_dwell_seconds)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 camera_id,
@@ -1286,6 +1289,7 @@ def create_camera_detection_zone(
                 _valid_zone_mode(mode),
                 json.dumps(list(classes)) if classes else None,
                 json.dumps([list(point) for point in points]),
+                max(1, min(3600, int(min_dwell_seconds))),
             ),
         )
         return int(cursor.lastrowid)
@@ -1307,7 +1311,9 @@ def _detection_zone_row(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def _valid_zone_mode(mode: str) -> str:
-    return "exclude" if mode == "exclude" else "include"
+    if mode in {"exclude", "loiter"}:
+        return mode
+    return "include"
 
 
 def mark_recording_started(database_path: str, camera_id: int) -> None:

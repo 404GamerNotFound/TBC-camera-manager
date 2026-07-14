@@ -30,6 +30,19 @@ DETECTION_KEY_LABELS: dict[str, str] = {
     "ai_animal": "Tier (lokale KI)",
 }
 
+# Separate trigger keys for "present in a loiter zone for at least N seconds",
+# distinct from the plain per-frame detection keys above so they can be recorded
+# on (or filtered from) independently.
+LOITERING_KEY_LABELS: dict[str, str] = {
+    "ai_person_loitering": "Person verweilt (lokale KI)",
+    "ai_vehicle_loitering": "Fahrzeug verweilt (lokale KI)",
+    "ai_animal_loitering": "Tier verweilt (lokale KI)",
+}
+
 
 def canonical_detection_key(label: str) -> str | None:
     return COCO_LABEL_TO_DETECTION_KEY.get(label.strip().lower())
+
+
+def loitering_key_for(detection_key: str) -> str | None:
+    return f"{detection_key}_loitering" if detection_key in DETECTION_KEY_LABELS else None

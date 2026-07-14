@@ -56,7 +56,7 @@ from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .detection import factory as detection_factory
-from .detection.classes import DETECTION_KEY_LABELS
+from .detection.classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection.model_provisioning import ensure_default_model
 from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
@@ -159,7 +159,8 @@ PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
 # itself, which keeps running on the camera independently of TBC.
 FIRMWARE_UPDATE_STATE: dict[tuple[int, int], dict[str, Any]] = {}
 LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
-    DetectionDefinition(key=key, label=label, category="ai") for key, label in DETECTION_KEY_LABELS.items()
+    DetectionDefinition(key=key, label=label, category="ai")
+    for key, label in {**DETECTION_KEY_LABELS, **LOITERING_KEY_LABELS}.items()
 )
 DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
@@ -947,7 +948,7 @@ async def create_camera_detection_zone_route(request: Request, camera_id: int):
         return JSONResponse({"ok": False, "message": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
     payload = await request.json()
     name = str(payload.get("name") or "").strip() or "Zone"
-    mode = "exclude" if payload.get("mode") == "exclude" else "include"
+    mode = payload.get("mode") if payload.get("mode") in {"exclude", "loiter"} else "include"
     classes = payload.get("classes")
     classes = [key for key in classes if key in DETECTION_KEY_LABELS] if isinstance(classes, list) else None
     raw_points = payload.get("points")
@@ -960,6 +961,10 @@ async def create_camera_detection_zone_route(request: Request, camera_id: int):
         ]
     except (TypeError, ValueError, IndexError):
         return JSONResponse({"ok": False, "message": "Ungültige Punktkoordinaten"}, status_code=status.HTTP_400_BAD_REQUEST)
+    try:
+        min_dwell_seconds = max(1, min(3600, int(payload.get("min_dwell_seconds") or 10)))
+    except (TypeError, ValueError):
+        min_dwell_seconds = 10
     zone_id = database.create_camera_detection_zone(
         SETTINGS.database_path,
         camera_id,
@@ -967,6 +972,7 @@ async def create_camera_detection_zone_route(request: Request, camera_id: int):
         mode=mode,
         classes=classes,
         points=points,
+        min_dwell_seconds=min_dwell_seconds,
     )
     zone = database.get_camera_detection_zone(SETTINGS.database_path, zone_id)
     return {"ok": True, "zone": zone}

@@ -419,8 +419,9 @@
     </div>
     <p class="hint-text">
       Zeichne Bereiche auf dem letzten Kamerabild ein. Ausschlusszonen ignorieren Erkennungen darin (z.&nbsp;B. eine Straße im
-      Hintergrund), Einschlusszonen zählen eine Klasse nur innerhalb der Zone (z.&nbsp;B. nur die Einfahrt). Ohne Zonen wertet
-      die lokale KI-Erkennung das gesamte Bild aus.
+      Hintergrund), Einschlusszonen zählen eine Klasse nur innerhalb der Zone (z.&nbsp;B. nur die Einfahrt), Verweilzonen lösen
+      erst aus, wenn eine Klasse mindestens die eingestellte Zeit ununterbrochen in der Zone bleibt (z.&nbsp;B. eine Person, die
+      an der Tür wartet). Ohne Zonen wertet die lokale KI-Erkennung das gesamte Bild aus.
     </p>
     <div class="zone-editor-canvas-wrap">
       <img class="zone-editor-image" data-zone-image src="/cameras/{{ camera.id }}/snapshot.jpg" alt="Letztes Kamerabild">
@@ -442,7 +443,12 @@
           <select name="mode" data-zone-mode-input>
             <option value="include">Einschluss (nur hier zählt es)</option>
             <option value="exclude">Ausschluss (hier ignorieren)</option>
+            <option value="loiter">Verweilzone (erst nach X Sekunden)</option>
           </select>
+        </label>
+        <label data-zone-dwell-field hidden>
+          <span>Mindest-Verweildauer in Sekunden</span>
+          <input type="number" name="min_dwell_seconds" data-zone-dwell-input min="1" max="3600" value="10">
         </label>
         <fieldset class="span-2 checkbox-field">
           <legend>Klassen (leer = alle)</legend>
@@ -466,8 +472,8 @@
       <li data-zone-id="{{ zone.id }}">
         <div class="zone-list-heading">
           <strong>{{ zone.name }}</strong>
-          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% else %}status-active{% endif %}">
-            {{ 'Ausschluss' if zone.mode == 'exclude' else 'Einschluss' }}
+          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}">
+            {% if zone.mode == 'exclude' %}Ausschluss{% elif zone.mode == 'loiter' %}Verweilzone ({{ zone.min_dwell_seconds }}s){% else %}Einschluss{% endif %}
           </span>
         </div>
         <span>

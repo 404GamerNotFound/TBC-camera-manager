@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app.tbc import database, recording
 from app.tbc.maintenance import apply_cleanup, cleanup_preview
-from app.tbc.recording import ContinuousRecordingManager, _motion_is_active
+from app.tbc.recording import ContinuousRecordingManager, _bbox_for_active_event, _drawbox_filter, _motion_is_active
 
 
 class RecordingTests(unittest.TestCase):
@@ -300,6 +300,71 @@ class ContinuousRecordingTests(unittest.TestCase):
                 self.assertTrue(second.exists())
             finally:
                 recording.CONTINUOUS_ROOT = original_root
+
+
+class BboxForActiveEventTests(unittest.TestCase):
+    def test_extracts_box_for_matching_active_local_ai_detection(self):
+        detections = [
+            {
+                "key": "ai_person",
+                "active": True,
+                "source": "local_ai",
+                "raw_value": '{"confidence": 0.9, "box": [0.1, 0.2, 0.5, 0.6]}',
+            }
+        ]
+        self.assertEqual(_bbox_for_active_event(detections, "ai_person"), (0.1, 0.2, 0.5, 0.6))
+
+    def test_ignores_camera_native_detections_without_local_ai_source(self):
+        detections = [{"key": "person", "active": True, "source": "onvif", "raw_value": None}]
+        self.assertIsNone(_bbox_for_active_event(detections, "person"))
+
+    def test_ignores_inactive_detections(self):
+        detections = [
+            {
+                "key": "ai_person",
+                "active": False,
+                "source": "local_ai",
+                "raw_value": '{"confidence": 0.9, "box": [0.1, 0.2, 0.5, 0.6]}',
+            }
+        ]
+        self.assertIsNone(_bbox_for_active_event(detections, "ai_person"))
+
+    def test_handles_missing_or_malformed_raw_value(self):
+        detections = [{"key": "ai_person", "active": True, "source": "local_ai", "raw_value": None}]
+        self.assertIsNone(_bbox_for_active_event(detections, "ai_person"))
+        detections = [{"key": "ai_person", "active": True, "source": "local_ai", "raw_value": "not json"}]
+        self.assertIsNone(_bbox_for_active_event(detections, "ai_person"))
+
+    def test_matches_channel_prefixed_keys(self):
+        detections = [
+            {
+                "key": "ch1:ai_person",
+                "active": True,
+                "source": "local_ai",
+                "raw_value": '{"confidence": 0.8, "box": [0.0, 0.0, 1.0, 1.0]}',
+            }
+        ]
+        self.assertEqual(_bbox_for_active_event(detections, "ai_person"), (0.0, 0.0, 1.0, 1.0))
+
+
+class DrawboxFilterTests(unittest.TestCase):
+    def test_returns_none_without_a_box(self):
+        self.assertIsNone(_drawbox_filter(None))
+
+    def test_builds_expected_expression(self):
+        expression = _drawbox_filter((0.1, 0.2, 0.5, 0.6))
+        self.assertIn("x=iw*0.1000", expression)
+        self.assertIn("y=ih*0.2000", expression)
+        self.assertIn("w=iw*0.4000", expression)
+        self.assertIn("h=ih*0.4000", expression)
+        self.assertIn("color=red", expression)
+
+    def test_clamps_out_of_range_values(self):
+        expression = _drawbox_filter((-0.5, -0.5, 1.5, 1.5))
+        self.assertIn("x=iw*0.0000", expression)
+        self.assertIn("y=ih*0.0000", expression)
+        self.assertIn("w=iw*1.0000", expression)
+        self.assertIn("h=ih*1.0000", expression)
 
 
 if __name__ == "__main__":
