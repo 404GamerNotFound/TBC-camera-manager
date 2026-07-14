@@ -11,7 +11,7 @@
 # as a documented starting point, not a verified recipe; check
 # https://coral.ai/docs/accelerator/get-started/ for the current package locations
 # before relying on it, since Google has changed hosting for these packages before.
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
