@@ -44,6 +44,50 @@ DEFAULT_MODEL_METADATA: dict[str, object] = {
 }
 
 
+# Google's official Coral example model/labels (google-coral/test_data), an
+# edgetpu-compiled SSD-MobileNetV2 with the TFLite_Detection_PostProcess op pycoral's
+# detect.get_objects() expects. Indices are 0-based (verified against the labels file
+# itself), unlike the 1-based TF-Object-Detection-API convention DEFAULT_MODEL_METADATA
+# above uses - the two backends are not interchangeable metadata-wise.
+DEFAULT_CORAL_MODEL_URL = (
+    "https://github.com/google-coral/test_data/raw/master/"
+    "ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite"
+)
+DEFAULT_CORAL_MODEL_METADATA: dict[str, object] = {
+    "input_size": [300, 300],
+    "classes": {
+        "0": "person",
+        "1": "bicycle",
+        "2": "car",
+        "3": "motorcycle",
+        "5": "bus",
+        "6": "train",
+        "7": "truck",
+        "15": "bird",
+        "16": "cat",
+        "17": "dog",
+        "18": "horse",
+        "19": "sheep",
+        "20": "cow",
+        "21": "elephant",
+        "22": "bear",
+        "23": "zebra",
+        "24": "giraffe",
+    },
+}
+
+
+def ensure_default_coral_model(model_path: Path, metadata_path: Path) -> bool:
+    """Provisions the bundled default Edge TPU model, lazily (only once a camera
+    actually selects the Coral backend - most installs never touch this, so it is not
+    downloaded eagerly at startup like ensure_default_model's ONNX default is).
+    """
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    if not metadata_path.exists():
+        metadata_path.write_text(json.dumps(DEFAULT_CORAL_MODEL_METADATA, ensure_ascii=False, indent=2), encoding="utf-8")
+    return download_model_if_missing(DEFAULT_CORAL_MODEL_URL, model_path)
+
+
 def download_model_if_missing(url: str, model_path: Path) -> bool:
     """Downloads a model binary to model_path unless it is already present.
 

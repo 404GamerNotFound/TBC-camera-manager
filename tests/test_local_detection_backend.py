@@ -1,9 +1,10 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 
 from app.tbc.detection.classes import canonical_detection_key
-from app.tbc.detection.onnx_backend import ModelMetadata, decode_detection_output, preprocess_frame
+from app.tbc.detection.onnx_backend import ModelMetadata, OnnxGpuBackend, decode_detection_output, preprocess_frame
 
 
 def _metadata(**overrides):
@@ -109,6 +110,26 @@ class CanonicalDetectionKeyTests(unittest.TestCase):
 
     def test_returns_none_for_unmapped_labels(self):
         self.assertIsNone(canonical_detection_key("bottle"))
+
+
+class OnnxGpuBackendAvailabilityTests(unittest.TestCase):
+    def test_unavailable_without_cuda_provider(self):
+        fake_onnxruntime = MagicMock()
+        fake_onnxruntime.get_available_providers.return_value = ["CPUExecutionProvider"]
+        with patch.dict("sys.modules", {"onnxruntime": fake_onnxruntime}):
+            available, message = OnnxGpuBackend.available()
+        self.assertFalse(available)
+        self.assertIn("CUDAExecutionProvider", message)
+
+    def test_available_with_cuda_provider(self):
+        fake_onnxruntime = MagicMock()
+        fake_onnxruntime.get_available_providers.return_value = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        with patch.dict("sys.modules", {"onnxruntime": fake_onnxruntime}):
+            available, message = OnnxGpuBackend.available()
+        self.assertTrue(available)
+
+    def test_uses_cuda_then_cpu_provider_order(self):
+        self.assertEqual(OnnxGpuBackend.providers, ("CUDAExecutionProvider", "CPUExecutionProvider"))
 
 
 if __name__ == "__main__":

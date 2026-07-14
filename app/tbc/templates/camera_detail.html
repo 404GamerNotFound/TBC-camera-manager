@@ -406,8 +406,19 @@
         <span>Mindest-Konfidenz</span>
         <input name="detection_confidence_threshold" type="number" min="0.05" max="1" step="0.05" value="{{ detection_settings.confidence_threshold if detection_settings else detection_default_confidence_threshold }}" required>
       </label>
+      <label class="span-2">
+        <span>Backend</span>
+        <select name="detection_backend">
+          {% for key, available, message in detection_backend_status %}
+          <option value="{{ key }}" {% if (detection_settings.backend if detection_settings else 'cpu') == key %}selected{% endif %}>
+            {{ detection_backend_labels.get(key, key | upper) }}{% if not available %} (nicht verfügbar auf diesem Server){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
     </div>
     <div class="form-actions">
+      <a class="secondary-button" href="/detection">Backend-Status</a>
       <button class="primary-button" type="submit">Speichern</button>
     </div>
   </form>

@@ -106,6 +106,7 @@ def decode_detection_output(
 
 class OnnxCpuBackend(DetectionBackend):
     key = "onnx_cpu"
+    providers: tuple[str, ...] = ("CPUExecutionProvider",)
 
     def __init__(self, model_path: str, metadata_path: str, *, confidence_threshold: float = 0.5) -> None:
         self.model_path = Path(model_path)
@@ -126,7 +127,7 @@ class OnnxCpuBackend(DetectionBackend):
             return
         import onnxruntime
 
-        self._session = onnxruntime.InferenceSession(str(self.model_path), providers=["CPUExecutionProvider"])
+        self._session = onnxruntime.InferenceSession(str(self.model_path), providers=list(self.providers))
 
     def infer(self, frame: np.ndarray) -> list[Detection]:
         self.load()
@@ -136,3 +137,26 @@ class OnnxCpuBackend(DetectionBackend):
         output_names = [output.name for output in self._session.get_outputs()]
         named_outputs = dict(zip(output_names, raw_outputs))
         return decode_detection_output(named_outputs, self.metadata, confidence_threshold=self.confidence_threshold)
+
+
+class OnnxGpuBackend(OnnxCpuBackend):
+    """Same ONNX model/pre/post-processing as OnnxCpuBackend, backed by onnxruntime's
+    CUDA execution provider instead of plain CPU. Requires the onnxruntime-gpu wheel
+    (not onnxruntime) plus a matching CUDA/cuDNN runtime to actually be present - see
+    Dockerfile.gpu. Falls back to CPU within the same session if CUDA init fails for a
+    particular op, since "CPUExecutionProvider" stays listed as a fallback provider.
+    """
+
+    key = "onnx_cuda"
+    providers = ("CUDAExecutionProvider", "CPUExecutionProvider")
+
+    @classmethod
+    def available(cls) -> tuple[bool, str]:
+        try:
+            import onnxruntime
+        except ImportError:
+            return False, "onnxruntime ist nicht installiert"
+        available_providers = onnxruntime.get_available_providers()
+        if "CUDAExecutionProvider" not in available_providers:
+            return False, "Kein CUDAExecutionProvider gefunden (onnxruntime-gpu + passende CUDA/cuDNN-Laufzeit erforderlich)"
+        return True, "GPU-Inferenz (CUDA) verfügbar"

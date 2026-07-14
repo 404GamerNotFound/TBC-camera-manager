@@ -24,24 +24,20 @@
       <tbody>
         {% for key, available, message in backend_status %}
         <tr>
-          <td>{{ key | upper }}</td>
+          <td>{{ detection_backend_labels.get(key, key | upper) }}</td>
           <td><span class="status-pill {{ 'status-active' if available else 'status-idle' }}">{{ 'verfügbar' if available else 'nicht verfügbar' }}</span></td>
           <td>{{ message }}</td>
         </tr>
         {% endfor %}
-        <tr>
-          <td>GPU (CUDA)</td>
-          <td><span class="status-pill status-idle">geplant</span></td>
-          <td>Noch nicht implementiert.</td>
-        </tr>
-        <tr>
-          <td>Coral (Edge TPU)</td>
-          <td><span class="status-pill status-idle">geplant</span></td>
-          <td>Noch nicht implementiert.</td>
-        </tr>
       </tbody>
     </table>
   </div>
+  <p class="hint-text">
+    GPU (CUDA) benötigt ein separat gebautes Image mit <code>onnxruntime-gpu</code> (siehe <code>Dockerfile.gpu</code>) und eine passende NVIDIA-Laufzeit.
+    Coral (Edge TPU) benötigt ein separat gebautes Image mit <code>pycoral</code>/<code>tflite-runtime</code> (siehe <code>Dockerfile.coral</code>) und ein
+    angeschlossenes Edge-TPU-Gerät. Beide sind eigenständig implementiert, konnten aber in dieser Entwicklungsumgebung nicht gegen echte GPU-/Coral-Hardware
+    getestet werden - vor produktivem Einsatz selbst verifizieren.
+  </p>
 </section>
 
 <section class="table-section">
@@ -50,9 +46,16 @@
   </div>
   <div class="quiet-box">
     {% if model_ready %}
-    Standardmodell ist bereit ({{ model_size_mb }} MB) unter <code>{{ model_path }}</code>.
+    Standardmodell (CPU/GPU) ist bereit ({{ model_size_mb }} MB) unter <code>{{ model_path }}</code>.
     {% else %}
-    Standardmodell wurde noch nicht heruntergeladen (<code>{{ model_path }}</code>). Der Download wird beim nächsten Start des Servers automatisch versucht.
+    Standardmodell (CPU/GPU) wurde noch nicht heruntergeladen (<code>{{ model_path }}</code>). Der Download wird beim nächsten Start des Servers automatisch versucht.
+    {% endif %}
+  </div>
+  <div class="quiet-box">
+    {% if coral_model_ready %}
+    Standardmodell (Coral) ist bereit ({{ coral_model_size_mb }} MB) unter <code>{{ coral_model_path }}</code>.
+    {% else %}
+    Standardmodell (Coral) wurde noch nicht heruntergeladen (<code>{{ coral_model_path }}</code>). Der Download passiert erst, sobald eine Kamera auf das Coral-Backend umgestellt wird.
     {% endif %}
   </div>
   <p class="hint-text">

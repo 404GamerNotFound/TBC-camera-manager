@@ -58,7 +58,7 @@ from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
 from .detection import factory as detection_factory
 from .detection.classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
-from .detection.model_provisioning import ensure_default_model
+from .detection.model_provisioning import ensure_default_coral_model, ensure_default_model
 from .detection.plugin_models import resolve_plugin_model
 from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
@@ -187,6 +187,8 @@ LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
 )
 DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
+DETECTION_CORAL_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.tflite"
+DETECTION_CORAL_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.json"
 
 
 def _detection_backend_factory(settings: dict[str, Any], module_key: str | None = None):
@@ -194,6 +196,16 @@ def _detection_backend_factory(settings: dict[str, Any], module_key: str | None 
     if plugin_model:
         model_path, metadata_path = plugin_model
         return detection_factory.build_backend(settings, model_path=str(model_path), metadata_path=str(metadata_path))
+    backend_key = str(settings.get("backend") or "cpu").strip().lower()
+    if backend_key == "coral":
+        # Downloaded lazily on first use, not eagerly at startup like the ONNX
+        # default - most installs never select this backend.
+        ensure_default_coral_model(DETECTION_CORAL_MODEL_PATH, DETECTION_CORAL_MODEL_METADATA_PATH)
+        return detection_factory.build_backend(
+            settings,
+            model_path=str(DETECTION_CORAL_MODEL_PATH),
+            metadata_path=str(DETECTION_CORAL_MODEL_METADATA_PATH),
+        )
     return detection_factory.build_backend(
         settings,
         model_path=str(DETECTION_MODEL_PATH),
@@ -533,6 +545,8 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "detection_settings": detection_settings,
             "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
             "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
+            "detection_backend_status": detection_factory.backend_status(),
+            "detection_backend_labels": detection_factory.BACKEND_LABELS,
             "detection_zones": detection_zones,
             "detection_key_labels": DETECTION_KEY_LABELS,
             "control_state": control_state,
@@ -906,6 +920,7 @@ async def update_camera_detection(
     detection_confidence_threshold: float = Form(0.5),
     detection_sample_fps: float = Form(2.0),
     detection_enabled: str | None = Form(None),
+    detection_backend: str = Form("cpu"),
 ):
     guard = _require_admin(request)
     if guard:
@@ -914,11 +929,12 @@ async def update_camera_detection(
     if not camera:
         _set_flash(request, "Kamera wurde nicht gefunden", "error")
         return _redirect("/cameras")
+    backend = detection_backend if detection_backend in detection_factory.BACKEND_CHOICES else "cpu"
     database.update_camera_detection_settings(
         SETTINGS.database_path,
         camera_id,
         enabled=detection_enabled == "on",
-        backend="cpu",
+        backend=backend,
         confidence_threshold=min(1.0, max(0.05, detection_confidence_threshold)),
         sample_fps=min(10.0, max(0.2, detection_sample_fps)),
     )
@@ -2020,6 +2036,7 @@ async def detection_overview_page(request: Request):
     if guard:
         return guard
     model_ready = DETECTION_MODEL_PATH.exists() and DETECTION_MODEL_PATH.stat().st_size > 0
+    coral_model_ready = DETECTION_CORAL_MODEL_PATH.exists() and DETECTION_CORAL_MODEL_PATH.stat().st_size > 0
     return templates.TemplateResponse(
         request,
         "detection.html",
@@ -2028,9 +2045,13 @@ async def detection_overview_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "backend_status": detection_factory.backend_status(),
+            "detection_backend_labels": detection_factory.BACKEND_LABELS,
             "model_ready": model_ready,
             "model_size_mb": round(DETECTION_MODEL_PATH.stat().st_size / (1024 * 1024), 1) if model_ready else None,
             "model_path": str(DETECTION_MODEL_PATH),
+            "coral_model_ready": coral_model_ready,
+            "coral_model_size_mb": round(DETECTION_CORAL_MODEL_PATH.stat().st_size / (1024 * 1024), 1) if coral_model_ready else None,
+            "coral_model_path": str(DETECTION_CORAL_MODEL_PATH),
             "default_sample_fps": SETTINGS.detection_default_sample_fps,
             "default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
             "cameras": database.list_enabled_camera_detection_settings(SETTINGS.database_path),
