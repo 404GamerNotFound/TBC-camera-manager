@@ -1492,6 +1492,34 @@ def list_recordings_for_range(
     return [dict(row) for row in rows]
 
 
+def list_event_recordings_for_cameras_range(
+    database_path: str,
+    *,
+    camera_ids: list[int],
+    start_at: str,
+    end_at: str,
+) -> list[dict[str, Any]]:
+    """Event recordings (excludes 24/7 continuous segments) across several cameras at
+    once, for the cross-camera activity timeline - one query instead of one per camera.
+    """
+    if not camera_ids:
+        return []
+    with connect(database_path) as db:
+        placeholders = ",".join("?" for _ in camera_ids)
+        rows = db.execute(
+            f"""
+            SELECT r.*, c.name AS camera_name
+              FROM recordings r
+              JOIN cameras c ON c.id = r.camera_id
+             WHERE r.camera_id IN ({placeholders}) AND r.status = 'ready' AND r.detection_key != 'continuous'
+               AND r.started_at >= ? AND r.started_at < ?
+             ORDER BY r.started_at ASC, r.id ASC
+            """,
+            (*camera_ids, start_at, end_at),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute(

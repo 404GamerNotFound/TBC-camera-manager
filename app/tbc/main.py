@@ -1382,6 +1382,61 @@ async def timeline_view(
     )
 
 
+@app.get("/activity", response_class=HTMLResponse)
+async def activity_view(request: Request, day: str | None = Query(None)):
+    guard = _require_login(request)
+    if guard:
+        return guard
+    user = _current_user(request)
+    cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    selected_day = _parse_date(day, date.today())
+    start_at = f"{selected_day.isoformat()}T00:00:00"
+    end_at = f"{(selected_day + timedelta(days=1)).isoformat()}T00:00:00"
+
+    camera_ids = [int(camera["id"]) for camera in cameras]
+    rows = database.list_event_recordings_for_cameras_range(
+        SETTINGS.database_path,
+        camera_ids=camera_ids,
+        start_at=start_at,
+        end_at=end_at,
+    )
+    events_by_camera: dict[int, list[dict[str, Any]]] = {camera_id: [] for camera_id in camera_ids}
+    for row in rows:
+        events_by_camera.setdefault(int(row["camera_id"]), []).append(row)
+
+    activity_cameras = [
+        {
+            "id": int(camera["id"]),
+            "name": camera["name"],
+            "events": _timeline_payload(events_by_camera.get(int(camera["id"]), [])),
+        }
+        for camera in cameras
+    ]
+    total_events = sum(len(camera["events"]) for camera in activity_cameras)
+
+    return templates.TemplateResponse(
+        request,
+        "activity.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": user["role"],
+            "selected_day": selected_day.isoformat(),
+            "prev_day": (selected_day - timedelta(days=1)).isoformat(),
+            "next_day": (selected_day + timedelta(days=1)).isoformat(),
+            "today": date.today().isoformat(),
+            "is_today": selected_day == date.today(),
+            "activity_cameras": activity_cameras,
+            "total_events": total_events,
+            "activity_data": {
+                "day": selected_day.isoformat(),
+                "cameras": activity_cameras,
+            },
+            "flash": _pop_flash(request),
+        },
+    )
+
+
 @app.get("/sd-card", response_class=HTMLResponse)
 async def sd_card(
     request: Request,

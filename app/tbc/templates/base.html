@@ -20,7 +20,7 @@
         </a>
       {% if username %}
       {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') or path.startswith('/cloud-accounts') %}
-      {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') %}
+      {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') or path.startswith('/activity') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
       {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/plugin-sources') or path.startswith('/updates') %}
@@ -53,6 +53,12 @@
                 Archiv
               </button>
               <ul class="dropdown-menu" data-menu-panel>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/activity') %} active{% endif %}" href="/activity">
+                    <span class="nav-shortcut" aria-hidden="true">V</span>
+                    <span>Aktivität</span>
+                  </a>
+                </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="/timeline">
                     <span class="nav-shortcut" aria-hidden="true">T</span>
