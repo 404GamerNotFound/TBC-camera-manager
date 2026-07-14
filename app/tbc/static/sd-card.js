@@ -1,4 +1,5 @@
 (() => {
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
   const root = document.querySelector("[data-sd-content]");
   const form = document.querySelector("[data-sd-filter-form]");
   const player = document.querySelector("[data-sd-preview-player]");
@@ -47,7 +48,7 @@
     if (!player || !previewPanel) return;
     stopCurrent();
     player.src = recording.media_url;
-    if (title) title.textContent = recording.file_name || "Vorschau";
+    if (title) title.textContent = recording.file_name || t("sd_card.preview");
     if (meta) meta.textContent = `${recording.start_time || ""} · ${recording.duration_seconds || 0}s`;
     previewPanel.hidden = false;
     player.load();
@@ -75,7 +76,7 @@
       const preview = document.createElement("button");
       preview.className = "secondary-button";
       preview.type = "button";
-      preview.textContent = "Vorschau";
+      preview.textContent = t("sd_card.preview");
       preview.addEventListener("click", () => playRecording(recording));
 
       const download = document.createElement("a");
@@ -118,7 +119,7 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data.error || "SD-Karteninhalt konnte nicht geladen werden");
+      throw new Error(data.error || t("sd_card.load_failed"));
     }
 
     const recordings = data.recordings || [];

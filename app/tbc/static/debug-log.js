@@ -1,4 +1,5 @@
 (function () {
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
   const drawer = document.querySelector("[data-debug-drawer]");
   if (!drawer) return;
 
@@ -19,7 +20,7 @@
     if (!entries.length) {
       const empty = document.createElement("li");
       empty.className = "debug-line debug-line-info";
-      empty.textContent = "Noch keine Debug-Meldungen";
+      empty.textContent = t("debug.empty");
       list.appendChild(empty);
       return;
     }
@@ -46,7 +47,7 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
       render(payload.entries || []);
-      if (meta) meta.textContent = `${payload.entries.length} Eintraege`;
+      if (meta) meta.textContent = t("debug.entry_count", {count: payload.entries.length});
     } catch (error) {
       render([{ created_at: new Date().toISOString(), level: "error", logger: "debug-log", message: String(error) }]);
     }

@@ -3,39 +3,39 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Archiv</p>
+    <p class="eyebrow">Archive</p>
     <h1>Clips</h1>
   </div>
 </section>
 
 <form class="filter-bar" method="get" action="/recordings">
   <label>
-    <span>Kamera</span>
+    <span>Camera</span>
     <select name="camera_id">
-      <option value="">Alle</option>
+      <option value="">All</option>
       {% for camera in cameras %}
       <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
       {% endfor %}
     </select>
   </label>
   <label>
-    <span>Ereignis</span>
+    <span>Event</span>
     <select name="detection_key">
-      <option value="">Alle</option>
+      <option value="">All</option>
       {% for key in event_keys %}
       <option value="{{ key }}" {% if filters.detection_key == key %}selected{% endif %}>{{ key }}</option>
       {% endfor %}
     </select>
   </label>
   <label>
-    <span>Von</span>
+    <span>From</span>
     <input name="date_from" type="date" value="{{ filters.date_from }}">
   </label>
   <label>
-    <span>Bis</span>
+    <span>To</span>
     <input name="date_to" type="date" value="{{ filters.date_to }}">
   </label>
-  <button class="primary-button" type="submit">Filtern</button>
+  <button class="primary-button" type="submit">Filter</button>
 </form>
 
 {% if recordings %}
@@ -71,7 +71,7 @@
           <a class="secondary-button" href="/recordings/{{ clip.id }}/download">Download</a>
           {% if role == 'admin' %}
           <form method="post" action="/recordings/{{ clip.id }}/delete">
-            <button class="danger-button" type="submit">Löschen</button>
+            <button class="danger-button" type="submit">Delete</button>
           </form>
           {% endif %}
         </div>
@@ -82,7 +82,7 @@
 </section>
 {% else %}
 <section class="empty-state">
-  <h2>Keine Clips gefunden</h2>
+  <h2>No clips found</h2>
 </section>
 {% endif %}
 <script src="{{ url_for('static', path='/video-player.js') }}" defer></script>

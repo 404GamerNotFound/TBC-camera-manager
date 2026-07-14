@@ -3,8 +3,8 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Erweiterungen</p>
-    <h1>Kamera-Plugins</h1>
+    <p class="eyebrow">Extensions</p>
+    <h1>Camera plugins</h1>
   </div>
 </section>
 
@@ -12,33 +12,33 @@
   <details class="plugin-import-panel">
     <summary>
       <span>
-        <strong>Plugin importieren</strong>
-        <small>Plugin-Datei</small>
+        <strong>Import plugin</strong>
+        <small>Plugin file</small>
       </span>
       <span class="status-pill status-idle">ZIP</span>
     </summary>
     <form class="editor-form compact-form" method="post" action="/camera-modules/import" enctype="multipart/form-data">
       <div class="quiet-box">
-        Kamera-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.
+        Camera plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.
       </div>
       <label>
-        <span>Plugin-Datei</span>
+        <span>Plugin file</span>
         <input name="plugin_file" type="file" accept=".zip,application/zip" required>
       </label>
       <div class="form-actions">
-        <button class="primary-button" type="submit">Importieren</button>
+        <button class="primary-button" type="submit">Import</button>
       </div>
     </form>
   </details>
 
   <div class="plugin-search-bar">
-    <label class="visually-hidden" for="camera-module-search">Plugins durchsuchen</label>
-    <input type="search" id="camera-module-search" placeholder="Plugins durchsuchen…" autocomplete="off" data-plugin-search="#camera-module-list">
+    <label class="visually-hidden" for="camera-module-search">Search plugins</label>
+    <input type="search" id="camera-module-search" placeholder="Search plugins…" autocomplete="off" data-plugin-search="#camera-module-list">
   </div>
 
   <section class="storage-list plugin-grid" id="camera-module-list">
     <div class="section-title">
-      <h2>Installierte Plugins</h2>
+      <h2>Installed plugins</h2>
       <span>{{ registrations | length }}</span>
     </div>
     {% for registration in registrations %}
@@ -52,9 +52,9 @@
         <span>{{ registration.version }}</span>
       </div>
       <dl class="metric-row plugin-card-meta">
-        <div><dt>Schlüssel</dt><dd>{{ camera_module.key }}</dd></div>
-        <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else ('ZIP-Import' if registration.origin == 'uploaded' else 'Python-Paket') }}</dd></div>
-        <div><dt>Kameras</dt><dd>{{ camera_counts[camera_module.key] }}</dd></div>
+        <div><dt>Key</dt><dd>{{ camera_module.key }}</dd></div>
+        <div><dt>Source</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else ('ZIP-Import' if registration.origin == 'uploaded' else 'Python-Paket') }}</dd></div>
+        <div><dt>Cameras</dt><dd>{{ camera_counts[camera_module.key] }}</dd></div>
       </dl>
       <p class="plugin-card-capabilities">
         {% for capability in camera_module.capabilities %}
@@ -63,22 +63,22 @@
       </p>
       <div class="form-actions plugin-card-actions">
         {% if registration.package %}
-        <a class="secondary-button" href="/camera-modules/{{ camera_module.key }}/export">ZIP exportieren</a>
+        <a class="secondary-button" href="/camera-modules/{{ camera_module.key }}/export">Export ZIP</a>
         {% endif %}
         {% if has_tests[camera_module.key] %}
         <form method="post" action="/camera-modules/{{ camera_module.key }}/run-tests">
-          <button class="secondary-button" type="submit">Tests ausführen</button>
+          <button class="secondary-button" type="submit">Run tests</button>
         </form>
         {% endif %}
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/camera-modules/{{ camera_module.key }}/delete">
-          <button class="danger-button" type="submit" {% if camera_counts[camera_module.key] %}disabled{% endif %}>Entfernen</button>
+          <button class="danger-button" type="submit" {% if camera_counts[camera_module.key] %}disabled{% endif %}>Remove</button>
         </form>
         {% endif %}
       </div>
     </article>
     {% endfor %}
-    <p class="quiet-box" data-plugin-search-empty hidden>Keine Plugins gefunden.</p>
+    <p class="quiet-box" data-plugin-search-empty hidden>No plugins found.</p>
   </section>
 </section>
 <script src="{{ url_for('static', path='/plugin-search.js') }}" defer></script>

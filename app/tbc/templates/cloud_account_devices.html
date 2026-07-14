@@ -4,18 +4,18 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow">{{ cloud_module.label }}</p>
-    <h1>Geräte von {{ account.label }}</h1>
+    <h1>Devices from {{ account.label }}</h1>
   </div>
-  <a class="secondary-button" href="/cloud-accounts">Zurück zu Cloud-Konten</a>
+  <a class="secondary-button" href="/cloud-accounts">Back to cloud accounts</a>
 </section>
 
 {% if error %}
 <div class="inline-error">{{ error }}</div>
 <div class="form-actions">
-  <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Kontodaten oder Bestätigungscode bearbeiten</a>
+  <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Edit account details or verification code</a>
 </div>
 {% elif not devices %}
-<div class="quiet-box">Es wurden keine Geräte in diesem Cloud-Konto gefunden.</div>
+<div class="quiet-box">No devices were found in this cloud account.</div>
 {% endif %}
 
 <section class="storage-list">
@@ -32,16 +32,16 @@
     </div>
     {% if device.manual_stream_uri %}
     {% if device.manual_stream_uri in existing_uris %}
-    <p class="quiet-box">Bereits als Kamera importiert.</p>
+    <p class="quiet-box">Already imported as a camera.</p>
     {% endif %}
     <form method="post" action="/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
       <input type="hidden" name="manual_stream_uri" value="{{ device.manual_stream_uri }}">
       <input type="hidden" name="module_key" value="{{ device.suggested_module_key }}">
       <input type="hidden" name="name" value="{{ device.name }}">
-      <button class="primary-button" type="submit">Als Kamera hinzufügen</button>
+      <button class="primary-button" type="submit">Add as camera</button>
     </form>
     {% else %}
-    <p class="quiet-box">Kein RTSP-Stream verfügbar. Bitte RTSP für dieses Gerät zuerst in der Herstelleroberfläche aktivieren.</p>
+    <p class="quiet-box">No RTSP stream is available. Enable RTSP for this device in the vendor interface first.</p>
     {% endif %}
   </article>
   {% endfor %}

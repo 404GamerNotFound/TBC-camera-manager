@@ -1,5 +1,6 @@
 (() => {
   const PTZ_STOP_ON_RELEASE = "Stop";
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
 
   function formatTime(seconds) {
     if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -81,7 +82,7 @@
       const playButton = document.createElement("button");
       playButton.type = "button";
       playButton.className = "tbc-player-btn";
-      playButton.setAttribute("aria-label", "Wiedergabe/Pause");
+      playButton.setAttribute("aria-label", t("player.play_pause"));
       playButton.textContent = "▶";
       playButton.addEventListener("click", () => {
         if (this.video.paused) this.video.play().catch(() => {});
@@ -93,7 +94,7 @@
       const muteButton = document.createElement("button");
       muteButton.type = "button";
       muteButton.className = "tbc-player-btn";
-      muteButton.setAttribute("aria-label", "Stumm");
+      muteButton.setAttribute("aria-label", t("player.mute"));
       muteButton.textContent = this.video.muted ? "🔇" : "🔊";
       muteButton.addEventListener("click", () => {
         this.video.muted = !this.video.muted;
@@ -138,7 +139,7 @@
       const fullscreenButton = document.createElement("button");
       fullscreenButton.type = "button";
       fullscreenButton.className = "tbc-player-btn tbc-player-btn-fullscreen";
-      fullscreenButton.setAttribute("aria-label", "Vollbild");
+      fullscreenButton.setAttribute("aria-label", t("player.fullscreen"));
       fullscreenButton.textContent = "⤢";
       fullscreenButton.addEventListener("click", () => {
         const request = this.shell.requestFullscreen || this.shell.webkitRequestFullscreen;
@@ -157,19 +158,21 @@
       const pad = document.createElement("div");
       pad.className = "tbc-ptz-pad";
       pad.innerHTML = `
-        <button type="button" class="tbc-ptz-btn tbc-ptz-up" data-ptz="Up" aria-label="Hoch">▲</button>
-        <button type="button" class="tbc-ptz-btn tbc-ptz-left" data-ptz="Left" aria-label="Links">◄</button>
-        <button type="button" class="tbc-ptz-btn tbc-ptz-stop" data-ptz="Stop" aria-label="Stopp">■</button>
-        <button type="button" class="tbc-ptz-btn tbc-ptz-right" data-ptz="Right" aria-label="Rechts">►</button>
-        <button type="button" class="tbc-ptz-btn tbc-ptz-down" data-ptz="Down" aria-label="Runter">▼</button>
+        <button type="button" class="tbc-ptz-btn tbc-ptz-up" data-ptz="Up">▲</button>
+        <button type="button" class="tbc-ptz-btn tbc-ptz-left" data-ptz="Left">◄</button>
+        <button type="button" class="tbc-ptz-btn tbc-ptz-stop" data-ptz="Stop">■</button>
+        <button type="button" class="tbc-ptz-btn tbc-ptz-right" data-ptz="Right">►</button>
+        <button type="button" class="tbc-ptz-btn tbc-ptz-down" data-ptz="Down">▼</button>
       `;
+      [["Up", "player.ptz_up"], ["Left", "player.ptz_left"], ["Stop", "player.ptz_stop"], ["Right", "player.ptz_right"], ["Down", "player.ptz_down"]]
+        .forEach(([command, key]) => pad.querySelector(`[data-ptz="${command}"]`)?.setAttribute("aria-label", t(key)));
       overlay.appendChild(pad);
 
       const zoom = document.createElement("div");
       zoom.className = "tbc-ptz-zoom";
       zoom.innerHTML = `
-        <button type="button" class="tbc-ptz-btn" data-ptz="ZoomDec" aria-label="Auszoomen">－</button>
-        <button type="button" class="tbc-ptz-btn" data-ptz="ZoomInc" aria-label="Einzoomen">＋</button>
+        <button type="button" class="tbc-ptz-btn" data-ptz="ZoomDec" aria-label="${t("player.zoom_out")}">－</button>
+        <button type="button" class="tbc-ptz-btn" data-ptz="ZoomInc" aria-label="${t("player.zoom_in")}">＋</button>
       `;
       overlay.appendChild(zoom);
 

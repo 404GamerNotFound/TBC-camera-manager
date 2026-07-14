@@ -3,37 +3,38 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Archiv</p>
-    <h1>Aktivität</h1>
+    <p class="eyebrow">Archive</p>
+    <h1 data-i18n="nav.activity">Activity</h1>
   </div>
 </section>
 
 <form class="filter-bar" method="get" action="/activity">
   <label>
-    <span>Tag</span>
+    <span>Day</span>
     <input name="day" type="date" value="{{ selected_day }}" max="{{ today }}">
   </label>
-  <button class="primary-button" type="submit">Anzeigen</button>
+  <button class="primary-button" type="submit">Show</button>
   <div class="button-row timeline-day-nav">
-    <a class="secondary-button" href="/activity?day={{ prev_day }}">‹ Vorheriger Tag</a>
-    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/activity?day={{ next_day }}">Nächster Tag ›</a>
+    <a class="secondary-button" href="/activity?day={{ prev_day }}">‹ Previous day</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/activity?day={{ next_day }}">Next day ›</a>
   </div>
 </form>
 
 {% if not activity_cameras %}
 <section class="empty-state">
-  <h2>Keine Kamera verfügbar</h2>
+  <h2>No camera available</h2>
 </section>
 {% else %}
 <section class="timeline-scrubber" data-activity-root>
   <script type="application/json" data-activity-json>{{ activity_data | tojson }}</script>
   <div class="section-title">
-    <h2>Ereignisse an diesem Tag</h2>
+    <h2>Events on this day</h2>
     <span>{{ total_events }}</span>
   </div>
   <p class="hint-text">
-    Ein Block pro Ereignis-Aufnahme, farblich nach Ereignistyp gruppiert. Klick auf einen Block öffnet die Timeline dieser Kamera
-    an dem Tag. Reine Dauer-/24-7-Aufzeichnung wird hier bewusst nicht gezeigt (siehe „Timeline" für eine einzelne Kamera).
+    One block is shown for each event recording, grouped by event type and color. Select a block
+    to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted
+    here; use the timeline for an individual camera instead.
   </p>
   <div class="timeline-scroll" data-activity-scroll>
     <div class="timeline-inner" data-activity-inner>
@@ -43,7 +44,7 @@
     </div>
   </div>
   {% if not total_events %}
-  <p class="timeline-hint">Für diesen Tag liegen keine Ereignis-Aufnahmen vor.</p>
+  <p class="timeline-hint">No event recordings are available for this day.</p>
   {% endif %}
 </section>
 {% endif %}

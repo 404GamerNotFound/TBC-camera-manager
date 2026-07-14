@@ -3,26 +3,26 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Kamera hinzufügen</p>
-    <h1>Cloud-Konten</h1>
+    <p class="eyebrow">Add camera</p>
+    <h1>Cloud accounts</h1>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras">Zurück zu Kameras</a>
-    <a class="secondary-button" href="/cloud-modules">Cloud-Anbieter verwalten</a>
+    <a class="secondary-button" href="/cameras">Back to cameras</a>
+    <a class="secondary-button" href="/cloud-modules">Manage cloud providers</a>
   </div>
 </section>
 
 {% if not cloud_modules %}
 <div class="quiet-box">
-  Es ist noch kein Cloud-Anbieter installiert. Installiere zuerst ein <a href="/cloud-modules">Cloud-Plugin</a>, bevor du ein Konto hinzufügen kannst.
+  No cloud provider is installed yet. Install a <a href="/cloud-modules">cloud plugin</a> before you can add an account.
 </div>
 {% endif %}
 
 <form class="editor-form" method="post" action="/cloud-accounts" data-cloud-account-form>
-  <div class="section-title"><h2>Konto hinzufügen</h2></div>
+  <div class="section-title"><h2>Add account</h2></div>
   <div class="form-grid">
     <label class="span-2">
-      <span>Anbieter</span>
+      <span>Provider</span>
       <select name="module_key" required data-cloud-account-provider>
         {% for registration in cloud_modules %}
         <option value="{{ registration.module.key }}">
@@ -32,7 +32,7 @@
       </select>
     </label>
     <label>
-      <span>Bezeichnung</span>
+      <span>Label</span>
       <input name="label" placeholder="z. B. Zuhause">
     </label>
     {% for registration in cloud_modules %}
@@ -73,13 +73,13 @@
     {% endfor %}
   </div>
   <div class="form-actions">
-    <button class="primary-button" type="submit">Konto hinzufügen</button>
+    <button class="primary-button" type="submit">Add account</button>
   </div>
 </form>
 
 <section class="storage-list">
   <div class="section-title">
-    <h2>Konfigurierte Konten</h2>
+    <h2>Configured accounts</h2>
     <span>{{ accounts | length }}</span>
   </div>
   {% for account in accounts %}
@@ -89,28 +89,28 @@
         <h3>{{ account.label }}</h3>
         <p>{{ account.module_key }}{% if account.host %} · {{ account.host }}{% endif %}</p>
       </div>
-      <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'noch nicht getestet' }}</span>
+      <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'not tested yet' }}</span>
     </div>
     {% if account.pending_verification_field %}
     <div class="quiet-box">{{ account.pending_verification_message }}</div>
     {% endif %}
     <div class="form-actions">
-      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Konto bearbeiten</a>
+      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Edit account</a>
       {% if account.pending_verification_field %}
-      <a class="primary-button" href="/cloud-accounts/{{ account.id }}/verify">Bestätigungscode eingeben</a>
+      <a class="primary-button" href="/cloud-accounts/{{ account.id }}/verify">Enter verification code</a>
       {% else %}
       <form method="post" action="/cloud-accounts/{{ account.id }}/test">
-        <button class="secondary-button" type="submit">Verbindung testen</button>
+        <button class="secondary-button" type="submit">Test connection</button>
       </form>
-      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices">Geräte suchen</a>
+      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices">Discover devices</a>
       {% endif %}
       <form method="post" action="/cloud-accounts/{{ account.id }}/delete">
-        <button class="danger-button" type="submit">Entfernen</button>
+        <button class="danger-button" type="submit">Remove</button>
       </form>
     </div>
   </article>
   {% else %}
-  <p class="quiet-box">Noch keine Cloud-Konten konfiguriert.</p>
+  <p class="quiet-box">No cloud accounts have been configured yet.</p>
   {% endfor %}
 </section>
 <script src="{{ url_for('static', path='/cloud-account-form.js') }}" defer></script>

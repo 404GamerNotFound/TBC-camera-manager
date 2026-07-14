@@ -3147,7 +3147,8 @@ def _api_examples() -> list[dict[str, Any]]:
         {
             "method": "GET",
             "path": "/api/v1/status",
-            "description": "App-Name, Version, Update-Verfügbarkeit, Kamera-Anzahl.",
+            "description_key": "api.description.status",
+            "description": "Application name, version, update availability, and camera count.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/status",
             "response": _json(
                 {
@@ -3162,29 +3163,34 @@ def _api_examples() -> list[dict[str, Any]]:
         {
             "method": "GET",
             "path": "/api/v1/cameras",
-            "description": "Alle Kameras mit Fähigkeiten, Status und Erkennungs-Zählern.",
+            "description_key": "api.description.cameras",
+            "description": "All cameras with capabilities, status, and detection counts.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/cameras",
             "response": _json({"cameras": [camera]}),
         },
         {
             "method": "GET",
             "path": "/api/v1/cameras/{id}",
-            "description": "Einzelne Kamera nach ID.",
+            "description_key": "api.description.camera",
+            "description": "A single camera by ID.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/cameras/1",
             "response": _json(camera),
         },
         {
             "method": "GET",
             "path": "/api/v1/cameras/{id}/snapshot",
-            "description": "Aktuelles Vorschaubild der Kamera - Binärdaten, kein JSON.",
+            "description_key": "api.description.camera_snapshot",
+            "description": "The camera's current preview image as binary data, not JSON.",
             "curl": f"{curl_prefix} -o snapshot.jpg https://tbc.example.com/api/v1/cameras/1/snapshot",
             "response": None,
-            "response_note": "Antwort: Bilddaten mit Content-Type: image/jpeg",
+            "response_note_key": "api.response.jpeg",
+            "response_note": "Response: image data with Content-Type: image/jpeg",
         },
         {
             "method": "GET",
             "path": "/api/v1/cameras/{id}/detections",
-            "description": "Aktueller Erkennungszustand der Kamera (jede konfigurierte Erkennungsart).",
+            "description_key": "api.description.camera_detections",
+            "description": "The camera's current detection state for every configured detection type.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/cameras/1/detections",
             "response": _json(
                 {
@@ -3211,40 +3217,44 @@ def _api_examples() -> list[dict[str, Any]]:
         {
             "method": "GET",
             "path": "/api/v1/recordings",
-            "description": (
-                "Aufnahmenliste. Query-Parameter: camera_id, detection_key, date_from, date_to, "
-                "limit (Standard 200, max. 1000)."
-            ),
+            "description_key": "api.description.recordings",
+            "description": "Recording list. Query parameters: camera_id, detection_key, date_from, date_to, limit (default 200, maximum 1000).",
             "curl": f"{curl_prefix} \"https://tbc.example.com/api/v1/recordings?camera_id=1&limit=20\"",
             "response": _json({"recordings": [recording]}),
         },
         {
             "method": "GET",
             "path": "/api/v1/recordings/{id}",
-            "description": "Metadaten einer einzelnen Aufnahme.",
+            "description_key": "api.description.recording",
+            "description": "Metadata for a single recording.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/recordings/512",
             "response": _json(recording),
         },
         {
             "method": "GET",
             "path": "/api/v1/recordings/{id}/media",
-            "description": "Video-Clip - Binärdaten (MP4), unterstützt HTTP-Range für Seeking.",
+            "description_key": "api.description.recording_media",
+            "description": "Video clip as binary MP4 data with HTTP Range support for seeking.",
             "curl": f"{curl_prefix} -o clip.mp4 https://tbc.example.com/api/v1/recordings/512/media",
             "response": None,
-            "response_note": "Antwort: Video-Daten mit Content-Type: video/mp4",
+            "response_note_key": "api.response.mp4",
+            "response_note": "Response: video data with Content-Type: video/mp4",
         },
         {
             "method": "GET",
             "path": "/api/v1/recordings/{id}/snapshot",
-            "description": "Ereignis-Vorschaubild der Aufnahme - Binärdaten, kein JSON.",
+            "description_key": "api.description.recording_snapshot",
+            "description": "The recording's event preview image as binary data, not JSON.",
             "curl": f"{curl_prefix} -o event.jpg https://tbc.example.com/api/v1/recordings/512/snapshot",
             "response": None,
-            "response_note": "Antwort: Bilddaten mit Content-Type: image/jpeg",
+            "response_note_key": "api.response.jpeg",
+            "response_note": "Response: image data with Content-Type: image/jpeg",
         },
         {
             "method": "GET",
             "path": "/api/v1/activity",
-            "description": "Ereignis-Aufnahmen über alle Kameras für einen Tag. Query-Parameter: day (YYYY-MM-DD, Standard heute).",
+            "description_key": "api.description.activity",
+            "description": "Event recordings across all cameras for one day. Query parameter: day (YYYY-MM-DD, defaults to today).",
             "curl": f"{curl_prefix} \"https://tbc.example.com/api/v1/activity?day=2026-07-14\"",
             "response": _json(
                 {
@@ -3259,14 +3269,16 @@ def _api_examples() -> list[dict[str, Any]]:
         {
             "method": "GET",
             "path": "/api/v1/storage",
-            "description": "Konfigurierte Speicherziele (ohne Zugangsdaten).",
+            "description_key": "api.description.storage",
+            "description": "Configured storage destinations without credentials.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/storage",
             "response": _json({"storage_targets": [storage_target]}),
         },
         {
             "method": "GET",
             "path": "/api/v1/health",
-            "description": "Systemauslastung sowie Health-Status/-Ereignisse (Kameras, Speicher, MQTT).",
+            "description_key": "api.description.health",
+            "description": "System usage and health status/events for cameras, storage, and MQTT.",
             "curl": f"{curl_prefix} https://tbc.example.com/api/v1/health",
             "response": _json(
                 {
@@ -3311,17 +3323,17 @@ def _api_examples() -> list[dict[str, Any]]:
 
 def _mcp_tool_examples() -> list[dict[str, str]]:
     return [
-        ("list_cameras", "Alle Kameras mit Fähigkeiten und Status."),
-        ("get_camera", "Einzelne Kamera nach ID."),
-        ("get_camera_detections", "Aktueller Erkennungszustand einer Kamera."),
-        ("get_camera_snapshot", "Aktuelles Live-Vorschaubild einer Kamera - als Bild, nicht nur als URL."),
-        ("list_recordings", "Aufnahmenliste, filterbar nach Kamera, Erkennungstyp, Datumsbereich."),
-        ("get_recording", "Metadaten einer einzelnen Aufnahme."),
-        ("get_recording_snapshot", "Ereignis-Vorschaubild einer Aufnahme (nur bei lokalem Snapshot)."),
-        ("get_activity", "Ereignis-Aufnahmen über alle Kameras für einen Tag."),
-        ("get_storage", "Konfigurierte Speicherziele (ohne Zugangsdaten)."),
-        ("get_health", "Systemauslastung und Health-Status/-Ereignisse."),
-        ("get_status", "App-Name, Version, Update-Verfügbarkeit, Kamera-Anzahl."),
+        {"name": "list_cameras", "description_key": "mcp.description.cameras", "description": "All cameras with capabilities and status."},
+        {"name": "get_camera", "description_key": "api.description.camera", "description": "A single camera by ID."},
+        {"name": "get_camera_detections", "description_key": "mcp.description.camera_detections", "description": "The current detection state of a camera."},
+        {"name": "get_camera_snapshot", "description_key": "mcp.description.camera_snapshot", "description": "A camera's current live preview as an image, not only a URL."},
+        {"name": "list_recordings", "description_key": "mcp.description.recordings", "description": "Recordings filtered by camera, detection type, and date range."},
+        {"name": "get_recording", "description_key": "api.description.recording", "description": "Metadata for a single recording."},
+        {"name": "get_recording_snapshot", "description_key": "mcp.description.recording_snapshot", "description": "A recording's event preview image when a local snapshot exists."},
+        {"name": "get_activity", "description_key": "mcp.description.activity", "description": "Event recordings across all cameras for one day."},
+        {"name": "get_storage", "description_key": "api.description.storage", "description": "Configured storage destinations without credentials."},
+        {"name": "get_health", "description_key": "mcp.description.health", "description": "System usage and health status/events."},
+        {"name": "get_status", "description_key": "api.description.status", "description": "Application name, version, update availability, and camera count."},
     ]
 
 

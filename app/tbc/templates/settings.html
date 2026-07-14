@@ -4,19 +4,19 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow">System</p>
-    <h1>Einstellungen</h1>
+    <h1>Settings</h1>
   </div>
 </section>
 
 <section class="settings-layout">
   <section class="event-panel">
     <div class="section-title">
-      <h2>API &amp; KI-Schnittstelle</h2>
+      <h2>API &amp; AI interface</h2>
     </div>
     <div class="quiet-box">
-      Aktivieren, API-Key verwalten sowie viele Beispiele, was abgerufen werden kann und wie
-      die Daten zurückkommen, gibt es jetzt auf einer eigenen Seite:
-      <a href="/api-access">API-Zugriff öffnen</a>.
+      API activation, API-key management, and examples of the available data and response
+      formats are now collected on a dedicated page:
+      <a href="/api-access">Open API access</a>.
     </div>
   </section>
 
@@ -26,12 +26,12 @@
       <span>{{ debug_count }}</span>
     </div>
     <div class="quiet-box">
-      Das Debug Log sammelt laufende Meldungen der App und ffmpeg-Live-Prozesse. Es ist auf jeder Admin-Seite unten rechts als Pull-up verfuegbar.
+      The debug log collects ongoing messages from the app and ffmpeg live processes. It is available as a pull-up in the bottom-right corner of every admin page.
     </div>
     <div class="form-actions debug-settings-actions">
-      <button class="primary-button" type="button" data-debug-toggle>Debug Log oeffnen</button>
+      <button class="primary-button" type="button" data-debug-toggle>Open debug log</button>
       <form method="post" action="/settings/debug-log/clear">
-        <button class="secondary-button" type="submit">Leeren</button>
+        <button class="secondary-button" type="submit">Clear</button>
       </form>
     </div>
   </section>

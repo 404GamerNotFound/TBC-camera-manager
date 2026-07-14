@@ -4,19 +4,19 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow">{{ cloud_module.label }}</p>
-    <h1>Cloud-Konto bearbeiten</h1>
+    <h1>Edit cloud account</h1>
   </div>
-  <a class="secondary-button" href="/cloud-accounts">Zurück zu Cloud-Konten</a>
+  <a class="secondary-button" href="/cloud-accounts">Back to cloud accounts</a>
 </section>
 
 <form class="editor-form" method="post" action="/cloud-accounts/{{ account.id }}/edit">
   <div class="form-grid">
     <label class="span-2">
-      <span>Anbieter</span>
+      <span>Provider</span>
       <input value="{{ cloud_module.label }}" disabled>
     </label>
     <label>
-      <span>Bezeichnung</span>
+      <span>Label</span>
       <input name="label" value="{{ account.label }}" required>
     </label>
     {% for field in cloud_module.account_fields if not field.transient %}
@@ -39,7 +39,7 @@
         {% else %}
         <input name="account_{{ field.key }}"
                type="{{ field.field_type.value }}"
-               {% if field.field_type.value == 'password' %}placeholder="Unverändert lassen"
+               {% if field.field_type.value == 'password' %}placeholder="Leave unchanged"
                {% elif current_value is not none %}value="{{ current_value }}"
                {% elif field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
                {% if field.minimum is not none %}min="{{ field.minimum }}"{% endif %}
@@ -53,7 +53,7 @@
     {% endfor %}
   </div>
   <div class="form-actions">
-    <button class="primary-button" type="submit">Änderungen speichern</button>
+    <button class="primary-button" type="submit">Save changes</button>
   </div>
 </form>
 {% endblock %}

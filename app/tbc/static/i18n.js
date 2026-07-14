@@ -1232,6 +1232,128 @@
     "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "El inicio de sesión en Eufy fue correcto, pero el dispositivo no se pudo guardar como de confianza"
   };
 
+  // Explicit keys are used by templates that carry data-i18n attributes and
+  // by every dynamic JavaScript message. The large legacy dictionaries below
+  // remain as a compatibility layer for server/plugin messages and for older
+  // third-party templates that still emit complete source strings.
+  const keyedMessages = {
+    "common.close": { en: "Close", de: "Schließen", es: "Cerrar" },
+    "common.delete": { en: "Delete", de: "Löschen", es: "Eliminar" },
+    "common.refresh": { en: "Refresh", de: "Aktualisieren", es: "Actualizar" },
+    "common.all_classes": { en: "All classes", de: "Alle Klassen", es: "Todas las clases" },
+    "common.unknown_error": { en: "unknown error", de: "unbekannter Fehler", es: "error desconocido" },
+    "nav.activity": { en: "Activity", de: "Aktivität", es: "Actividad" },
+    "nav.cameras": { en: "Cameras", de: "Kameras", es: "Cámaras" },
+    "nav.language": { en: "Change language", de: "Sprache wechseln", es: "Cambiar idioma" },
+    "nav.main": { en: "Main navigation", de: "Hauptnavigation", es: "Navegación principal" },
+    "nav.sign_out": { en: "Sign out", de: "Abmelden", es: "Cerrar sesión" },
+    "nav.toggle": { en: "Toggle navigation", de: "Navigation umschalten", es: "Alternar navegación" },
+    "debug.empty": { en: "No debug messages yet", de: "Noch keine Debug-Meldungen", es: "Aún no hay mensajes de depuración" },
+    "api.description.status": { en: "Application name, version, update availability, and camera count.", de: "App-Name, Version, Update-Verfügbarkeit und Kamera-Anzahl.", es: "Nombre de la aplicación, versión, disponibilidad de actualizaciones y número de cámaras." },
+    "api.description.cameras": { en: "All cameras with capabilities, status, and detection counts.", de: "Alle Kameras mit Fähigkeiten, Status und Erkennungszählern.", es: "Todas las cámaras con capacidades, estado y contadores de detección." },
+    "api.description.camera": { en: "A single camera by ID.", de: "Eine einzelne Kamera nach ID.", es: "Una cámara individual por ID." },
+    "api.description.camera_snapshot": { en: "The camera's current preview image as binary data, not JSON.", de: "Das aktuelle Vorschaubild der Kamera als Binärdaten, nicht als JSON.", es: "La vista previa actual de la cámara como datos binarios, no JSON." },
+    "api.description.camera_detections": { en: "The camera's current detection state for every configured detection type.", de: "Der aktuelle Erkennungszustand der Kamera für jede konfigurierte Erkennungsart.", es: "El estado de detección actual de la cámara para cada tipo configurado." },
+    "api.description.recordings": { en: "Recording list. Query parameters: camera_id, detection_key, date_from, date_to, limit (default 200, maximum 1000).", de: "Aufnahmenliste. Query-Parameter: camera_id, detection_key, date_from, date_to, limit (Standard 200, maximal 1000).", es: "Lista de grabaciones. Parámetros: camera_id, detection_key, date_from, date_to y limit (200 por defecto, máximo 1000)." },
+    "api.description.recording": { en: "Metadata for a single recording.", de: "Metadaten einer einzelnen Aufnahme.", es: "Metadatos de una grabación individual." },
+    "api.description.recording_media": { en: "Video clip as binary MP4 data with HTTP Range support for seeking.", de: "Video-Clip als MP4-Binärdaten mit HTTP-Range-Unterstützung zum Spulen.", es: "Clip de vídeo como datos MP4 binarios con soporte HTTP Range para búsqueda." },
+    "api.description.recording_snapshot": { en: "The recording's event preview image as binary data, not JSON.", de: "Das Ereignis-Vorschaubild der Aufnahme als Binärdaten, nicht als JSON.", es: "La vista previa del evento de la grabación como datos binarios, no JSON." },
+    "api.description.activity": { en: "Event recordings across all cameras for one day. Query parameter: day (YYYY-MM-DD, defaults to today).", de: "Ereignisaufnahmen aller Kameras für einen Tag. Query-Parameter: day (YYYY-MM-DD, Standard ist heute).", es: "Grabaciones de eventos de todas las cámaras para un día. Parámetro: day (AAAA-MM-DD, hoy por defecto)." },
+    "api.description.storage": { en: "Configured storage destinations without credentials.", de: "Konfigurierte Speicherziele ohne Zugangsdaten.", es: "Destinos de almacenamiento configurados sin credenciales." },
+    "api.description.health": { en: "System usage and health status/events for cameras, storage, and MQTT.", de: "Systemauslastung sowie Health-Status und -Ereignisse für Kameras, Speicher und MQTT.", es: "Uso del sistema y estado/eventos de salud para cámaras, almacenamiento y MQTT." },
+    "api.eyebrow": { en: "Integrations", de: "Integrationen", es: "Integraciones" },
+    "api.title": { en: "API access", de: "API-Zugriff", es: "Acceso a la API" },
+    "api.activate": { en: "Activate", de: "Aktivieren", es: "Activar" },
+    "api.intro_before_rest": { en: "Provides read-only TBC content (cameras, recordings, activity, and status) under", de: "Stellt schreibgeschützte TBC-Inhalte (Kameras, Aufnahmen, Aktivität und Status) unter", es: "Proporciona contenido TBC de solo lectura (cámaras, grabaciones, actividad y estado) en" },
+    "api.intro_between_endpoints": { en: "for external scripts, dashboards, or Home Assistant, and exposes the same content as MCP tools for an AI agent (Claude Desktop, Claude Code, etc.) under", de: "für externe Skripte, Dashboards oder Home Assistant bereit und stellt dieselben Inhalte als MCP-Tools für einen KI-Agenten (Claude Desktop, Claude Code usw.) unter", es: "para scripts externos, paneles o Home Assistant, y ofrece el mismo contenido como herramientas MCP para un agente de IA (Claude Desktop, Claude Code, etc.) en" },
+    "api.intro_disabled": { en: ". Disabled by default.", de: ". Standardmäßig deaktiviert.", es: ". Desactivado de forma predeterminada." },
+    "api.enable": { en: "Enable API", de: "API aktivieren", es: "Activar API" },
+    "api.require_key": { en: "Require API key", de: "API-Key erforderlich", es: "Requerir clave API" },
+    "api.not_generated": { en: "Not generated yet", de: "Noch nicht erzeugt", es: "Aún no generada" },
+    "api.generate_key": { en: "Generate new key", de: "Neuen Schlüssel erzeugen", es: "Generar nueva clave" },
+    "api.revoke_key": { en: "Revoke key", de: "Schlüssel widerrufen", es: "Revocar clave" },
+    "api.rest_examples": { en: "REST API examples", de: "REST-API-Beispiele", es: "Ejemplos de la API REST" },
+    "api.examples_before_key": { en: "Each example shows the exact request and a realistic example response containing every field TBC actually returns. Replace", de: "Jedes Beispiel zeigt die genaue Anfrage und eine realistische Beispielantwort mit allen Feldern, die TBC tatsächlich zurückgibt. Ersetze", es: "Cada ejemplo muestra la solicitud exacta y una respuesta realista con todos los campos que TBC devuelve. Sustituye" },
+    "api.examples_between": { en: "with the generated API key above. See", de: "durch den oben erzeugten API-Key. Siehe", es: "por la clave API generada arriba. Consulta" },
+    "api.examples_after_docs": { en: "for details and all query parameters.", de: "für Details und alle Query-Parameter.", es: "para obtener detalles y todos los parámetros de consulta." },
+    "api.request": { en: "Request:", de: "Anfrage:", es: "Solicitud:" },
+    "api.response": { en: "Response:", de: "Antwort:", es: "Respuesta:" },
+    "api.mcp_title": { en: "MCP tools (AI interface)", de: "MCP-Tools (KI-Schnittstelle)", es: "Herramientas MCP (interfaz de IA)" },
+    "api.mcp_intro_before_docs": { en: "The same content is available as MCP tools for an AI agent instead of REST endpoints. Every tool invokes the same logic as its corresponding REST endpoint above. See", de: "Dieselben Inhalte stehen als MCP-Tools für einen KI-Agenten statt als REST-Endpunkte bereit. Jedes Tool verwendet dieselbe Logik wie der entsprechende REST-Endpunkt oben. Siehe", es: "El mismo contenido está disponible como herramientas MCP para un agente de IA en lugar de endpoints REST. Cada herramienta usa la misma lógica que su endpoint REST correspondiente. Consulta" },
+    "api.mcp_intro_after_docs": { en: "for client configuration details (Claude Code, Claude.ai, and generic JSON clients).", de: "für Details zur Client-Konfiguration (Claude Code, Claude.ai und generische JSON-Clients).", es: "para detalles de configuración del cliente (Claude Code, Claude.ai y clientes JSON genéricos)." },
+    "api.mcp_call_example": { en: "Example MCP tool call (JSON-RPC via", de: "Beispiel eines MCP-Tool-Aufrufs (JSON-RPC über", es: "Ejemplo de llamada a una herramienta MCP (JSON-RPC mediante" },
+    "api.response_excerpt": { en: "Response (excerpt):", de: "Antwort (Auszug):", es: "Respuesta (extracto):" },
+    "api.response.jpeg": { en: "Response: image data with Content-Type: image/jpeg", de: "Antwort: Bilddaten mit Content-Type: image/jpeg", es: "Respuesta: datos de imagen con Content-Type: image/jpeg" },
+    "api.response.mp4": { en: "Response: video data with Content-Type: video/mp4", de: "Antwort: Videodaten mit Content-Type: video/mp4", es: "Respuesta: datos de vídeo con Content-Type: video/mp4" },
+    "mcp.description.cameras": { en: "All cameras with capabilities and status.", de: "Alle Kameras mit Fähigkeiten und Status.", es: "Todas las cámaras con capacidades y estado." },
+    "mcp.description.camera_detections": { en: "The current detection state of a camera.", de: "Der aktuelle Erkennungszustand einer Kamera.", es: "El estado de detección actual de una cámara." },
+    "mcp.description.camera_snapshot": { en: "A camera's current live preview as an image, not only a URL.", de: "Das aktuelle Live-Vorschaubild einer Kamera als Bild, nicht nur als URL.", es: "La vista previa en directo de una cámara como imagen, no solo como URL." },
+    "mcp.description.recordings": { en: "Recordings filtered by camera, detection type, and date range.", de: "Aufnahmen, filterbar nach Kamera, Erkennungstyp und Datumsbereich.", es: "Grabaciones filtradas por cámara, tipo de detección y rango de fechas." },
+    "mcp.description.recording_snapshot": { en: "A recording's event preview image when a local snapshot exists.", de: "Das Ereignis-Vorschaubild einer Aufnahme, wenn ein lokaler Snapshot vorhanden ist.", es: "La vista previa del evento de una grabación cuando existe una captura local." },
+    "mcp.description.activity": { en: "Event recordings across all cameras for one day.", de: "Ereignisaufnahmen aller Kameras für einen Tag.", es: "Grabaciones de eventos de todas las cámaras para un día." },
+    "mcp.description.health": { en: "System usage and health status/events.", de: "Systemauslastung sowie Health-Status und -Ereignisse.", es: "Uso del sistema y estado/eventos de salud." },
+    "health.check_failed": { en: "The health check could not be loaded", de: "Health-Check konnte nicht geladen werden", es: "No se pudo cargar la comprobación de estado" },
+    "health.check_running": { en: "Check running", de: "Prüfung läuft", es: "Comprobación en curso" },
+    "health.updated": { en: "Updated", de: "Aktualisiert", es: "Actualizado" },
+    "health.cores": { en: "{count} cores · {load}", de: "{count} Kerne · {load}", es: "{count} núcleos · {load}" },
+    "live.api_failed": { en: "The live API could not be loaded", de: "Live-API konnte nicht geladen werden", es: "No se pudo cargar la API en directo" },
+    "live.error_count": { en: " · {count} errors", de: " · {count} Fehler", es: " · {count} errores" },
+    "live.missing": { en: "No stream is known", de: "Kein Stream bekannt", es: "No se conoce ninguna transmisión" },
+    "live.no_streams": { en: "No streams", de: "Keine Streams", es: "No hay transmisiones" },
+    "live.starting_count": { en: " · {count} starting", de: " · {count} starten", es: " · {count} iniciándose" },
+    "live.starting": { en: "Streams are starting", de: "Streams werden gestartet", es: "Las transmisiones se están iniciando" },
+    "live.stream_starting": { en: "Stream is starting", de: "Stream startet", es: "La transmisión se está iniciando" },
+    "live.stream_starting_progress": { en: "Stream is starting…", de: "Stream wird gestartet…", es: "La transmisión se está iniciando…" },
+    "live.stream_stopped": { en: "Stream stopped", de: "Stream gestoppt", es: "Transmisión detenida" },
+    "live.stream_failed": { en: "Stream could not start", de: "Stream konnte nicht starten", es: "No se pudo iniciar la transmisión" },
+    "live.waiting": { en: "Waiting for stream", de: "Warte auf Stream", es: "Esperando la transmisión" },
+    "camera.command_failed": { en: "Command failed", de: "Befehl fehlgeschlagen", es: "El comando falló" },
+    "camera.command_network_failed": { en: "Command failed: network error", de: "Befehl fehlgeschlagen: Netzwerkfehler", es: "El comando falló: error de red" },
+    "camera.command_sent": { en: "Command was sent", de: "Befehl wurde gesendet", es: "El comando fue enviado" },
+    "camera.stream_start_failed": { en: "Stream could not be started", de: "Stream konnte nicht gestartet werden", es: "No se pudo iniciar la transmisión" },
+    "camera.stream_unavailable": { en: "Stream unavailable", de: "Stream nicht verfügbar", es: "Transmisión no disponible" },
+    "firmware.check_failed": { en: "Firmware check failed", de: "Firmware-Prüfung fehlgeschlagen", es: "La comprobación del firmware falló" },
+    "firmware.checking": { en: "Checking for updates…", de: "Prüfe auf Updates…", es: "Buscando actualizaciones…" },
+    "firmware.current": { en: "Firmware is up to date.", de: "Firmware ist aktuell.", es: "El firmware está actualizado." },
+    "firmware.failed": { en: "Update failed: {error}", de: "Update fehlgeschlagen: {error}", es: "La actualización falló: {error}" },
+    "firmware.new_available": { en: "New firmware available: {version}", de: "Neue Firmware verfügbar: {version}", es: "Nuevo firmware disponible: {version}" },
+    "firmware.start_failed": { en: "The update could not be started", de: "Update konnte nicht gestartet werden", es: "No se pudo iniciar la actualización" },
+    "firmware.updating": { en: "Update in progress…", de: "Update läuft…", es: "Actualización en curso…" },
+    "firmware.starting": { en: "Starting update…", de: "Update wird gestartet…", es: "Iniciando actualización…" },
+    "firmware.updated": { en: "Firmware was updated. The camera is restarting and will be unavailable briefly.", de: "Firmware wurde aktualisiert. Die Kamera startet neu und ist kurz nicht erreichbar.", es: "El firmware se actualizó. La cámara se está reiniciando y no estará disponible brevemente." },
+    "firmware.confirm": { en: "Update the firmware now? The camera will be unavailable during the update and restart afterward. This can take several minutes and must not be interrupted.", de: "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. Der Vorgang kann mehrere Minuten dauern und darf nicht unterbrochen werden.", es: "¿Actualizar el firmware ahora? La cámara no estará disponible durante la actualización y se reiniciará después. El proceso puede tardar varios minutos y no debe interrumpirse." },
+    "sd_card.load_failed": { en: "The SD card contents could not be loaded", de: "SD-Karteninhalt konnte nicht geladen werden", es: "No se pudo cargar el contenido de la tarjeta SD" },
+    "sd_card.preview": { en: "Preview", de: "Vorschau", es: "Vista previa" },
+    "debug.entry_count": { en: "{count} entries", de: "{count} Einträge", es: "{count} entradas" },
+    "timeline.play": { en: "Play", de: "Abspielen", es: "Reproducir" },
+    "player.play_pause": { en: "Play/Pause", de: "Wiedergabe/Pause", es: "Reproducir/Pausa" },
+    "player.mute": { en: "Mute", de: "Stumm", es: "Silenciar" },
+    "player.fullscreen": { en: "Fullscreen", de: "Vollbild", es: "Pantalla completa" },
+    "player.ptz_up": { en: "Up", de: "Hoch", es: "Arriba" },
+    "player.ptz_left": { en: "Left", de: "Links", es: "Izquierda" },
+    "player.ptz_stop": { en: "Stop", de: "Stopp", es: "Detener" },
+    "player.ptz_right": { en: "Right", de: "Rechts", es: "Derecha" },
+    "player.ptz_down": { en: "Down", de: "Runter", es: "Abajo" },
+    "player.zoom_out": { en: "Zoom out", de: "Auszoomen", es: "Alejar" },
+    "player.zoom_in": { en: "Zoom in", de: "Einzoomen", es: "Acercar" },
+    "timeline.no_events": { en: "No events yet", de: "Noch keine Ereignisse", es: "Aún no hay eventos" },
+    "zones.empty": { en: "No zones have been defined yet", de: "Noch keine Zonen definiert", es: "Aún no se han definido zonas" },
+    "zones.save_failed": { en: "The zone could not be saved", de: "Zone konnte nicht gespeichert werden", es: "No se pudo guardar la zona" },
+    "zones.save_network_failed": { en: "The zone could not be saved: network error", de: "Zone konnte nicht gespeichert werden: Netzwerkfehler", es: "No se pudo guardar la zona: error de red" },
+    "zones.delete_failed": { en: "The zone could not be deleted", de: "Zone konnte nicht gelöscht werden", es: "No se pudo eliminar la zona" },
+    "zones.delete_network_failed": { en: "The zone could not be deleted: network error", de: "Zone konnte nicht gelöscht werden: Netzwerkfehler", es: "No se pudo eliminar la zona: error de red" },
+    "zones.mode_include": { en: "Include", de: "Einschluss", es: "Inclusión" },
+    "zones.mode_exclude": { en: "Exclude", de: "Ausschluss", es: "Exclusión" },
+    "zones.mode_loiter": { en: "Loitering zone ({seconds}s)", de: "Verweilzone ({seconds}s)", es: "Zona de permanencia ({seconds}s)" }
+  };
+
+  const germanFromEnglish = {};
+  const spanishFromEnglish = {};
+  Object.entries(english).forEach(([germanSource, englishSource]) => {
+    germanFromEnglish[englishSource] ??= germanSource;
+    spanishFromEnglish[englishSource] ??= spanish[germanSource] || englishSource;
+  });
+
   const englishPatterns = [
     [/^(\d+) Eintraege$/, "$1 entries"],
     [/^Aktuelles Vorschaubild von (.+)$/, "Current preview image from $1"],
@@ -1466,26 +1588,43 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (["de", "en", "es"].includes(stored)) return stored;
     } catch (_) {
-      // Storage can be disabled; browser language remains a safe fallback.
+      // Storage can be disabled; English remains the deterministic default.
     }
-    const browserLanguage = (navigator.language || "en").toLowerCase();
-    if (browserLanguage.startsWith("de")) return "de";
-    if (browserLanguage.startsWith("es")) return "es";
     return "en";
   };
 
   let language = selectedLanguage();
 
-  const translate = (value) => {
-    if (language === "de" || typeof value !== "string") return value;
-    const dictionary = language === "es" ? spanish : english;
-    const languagePatterns = language === "es" ? spanishPatterns : englishPatterns;
-    const direct = dictionary[value];
-    if (direct) return direct;
-    for (const [pattern, replacement] of languagePatterns) {
-      if (pattern.test(value)) return translateCompound(value.replace(pattern, replacement));
+  const interpolate = (value, parameters = {}) => value.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, key) => (
+    Object.prototype.hasOwnProperty.call(parameters, key) ? String(parameters[key]) : match
+  ));
+
+  const translate = (keyOrValue, parameters = {}) => {
+    if (typeof keyOrValue !== "string") return keyOrValue;
+
+    const keyed = keyedMessages[keyOrValue];
+    if (keyed) return interpolate(keyed[language] || keyed.en, parameters);
+
+    const value = keyOrValue;
+    if (language === "en") {
+      const direct = english[value];
+      if (direct) return interpolate(direct, parameters);
+      for (const [pattern, replacement] of englishPatterns) {
+        if (pattern.test(value)) return interpolate(translateCompound(value.replace(pattern, replacement)), parameters);
+      }
+      return interpolate(value, parameters);
     }
-    return translateCompound(value);
+
+    if (language === "de") {
+      return interpolate(germanFromEnglish[value] || value, parameters);
+    }
+
+    const direct = spanishFromEnglish[value] || spanish[value];
+    if (direct) return interpolate(direct, parameters);
+    for (const [pattern, replacement] of spanishPatterns) {
+      if (pattern.test(value)) return interpolate(translateCompound(value.replace(pattern, replacement)), parameters);
+    }
+    return interpolate(value, parameters);
   };
 
   const translateTextNode = (node) => {
@@ -1500,6 +1639,11 @@
 
   const translateElement = (element) => {
     if (!(element instanceof Element)) return;
+    if (element.dataset.i18n) element.textContent = translate(element.dataset.i18n);
+    for (const attribute of ["aria-label", "title", "placeholder", "data-tooltip"]) {
+      const key = element.dataset[`i18n${attribute.replace(/(^|-)([a-z])/g, (_, __, letter) => letter.toUpperCase())}`];
+      if (key) element.setAttribute(attribute, translate(key));
+    }
     for (const attribute of ["aria-label", "title", "placeholder", "data-tooltip"]) {
       if (element.hasAttribute(attribute)) {
         element.setAttribute(attribute, translate(element.getAttribute(attribute)));
@@ -1509,6 +1653,11 @@
       if (child.nodeType === Node.TEXT_NODE) translateTextNode(child);
     }
     element.querySelectorAll("*").forEach((child) => {
+      if (child.dataset.i18n) child.textContent = translate(child.dataset.i18n);
+      for (const attribute of ["aria-label", "title", "placeholder", "data-tooltip"]) {
+        const key = child.dataset[`i18n${attribute.replace(/(^|-)([a-z])/g, (_, __, letter) => letter.toUpperCase())}`];
+        if (key) child.setAttribute(attribute, translate(key));
+      }
       for (const attribute of ["aria-label", "title", "placeholder", "data-tooltip"]) {
         if (child.hasAttribute(attribute)) {
           child.setAttribute(attribute, translate(child.getAttribute(attribute)));

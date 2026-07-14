@@ -3,16 +3,16 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Aufnahmeziele</p>
-    <h1>Speicher</h1>
+    <p class="eyebrow">Recording destinations</p>
+    <h1>Storage</h1>
   </div>
-  <a class="secondary-button" href="/cameras">Kameras</a>
+  <a class="secondary-button" href="/cameras">Cameras</a>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/storage">
     <div class="section-title">
-      <h2>Neues Speicherziel</h2>
+      <h2>New storage destination</h2>
     </div>
     <div class="form-grid">
       <label>
@@ -20,14 +20,14 @@
         <input name="name" required>
       </label>
       <label>
-        <span>Typ</span>
+        <span>Type</span>
         <select name="kind">
-          <option value="local">Lokaler oder gemounteter Pfad</option>
-          <option value="s3">S3-kompatibler Cloud-Speicher</option>
+          <option value="local">Local or mounted path</option>
+          <option value="s3">S3-compatible cloud storage</option>
         </select>
       </label>
       <label class="span-2">
-        <span>Lokaler Pfad im Container</span>
+        <span>Local path in the container</span>
         <input name="local_path" value="{{ defaults.local_path }}">
       </label>
       <label>
@@ -51,18 +51,18 @@
         <input name="s3_access_key_id" autocomplete="off">
       </label>
       <label>
-        <span>Secret Key</span>
+        <span>Secret key</span>
         <input name="s3_secret_access_key" type="password" autocomplete="new-password">
       </label>
     </div>
     <div class="form-actions">
-      <button class="primary-button" type="submit">Anlegen</button>
+      <button class="primary-button" type="submit">Create</button>
     </div>
   </form>
 
   <section class="storage-list">
     <div class="section-title">
-      <h2>Vorhandene Ziele</h2>
+      <h2>Existing destinations</h2>
       <span>{{ storage_targets | length }}</span>
     </div>
     {% for target in storage_targets %}
@@ -74,14 +74,14 @@
             <input name="name" value="{{ target.name }}" required>
           </label>
           <label>
-            <span>Typ</span>
+            <span>Type</span>
             <select name="kind">
-              <option value="local" {% if target.kind == 'local' %}selected{% endif %}>Lokaler/gemounteter Pfad</option>
+              <option value="local" {% if target.kind == 'local' %}selected{% endif %}>Local/mounted path</option>
               <option value="s3" {% if target.kind == 's3' %}selected{% endif %}>S3 Cloud</option>
             </select>
           </label>
           <label class="span-2">
-            <span>Lokaler Pfad</span>
+            <span>Local path</span>
             <input name="local_path" value="{{ target.local_path or '' }}">
           </label>
           <label>
@@ -105,11 +105,11 @@
             <input name="s3_access_key_id" value="{{ target.s3_access_key_id or '' }}" autocomplete="off">
           </label>
           <label>
-            <span>Secret Key</span>
+            <span>Secret key</span>
             <input name="s3_secret_access_key" type="password" value="{{ target.s3_secret_access_key or '' }}" autocomplete="new-password">
           </label>
           <label>
-            <span>Retention Tage</span>
+            <span>Retention days</span>
             <input name="retention_days" type="number" min="0" value="{{ target.retention_days or '' }}">
           </label>
           <label>
@@ -118,15 +118,15 @@
           </label>
         </div>
         <div class="form-actions">
-          <button class="primary-button" type="submit">Aktualisieren</button>
+          <button class="primary-button" type="submit">Refresh</button>
         </div>
       </form>
       <form method="post" action="/storage/{{ target.id }}/delete">
-        <button class="danger-button" type="submit">Löschen</button>
+        <button class="danger-button" type="submit">Delete</button>
       </form>
     </article>
     {% else %}
-    <div class="quiet-box">Noch kein Speicherziel angelegt</div>
+    <div class="quiet-box">No storage destination has been created yet</div>
     {% endfor %}
   </section>
 </section>

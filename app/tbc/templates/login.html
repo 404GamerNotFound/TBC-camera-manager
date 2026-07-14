@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="login-language" aria-label="Sprache wechseln">
+<div class="login-language" aria-label="Change language">
   <button class="secondary-button" type="button" data-language="de" lang="de">Deutsch</button>
   <button class="secondary-button" type="button" data-language="en" lang="en">English</button>
   <button class="secondary-button" type="button" data-language="es" lang="es">Español</button>
@@ -16,14 +16,14 @@
     <div class="inline-error">{{ error }}</div>
     {% endif %}
     <label>
-      <span>Benutzer</span>
+      <span>Username</span>
       <input name="username" autocomplete="username" required autofocus>
     </label>
     <label>
-      <span>Passwort</span>
+      <span>Password</span>
       <input name="password" type="password" autocomplete="current-password" required>
     </label>
-    <button class="primary-button" type="submit">Anmelden</button>
+    <button class="primary-button" type="submit">Sign in</button>
   </form>
 </section>
 {% endblock %}

@@ -3,8 +3,8 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Kameramodul</p>
-    <h1>Kamera einbinden</h1>
+    <p class="eyebrow">Camera module</p>
+    <h1>Add camera</h1>
   </div>
 </section>
 
@@ -14,7 +14,7 @@
   {% endif %}
   <div class="form-grid">
     <label class="span-2">
-      <span>Modul</span>
+      <span>Module</span>
       <select name="module_key" required>
         {% for camera_module in camera_modules %}
         <option value="{{ camera_module.key }}"
@@ -51,22 +51,22 @@
       <input name="rtsp_port" type="number" min="1" max="65535" value="{{ values.rtsp_port }}" required>
     </label>
     <label class="credential-field">
-      <span>Benutzer</span>
+      <span>Username</span>
       <input name="username" value="{{ values.username }}" autocomplete="username">
     </label>
     <label class="credential-field">
-      <span>Passwort</span>
+      <span>Password</span>
       <input name="password" type="password" autocomplete="current-password">
     </label>
     <label class="span-2 manual-stream-field" hidden>
       <span>RTSP-/RTSPS-URL</span>
       <input name="manual_stream_uri" type="password" autocomplete="off" placeholder="rtsp://benutzer:passwort@kamera:554/pfad">
-      <small>Die vollständige URL wird geschützt gespeichert und in der Oberfläche immer zensiert.</small>
+      <small>The full URL is stored securely and is always redacted in the interface.</small>
     </label>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras">Abbrechen</a>
-    <button class="primary-button" type="submit">Speichern</button>
+    <a class="secondary-button" href="/cameras">Cancel</a>
+    <button class="primary-button" type="submit">Save</button>
   </div>
 </form>
 <script src="{{ url_for('static', path='/camera-form.js') }}" defer></script>

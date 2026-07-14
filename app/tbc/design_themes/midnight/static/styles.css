@@ -1123,24 +1123,60 @@ code {
   font-size: inherit;
 }
 
-.api-example-list {
++.api-example-list {
   display: grid;
-  gap: 18px;
+  gap: 10px;
   margin-top: 14px;
 }
 
 .api-example {
-  padding: 16px;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+  overflow: hidden;
+}
+
+.api-example-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.api-example-summary::-webkit-details-marker {
+  display: none;
+}
+
+.api-example-summary:hover,
+.api-example[open] .api-example-summary {
+  background: var(--surface-soft);
+}
+
+.api-example[open] .api-example-summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.api-example-summary-main {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
 }
 
 .api-example-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 4px;
+  min-width: 0;
+}
+
+.api-example-head code {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .api-example-method {
@@ -1152,6 +1188,147 @@ code {
   font-weight: 800;
   letter-spacing: 0.02em;
 }
+
+.api-example-description {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.api-example-chevron {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.api-example[open] .api-example-chevron {
+  transform: rotate(225deg);
+}
+
+.api-example-body {
+  min-width: 0;
+  padding: 14px 16px 16px;
+}
+
+.api-example-body .hint-text {
+  margin: 0 0 6px;
+  font-weight: 800;
+}
+
+.api-example-body .code-block {
+  max-width: 100%;
+  margin: 0 0 14px;
+}
+
+.api-example-body .code-block:last-child {
+  margin-bottom: 0;
+}
+
+.api-access-layout {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.api-access-layout > * {
+  min-width: 0;
+}
+
+.api-access-overview {
+  display: grid;
+  gap: 14px;
+}
+
+.api-access-overview > .section-title {
+  margin-bottom: 0;
+}
+
+.api-access-intro {
+  max-width: 1080px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.api-access-control-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+  gap: 12px;
+}
+
+.api-access-settings,
+.api-access-credentials {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.api-access-settings,
+.api-access-credentials,
+.api-toggle-list,
+.api-access-endpoints {
+  display: grid;
+  gap: 11px;
+}
+
+.api-access-settings {
+  align-content: space-between;
+}
+
+.api-key-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.api-key-status strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.api-access-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.api-access-endpoint {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.api-access-endpoint > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.api-access-endpoint code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.api-access-credentials .form-actions form {
+  margin: 0;
+}
+
 
 .table-section {
   margin-top: 22px;
@@ -2831,6 +3008,24 @@ tr:last-child td {
   .storage-grid,
   .filter-bar {
     grid-template-columns: 1fr;
+  }
+
+  .api-access-control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .api-example-summary {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .api-example-body {
+    padding: 12px;
+  }
+
+  .api-key-status {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .span-2 {

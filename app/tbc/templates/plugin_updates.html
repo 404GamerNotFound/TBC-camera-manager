@@ -3,45 +3,45 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Erweiterungen</p>
+    <p class="eyebrow">Extensions</p>
     <h1>Updates</h1>
   </div>
-  <a class="secondary-button" href="/plugin-sources">Externe Quellen verwalten</a>
+  <a class="secondary-button" href="/plugin-sources">Manage external sources</a>
 </section>
 
 <section class="storage-list">
   <div class="section-title">
-    <h2>TBC-Anwendung</h2>
+    <h2>TBC application</h2>
     <span class="status-pill {{ 'status-active' if app_update_available else 'status-idle' }}">
-      {{ 'Update verfügbar' if app_update_available else 'aktuell' }}
+      {{ 'Update available' if app_update_available else 'up to date' }}
     </span>
   </div>
   <article class="storage-item">
     <dl class="metric-row">
-      <div><dt>Installiert</dt><dd>{{ app_version }}</dd></div>
-      <div><dt>Neueste Version</dt><dd>{{ app_latest_version or 'noch nicht geprüft' }}</dd></div>
+      <div><dt>Installed</dt><dd>{{ app_version }}</dd></div>
+      <div><dt>Latest version</dt><dd>{{ app_latest_version or 'not checked yet' }}</dd></div>
     </dl>
     <p class="quiet-box">
-      Wird stündlich gegen die veröffentlichten GitHub-Releases geprüft. Ein Update auf eine neue Version
-      erfolgt manuell (Docker-Image neu bauen/ziehen bzw. <code>git pull</code>) - hier gibt es bewusst keinen
-      Einzelklick-Installer wie bei Plugins.
+      Published GitHub releases are checked hourly. Updating to a new version is a manual operation
+      (rebuild or pull the Docker image, or run <code>git pull</code>); there is intentionally no
+      one-click installer for the application itself.
     </p>
     {% if app_update_available and app_update_url %}
     <div class="form-actions">
-      <a class="primary-button" href="{{ app_update_url }}" target="_blank" rel="noopener noreferrer">Release ansehen</a>
+      <a class="primary-button" href="{{ app_update_url }}" target="_blank" rel="noopener noreferrer">View release</a>
     </div>
     {% endif %}
   </article>
 </section>
 
 <div class="quiet-box">
-  Jede registrierte externe Quelle wird stündlich darauf geprüft, ob sich der Branch/Tag seit der letzten Installation weiterbewegt hat (Vergleich der Commit-SHA, ohne das ganze Repository herunterzuladen). Hier erscheinen nur Quellen mit einem tatsächlich verfügbaren Update.
+  Every registered external source is checked hourly to see whether its branch/tag has advanced since the last installation (by comparing the commit SHA without downloading the entire repository). Only sources with an update that is actually available appear here.
 </div>
 
 {% if sources %}
 <section class="storage-list">
   <div class="section-title">
-    <h2>Verfügbare Updates</h2>
+    <h2>Available updates</h2>
     <span>{{ sources | length }}</span>
   </div>
   {% for source in sources %}
@@ -51,23 +51,23 @@
         <h3>{{ source.label }}</h3>
         <p>{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
       </div>
-      <span class="status-pill status-active">Update verfügbar</span>
+      <span class="status-pill status-active">Update available</span>
     </div>
     <dl class="metric-row">
-      <div><dt>Installiert</dt><dd>{{ source.installed_ref_sha[:7] if source.installed_ref_sha else 'unbekannt' }}</dd></div>
-      <div><dt>Verfügbar</dt><dd>{{ source.latest_ref_sha[:7] if source.latest_ref_sha else 'unbekannt' }}</dd></div>
-      <div><dt>Zuletzt geprüft</dt><dd>{{ source.last_checked_at or 'noch nicht geprüft' }}</dd></div>
+      <div><dt>Installed</dt><dd>{{ source.installed_ref_sha[:7] if source.installed_ref_sha else 'unknown' }}</dd></div>
+      <div><dt>Available</dt><dd>{{ source.latest_ref_sha[:7] if source.latest_ref_sha else 'unknown' }}</dd></div>
+      <div><dt>Last checked</dt><dd>{{ source.last_checked_at or 'not checked yet' }}</dd></div>
     </dl>
     <div class="form-actions">
       <form method="post" action="/plugin-sources/{{ source.id }}/sync">
         <input type="hidden" name="return_to" value="/updates">
-        <button class="primary-button" type="submit">Jetzt aktualisieren</button>
+        <button class="primary-button" type="submit">Update now</button>
       </form>
     </div>
   </article>
   {% endfor %}
 </section>
 {% else %}
-<p class="quiet-box">Alle externen Quellen sind aktuell.</p>
+<p class="quiet-box">All external sources are up to date.</p>
 {% endif %}
 {% endblock %}

@@ -3,16 +3,16 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Kamera-Manager</p>
-    <h1>Kameras</h1>
+    <p class="eyebrow">Camera Manager</p>
+    <h1>Cameras</h1>
   </div>
   {% if role == 'admin' %}
-  <a class="primary-button" href="/cameras/new">+ Kamera</a>
+  <a class="primary-button" href="/cameras/new">+ Camera</a>
   {% endif %}
 </section>
 
 {% if cameras %}
-<section class="camera-grid" aria-label="Kameraliste">
+<section class="camera-grid" aria-label="Camera list">
   {% for camera in cameras %}
   <article class="camera-card">
     <div class="card-header">
@@ -20,10 +20,10 @@
         <h2><a href="/cameras/{{ camera.id }}">{{ camera.name }}</a></h2>
         <p>{{ camera.host }}:{{ camera.onvif_port }}</p>
       </div>
-      <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'neu' }}</span>
+      <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'new' }}</span>
     </div>
     {% if camera.last_probe_message %}
-    <div class="probe-status-list" aria-label="Verbindungsstatus">
+    <div class="probe-status-list" aria-label="Connection status">
       {% for message in camera.last_probe_message.split(' | ') %}
       {% set normalized_message = message | lower %}
       {% set probe_failed = camera.last_probe_status == 'error' or 'fehl' in normalized_message or 'nicht ' in normalized_message or 'kein ' in normalized_message or 'abgelehnt' in normalized_message or 'timeout' in normalized_message %}
@@ -37,12 +37,12 @@
       {% endfor %}
     </div>
     {% elif camera.host.startswith('192.169.') %}
-    <div class="probe-status-list" aria-label="Verbindungsstatus">
+    <div class="probe-status-list" aria-label="Connection status">
       <span class="probe-indicator probe-indicator-error"
             tabindex="0"
             role="img"
-            aria-label="Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint."
-            data-tooltip="Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint.">
+            aria-label="Note: The host starts with 192.169. On home networks, 192.168 is often intended."
+            data-tooltip="Note: The host starts with 192.169. On home networks, 192.168 is often intended.">
         <span aria-hidden="true">×</span>
       </span>
     </div>
@@ -50,45 +50,45 @@
     {% if camera.stream_uri %}
     <figure class="camera-snapshot">
       <img src="/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
-           alt="Aktuelles Vorschaubild von {{ camera.name }}"
+           alt="Current preview image from {{ camera.name }}"
            loading="lazy"
            decoding="async">
       <figcaption>Vorschaubild · Aktualisierung alle {{ snapshot_interval_minutes }} Minuten</figcaption>
     </figure>
     {% else %}
-    <div class="camera-snapshot camera-snapshot-empty">Noch kein Stream für ein Vorschaubild verfügbar</div>
+    <div class="camera-snapshot camera-snapshot-empty">No stream is available for a preview image yet</div>
     {% endif %}
     <dl class="metric-row camera-metrics">
       <div class="camera-metric camera-metric-supported">
-        <dt>Unterstützt</dt>
+        <dt>Supported</dt>
         <dd>{{ camera.supported_count or 0 }}</dd>
       </div>
       <div class="camera-metric camera-metric-active{% if not camera.active_count %} is-empty{% endif %}">
-        <dt>Aktiv</dt>
+        <dt>Active</dt>
         <dd>{{ camera.active_count or 0 }}</dd>
       </div>
       <div class="camera-metric camera-metric-features">
-        <dt>Funktionen</dt>
+        <dt>Features</dt>
         <dd>{{ camera.detection_count or 0 }}</dd>
       </div>
     </dl>
     <div class="card-footer">
       <span>
-        {{ camera.model or 'Modell offen' }}
+        {{ camera.model or 'Model unknown' }}
         {% if camera.recording_enabled %}
-        · Aufnahme aktiv
+        · Recording active
         {% endif %}
       </span>
-      <a class="text-button" href="/cameras/{{ camera.id }}">Öffnen</a>
+      <a class="text-button" href="/cameras/{{ camera.id }}">Open</a>
     </div>
   </article>
   {% endfor %}
 </section>
 {% else %}
 <section class="empty-state">
-  <h2>Noch keine Kamera</h2>
+  <h2>No camera yet</h2>
   {% if role == 'admin' %}
-  <a class="primary-button" href="/cameras/new">+ Kamera</a>
+  <a class="primary-button" href="/cameras/new">+ Camera</a>
   {% endif %}
 </section>
 {% endif %}

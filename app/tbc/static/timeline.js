@@ -302,7 +302,7 @@
       const playButton = document.createElement("button");
       playButton.type = "button";
       playButton.className = "secondary-button";
-      playButton.textContent = "Abspielen";
+      playButton.textContent = window.tbcI18n.t("timeline.play");
       playButton.addEventListener("click", () => playItem(eventItem, 0, "events"));
       actions.appendChild(playButton);
 
@@ -312,7 +312,7 @@
     });
     if (!items.length) {
       const empty = document.createElement("li");
-      empty.textContent = "Noch keine Ereignisse";
+      empty.textContent = window.tbcI18n.t("timeline.no_events");
       listBody.appendChild(empty);
     }
   }

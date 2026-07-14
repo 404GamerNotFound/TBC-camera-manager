@@ -3,114 +3,132 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Integrationen</p>
-    <h1>API-Zugriff</h1>
+    <p class="eyebrow" data-i18n="api.eyebrow">Integrations</p>
+    <h1 data-i18n="api.title">API access</h1>
   </div>
 </section>
 
-<section class="settings-layout">
-  <section class="event-panel">
+<section class="api-access-layout">
+  <section class="event-panel api-access-overview">
     <div class="section-title">
-      <h2>Aktivieren</h2>
+      <h2 data-i18n="api.activate">Activate</h2>
     </div>
-    <div class="quiet-box">
-      Stellt schreibgeschützte TBC-Inhalte (Kameras, Aufnahmen, Aktivität, Status) unter
-      <code>/api/v1/...</code> für externe Skripte, Dashboards oder Home Assistant bereit -
-      und denselben Inhalt als MCP-Tools für einen KI-Agenten (Claude Desktop, Claude Code,
-      ...) unter <code>/mcp/mcp</code>. Standardmäßig deaktiviert.
-    </div>
-    <form class="editor-form" method="post" action="/settings/api">
-      <label class="check-row">
-        <input name="enabled" type="checkbox" {% if api_config.enabled %}checked{% endif %}>
-        <span>API aktivieren</span>
-      </label>
-      <label class="check-row">
-        <input name="require_api_key" type="checkbox" {% if api_config.require_api_key %}checked{% endif %}>
-        <span>API-Key erforderlich</span>
-      </label>
-      <div class="form-actions">
-        <button class="primary-button" type="submit">Speichern</button>
+    <p class="api-access-intro">
+      <span data-i18n="api.intro_before_rest">Provides read-only TBC content (cameras, recordings, activity, and status) under</span>
+      <code>/api/v1/...</code>
+      <span data-i18n="api.intro_between_endpoints">for external scripts, dashboards, or Home Assistant, and exposes the same content as MCP tools for an AI agent (Claude Desktop, Claude Code, etc.) under</span>
+      <code>/mcp/mcp</code><span data-i18n="api.intro_disabled">. Disabled by default.</span>
+    </p>
+    <div class="api-access-control-grid">
+      <form class="api-access-settings" method="post" action="/settings/api">
+        <div class="api-toggle-list">
+          <label class="check-row">
+            <input name="enabled" type="checkbox" {% if api_config.enabled %}checked{% endif %}>
+            <span data-i18n="api.enable">Enable API</span>
+          </label>
+          <label class="check-row">
+            <input name="require_api_key" type="checkbox" {% if api_config.require_api_key %}checked{% endif %}>
+            <span data-i18n="api.require_key">Require API key</span>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="primary-button" type="submit">Save</button>
+        </div>
+      </form>
+
+      <div class="api-access-credentials">
+        <div class="api-key-status">
+          <span class="api-access-label">API key</span>
+          {% if api_config.api_key_prefix %}
+          <strong>Active: <code>{{ api_config.api_key_prefix }}…</code></strong>
+          {% else %}
+          <strong data-i18n="api.not_generated">Not generated yet</strong>
+          {% endif %}
+        </div>
+        <div class="api-access-endpoints">
+          <div class="api-access-endpoint">
+            <span>REST</span>
+            <code>/api/v1/...</code>
+          </div>
+          <div class="api-access-endpoint">
+            <span>MCP</span>
+            <code>{{ mcp_endpoint_url }}</code>
+          </div>
+        </div>
+        <div class="form-actions">
+          <form method="post" action="/settings/api-key/generate">
+            <button class="primary-button" type="submit" data-i18n="api.generate_key">Generate new key</button>
+          </form>
+          {% if api_config.api_key_prefix %}
+          <form method="post" action="/settings/api-key/revoke">
+            <button class="secondary-button" type="submit" data-i18n="api.revoke_key">Revoke key</button>
+          </form>
+          {% endif %}
+        </div>
       </div>
-    </form>
-    <div class="quiet-box">
-      {% if api_config.api_key_prefix %}
-      Aktiver Key: <code>{{ api_config.api_key_prefix }}…</code>
-      {% else %}
-      Kein API-Key erzeugt.
-      {% endif %}
-    </div>
-    <div class="quiet-box">
-      REST-Endpunkt-Basis: <code>/api/v1/...</code> (siehe Beispiele unten) · MCP-Endpunkt
-      (KI-Schnittstelle): <code>{{ mcp_endpoint_url }}</code> - beide nutzen denselben
-      Aktivieren-Schalter und Key oben.
-    </div>
-    <div class="form-actions">
-      <form method="post" action="/settings/api-key/generate">
-        <button class="primary-button" type="submit">Neuen Key erzeugen</button>
-      </form>
-      {% if api_config.api_key_prefix %}
-      <form method="post" action="/settings/api-key/revoke">
-        <button class="secondary-button" type="submit">Key widerrufen</button>
-      </form>
-      {% endif %}
     </div>
   </section>
 
   <section class="event-panel">
     <div class="section-title">
-      <h2>REST-API-Beispiele</h2>
+      <h2 data-i18n="api.rest_examples">REST API examples</h2>
       <span>{{ api_examples|length }}</span>
     </div>
     <p class="hint-text">
-      Jedes Beispiel zeigt die genaue Anfrage und eine realistische Beispiel-Antwort mit allen
-      Feldern, die TBC tatsächlich zurückgibt. <code>tbc_XXX...</code> durch den erzeugten
-      API-Key oben ersetzen. Details und alle Query-Parameter siehe <code>docs/api.md</code>.
+      <span data-i18n="api.examples_before_key">Each example shows the exact request and a realistic example response containing every field TBC actually returns. Replace</span>
+      <code>tbc_XXX...</code> <span data-i18n="api.examples_between">with the generated API key above. See</span>
+      <code>docs/api.md</code> <span data-i18n="api.examples_after_docs">for details and all query parameters.</span>
     </p>
     <div class="api-example-list">
       {% for example in api_examples %}
-      <div class="api-example">
-        <div class="api-example-head">
-          <span class="api-example-method">{{ example.method }}</span>
-          <code>{{ example.path }}</code>
+      <details class="api-example" {% if loop.first %}open{% endif %}>
+        <summary class="api-example-summary">
+          <span class="api-example-summary-main">
+            <span class="api-example-head">
+              <span class="api-example-method">{{ example.method }}</span>
+              <code>{{ example.path }}</code>
+            </span>
+            <span class="api-example-description" data-i18n="{{ example.description_key }}">{{ example.description }}</span>
+          </span>
+          <span class="api-example-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="api-example-body">
+          <p class="hint-text" data-i18n="api.request">Request:</p>
+          <pre class="code-block"><code>{{ example.curl }}</code></pre>
+          {% if example.response %}
+          <p class="hint-text" data-i18n="api.response">Response:</p>
+          <pre class="code-block"><code>{{ example.response }}</code></pre>
+          {% else %}
+          <p class="hint-text" data-i18n="{{ example.response_note_key }}">{{ example.response_note }}</p>
+          {% endif %}
         </div>
-        <p class="quiet-box">{{ example.description }}</p>
-        <p class="hint-text">Anfrage:</p>
-        <pre class="code-block"><code>{{ example.curl }}</code></pre>
-        {% if example.response %}
-        <p class="hint-text">Antwort:</p>
-        <pre class="code-block"><code>{{ example.response }}</code></pre>
-        {% else %}
-        <p class="hint-text">{{ example.response_note }}</p>
-        {% endif %}
-      </div>
+      </details>
       {% endfor %}
     </div>
   </section>
 
   <section class="event-panel">
     <div class="section-title">
-      <h2>MCP-Tools (KI-Schnittstelle)</h2>
+      <h2 data-i18n="api.mcp_title">MCP tools (AI interface)</h2>
       <span>{{ mcp_tools|length }}</span>
     </div>
     <p class="hint-text">
-      Dieselben Inhalte, aber als MCP-Tools für einen KI-Agenten statt als REST-Endpunkte -
-      jedes Tool ruft dieselbe Logik wie der entsprechende REST-Endpunkt oben auf. Details zur
-      Client-Konfiguration (Claude Code, Claude.ai, generisches JSON) siehe
-      <code>docs/mcp.md</code>.
+      <span data-i18n="api.mcp_intro_before_docs">The same content is available as MCP tools for an AI agent instead of REST endpoints. Every tool invokes the same logic as its corresponding REST endpoint above. See</span>
+      <code>docs/mcp.md</code> <span data-i18n="api.mcp_intro_after_docs">for client configuration details (Claude Code, Claude.ai, and generic JSON clients).</span>
     </p>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Tool</th><th>Beschreibung</th></tr>
+          <tr><th>Tool</th><th>Description</th></tr>
         </thead>
         <tbody>
-          {% for name, description in mcp_tools %}
-          <tr><td><code>{{ name }}</code></td><td>{{ description }}</td></tr>
+          {% for tool in mcp_tools %}
+          <tr><td><code>{{ tool.name }}</code></td><td data-i18n="{{ tool.description_key }}">{{ tool.description }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    <p class="hint-text">Beispiel eines MCP-Tool-Aufrufs (JSON-RPC über <code>/mcp/mcp</code>):</p>
+    <p class="hint-text"><span data-i18n="api.mcp_call_example">Example MCP tool call (JSON-RPC via</span> <code>/mcp/mcp</code>):</p>
     <pre class="code-block"><code>{
   "jsonrpc": "2.0",
   "id": 1,
@@ -120,13 +138,13 @@
     "arguments": {}
   }
 }</code></pre>
-    <p class="hint-text">Antwort (Auszug):</p>
+    <p class="hint-text" data-i18n="api.response_excerpt">Response (excerpt):</p>
     <pre class="code-block"><code>{
   "jsonrpc": "2.0",
   "id": 1,
   "result": {
-    "content": [{"type": "text", "text": "{ ... eine Kamera als JSON ... }"}],
-    "structuredContent": {"result": [{ "id": 1, "name": "Einfahrt", "...": "..." }]},
+    "content": [{"type": "text", "text": "{ ... one camera as JSON ... }"}],
+    "structuredContent": {"result": [{ "id": 1, "name": "Driveway", "...": "..." }]},
     "isError": false
   }
 }</code></pre>

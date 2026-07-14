@@ -7,9 +7,9 @@
     <h1>Live</h1>
   </div>
   <div class="button-row live-toolbar">
-    <span class="status-pill status-warning" data-live-summary>Streams werden gestartet</span>
-    <button class="secondary-button" type="button" data-live-refresh>Aktualisieren</button>
-    <button class="secondary-button" type="button" data-live-fullscreen>Vollbild</button>
+    <span class="status-pill status-warning" data-live-summary>Streams are starting</span>
+    <button class="secondary-button" type="button" data-live-refresh>Refresh</button>
+    <button class="secondary-button" type="button" data-live-fullscreen>Full screen</button>
     {% if role == 'admin' %}
     <button class="secondary-button" type="button" data-live-layout-toggle aria-expanded="false">Layout</button>
     {% endif %}
@@ -19,19 +19,19 @@
 <div class="live-wall-controls">
   <label class="check-row">
     <input type="checkbox" data-live-rotation-toggle {% if wall_settings.rotation_enabled %}checked{% endif %}>
-    <span>Automatisch durchschalten</span>
+    <span>Rotate automatically</span>
   </label>
 </div>
 
 {% if role == 'admin' %}
 <form class="editor-form compact-form" method="post" action="/live/layout" data-live-layout-form hidden>
   <div class="section-title">
-    <h2>Wandlayout</h2>
+    <h2>Wall layout</h2>
     <span>Admin</span>
   </div>
   <div class="form-grid">
     <label>
-      <span>Raster-Spalten</span>
+      <span>Grid columns</span>
       <select name="columns" class="live-columns-select">
         {% for n in [2, 3, 4, 5, 6] %}
         <option value="{{ n }}" {% if wall_settings.columns == n %}selected{% endif %}>{{ n }} Spalten</option>
@@ -40,18 +40,18 @@
     </label>
     <label class="check-row">
       <input type="checkbox" name="rotation_enabled" {% if wall_settings.rotation_enabled %}checked{% endif %}>
-      <span>Rotation standardmäßig aktiv</span>
+      <span>Rotation enabled by default</span>
     </label>
     <label>
-      <span>Rotationsintervall (Sekunden)</span>
+      <span>Rotation interval (seconds)</span>
       <input type="number" name="rotation_seconds" min="5" max="300" value="{{ wall_settings.rotation_seconds }}">
     </label>
   </div>
   <div class="quiet-box">
-    Größe und Reihenfolge jeder Kachel werden direkt am Bild eingestellt: Werkzeuge oben rechts erscheinen beim Überfahren mit der Maus (⠿ verschiebt, ⤡ ändert die Größe).
+    The size and order of each tile are adjusted directly on the image: tools appear in the top-right corner on hover (⠿ moves, ⤡ resizes).
   </div>
   <div class="form-actions">
-    <button class="primary-button" type="submit">Speichern</button>
+    <button class="primary-button" type="submit">Save</button>
   </div>
 </form>
 {% endif %}
@@ -59,7 +59,7 @@
 {% if live_items %}
 <section
   class="live-grid"
-  aria-label="Livestreams"
+  aria-label="Live streams"
   data-live-grid
   data-live-columns="{{ wall_settings.columns }}"
   data-rotation-seconds="{{ wall_settings.rotation_seconds }}"
@@ -79,9 +79,9 @@
         <span class="live-card-name">{{ item.name }}</span>
         <div class="live-card-tools">
           <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
-          <a class="live-card-tool-btn" href="{{ item.playlist_url }}" aria-label="HLS-Playlist öffnen" title="HLS-Playlist">HLS</a>
+          <a class="live-card-tool-btn" href="{{ item.playlist_url }}" aria-label="Open HLS playlist" title="HLS-Playlist">HLS</a>
           {% if role == 'admin' %}
-          <button class="live-card-tool-btn live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Kachel verschieben" title="Verschieben">⠿</button>
+          <button class="live-card-tool-btn live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Move tile" title="Move">⠿</button>
           <button
             class="live-card-tool-btn live-resize-handle"
             type="button"
@@ -89,8 +89,8 @@
             data-live-key="{{ item.key }}"
             data-column-span="{{ item.column_span }}"
             data-row-span="{{ item.row_span }}"
-            aria-label="Kachelgröße ändern, ziehen"
-            title="Größe ändern"
+            aria-label="Drag to resize tile"
+            title="Resize"
           >⤡</button>
           {% endif %}
         </div>
@@ -105,24 +105,24 @@
       data-can-control="{{ '1' if role == 'admin' else '0' }}"
       data-live-expand
     >
-      <div class="live-placeholder">{{ 'Stream startet' if item.status == 'starting' else 'Warte auf Stream' }}</div>
+      <div class="live-placeholder" {% if item.status == 'starting' %}data-i18n="live.stream_starting"{% else %}data-i18n="live.waiting"{% endif %}>{{ 'Stream is starting' if item.status == 'starting' else 'Waiting for stream' }}</div>
     </div>
   </article>
   {% endfor %}
 </section>
 {% else %}
 <section class="empty-state">
-  <h2>Keine Kamera verfügbar</h2>
+  <h2>No camera available</h2>
 </section>
 {% endif %}
 
-<button class="secondary-button live-kiosk-exit" type="button" data-live-kiosk-exit hidden>Vollbild verlassen (Esc)</button>
+<button class="secondary-button live-kiosk-exit" type="button" data-live-kiosk-exit hidden>Exit full screen (Esc)</button>
 
 <div class="live-solo-overlay" data-live-solo-overlay hidden>
   <div class="live-solo-panel">
     <div class="live-solo-header">
       <h2 data-live-solo-title></h2>
-      <button class="icon-button" type="button" aria-label="Schließen" data-live-solo-close>×</button>
+      <button class="icon-button" type="button" aria-label="Close" data-live-solo-close>×</button>
     </div>
     <div class="live-solo-player" data-live-solo-player></div>
   </div>

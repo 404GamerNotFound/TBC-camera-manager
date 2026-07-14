@@ -3,14 +3,14 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Kamera-Archiv</p>
-    <h1>SD-Karte</h1>
+    <p class="eyebrow">Camera archive</p>
+    <h1>SD card</h1>
   </div>
 </section>
 
 <form class="filter-bar sd-filter" method="get" action="/sd-card" data-sd-filter-form>
   <label>
-    <span>Kamera</span>
+    <span>Camera</span>
     <select name="camera_id">
       {% for camera in cameras %}
       <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
@@ -18,7 +18,7 @@
     </select>
   </label>
   <label>
-    <span>Kanal</span>
+    <span>Channel</span>
     <select name="channel">
       {% for item in channels %}
       <option value="{{ item.channel_index }}" {% if filters.channel == item.channel_index %}selected{% endif %}>
@@ -35,14 +35,14 @@
     </select>
   </label>
   <label>
-    <span>Von</span>
+    <span>From</span>
     <input name="date_from" type="date" value="{{ filters.date_from }}">
   </label>
   <label>
-    <span>Bis</span>
+    <span>To</span>
     <input name="date_to" type="date" value="{{ filters.date_to }}">
   </label>
-  <button class="primary-button" type="submit">Suchen</button>
+  <button class="primary-button" type="submit">Search</button>
 </form>
 
 <div class="inline-error" data-sd-error {% if not error %}hidden{% endif %}>{{ error or '' }}</div>
@@ -50,19 +50,19 @@
 <section data-sd-content data-sd-can-load="{% if selected_camera and not error %}1{% else %}0{% endif %}">
   <section class="sd-preview-panel" data-sd-preview-panel hidden>
     <div class="section-title">
-      <h2 data-sd-preview-title>Vorschau</h2>
+      <h2 data-sd-preview-title>Preview</h2>
       <span data-sd-preview-meta></span>
     </div>
     <video class="sd-preview-player" preload="none" data-sd-preview-player></video>
   </section>
 
   <section class="quiet-box" data-sd-loading>
-    SD-Karteninhalt wird geladen...
+    Loading SD card content...
   </section>
 
   <section class="table-section" data-sd-table-section hidden>
     <div class="section-title">
-      <h2>Aufnahmen auf SD-Karte</h2>
+      <h2>Recordings on SD card</h2>
       <span data-sd-count>0</span>
     </div>
     <div class="table-wrap">
@@ -70,11 +70,11 @@
         <thead>
           <tr>
             <th>Start</th>
-            <th>Ende</th>
-            <th>Dauer</th>
-            <th>Typ</th>
-            <th>Datei</th>
-            <th>Groesse</th>
+            <th>End</th>
+            <th>Duration</th>
+            <th>Type</th>
+            <th>File</th>
+            <th>Size</th>
             <th></th>
           </tr>
         </thead>
@@ -84,7 +84,7 @@
   </section>
 
   <section class="empty-state" data-sd-empty hidden>
-    <h2>Keine SD-Card-Aufnahmen gefunden</h2>
+    <h2>No SD card recordings found</h2>
   </section>
 </section>
 

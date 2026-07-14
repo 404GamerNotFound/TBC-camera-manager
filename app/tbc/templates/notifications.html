@@ -4,26 +4,26 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow">Events</p>
-    <h1>Benachrichtigungen</h1>
+    <h1>Notifications</h1>
   </div>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/notifications">
-    <div class="section-title"><h2>Neuer Kanal</h2></div>
+    <div class="section-title"><h2>New channel</h2></div>
     {% include "partials/notification_fields.html" %}
-    <div class="form-actions"><button class="primary-button" type="submit">Anlegen</button></div>
+    <div class="form-actions"><button class="primary-button" type="submit">Create</button></div>
   </form>
   <section class="storage-list">
-    <div class="section-title"><h2>Kanäle</h2><span>{{ channels | length }}</span></div>
+    <div class="section-title"><h2>Channels</h2><span>{{ channels | length }}</span></div>
     {% for channel in channels %}
     <article class="storage-item">
       <form method="post" action="/notifications/{{ channel.id }}">
         {% set values = channel %}
         {% include "partials/notification_fields.html" %}
-        <div class="form-actions"><button class="primary-button" type="submit">Speichern</button></div>
+        <div class="form-actions"><button class="primary-button" type="submit">Save</button></div>
       </form>
-      <form method="post" action="/notifications/{{ channel.id }}/delete"><button class="danger-button" type="submit">Löschen</button></form>
+      <form method="post" action="/notifications/{{ channel.id }}/delete"><button class="danger-button" type="submit">Delete</button></form>
     </article>
     {% endfor %}
   </section>

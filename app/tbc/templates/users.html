@@ -3,34 +3,34 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Zugriff</p>
-    <h1>Benutzer</h1>
+    <p class="eyebrow">Access</p>
+    <h1>Users</h1>
   </div>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/users">
     <div class="section-title">
-      <h2>Neuer Benutzer</h2>
+      <h2>New user</h2>
     </div>
     <div class="form-grid">
       <label>
-        <span>Benutzername</span>
+        <span>Username</span>
         <input name="username" required>
       </label>
       <label>
-        <span>Passwort</span>
+        <span>Password</span>
         <input name="password" type="password" required autocomplete="new-password">
       </label>
       <label>
-        <span>Rolle</span>
+        <span>Role</span>
         <select name="role">
           <option value="viewer">Viewer</option>
           <option value="admin">Admin</option>
         </select>
       </label>
       <fieldset class="span-2 checkbox-field">
-        <legend>Kamerazugriff für Viewer</legend>
+        <legend>Camera access for viewers</legend>
         <div class="checkbox-grid">
           {% for camera in cameras %}
           <label class="check-row">
@@ -42,13 +42,13 @@
       </fieldset>
     </div>
     <div class="form-actions">
-      <button class="primary-button" type="submit">Anlegen</button>
+      <button class="primary-button" type="submit">Create</button>
     </div>
   </form>
 
   <section class="storage-list">
     <div class="section-title">
-      <h2>Vorhandene Benutzer</h2>
+      <h2>Existing users</h2>
       <span>{{ users | length }}</span>
     </div>
     {% for user in users %}
@@ -56,22 +56,22 @@
       <form method="post" action="/users/{{ user.id }}">
         <div class="form-grid">
           <label>
-            <span>Benutzername</span>
+            <span>Username</span>
             <input name="username" value="{{ user.username }}" required>
           </label>
           <label>
-            <span>Neues Passwort</span>
+            <span>New password</span>
             <input name="password" type="password" autocomplete="new-password">
           </label>
           <label>
-            <span>Rolle</span>
+            <span>Role</span>
             <select name="role">
               <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %}>Viewer</option>
               <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
             </select>
           </label>
           <fieldset class="span-2 checkbox-field">
-            <legend>Kamerazugriff</legend>
+            <legend>Camera access</legend>
             <div class="checkbox-grid">
               {% for camera in cameras %}
               <label class="check-row">
@@ -83,11 +83,11 @@
           </fieldset>
         </div>
         <div class="form-actions">
-          <button class="primary-button" type="submit">Aktualisieren</button>
+          <button class="primary-button" type="submit">Refresh</button>
         </div>
       </form>
       <form method="post" action="/users/{{ user.id }}/delete">
-        <button class="danger-button" type="submit">Löschen</button>
+        <button class="danger-button" type="submit">Delete</button>
       </form>
     </article>
     {% endfor %}

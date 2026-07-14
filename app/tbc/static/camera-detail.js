@@ -47,6 +47,7 @@
 (() => {
   const panel = document.querySelector("[data-control-panel]");
   if (!panel) return;
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
 
   const channelSelect = panel.querySelector("[data-control-channel-select]");
   if (channelSelect) {
@@ -105,7 +106,7 @@
         return;
       }
       if (item && (item.status === "failed" || item.status === "missing")) {
-        setLivePlaceholder(item.message || "Stream nicht verfügbar");
+        setLivePlaceholder(item.message || t("camera.stream_unavailable"));
         return;
       }
     } catch (error) {
@@ -114,7 +115,7 @@
     if (attempt < 10) {
       setTimeout(() => pollLivePreview(liveKey, attempt + 1), 1500);
     } else {
-      setLivePlaceholder("Stream konnte nicht gestartet werden");
+      setLivePlaceholder(t("camera.stream_start_failed"));
     }
   }
 
@@ -122,7 +123,7 @@
     if (livePreviewStarted || !livePlayerContainer) return;
     livePreviewStarted = true;
     const liveKey = livePlayerContainer.dataset.liveKey;
-    setLivePlaceholder("Stream wird gestartet…");
+    setLivePlaceholder(t("live.stream_starting_progress"));
     try {
       const response = await fetch(`/api/live/${encodeURIComponent(liveKey)}/start`, {
         method: "POST",
@@ -161,7 +162,7 @@
       const previousPillClass = pill ? pill.className : null;
       if (pill && pillValue) {
         pill.textContent = pillValue;
-        pill.className = `status-pill ${pillValue === "aus" ? "status-idle" : "status-active"}`;
+        pill.className = `status-pill ${pillValue === "off" ? "status-idle" : "status-active"}`;
       }
       try {
         const response = await fetch(form.action, {
@@ -171,13 +172,13 @@
         });
         const data = await response.json().catch(() => null);
         const ok = response.ok && data && data.ok;
-        showToast((data && data.message) || (ok ? "Befehl wurde gesendet" : "Befehl fehlgeschlagen"), ok);
+        showToast((data && data.message) || t(ok ? "camera.command_sent" : "camera.command_failed"), ok);
         if (!ok && pill && previousPillText !== null) {
           pill.textContent = previousPillText;
           pill.className = previousPillClass;
         }
       } catch (error) {
-        showToast("Befehl fehlgeschlagen: Netzwerkfehler", false);
+        showToast(t("camera.command_network_failed"), false);
         if (pill && previousPillText !== null) {
           pill.textContent = previousPillText;
           pill.className = previousPillClass;
@@ -195,6 +196,7 @@
 (() => {
   const section = document.querySelector("[data-firmware-section]");
   if (!section) return;
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
 
   const cameraId = section.dataset.cameraId;
   const channel = Number(section.dataset.controlChannel || 0);
@@ -248,16 +250,16 @@
     if (!ok || !data) return;
     setProgress(data.progress || 0);
     if (data.status === "updating") {
-      showResult(data.message || "Update läuft…", "warning");
+      showResult(data.message || t("firmware.updating"), "warning");
       return;
     }
     stopPolling();
     if (data.status === "done") {
-      showResult("Firmware wurde aktualisiert. Die Kamera startet neu und ist kurz nicht erreichbar.", "ok");
+      showResult(t("firmware.updated"), "ok");
       if (updateButton) updateButton.hidden = true;
       if (checkButton) checkButton.disabled = false;
     } else if (data.status === "failed") {
-      showResult(`Update fehlgeschlagen: ${data.message || "unbekannter Fehler"}`, "error");
+      showResult(t("firmware.failed", {error: data.message || t("common.unknown_error")}), "error");
       if (checkButton) checkButton.disabled = false;
       if (updateButton) updateButton.disabled = false;
     }
@@ -266,35 +268,33 @@
   checkButton?.addEventListener("click", async () => {
     checkButton.disabled = true;
     if (updateButton) updateButton.hidden = true;
-    showResult("Prüfe auf Updates…", "warning");
+    showResult(t("firmware.checking"), "warning");
     const {ok, data} = await postJson(`/cameras/${cameraId}/firmware/check`);
     checkButton.disabled = false;
     if (!ok || !data || !data.ok) {
-      showResult((data && data.message) || "Prüfung fehlgeschlagen", "error");
+      showResult((data && data.message) || t("firmware.check_failed"), "error");
       return;
     }
     if (currentEl && data.current) currentEl.textContent = data.current;
     if (data.update_available) {
-      showResult(`Neue Firmware verfügbar: ${data.latest}${data.release_notes ? " – " + data.release_notes : ""}`, "warning");
+      const version = `${data.latest}${data.release_notes ? " – " + data.release_notes : ""}`;
+      showResult(t("firmware.new_available", {version}), "warning");
       if (updateButton) updateButton.hidden = false;
     } else {
-      showResult("Firmware ist aktuell.", "ok");
+      showResult(t("firmware.current"), "ok");
     }
   });
 
   updateButton?.addEventListener("click", async () => {
-    const confirmationText =
-      "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. " +
-      "Der Vorgang kann mehrere Minuten dauern und sollte nicht unterbrochen werden.";
-    const confirmed = window.confirm(window.tbcI18n ? window.tbcI18n.t(confirmationText) : confirmationText);
+    const confirmed = window.confirm(t("firmware.confirm"));
     if (!confirmed) return;
     updateButton.disabled = true;
     checkButton.disabled = true;
-    showResult("Update wird gestartet…", "warning");
+    showResult(t("firmware.starting"), "warning");
     setProgress(1);
     const {ok, data} = await postJson(`/cameras/${cameraId}/firmware/update`);
     if (!ok || !data || !data.ok) {
-      showResult((data && data.message) || "Update konnte nicht gestartet werden", "error");
+      showResult((data && data.message) || t("firmware.start_failed"), "error");
       updateButton.disabled = false;
       checkButton.disabled = false;
       setProgress(0);
@@ -310,6 +310,7 @@
 (() => {
   const editor = document.querySelector("[data-zone-editor]");
   if (!editor) return;
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
 
   const cameraId = editor.dataset.cameraId;
   const image = editor.querySelector("[data-zone-image]");
@@ -384,9 +385,9 @@
   }
 
   function zoneModeLabel(zone) {
-    if (zone.mode === "exclude") return "Ausschluss";
-    if (zone.mode === "loiter") return `Verweilzone (${zone.min_dwell_seconds}s)`;
-    return "Einschluss";
+    if (zone.mode === "exclude") return t("zones.mode_exclude");
+    if (zone.mode === "loiter") return t("zones.mode_loiter", {seconds: zone.min_dwell_seconds});
+    return t("zones.mode_include");
   }
 
   function zoneStatusClass(mode) {
@@ -412,7 +413,7 @@
     if (!zones.length) {
       const empty = document.createElement("li");
       empty.className = "quiet-box";
-      empty.textContent = "Noch keine Zonen definiert";
+      empty.textContent = t("zones.empty");
       list.appendChild(empty);
       return;
     }
@@ -421,18 +422,19 @@
       item.dataset.zoneId = zone.id;
       const classText = zone.classes && zone.classes.length
         ? zone.classes.map((key) => classLabels[key] || key).join(", ")
-        : "Alle Klassen";
+        : t("common.all_classes");
       item.innerHTML = `
         <div class="zone-list-heading">
           <strong></strong>
           <span class="status-pill ${zoneStatusClass(zone.mode)}"></span>
         </div>
         <span class="zone-classes"></span>
-        <button class="text-button" type="button" data-zone-delete="${zone.id}">Löschen</button>
+        <button class="text-button" type="button" data-zone-delete="${zone.id}"></button>
       `;
       item.querySelector(".zone-list-heading strong").textContent = zone.name;
       item.querySelector(".status-pill").textContent = zoneModeLabel(zone);
       item.querySelector(".zone-classes").textContent = classText;
+      item.querySelector("[data-zone-delete]").textContent = t("common.delete");
       list.appendChild(item);
     });
   }
@@ -510,7 +512,7 @@
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || !data.ok) {
-        window.alert((data && data.message) || "Zone konnte nicht gespeichert werden");
+        window.alert((data && data.message) || t("zones.save_failed"));
         return;
       }
       zones.push(data.zone);
@@ -518,7 +520,7 @@
       renderList();
       draw();
     } catch (error) {
-      window.alert("Zone konnte nicht gespeichert werden: Netzwerkfehler");
+      window.alert(t("zones.save_network_failed"));
     } finally {
       submitButton.disabled = false;
     }
@@ -535,7 +537,7 @@
         credentials: "same-origin",
       });
       if (!response.ok) {
-        window.alert("Zone konnte nicht gelöscht werden");
+        window.alert(t("zones.delete_failed"));
         button.disabled = false;
         return;
       }
@@ -543,7 +545,7 @@
       renderList();
       draw();
     } catch (error) {
-      window.alert("Zone konnte nicht gelöscht werden: Netzwerkfehler");
+      window.alert(t("zones.delete_network_failed"));
       button.disabled = false;
     }
   });

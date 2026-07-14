@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Erweiterungen</p>
+    <p class="eyebrow">Extensions</p>
     <h1>Design</h1>
   </div>
 </section>
@@ -12,33 +12,33 @@
   <details class="plugin-import-panel">
     <summary>
       <span>
-        <strong>Design importieren</strong>
-        <small>Design-Datei</small>
+        <strong>Import design</strong>
+        <small>Design file</small>
       </span>
       <span class="status-pill status-idle">ZIP</span>
     </summary>
     <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
       <div class="quiet-box">
-        Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.
+        Design packages contain only stylesheets, metadata, and images, with no executable code. Maximum file size: 5 MB.
       </div>
       <label>
-        <span>Design-Datei</span>
+        <span>Design file</span>
         <input name="theme_file" type="file" accept=".zip,application/zip" required>
       </label>
       <div class="form-actions">
-        <button class="primary-button" type="submit">Importieren</button>
+        <button class="primary-button" type="submit">Import</button>
       </div>
     </form>
   </details>
 
   <div class="plugin-search-bar">
-    <label class="visually-hidden" for="design-theme-search">Designs durchsuchen</label>
-    <input type="search" id="design-theme-search" placeholder="Designs durchsuchen…" autocomplete="off" data-plugin-search="#design-theme-list">
+    <label class="visually-hidden" for="design-theme-search">Search designs</label>
+    <input type="search" id="design-theme-search" placeholder="Search designs…" autocomplete="off" data-plugin-search="#design-theme-list">
   </div>
 
   <section class="storage-list plugin-grid" id="design-theme-list">
     <div class="section-title">
-      <h2>Installierte Designs</h2>
+      <h2>Installed designs</h2>
       <span>{{ registrations | length }}</span>
     </div>
     {% for registration in registrations %}
@@ -52,29 +52,29 @@
         <span>{{ manifest.version }}</span>
       </div>
       <dl class="metric-row plugin-card-meta">
-        <div><dt>Schlüssel</dt><dd>{{ manifest.key }}</dd></div>
-        <div><dt>Quelle</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else 'ZIP-Import' }}</dd></div>
-        <div><dt>Status</dt><dd>{{ 'Aktiv' if manifest.key == active_theme_key else 'Inaktiv' }}</dd></div>
+        <div><dt>Key</dt><dd>{{ manifest.key }}</dd></div>
+        <div><dt>Source</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else 'ZIP-Import' }}</dd></div>
+        <div><dt>Status</dt><dd>{{ 'Active' if manifest.key == active_theme_key else 'Inactive' }}</dd></div>
       </dl>
       <div class="form-actions plugin-card-actions">
         {% if manifest.key != active_theme_key %}
         <form method="post" action="/design/activate">
           <input type="hidden" name="theme_key" value="{{ manifest.key }}">
-          <button class="primary-button" type="submit">Aktivieren</button>
+          <button class="primary-button" type="submit">Activate</button>
         </form>
         {% else %}
-        <span class="status-pill status-active">Aktiv</span>
+        <span class="status-pill status-active">Active</span>
         {% endif %}
-        <a class="secondary-button" href="/design/{{ manifest.key }}/export">ZIP exportieren</a>
+        <a class="secondary-button" href="/design/{{ manifest.key }}/export">Export ZIP</a>
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/design/{{ manifest.key }}/delete">
-          <button class="danger-button" type="submit" {% if manifest.key == active_theme_key %}disabled{% endif %}>Entfernen</button>
+          <button class="danger-button" type="submit" {% if manifest.key == active_theme_key %}disabled{% endif %}>Remove</button>
         </form>
         {% endif %}
       </div>
     </article>
     {% endfor %}
-    <p class="quiet-box" data-plugin-search-empty hidden>Keine Designs gefunden.</p>
+    <p class="quiet-box" data-plugin-search-empty hidden>No designs found.</p>
   </section>
 </section>
 <script src="{{ url_for('static', path='/plugin-search.js') }}" defer></script>

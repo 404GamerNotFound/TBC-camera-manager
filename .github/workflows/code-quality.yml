@@ -54,3 +54,17 @@ jobs:
 
       - name: Validate Docker Compose
         run: docker compose config --quiet
+
+  home-assistant-app:
+    name: Home Assistant app manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run Home Assistant App Lint
+        uses: frenck/action-addon-linter@v2.21
+        with:
+          path: ./tbc_camera_manager

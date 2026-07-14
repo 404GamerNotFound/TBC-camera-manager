@@ -3,8 +3,8 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Erweiterungen</p>
-    <h1>KI-Erkennung</h1>
+    <p class="eyebrow">Extensions</p>
+    <h1>AI detection</h1>
   </div>
 </section>
 
@@ -18,14 +18,14 @@
         <tr>
           <th>Backend</th>
           <th>Status</th>
-          <th>Meldung</th>
+          <th>Message</th>
         </tr>
       </thead>
       <tbody>
         {% for key, available, message in backend_status %}
         <tr>
           <td>{{ detection_backend_labels.get(key, key | upper) }}</td>
-          <td><span class="status-pill {{ 'status-active' if available else 'status-idle' }}">{{ 'verfügbar' if available else 'nicht verfügbar' }}</span></td>
+          <td><span class="status-pill {{ 'status-active' if available else 'status-idle' }}">{{ 'available' if available else 'unavailable' }}</span></td>
           <td>{{ message }}</td>
         </tr>
         {% endfor %}
@@ -33,52 +33,52 @@
     </table>
   </div>
   <p class="hint-text">
-    GPU (CUDA) benötigt ein separat gebautes Image mit <code>onnxruntime-gpu</code> (siehe <code>Dockerfile.gpu</code>) und eine passende NVIDIA-Laufzeit.
-    Coral (Edge TPU) benötigt ein separat gebautes Image mit <code>pycoral</code>/<code>tflite-runtime</code> (siehe <code>Dockerfile.coral</code>) und ein
-    angeschlossenes Edge-TPU-Gerät. Beide sind eigenständig implementiert, konnten aber in dieser Entwicklungsumgebung nicht gegen echte GPU-/Coral-Hardware
-    getestet werden - vor produktivem Einsatz selbst verifizieren.
+    GPU (CUDA) requires a separately built image with <code>onnxruntime-gpu</code> (see <code>Dockerfile.gpu</code>) and a compatible NVIDIA runtime.
+    Coral (Edge TPU) requires a separately built image with <code>pycoral</code>/<code>tflite-runtime</code> (see <code>Dockerfile.coral</code>) and a connected
+    Edge TPU device. Both backends are implemented independently but could not be tested against real GPU or Coral hardware in this development environment;
+    verify them before production use.
   </p>
 </section>
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Modell</h2>
+    <h2>Model</h2>
   </div>
   <div class="quiet-box">
     {% if model_ready %}
-    Standardmodell (CPU/GPU) ist bereit ({{ model_size_mb }} MB) unter <code>{{ model_path }}</code>.
+    The default CPU/GPU model is ready ({{ model_size_mb }} MB) at <code>{{ model_path }}</code>.
     {% else %}
-    Standardmodell (CPU/GPU) wurde noch nicht heruntergeladen (<code>{{ model_path }}</code>). Der Download wird beim nächsten Start des Servers automatisch versucht.
+    The default CPU/GPU model has not been downloaded yet (<code>{{ model_path }}</code>). The server will retry the download on its next start.
     {% endif %}
   </div>
   <div class="quiet-box">
     {% if coral_model_ready %}
-    Standardmodell (Coral) ist bereit ({{ coral_model_size_mb }} MB) unter <code>{{ coral_model_path }}</code>.
+    The default Coral model is ready ({{ coral_model_size_mb }} MB) at <code>{{ coral_model_path }}</code>.
     {% else %}
-    Standardmodell (Coral) wurde noch nicht heruntergeladen (<code>{{ coral_model_path }}</code>). Der Download passiert erst, sobald eine Kamera auf das Coral-Backend umgestellt wird.
+    The default Coral model has not been downloaded yet (<code>{{ coral_model_path }}</code>). It is downloaded when a camera is first switched to the Coral backend.
     {% endif %}
   </div>
   <p class="hint-text">
-    Standard-Bildrate: {{ default_sample_fps }} Bilder/s · Standard-Konfidenz: {{ default_confidence_threshold }}. Diese Werte gelten als Vorbelegung für neu
-    aktivierte Kameras und lassen sich pro Kamera im Tab „KI-Erkennung" der jeweiligen Kamera anpassen. Über <code>TBC_DETECTION_SAMPLE_FPS</code> und
-    <code>TBC_DETECTION_CONFIDENCE_THRESHOLD</code> lassen sie sich global umstellen.
+    Default sample rate: {{ default_sample_fps }} images/s · default confidence: {{ default_confidence_threshold }}. These values are preselected for newly
+    enabled cameras and can be adjusted per camera in its “AI detection” tab. Use <code>TBC_DETECTION_SAMPLE_FPS</code> and
+    <code>TBC_DETECTION_CONFIDENCE_THRESHOLD</code> to change them globally.
   </p>
 </section>
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Kameras mit lokaler KI-Erkennung</h2>
+    <h2>Cameras with local AI detection</h2>
     <span>{{ cameras | length }}</span>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Kamera</th>
+          <th>Camera</th>
           <th>Backend</th>
-          <th>Bilder/s</th>
-          <th>Mindest-Konfidenz</th>
-          <th>Zonen</th>
+          <th>Images/s</th>
+          <th>Minimum confidence</th>
+          <th>Zones</th>
           <th></th>
         </tr>
       </thead>
@@ -90,11 +90,11 @@
           <td>{{ camera.sample_fps }}</td>
           <td>{{ camera.confidence_threshold }}</td>
           <td>{{ camera.zone_count }}</td>
-          <td><a class="text-button" href="/cameras/{{ camera.camera_id }}#ai-zones">Öffnen</a></td>
+          <td><a class="text-button" href="/cameras/{{ camera.camera_id }}#ai-zones">Open</a></td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6">Noch keine Kamera mit lokaler KI-Erkennung aktiv</td>
+          <td colspan="6">No camera has local AI detection enabled yet</td>
         </tr>
         {% endfor %}
       </tbody>

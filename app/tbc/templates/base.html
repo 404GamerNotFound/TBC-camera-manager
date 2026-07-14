@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de" class="i18n-pending">
+<html lang="en" class="i18n-pending">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,20 +24,20 @@
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
       {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/api-access') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/plugin-sources') or path.startswith('/updates') %}
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Navigation umschalten" data-menu-toggle>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Toggle navigation" data-i18n-aria-label="nav.toggle" data-menu-toggle>
           <span class="navbar-toggler-icon"></span>
         </button>
-        <nav class="collapse navbar-collapse app-navbar" id="main-menu" aria-label="Hauptnavigation" data-main-menu data-menu-nav>
+        <nav class="collapse navbar-collapse app-navbar" id="main-menu" aria-label="Main navigation" data-i18n-aria-label="nav.main" data-main-menu data-menu-nav>
           <ul class="navbar-nav app-nav-list ms-xl-auto align-items-xl-center">
             <li class="nav-item dropdown{% if cameras_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if cameras_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
-                Kameras
+                <span data-i18n="nav.cameras">Cameras</span>
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/cameras') %} active{% endif %}" href="/cameras">
                     <span class="nav-shortcut" aria-hidden="true">K</span>
-                    <span>Kameras</span>
+                    <span data-i18n="nav.cameras">Cameras</span>
                   </a>
                 </li>
                 <li>
@@ -50,13 +50,13 @@
             </li>
             <li class="nav-item dropdown{% if archive_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if archive_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
-                Archiv
+                Archive
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/activity') %} active{% endif %}" href="/activity">
                     <span class="nav-shortcut" aria-hidden="true">V</span>
-                    <span>Aktivität</span>
+                    <span data-i18n="nav.activity">Activity</span>
                   </a>
                 </li>
                 <li>
@@ -74,7 +74,7 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="/sd-card">
                     <span class="nav-shortcut" aria-hidden="true">S</span>
-                    <span>SD-Karte</span>
+                    <span>SD card</span>
                   </a>
                 </li>
               </ul>
@@ -82,13 +82,13 @@
         {% if role == 'admin' %}
             <li class="nav-item dropdown{% if storage_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if storage_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
-                Speicher
+                Storage
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="/storage">
                     <span class="nav-shortcut" aria-hidden="true">Z</span>
-                    <span>Ziele</span>
+                    <span>Destinations</span>
                   </a>
                 </li>
                 <li>
@@ -107,19 +107,19 @@
             </li>
             <li class="nav-item dropdown{% if ops_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if ops_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
-                Betrieb
+                Operations
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="/health">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
-                    <span>Leistung</span>
+                    <span>Performance</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="/notifications">
                     <span class="nav-shortcut" aria-hidden="true">N</span>
-                    <span>Notify</span>
+                    <span>Notifications</span>
                   </a>
                 </li>
                 <li>
@@ -135,26 +135,26 @@
               <button class="nav-link dropdown-toggle{% if admin_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
                 Admin
                 {% if total_update_count %}
-                <span class="nav-update-badge" title="{{ total_update_count }} Update(s) verfügbar">{{ total_update_count }}</span>
+                <span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>
                 {% endif %}
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
                     <span class="nav-shortcut" aria-hidden="true">B</span>
-                    <span>Benutzer</span>
+                    <span>Users</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
-                    <span>Kamera-Plugins</span>
+                    <span>Camera plugins</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
                     <span class="nav-shortcut" aria-hidden="true">E</span>
-                    <span>KI-Erkennung</span>
+                    <span>AI detection</span>
                   </a>
                 </li>
                 <li>
@@ -166,31 +166,31 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
                     <span class="nav-shortcut" aria-hidden="true">O</span>
-                    <span>Cloud-Anbieter</span>
+                    <span>Cloud providers</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
                     <span class="nav-shortcut" aria-hidden="true">X</span>
-                    <span>Externe Quellen</span>
+                    <span>External sources</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update auf {{ app_latest_version }} verfügbar{% endif %}">
+                  <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}">
                     <span class="nav-shortcut" aria-hidden="true">U</span>
-                    <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} Update(s) verfügbar">{{ total_update_count }}</span>{% endif %}</span>
+                    <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>{% endif %}</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/settings') %} active{% endif %}" href="/settings">
                     <span class="nav-shortcut" aria-hidden="true">A</span>
-                    <span>Einstellungen</span>
+                    <span>Settings</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
                     <span class="nav-shortcut" aria-hidden="true">I</span>
-                    <span>API-Zugriff</span>
+                    <span>API access</span>
                   </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
@@ -204,9 +204,9 @@
             </li>
         {% endif %}
             <li class="nav-item dropdown" data-menu-group data-language-menu>
-              <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger aria-label="Sprache wechseln">
+              <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger aria-label="Change language" data-i18n-aria-label="nav.language">
                 <span aria-hidden="true">🌐</span>
-                <span data-current-language>Deutsch</span>
+                <span data-current-language>English</span>
               </button>
               <ul class="dropdown-menu dropdown-menu-end" data-menu-panel>
                 <li><button class="dropdown-item" type="button" data-language="de" lang="de">Deutsch</button></li>
@@ -216,7 +216,7 @@
             </li>
             <li class="nav-item nav-logout">
               <form method="post" action="/logout">
-                <button class="icon-button" title="Abmelden" aria-label="Abmelden" type="submit">⏻</button>
+                <button class="icon-button" title="Sign out" aria-label="Sign out" data-i18n-title="nav.sign_out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
               </form>
             </li>
           </ul>
@@ -237,11 +237,11 @@
         <div class="debug-drawer-head">
           <div>
             <strong>Debug Log</strong>
-            <span data-debug-meta>0 Eintraege</span>
+            <span data-debug-meta>0 entries</span>
           </div>
           <div class="button-row">
-            <button class="secondary-button" type="button" data-debug-refresh>Aktualisieren</button>
-            <button class="icon-button" type="button" aria-label="Debug Log schliessen" data-debug-close>x</button>
+            <button class="secondary-button" type="button" data-i18n="common.refresh" data-debug-refresh>Refresh</button>
+            <button class="icon-button" type="button" aria-label="Close debug log" data-debug-close>x</button>
           </div>
         </div>
         <ol class="debug-list" data-debug-list></ol>

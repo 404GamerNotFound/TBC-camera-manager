@@ -1,4 +1,5 @@
 (() => {
+  const t = (key, parameters) => window.tbcI18n.t(key, parameters);
   const cards = Array.from(document.querySelectorAll("[data-live-card]"));
   const summary = document.querySelector("[data-live-summary]");
   const refreshButton = document.querySelector("[data-live-refresh]");
@@ -14,7 +15,7 @@
   const soloCloseButton = document.querySelector("[data-live-solo-close]");
 
   if (!cards.length) {
-    if (summary) summary.textContent = "Keine Streams";
+    if (summary) summary.textContent = t("live.no_streams");
     return;
   }
 
@@ -37,15 +38,17 @@
     const starting = items.filter((item) => item.status === "starting").length;
     const failed = items.filter((item) => item.status === "failed" || item.status === "missing").length;
     summary.className = `status-pill ${failed ? "status-error" : starting ? "status-warning" : "status-active"}`;
-    summary.textContent = `${running}/${items.length} live${starting ? ` · ${starting} starten` : ""}${failed ? ` · ${failed} Fehler` : ""}`;
+    const startingText = starting ? t("live.starting_count", {count: starting}) : "";
+    const failedText = failed ? t("live.error_count", {count: failed}) : "";
+    summary.textContent = `${running}/${items.length} live${startingText}${failedText}`;
   };
 
   const placeholderText = (status) => {
-    if (status === "starting") return "Stream startet";
-    if (status === "failed") return "Stream konnte nicht starten";
-    if (status === "missing") return "Kein Stream bekannt";
-    if (status === "stopped") return "Stream gestoppt";
-    return "Warte auf Stream";
+    if (status === "starting") return t("live.stream_starting");
+    if (status === "failed") return t("live.stream_failed");
+    if (status === "missing") return t("live.missing");
+    if (status === "stopped") return t("live.stream_stopped");
+    return t("live.waiting");
   };
 
   const destroyPlayer = (container) => {
@@ -97,7 +100,7 @@
     });
   };
 
-  // Without a manual "Neu starten" button on the wall, a camera that once
+  // Without a manual restart button on the wall, a camera that once
   // fails would otherwise stay dark until someone reloads the page. Retry it
   // automatically instead, with a cooldown so a persistently broken camera
   // doesn't get hammered every poll cycle.
@@ -151,7 +154,7 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data.error || "Live-API konnte nicht geladen werden");
+      throw new Error(data.error || t("live.api_failed"));
     }
     return data;
   };
@@ -162,7 +165,7 @@
   };
 
   const startAll = async () => {
-    if (summary) summary.textContent = "Streams werden gestartet";
+    if (summary) summary.textContent = t("live.starting");
     const data = await fetchJson("/api/live/start-all", {method: "POST"});
     renderItems(data.items || []);
   };
