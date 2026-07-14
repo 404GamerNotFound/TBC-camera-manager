@@ -25,6 +25,10 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
         self.assertIsNone(config["options"]["admin_password"])
         self.assertNotIn("boot", config)
         self.assertNotIn("startup", config)
+        dockerfile = (ROOT / "tbc_camera_manager" / "Dockerfile").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(f"ARG BUILD_VERSION={config['version']}", dockerfile)
 
     def test_release_workflow_links_and_publicly_verifies_the_image(self):
         workflow = (ROOT / ".github" / "workflows" / "home-assistant-app.yml").read_text(
@@ -35,6 +39,8 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
             "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}",
             workflow,
         )
+        self.assertIn("fromJSON(steps.info.outputs.version)", workflow)
+        self.assertIn("fromJSON(steps.info.outputs.image)", workflow)
         self.assertIn("docker logout ghcr.io", workflow)
         self.assertIn('docker pull "${IMAGE}:${VERSION}"', workflow)
         self.assertIn("change its visibility to Public", workflow)
