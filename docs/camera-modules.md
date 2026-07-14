@@ -1,10 +1,16 @@
-# Kamera-Module entwickeln
+# Developing camera modules
 
-TBC trennt herstellerspezifische Kamera-APIs über `CameraModule` von der Weboberfläche. Eingebaut bleiben die herstellerneutralen Module `standard_onvif` und `rtsp_only`. Die Hersteller-Plugins `aqara`, `axis`, `dahua`, `foscam`, `hikvision`, `reolink`, `sonoff`, `tplink` und `ubiquiti` werden als direkt installierbare Standard-Repositories angeboten. Weitere Module können als ZIP-Plugin über die Admin-Oberfläche importiert werden, ohne Routen oder Templates in TBC zu ändern.
+TBC separates manufacturer-specific camera APIs from the web interface through
+`CameraModule`. The manufacturer-neutral `standard_onvif` and `rtsp_only` modules remain
+built in. The manufacturer plugins `aqara`, `axis`, `dahua`, `foscam`, `hikvision`,
+`reolink`, `sonoff`, `tplink`, and `ubiquiti` are offered as directly installable default
+repositories. Additional modules can be imported as ZIP plugins through the admin interface
+without changing TBC routes or templates.
 
-## Plugin-Datei
+## Plugin file
 
-Eine Plugin-ZIP enthält ihre Dateien direkt im Hauptverzeichnis oder in genau einem gemeinsamen Ordner:
+A plugin ZIP contains its files directly at the archive root or inside exactly one common
+directory:
 
 ```text
 acme-camera-plugin.zip
@@ -15,7 +21,7 @@ acme-camera-plugin.zip
 └── README.md
 ```
 
-`manifest.json` ist die verbindliche Konfiguration für Metadaten, Ports und Fähigkeiten:
+`manifest.json` is the authoritative configuration for metadata, ports, and capabilities:
 
 ```json
 {
@@ -23,18 +29,27 @@ acme-camera-plugin.zip
   "key": "acme",
   "label": "Acme Camera",
   "version": "1.0.0",
-  "description": "Acme-Kameras",
+  "description": "Acme cameras",
   "entrypoint": "plugin.py",
   "capabilities": ["live", "detections"],
   "ports": {"onvif": 8000, "http": 80, "rtsp": 554}
 }
 ```
 
-Die eingebauten Module liegen vollständig unter `app/tbc/camera_plugins/<schlüssel>/` — nicht nur `manifest.json`/`plugin.py`/`detections.json`, sondern auch die komplette herstellerspezifische Implementierung (`module.py`, `service.py`, `catalog.py`, ggf. `control.py`). Jedes eingebaute Modul ist damit genauso in sich geschlossen wie ein extern installiertes Plugin; nur generischer, herstellerneutraler Code (ONVIF-Hilfsfunktionen, die `CameraModule`-Basisklasse, die gemeinsame `manual_rtsp`-Implementierung für reine RTSP-Profile) liegt bewusst außerhalb, unter `app/tbc/camera_modules/` bzw. `app/tbc/manual_rtsp/`. Profile ohne auswertbare Ereignisquelle verwenden eine leere `detections.json`-Liste und deklarieren nur `live`.
+Built-in modules are completely contained in `app/tbc/camera_plugins/<key>/`. This includes
+not only `manifest.json`, `plugin.py`, and `detections.json`, but also the full
+manufacturer-specific implementation in files such as `module.py`, `service.py`, `catalog.py`,
+and optionally `control.py`. Each built-in module is therefore as self-contained as an
+externally installed plugin. Only generic manufacturer-neutral code intentionally remains
+outside these packages: ONVIF helpers, the `CameraModule` base class, and the shared
+`manual_rtsp` implementation for RTSP-only profiles under `app/tbc/camera_modules/` and
+`app/tbc/manual_rtsp/`. Profiles without a usable event source use an empty
+`detections.json` list and declare only `live`.
 
-## Öffentlicher Vertrag
+## Public contract
 
-Ein Modul erbt von `tbc_camera_api.CameraModule`. Schlüssel, Anzeigename und Fähigkeiten werden im Manifest definiert:
+A module inherits from `tbc_camera_api.CameraModule`. The key, display name, and capabilities
+are defined in the manifest:
 
 ```python
 from tbc_camera_api import CameraModule, CameraSnapshot
@@ -42,10 +57,10 @@ from tbc_camera_api import CameraModule, CameraSnapshot
 
 class AcmeCameraModule(CameraModule):
     async def probe(self, camera):
-        # Hersteller-API abfragen und in das einheitliche TBC-Modell übersetzen.
+        # Query the manufacturer API and map it to TBC's unified model.
         return CameraSnapshot(
             status="ok",
-            message="Acme-Kamera erfolgreich abgefragt",
+            message="Acme camera queried successfully",
             manufacturer="Acme",
             model="Camera",
             stream_uri="rtsp://...",
@@ -58,77 +73,140 @@ def create_module():
     return AcmeCameraModule()
 ```
 
-`plugin.py` stellt entweder `create_module()` oder eine Variable `MODULE` bereit. Metadaten und Fähigkeiten werden aus dem Manifest auf die Modulinstanz übertragen. `probe()` ist die einzige Pflichtmethode. Optional kann ein Modul `detection_definitions()`, `list_archive_recordings()`, `open_archive_download()`, `get_control_state()` und `send_control()` implementieren. Ein Archiv-Download liefert ein Objekt mit `filename`, `length` und dem asynchronen Byte-Iterator `chunks()`.
+`plugin.py` exposes either `create_module()` or a variable named `MODULE`. TBC transfers
+metadata and capabilities from the manifest to the module instance. `probe()` is the only
+required method. A module may optionally implement `detection_definitions()`,
+`list_archive_recordings()`, `open_archive_download()`, `get_control_state()`, and
+`send_control()`. An archive download returns an object with `filename`, `length`, and the
+asynchronous byte iterator `chunks()`.
 
-Für Echtzeit-Ereignisse kann die Modulinstanz zusätzlich eine asynchrone Methode `monitor_events(camera, callback)` anbieten. Alternativ erkennt TBC dieselbe Funktion in der zum Plugin gehörenden `service.py`. Der Callback erhält die aktuellen Erkennungszeilen; fällt die dauerhafte Verbindung aus, bleibt die reguläre Abfrage über `probe()` als Rückfallebene aktiv. Dadurch benötigt der Anwendungskern keinen direkten Import aus einem bestimmten Hersteller-Plugin.
+For real-time events, the module instance may also provide an asynchronous
+`monitor_events(camera, callback)` method. Alternatively, TBC detects the same function in the
+plugin's `service.py`. The callback receives current detection rows. If the persistent
+connection fails, regular polling through `probe()` remains active as a fallback. The
+application core therefore needs no direct import from a particular manufacturer plugin.
 
-Module, die eine vollständige Stream-URL statt separater ONVIF-Zugangsdaten erwarten, setzen `supports_manual_stream_uri = True`, `requires_manual_stream_uri = True` und `requires_credentials = False`. TBC speichert diese URL getrennt in `manual_stream_uri`, validiert ausschließlich `rtsp://` und `rtsps://` und rendert sie nie unzensiert in HTML. Die externen Plugins `ubiquiti` und `sonoff` sowie das eingebaute `rtsp_only` verwenden die gemeinsame Implementierung `manual_rtsp/`.
+Modules that expect a complete stream URL instead of separate ONVIF credentials set
+`supports_manual_stream_uri = True`, `requires_manual_stream_uri = True`, and
+`requires_credentials = False`. TBC stores this URL separately in `manual_stream_uri`, accepts
+only `rtsp://` and `rtsps://`, and never renders it unredacted in HTML. The external
+`ubiquiti` and `sonoff` plugins and the built-in `rtsp_only` module use the shared
+`manual_rtsp/` implementation.
 
-Die einheitliche Momentaufnahme `CameraSnapshot` enthält Gerätestatus, Herstellerdaten, RTSP-URI, Erkennungszustände und Kanäle. Erkennungszeilen verwenden die Felder `key`, `label`, `category`, `channel`, `supported`, `active`, `source` und optional `raw_value`.
+The unified `CameraSnapshot` contains device status, manufacturer data, RTSP URI, detection
+states, and channels. Detection rows use `key`, `label`, `category`, `channel`, `supported`,
+`active`, `source`, and optionally `raw_value`.
 
-## Import und Export
+## Import and export
 
-Administratoren öffnen `Admin → Kamera-Plugins` und importieren dort die ZIP-Datei. TBC prüft Manifest, Pfade, Dateitypen, Dateianzahl und entpackte Größe, lädt das Modul testweise und installiert es anschließend atomar. Ein vorhandenes externes Plugin mit demselben Schlüssel wird dabei aktualisiert. Eingebaute Plugins können weder überschrieben noch entfernt werden.
+Administrators open `Admin → Camera plugins` and import a ZIP. TBC validates the manifest,
+paths, file types, file count, and extracted size, loads the module as a test, and then installs
+it atomically. An existing external plugin with the same key is updated. Built-in plugins
+cannot be overwritten or removed.
 
-Jedes dateibasierte Plugin kann über dieselbe Seite wieder als ZIP exportiert werden. Externe Plugins dürfen nur entfernt werden, wenn keine Kamera mehr darauf verweist. Der Speicherort wird mit `TBC_CAMERA_MODULES_PATH` konfiguriert und liegt im Docker-Setup im persistenten `/data`-Volume.
+Every file-based plugin can be exported again as a ZIP from the same page. An external plugin
+can be removed only when no camera references it. `TBC_CAMERA_MODULES_PATH` configures the
+storage location, which resides in the persistent `/data` volume in the Docker setup.
 
-Alternativ bleiben Python-Distributionen mit dem Entry-Point `tbc.camera_modules` unterstützt. Diese werden außerhalb der ZIP-Verwaltung über den Image-Build installiert.
+Python distributions with the `tbc.camera_modules` entry point remain supported as an
+alternative. They are installed during the image build and are not managed through ZIP files.
 
-Statt eines manuellen ZIP-Uploads kann ein Plugin auch direkt aus einem öffentlichen GitHub-Repository installiert werden (`Admin → Externe Quellen`), und ein Plugin darf einen eigenen `tests/`-Ordner mitbringen, der über einen „Tests ausführen“-Knopf direkt in der Weboberfläche gestartet werden kann - siehe [plugin-sources.md](plugin-sources.md).
+Instead of a manual ZIP upload, a plugin can be installed directly from a public GitHub
+repository under `Admin → External sources`. A plugin may also include a `tests/` directory
+that can be started from the web interface with **Run tests**. See
+[plugin-sources.md](plugin-sources.md).
 
-## Sicherheit
+## Security
 
-Ein Kamera-Plugin enthält ausführbaren Python-Code und besitzt dieselben Rechte wie der TBC-Prozess. Die ZIP-Prüfung verhindert technische Archivangriffe, kann aber keinen absichtlich schädlichen Python-Code sicher erkennen. Deshalb dürfen ausschließlich Plugins aus vertrauenswürdigen Quellen importiert werden. Zugangsdaten werden pro Kamera in TBC gespeichert und gehören niemals in eine exportierte Plugin-Datei.
+A camera plugin contains executable Python code and has the same privileges as the TBC
+process. ZIP validation prevents technical archive attacks but cannot reliably detect
+intentionally malicious Python. Import plugins only from trusted sources. Camera credentials
+are stored per camera in TBC and must never be included in an exported plugin file.
 
-## Fähigkeiten
+## Capabilities
 
-- `LIVE`: Das Modul liefert einen Stream, der in der Live-Ansicht verwendet werden darf.
-- `RECORDING`: Ereignisse des Moduls dürfen die generische TBC-Aufnahme auslösen.
-- `DETECTIONS`: Das Modul stellt Erkennungsdefinitionen und Zustände bereit.
-- `CHANNELS`: Das Modul unterstützt mehrere Kamera- oder NVR-Kanäle.
-- `ARCHIVE`: Das Modul implementiert Suche, Wiedergabe und Download des Kamera-Archivs.
-- `CONTROL`: Das Modul implementiert `get_control_state()` und `send_control()` für Live-Gerätesteuerung (z. B. PTZ inkl. gespeicherter Positionen, Flutlicht, PIR-Sensor, Sirene, Neustart, Akkustatus).
-- `FIRMWARE`: Das Modul implementiert `check_firmware()` und `update_firmware()` für Firmware-Prüfung und -Aktualisierung.
+- `LIVE`: The module provides a stream that can be used in the live view.
+- `RECORDING`: Events from the module can trigger generic TBC recording.
+- `DETECTIONS`: The module provides detection definitions and states.
+- `CHANNELS`: The module supports multiple camera or NVR channels.
+- `ARCHIVE`: The module implements camera-archive search, playback, and download.
+- `CONTROL`: The module implements `get_control_state()` and `send_control()` for live device
+  control, such as PTZ with stored positions, floodlight, PIR sensor, siren, restart, and
+  battery status.
+- `FIRMWARE`: The module implements `check_firmware()` and `update_firmware()` for firmware
+  checks and updates.
 
-Eingebaute Implementierungen liegen in den Herstellerpaketen unter `app/tbc/camera_plugins/<schlüssel>/`; externe Implementierungen liegen im konfigurierten Plugin-Verzeichnis. Ihre jeweiligen Adapter `module.py` sind die einzigen Einstiegspunkte, die die Registry verwendet. Externe Plugins greifen über `tbc_camera_api` auf die öffentlichen TBC-Basisklassen und herstellerneutralen Hilfsfunktionen zu.
+Built-in implementations reside in manufacturer packages under
+`app/tbc/camera_plugins/<key>/`; external implementations reside in the configured plugin
+directory. Their `module.py` adapters are the only entry points used by the registry. External
+plugins access public TBC base classes and manufacturer-neutral helpers through
+`tbc_camera_api`.
 
-## Kamerasteuerung (`CONTROL`)
+## Camera control (`CONTROL`)
 
-Module mit der Fähigkeit `CONTROL` implementieren zwei zusätzliche Methoden:
+Modules with the `CONTROL` capability implement two additional methods:
 
 ```python
 async def get_control_state(self, camera: dict, *, channel: int = 0) -> dict:
-    """Aktuellen Gerätezustand liefern, z. B. {"floodlight_supported": True, "floodlight_state": False, ...}."""
+    """Return the current device state, for example floodlight support and state."""
 
 async def send_control(self, camera: dict, *, action: str, channel: int = 0, **params) -> dict:
-    """Einen Steuerbefehl ausführen, z. B. action="floodlight", params={"state": True}."""
+    """Run a control command, for example action="floodlight", params={"state": True}."""
 ```
 
-Das externe [Reolink-Plugin](https://github.com/404GamerNotFound/TBC-reolink) implementiert darüber PTZ-Schwenk/Neige-Befehle (inkl. auf der Kamera gespeicherter PTZ-Positionen über `reolink-aio`s `ptz_presets()`/`set_ptz_command(preset=...)`), Flutlicht, PIR-Sensor, Sirene, Neustart und Akkustatus. `tplink`, `aqara`, `axis`, `dahua`, `foscam` und `hikvision` bieten PTZ über den herstellerneutralen ONVIF-PTZ-Service (`app/tbc/camera_modules/onvif_control.py`) an. Die Weboberfläche zeigt bei vorhandener `CONTROL`-Fähigkeit einen zusätzlichen „Steuerung“-Tab je Kamera; ist MQTT/Home-Assistant-Discovery aktiviert, werden dieselben Aktionen zusätzlich als HA-Entities (Licht, Schalter, Taster, Sensor) veröffentlicht und über MQTT-Befehlstopics fernsteuerbar (`app/tbc/mqtt.py`).
+The external [Reolink plugin](https://github.com/404GamerNotFound/TBC-reolink) implements PTZ
+pan and tilt commands, including positions stored on the camera through `reolink-aio`'s
+`ptz_presets()` and `set_ptz_command(preset=...)`, as well as floodlight, PIR sensor, siren,
+restart, and battery status. `tplink`, `aqara`, `axis`, `dahua`, `foscam`, and `hikvision`
+provide PTZ through the manufacturer-neutral ONVIF PTZ service
+(`app/tbc/camera_modules/onvif_control.py`). When a camera has the `CONTROL` capability, the
+web interface adds a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC
+also publishes the same actions as Home Assistant entities (lights, switches, buttons, and
+sensors) and accepts remote control through MQTT command topics (`app/tbc/mqtt.py`).
 
-Für Modelle mit optischem Zoom (z. B. RLC-823A, Trackmix-Serie) meldet `get_control_state()` zusätzlich `zoom_supported`/`focus_supported` mit aktueller Position und Wertebereich (`reolink-aio`s `zoom_range()`/`get_zoom()`/`get_focus()`); die Steuerung erfolgt absolut über `send_control(action="zoom"|"focus", position=...)` (`set_zoom()`/`set_focus()`), nicht relativ wie die digitalen `ZoomInc`/`ZoomDec`-PTZ-Befehle. Für Video-Doorbell-Modelle meldet `is_doorbell`/`quick_reply_supported`/`quick_reply_options` die auf der Kamera hinterlegten Audioclips (`quick_reply_dict()`); `send_control(action="quick_reply", file_id=...)` spielt einen Clip über den Lautsprecher ab (`play_quick_reply()`). Beide Fähigkeiten hängen weiterhin nur von `CONTROL` ab, nicht von einer eigenen Manifest-Fähigkeit.
+For models with optical zoom, such as the RLC-823A and TrackMix series,
+`get_control_state()` also reports `zoom_supported` and `focus_supported` with current
+positions and value ranges through `reolink-aio`'s `zoom_range()`, `get_zoom()`, and
+`get_focus()`. Control is absolute through
+`send_control(action="zoom"|"focus", position=...)`, using `set_zoom()` or `set_focus()`,
+rather than relative like the digital `ZoomInc` and `ZoomDec` PTZ commands. For video
+doorbells, `is_doorbell`, `quick_reply_supported`, and `quick_reply_options` report audio clips
+stored on the camera through `quick_reply_dict()`. Calling
+`send_control(action="quick_reply", file_id=...)` plays a clip through the speaker with
+`play_quick_reply()`. Both features continue to depend only on `CONTROL`, not on separate
+manifest capabilities.
 
-## Firmware-Updates (`FIRMWARE`)
+## Firmware updates (`FIRMWARE`)
 
-Module mit der Fähigkeit `FIRMWARE` implementieren zwei zusätzliche Methoden:
+Modules with the `FIRMWARE` capability implement two additional methods:
 
 ```python
 async def check_firmware(self, camera: dict, *, channel: int = 0) -> dict:
-    """Nur lesend: aktuelle und bei reolink.com verfügbare Version liefern."""
+    """Read the installed version and the version available from reolink.com."""
 
 async def update_firmware(self, camera: dict, *, channel: int = 0, progress_callback=None) -> None:
-    """Firmware herunterladen und auf das Gerät schreiben; ruft progress_callback(0..100) auf."""
+    """Download and install firmware, calling progress_callback with values from 0 to 100."""
 ```
 
-Das externe Reolink-Plugin lädt dafür über `reolink-aio`s `check_new_firmware()`/`update_firmware()` direkt von reolink.com herunter und schreibt sie auf die Kamera; die Kamera ist währenddessen nicht erreichbar und startet danach neu. In der Weboberfläche liegt der Ablauf bewusst zweistufig: „Auf Updates prüfen“ (rein lesend) muss zuerst erfolgreich eine verfügbare Version melden, bevor „Jetzt aktualisieren“ überhaupt aktiv wird; der Update-Start verlangt zusätzlich eine JavaScript-Bestätigung. Der Update-Vorgang läuft als Hintergrund-Task in TBC und wird über einen Fortschritts-Endpunkt abgefragt, da er mehrere Minuten dauern kann.
+The external Reolink plugin uses `reolink-aio`'s `check_new_firmware()` and
+`update_firmware()` to download firmware directly from reolink.com and write it to the camera.
+The camera is unavailable during the operation and restarts afterward. The web interface
+deliberately uses a two-step process: the read-only **Check for updates** action must first
+report an available version before **Update now** is enabled. Starting the update also
+requires JavaScript confirmation. The update runs as a TBC background task and is queried
+through a progress endpoint because it can take several minutes.
 
-## Eigenes Modell für die lokale KI-Erkennung (`detection_model.json`)
+## Custom model for local AI detection (`detection_model.json`)
 
-TBC erkennt Personen/Fahrzeuge/Tiere standardmäßig mit einem herstellerneutralen Standardmodell (siehe `Admin → KI-Erkennung`). Ein Kamera-Plugin kann optional ein eigenes, besser zur eigenen Zielgruppe passendes Modell mitbringen, das für Kameras dieses Moduls automatisch **statt** des Standardmodells verwendet wird. Dafür genügt eine `detection_model.json` im Plugin-Hauptverzeichnis, neben `manifest.json`:
+By default, TBC detects people, vehicles, and animals with a manufacturer-neutral standard
+model; see `Admin → AI detection`. A camera plugin may optionally include a model tailored to
+its target devices. TBC automatically uses this model **instead of** the standard model for
+cameras assigned to that module. Add `detection_model.json` next to `manifest.json` in the
+plugin root:
 
 ```json
 {
-  "model_url": "https://example.com/mein-modell.onnx",
+  "model_url": "https://example.com/my-model.onnx",
   "input_name": "image_tensor:0",
   "input_size": [300, 300],
   "input_dtype": "uint8",
@@ -143,8 +221,18 @@ TBC erkennt Personen/Fahrzeuge/Tiere standardmäßig mit einem herstellerneutral
 }
 ```
 
-- `model_url` verweist auf die eigentliche ONNX-Datei; TBC lädt sie beim ersten Gebrauch in ein Cache-Verzeichnis (`TBC_DETECTION_MODELS_PATH/plugins/<schlüssel>/`) und merkt sich diese Kopie. Die Modell-Datei selbst gehört **nicht** ins Plugin-Repository/ZIP (Größe, Dateityp-Beschränkung beim Plugin-Import) — nur diese kleine JSON-Metadatendatei.
-- Alle übrigen Felder folgen demselben Ausgabeformat wie das Standardmodell (TF-Object-Detection-API-Stil: nachverarbeitete Boxen/Scores/Klassen, keine rohen YOLO-Grid-Ausgaben). Ein Modell mit einem anderen Ausgabeformat benötigt zusätzlichen Code in `app/tbc/detection/onnx_backend.py` und ist über diese Datei allein nicht einsetzbar.
-- `classes` bildet die eigenen Klassen-Indizes auf COCO-ähnliche Label-Strings ab (`person`, `car`, `dog`, …), die TBC intern auf `ai_person`/`ai_vehicle`/`ai_animal` normalisiert (siehe `app/tbc/detection/classes.py`).
-- Ändert sich `model_url` oder ein anderes Feld in einer neuen Plugin-Version, lädt TBC das Modell automatisch neu herunter.
-- Ändert der Nutzer den Modul-Schlüssel einer Kamera nachträglich, wird beim nächsten Start des Erkennungs-Workers automatisch neu aufgelöst, welches Modell zuständig ist.
+- `model_url` points to the ONNX file. On first use, TBC downloads it to
+  `TBC_DETECTION_MODELS_PATH/plugins/<key>/` and caches the copy. The model file itself must
+  **not** be included in the plugin repository or ZIP because of its size and plugin-import
+  file-type limits; include only this small JSON metadata file.
+- All other fields follow the standard model's output format: TensorFlow Object Detection API
+  style with post-processed boxes, scores, and classes rather than raw YOLO grid outputs. A
+  different output format requires additional code in `app/tbc/detection/onnx_backend.py` and
+  cannot be supported by this file alone.
+- `classes` maps model-specific class indices to COCO-like labels such as `person`, `car`, and
+  `dog`. TBC normalizes them internally to `ai_person`, `ai_vehicle`, and `ai_animal`; see
+  `app/tbc/detection/classes.py`.
+- If `model_url` or another field changes in a new plugin version, TBC downloads the model
+  again automatically.
+- If a user later changes a camera's module key, the detection worker resolves the responsible
+  model again on its next start.

@@ -1,72 +1,71 @@
-# Externe Read-API (`/api/v1/...`)
+# External read API (`/api/v1/...`)
 
-Neben den internen `/api/...`-Routen, die Session-Cookie-Auth für die eigene Web-UI nutzen,
-bietet TBC unter `/api/v1/...` eine eigenständige, schreibgeschützte API für externe Skripte,
-Dashboards oder Home-Assistant-Integrationen. Sie gibt genau die Inhalte aus, die in der
-laufenden Installation tatsächlich konfiguriert sind - eine Kamera ohne aktivierte
-KI-Erkennung liefert eine leere Erkennungsliste, eine Installation ohne Aufnahmen eine leere
-Aufnahmenliste, usw. Es gibt (Stand jetzt) keine Schreib-/Steuer-Endpunkte (kein PTZ, keine
-Kamera-Anlage, kein Umschalten von Einstellungen) - nur Lesezugriff.
+In addition to the internal `/api/...` routes, which use session-cookie authentication for the
+web UI, TBC provides a standalone, read-only API for external scripts, dashboards, and Home
+Assistant integrations under `/api/v1/...`. It returns exactly the content configured in the
+running installation: a camera without AI detection enabled returns an empty detection list,
+and an installation without recordings returns an empty recording list. There are currently
+no write or control endpoints (no PTZ, camera creation, or settings changes); access is
+read-only.
 
-## Aktivieren
+## Enabling the API
 
-Unter `Admin → Einstellungen` (`/settings`), Abschnitt „API-Zugriff“:
+Open `Admin → Settings` (`/settings`) and find the **API access** section:
 
-- **API aktivieren** - Hauptschalter. Ist er aus, antworten alle `/api/v1/...`-Routen mit
-  `404`, unabhängig vom API-Key.
-- **API-Key erforderlich** - ist dieser Schalter aus, ist die API bei aktiviertem Hauptschalter
-  vollständig offen (kein Key nötig). Sinnvoll nur in vertrauenswürdigen, abgeschotteten
-  Netzen.
-- **Neuen Key erzeugen** - erzeugt einen neuen Key und zeigt ihn **genau einmal** im
-  Bestätigungshinweis an. Gespeichert wird ausschließlich sein SHA-256-Hash
-  (`app/tbc/security.py`, `hash_api_key`/`verify_api_key`) - TBC kann den Klartext-Key danach
-  nicht mehr anzeigen. Ein neu erzeugter Key ersetzt einen vorher aktiven Key sofort.
-- **Key widerrufen** - deaktiviert den aktuellen Key sofort.
+- **Enable API** is the main switch. When disabled, all `/api/v1/...` routes return `404`,
+  regardless of the API key.
+- **Require API key** controls authentication. When disabled while the main switch is enabled,
+  the API is completely open and requires no key. Use this only in trusted, isolated networks.
+- **Generate new key** creates a key and displays it **exactly once** in the confirmation
+  message. TBC stores only its SHA-256 hash (`app/tbc/security.py`, `hash_api_key` and
+  `verify_api_key`) and cannot display the plaintext key again. A new key immediately replaces
+  the previously active key.
+- **Revoke key** immediately deactivates the current key.
 
-Die API ist in einer frischen Installation standardmäßig deaktiviert.
+The API is disabled by default in a new installation.
 
-## Authentifizierung
+## Authentication
 
-Der Key wird als Bearer-Token oder über einen eigenen Header übertragen:
+Send the key as a bearer token or through the dedicated header:
 
-```
+```text
 Authorization: Bearer tbc_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
-oder
+or:
 
-```
+```text
 X-API-Key: tbc_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
-Ein API-Key hat vollen Lesezugriff auf alle Kameras - unabhängig von etwaigen
-Viewer-Einschränkungen einzelner Benutzerkonten (`user_camera_access`). Es gibt aktuell nur
-einen globalen Key pro Installation, keine Keys pro Benutzer.
+An API key has full read access to every camera, regardless of viewer restrictions on
+individual user accounts (`user_camera_access`). There is currently one global key per
+installation, not one key per user.
 
-## Endpunkte
+## Endpoints
 
-Alle Antworten sind JSON, außer wo „Binär“ vermerkt ist.
+All responses are JSON unless marked as binary.
 
-| Methode & Pfad | Beschreibung |
+| Method and path | Description |
 |---|---|
-| `GET /api/v1/status` | App-Name, Version, Update-Verfügbarkeit, Kamera-Anzahl |
-| `GET /api/v1/cameras` | Alle Kameras inkl. Fähigkeiten, Status, Erkennungs-Zählern |
-| `GET /api/v1/cameras/{id}` | Einzelne Kamera |
-| `GET /api/v1/cameras/{id}/snapshot` | Aktuelles Vorschaubild (Binär, JPEG) |
-| `GET /api/v1/cameras/{id}/detections` | Aktueller Erkennungszustand der Kamera |
-| `GET /api/v1/recordings` | Aufnahmenliste. Query-Parameter: `camera_id`, `detection_key`, `date_from`, `date_to`, `limit` (Standard 200, max. 1000) |
-| `GET /api/v1/recordings/{id}` | Metadaten einer Aufnahme |
-| `GET /api/v1/recordings/{id}/media` | Video-Clip (Binär, MP4, unterstützt HTTP-Range) |
-| `GET /api/v1/recordings/{id}/snapshot` | Ereignis-Vorschaubild (Binär, JPEG) |
-| `GET /api/v1/activity` | Ereignis-Aufnahmen über alle Kameras für einen Tag. Query-Parameter: `day` (`YYYY-MM-DD`, Standard heute) |
-| `GET /api/v1/storage` | Konfigurierte Speicherziele (ohne Zugangsdaten) |
-| `GET /api/v1/health` | Systemauslastung + Health-Status/-Ereignisse |
+| `GET /api/v1/status` | Application name, version, update availability, and camera count |
+| `GET /api/v1/cameras` | All cameras, including capabilities, status, and detection counters |
+| `GET /api/v1/cameras/{id}` | One camera |
+| `GET /api/v1/cameras/{id}/snapshot` | Current preview image (binary JPEG) |
+| `GET /api/v1/cameras/{id}/detections` | Current detection state for the camera |
+| `GET /api/v1/recordings` | Recording list. Query parameters: `camera_id`, `detection_key`, `date_from`, `date_to`, and `limit` (default 200, maximum 1000) |
+| `GET /api/v1/recordings/{id}` | Metadata for one recording |
+| `GET /api/v1/recordings/{id}/media` | Video clip (binary MP4 with HTTP Range support) |
+| `GET /api/v1/recordings/{id}/snapshot` | Event preview image (binary JPEG) |
+| `GET /api/v1/activity` | Event recordings across all cameras for one day. Query parameter: `day` (`YYYY-MM-DD`, defaults to today) |
+| `GET /api/v1/storage` | Configured storage targets without credentials |
+| `GET /api/v1/health` | System utilization, health status, and health events |
 
-Kamera-Zugangsdaten, Storage-/MQTT-Zugangsdaten und der API-Key-Hash selbst erscheinen in
-keiner Antwort. Eine im Kameraobjekt enthaltene `stream_uri` wird ohne Zugangsdaten
-ausgegeben (`redact_rtsp_credentials`, wie auch sonst überall in TBC).
+Camera credentials, storage or MQTT credentials, and the API-key hash never appear in a
+response. Any `stream_uri` included in a camera object is returned without credentials using
+`redact_rtsp_credentials`, as elsewhere in TBC.
 
-## Beispiel
+## Examples
 
 ```bash
 curl -H "Authorization: Bearer tbc_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" \

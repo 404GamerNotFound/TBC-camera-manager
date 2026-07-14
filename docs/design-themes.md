@@ -1,12 +1,17 @@
-# Designs entwickeln
+# Developing themes
 
-TBC trennt das visuelle Design von der Weboberfläche über eine Design-Schnittstelle, die genauso funktioniert wie die Kamera-Plugins: Ein Design ist ein in sich geschlossenes Paket aus Metadaten und Stylesheet, das eingebaut oder als ZIP importiert sein kann. Die Weboberfläche selbst enthält keine fest verdrahteten Farben oder Layout-Regeln mehr — sie referenziert nur noch das gerade aktive Design.
+TBC separates visual design from the web interface through a theme API that follows the same
+packaging model as camera plugins. A theme is a self-contained package of metadata and a
+stylesheet that may be built in or imported as a ZIP file. The web interface contains no
+hard-coded colors or layout rules; it references only the currently active theme.
 
-Ausgeliefert werden zwei Designs: `standard` (das bisherige helle Design, weiterhin Vorgabe) und `midnight` (ein dunkles Design mit blauem Akzent).
+TBC includes two themes: `standard`, the original light theme and current default, and
+`midnight`, a dark theme with a blue accent.
 
-## Design-Paket
+## Theme package
 
-Ein Design-ZIP enthält seine Dateien direkt im Hauptverzeichnis oder in genau einem gemeinsamen Ordner:
+A theme ZIP contains its files directly at the archive root or inside exactly one common
+directory:
 
 ```text
 acme-design.zip
@@ -15,7 +20,7 @@ acme-design.zip
     └── styles.css
 ```
 
-`manifest.json` ist die verbindliche Konfiguration:
+`manifest.json` is the authoritative configuration:
 
 ```json
 {
@@ -23,27 +28,44 @@ acme-design.zip
   "key": "acme",
   "label": "Acme Design",
   "version": "1.0.0",
-  "description": "Ein Beispiel-Design",
+  "description": "An example theme",
   "stylesheet": "styles.css"
 }
 ```
 
-`stylesheet` verweist auf eine Datei relativ zu `static/` innerhalb des Pakets. Anders als ein Kamera-Plugin enthält ein Design-Paket ausschließlich Stylesheets (`.css`), Metadaten (`.json`, `.md`) und Bilder (`.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.ico`) — keinen ausführbaren Code. Dadurch ist ein Design-Import deutlich risikoärmer als ein Kamera-Plugin-Import.
+`stylesheet` points to a file relative to `static/` inside the package. Unlike a camera
+plugin, a theme package contains only stylesheets (`.css`), metadata (`.json`, `.md`), and
+images (`.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.ico`), with no executable code. Importing
+a theme is therefore considerably less risky than importing a camera plugin.
 
-Die eingebauten Designs liegen vollständig unter `app/tbc/design_themes/<schlüssel>/`, inklusive ihres kompletten Stylesheets — genauso in sich geschlossen wie ein extern installiertes Design.
+Built-in themes are completely contained in `app/tbc/design_themes/<key>/`, including their
+full stylesheets, and are as self-contained as externally installed themes.
 
-## Aktives Design
+## Active theme
 
-TBC merkt sich das aktive Design pro Installation in der Datenbank (Tabelle `ui_settings`, Vorgabe `standard`). Jede gerenderte Seite bindet automatisch das Stylesheet des aktiven Designs über die Route `/design/{schlüssel}/static/{pfad}` ein; diese Route ist wie `/static` ohne Login erreichbar, damit auch die Login-Seite korrekt gestaltet ist.
+TBC stores the active theme for each installation in the database (`ui_settings` table,
+default `standard`). Every rendered page automatically includes the active stylesheet through
+`/design/{key}/static/{path}`. Like `/static`, this route is accessible without signing in so
+that the login page is styled correctly.
 
-## Import, Aktivierung und Export
+## Importing, activating, and exporting
 
-Administratoren öffnen `Admin → Design` und importieren dort eine Design-ZIP-Datei. TBC prüft Manifest, Pfade, Dateitypen, Dateianzahl und entpackte Größe (maximal 5 MB Archiv, 10 MB entpackt) und installiert das Design anschließend atomar. Ein vorhandenes externes Design mit demselben Schlüssel wird dabei aktualisiert. Eingebaute Designs können weder überschrieben noch entfernt werden.
+Administrators open `Admin → Themes` and import a theme ZIP. TBC validates the manifest,
+paths, file types, file count, and extracted size (maximum 5 MB archive and 10 MB extracted),
+then installs the theme atomically. An existing external theme with the same key is updated.
+Built-in themes cannot be overwritten or removed.
 
-Über dieselbe Seite wird ein Design aktiviert (`Aktivieren`-Button) oder als ZIP exportiert. Das aktive Design kann nicht entfernt werden. Der Speicherort externer Designs wird mit `TBC_THEME_MODULES_PATH` konfiguriert (Vorgabe `/data/design-themes`) und liegt im Docker-Setup im persistenten `/data`-Volume.
+The same page can activate a theme with the **Activate** button or export it as a ZIP. The
+active theme cannot be removed. `TBC_THEME_MODULES_PATH` configures the external theme
+directory (default `/data/design-themes`), which resides in the persistent `/data` volume in
+the Docker setup.
 
-Statt eines manuellen ZIP-Uploads kann ein Design auch direkt aus einem öffentlichen GitHub-Repository installiert werden (`Admin → Externe Quellen`) - siehe [plugin-sources.md](plugin-sources.md). Da Designs keinen ausführbaren Code enthalten, entfällt dort die Testfunktion.
+Instead of uploading a ZIP manually, a theme can be installed directly from a public GitHub
+repository under `Admin → External sources`; see [plugin-sources.md](plugin-sources.md).
+Themes contain no executable code, so the plugin-test function does not apply to them.
 
-## Sicherheit
+## Security
 
-Ein Design-Paket enthält keinen ausführbaren Code, sondern nur Stylesheets, Metadaten und Bilder. Die ZIP-Prüfung verhindert Pfad- und Dateityp-Angriffe. Trotzdem sollten nur Designs aus vertrauenswürdigen Quellen importiert werden, da ein Stylesheet die gesamte Oberfläche verändern kann.
+A theme package contains no executable code, only stylesheets, metadata, and images. ZIP
+validation prevents path and file-type attacks. Even so, import themes only from trusted
+sources because a stylesheet can alter the entire interface.
