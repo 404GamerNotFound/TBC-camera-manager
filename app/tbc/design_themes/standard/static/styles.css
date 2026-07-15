@@ -447,6 +447,42 @@ select:focus {
   box-shadow: 0 0 0 0.2rem rgba(17, 97, 92, 0.16);
 }
 
+.plugin-install-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.plugin-install-prompt a {
+  color: var(--brand-strong);
+  font-weight: 800;
+}
+
+.plugin-unavailable-note {
+  margin: 0;
+}
+
+.editor-form.is-plugin-unavailable input:disabled,
+.editor-form.is-plugin-unavailable select:disabled,
+.editor-form.is-plugin-unavailable textarea:disabled {
+  color: var(--muted);
+  background: var(--surface-soft);
+  border-color: var(--line);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.editor-form button:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
 button,
 .primary-button,
 .secondary-button,
@@ -1077,6 +1113,43 @@ dd {
   border: 0;
   background: transparent;
   font-size: 0.78rem;
+}
+
+.checkbox-field.is-feature-disabled {
+  background: var(--surface-soft);
+}
+
+.checkbox-field.is-feature-disabled > legend,
+.checkbox-field.is-feature-disabled > .hint-text,
+.checkbox-field.is-feature-disabled > .trigger-actions,
+.checkbox-field.is-feature-disabled > .checkbox-grid {
+  opacity: 0.48;
+}
+
+.checkbox-field.is-feature-disabled input:disabled,
+.checkbox-field.is-feature-disabled button:disabled {
+  cursor: not-allowed;
+}
+
+.feature-disabled-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--brand);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.feature-disabled-note .text-button {
+  flex: 0 0 auto;
+  padding: 2px 0;
 }
 
 .event-trigger {

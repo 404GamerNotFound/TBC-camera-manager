@@ -14,26 +14,37 @@
 
 {% if not cloud_modules %}
 <div class="quiet-box">
-  No cloud provider is installed yet. Install a <a href="/cloud-modules">cloud plugin</a> before you can add an account.
+  <span data-i18n="plugin.no_cloud_before">No cloud provider is installed yet. Install a</span>
+  <a href="/plugin-sources" data-i18n="plugin.cloud_plugin_link">cloud plugin from External sources</a>
+  <span data-i18n="plugin.no_cloud_after">before you can add an account.</span>
 </div>
 {% endif %}
 
-<form class="editor-form" method="post" action="/cloud-accounts" data-cloud-account-form>
+<form class="editor-form" method="post" action="/cloud-accounts" data-cloud-account-form data-plugin-selector-form>
   <div class="section-title"><h2>Add account</h2></div>
   <div class="form-grid">
     <label class="span-2">
       <span>Provider</span>
       <select name="module_key" required data-cloud-account-provider>
-        {% for registration in cloud_modules %}
-        <option value="{{ registration.module.key }}">
-          {{ registration.module.label }} · {{ registration.module.description }}
+        {% for option in cloud_module_options %}
+        <option value="{{ option.key }}"
+                data-label="{{ option.label }}"
+                data-description="{{ option.description }}"
+                data-installed="{{ 'true' if option.installed else 'false' }}"
+                data-install-url="{{ option.install_url }}">
+          {{ option.label }}{% if option.description %} · {{ option.description }}{% endif %}{% if not option.installed %} · Not installed{% endif %}
         </option>
         {% endfor %}
       </select>
+      <small class="plugin-install-prompt">
+        <span data-i18n="plugin.cloud_install_prompt">Need another cloud provider?</span>
+        <a href="/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
+      </small>
     </label>
+    <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
     <label>
       <span>Label</span>
-      <input name="label" placeholder="z. B. Zuhause">
+      <input name="label" placeholder="e.g. Home" data-i18n-placeholder="plugin.account_label_placeholder">
     </label>
     {% for registration in cloud_modules %}
       {% set provider_loop = loop %}

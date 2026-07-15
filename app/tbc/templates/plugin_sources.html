@@ -19,7 +19,7 @@
   </div>
   <p class="standard-source-intro">Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.</p>
   {% for entry in standard_sources %}
-  <article class="storage-item standard-source-card">
+  <article class="storage-item standard-source-card" id="standard-source-{{ entry.source.key }}">
     <div class="standard-source-card-head">
       <h3>{{ entry.source.label }}</h3>
       <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}">{{ 'already registered' if entry.registered_source else 'ready to install' }}</span>
@@ -101,7 +101,7 @@
     <span>{{ sources | length }}</span>
   </div>
   {% for source in sources %}
-  <article class="storage-item source-registration-card">
+  <article class="storage-item source-registration-card" id="source-{{ source.id }}">
     <div class="source-registration-card-head">
       <h3>{{ source.label }}</h3>
       <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}">{{ source.last_sync_message if source.last_sync_status else 'not synchronized yet' }}</span>

@@ -78,6 +78,7 @@ from .plugin_sources import (
     fetch_latest_commit_sha,
     get_standard_plugin_source,
     github_repositories_match,
+    list_uninstalled_plugin_candidates,
     parse_github_repo_url,
     resolve_and_fetch_plugin,
 )
@@ -390,6 +391,11 @@ async def new_camera(request: Request):
     if guard:
         return guard
     user = _current_user(request)
+    camera_module_options = _camera_module_selector_options()
+    default_module_key = next(
+        (option["key"] for option in camera_module_options if option["installed"]),
+        "",
+    )
     return templates.TemplateResponse(
         request,
         "camera_form.html",
@@ -399,7 +405,7 @@ async def new_camera(request: Request):
             "role": user["role"],
             "flash": _pop_flash(request),
             "values": {
-                "module_key": "reolink",
+                "module_key": default_module_key,
                 "name": "",
                 "host": "",
                 "onvif_port": 8000,
@@ -408,7 +414,7 @@ async def new_camera(request: Request):
                 "username": "",
                 "manual_stream_uri": "",
             },
-            "camera_modules": list_camera_modules(),
+            "camera_module_options": camera_module_options,
             "error": None,
         },
     )
@@ -454,7 +460,7 @@ async def create_camera(
                 "role": "admin",
                 "flash": None,
                 "values": values,
-                "camera_modules": list_camera_modules(),
+                "camera_module_options": _camera_module_selector_options(),
                 "error": str(exc),
             },
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -484,7 +490,7 @@ async def create_camera(
                 "role": "admin",
                 "flash": None,
                 "values": values,
-                "camera_modules": list_camera_modules(),
+                "camera_module_options": _camera_module_selector_options(),
                 "error": "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich",
             },
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -530,7 +536,8 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
     available_triggers = camera_module.detection_definitions() if camera_module else ()
     detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
     detection_zones = database.list_camera_detection_zones(SETTINGS.database_path, camera_id)
-    if detection_settings and detection_settings.get("enabled"):
+    local_ai_enabled = bool(detection_settings and detection_settings.get("enabled"))
+    if camera.get("stream_uri") or local_ai_enabled:
         existing_trigger_keys = {trigger.key for trigger in available_triggers}
         available_triggers = tuple(available_triggers) + tuple(
             trigger for trigger in LOCAL_AI_TRIGGER_DEFINITIONS if trigger.key not in existing_trigger_keys
@@ -577,6 +584,7 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},
             "active_trigger_keys": active_trigger_keys,
             "detection_settings": detection_settings,
+            "local_ai_enabled": local_ai_enabled,
             "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
             "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
             "detection_backend_status": detection_factory.backend_status(),
@@ -2436,6 +2444,7 @@ async def cloud_accounts_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "cloud_modules": list_cloud_module_registrations(),
+            "cloud_module_options": _cloud_module_selector_options(),
             "accounts": database.list_cloud_accounts(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
@@ -4154,6 +4163,78 @@ def _camera_supports(camera: dict[str, Any], capability: CameraCapability) -> bo
         return False
 
 
+def _camera_module_selector_options() -> list[dict[str, Any]]:
+    modules = list_camera_modules()
+    options = [
+        {
+            "key": module.key,
+            "label": module.label,
+            "description": module.description,
+            "installed": True,
+            "install_url": "/plugin-sources",
+            "default_onvif_port": module.default_onvif_port,
+            "default_http_port": module.default_http_port,
+            "default_rtsp_port": module.default_rtsp_port,
+            "supports_manual_stream_uri": module.supports_manual_stream_uri,
+            "requires_manual_stream_uri": module.requires_manual_stream_uri,
+            "requires_credentials": module.requires_credentials,
+        }
+        for module in modules
+    ]
+    candidates = list_uninstalled_plugin_candidates(
+        "camera",
+        (module.key for module in modules),
+        database.list_plugin_sources(SETTINGS.database_path),
+    )
+    options.extend(
+        {
+            "key": candidate.key,
+            "label": candidate.label,
+            "description": candidate.description,
+            "installed": False,
+            "install_url": candidate.install_url,
+            "default_onvif_port": 8000,
+            "default_http_port": 80,
+            "default_rtsp_port": 554,
+            "supports_manual_stream_uri": False,
+            "requires_manual_stream_uri": False,
+            "requires_credentials": False,
+        }
+        for candidate in candidates
+    )
+    return options
+
+
+def _cloud_module_selector_options() -> list[dict[str, Any]]:
+    registrations = list_cloud_module_registrations()
+    options = [
+        {
+            "key": registration.module.key,
+            "label": registration.module.label,
+            "description": registration.module.description,
+            "installed": True,
+            "install_url": "/plugin-sources",
+        }
+        for registration in registrations
+    ]
+    candidates = list_uninstalled_plugin_candidates(
+        "cloud",
+        (registration.module.key for registration in registrations),
+        database.list_plugin_sources(SETTINGS.database_path),
+    )
+    options.extend(
+        {
+            "key": candidate.key,
+            "label": candidate.label,
+            "description": candidate.description,
+            "installed": False,
+            "install_url": candidate.install_url,
+        }
+        for candidate in candidates
+    )
+    return options
+
+
 def _redirect(path: str) -> RedirectResponse:
     return RedirectResponse(path, status_code=status.HTTP_303_SEE_OTHER)
 
@@ -4249,7 +4330,7 @@ def _camera_form_error(request: Request, values: dict[str, Any], message: str):
             "role": "admin",
             "flash": None,
             "values": values,
-            "camera_modules": list_camera_modules(),
+            "camera_module_options": _camera_module_selector_options(),
             "error": message,
         },
         status_code=status.HTTP_400_BAD_REQUEST,

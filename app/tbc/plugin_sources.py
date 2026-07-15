@@ -5,6 +5,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import PurePosixPath
@@ -44,6 +45,15 @@ class StandardPluginSource:
     repo_url: str
     ref: str = "main"
     subdirectory: str = ""
+
+
+@dataclass(frozen=True)
+class PluginInstallCandidate:
+    key: str
+    plugin_kind: str
+    label: str
+    description: str
+    install_url: str
 
 
 STANDARD_PLUGIN_SOURCES = (
@@ -116,6 +126,53 @@ STANDARD_PLUGIN_SOURCES = (
 def get_standard_plugin_source(key: str) -> StandardPluginSource | None:
     normalized_key = key.strip().lower()
     return next((source for source in STANDARD_PLUGIN_SOURCES if source.key == normalized_key), None)
+
+
+def list_uninstalled_plugin_candidates(
+    plugin_kind: str,
+    installed_keys: Iterable[str],
+    registered_sources: Iterable[Mapping[str, object]],
+) -> tuple[PluginInstallCandidate, ...]:
+    """Return known plugin modules that are available but not currently installed.
+
+    Standard repositories have a stable module key before their first installation.
+    Arbitrary registered repositories become selectable only after at least one successful
+    synchronization recorded their ``installed_key``; before that, their manifest identity is
+    unknown and they are merely sources rather than known modules.
+    """
+
+    normalized_kind = plugin_kind.strip().lower()
+    installed = {str(key).strip().lower() for key in installed_keys if str(key).strip()}
+    candidates: dict[str, PluginInstallCandidate] = {}
+
+    for source in STANDARD_PLUGIN_SOURCES:
+        if source.plugin_kind != normalized_kind or source.key in installed:
+            continue
+        candidates[source.key] = PluginInstallCandidate(
+            key=source.key,
+            plugin_kind=source.plugin_kind,
+            label=source.label,
+            description=source.description,
+            install_url=f"/plugin-sources#standard-source-{source.key}",
+        )
+
+    for source in registered_sources:
+        if str(source.get("plugin_kind") or "").strip().lower() != normalized_kind:
+            continue
+        key = str(source.get("installed_key") or "").strip().lower()
+        if not key or key in installed or key in candidates:
+            continue
+        source_id = source.get("id")
+        install_url = f"/plugin-sources#source-{source_id}" if source_id is not None else "/plugin-sources"
+        candidates[key] = PluginInstallCandidate(
+            key=key,
+            plugin_kind=normalized_kind,
+            label=str(source.get("label") or key).strip() or key,
+            description="",
+            install_url=install_url,
+        )
+
+    return tuple(candidates.values())
 
 
 def parse_github_repo_url(url: str) -> GithubRepo:

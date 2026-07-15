@@ -12,6 +12,7 @@ from app.tbc.plugin_sources import (
     fetch_latest_commit_sha,
     get_standard_plugin_source,
     github_repositories_match,
+    list_uninstalled_plugin_candidates,
     parse_github_repo_url,
     resolve_and_fetch_plugin,
 )
@@ -90,6 +91,58 @@ class StandardPluginSourceTests(unittest.TestCase):
 
     def test_unknown_standard_repository_returns_none(self):
         self.assertIsNone(get_standard_plugin_source("unknown"))
+
+    def test_uninstalled_camera_candidates_include_standard_and_known_registered_modules(self):
+        candidates = list_uninstalled_plugin_candidates(
+            "camera",
+            installed_keys={"reolink", "axis"},
+            registered_sources=(
+                {
+                    "id": 17,
+                    "plugin_kind": "camera",
+                    "label": "Acme Cameras",
+                    "installed_key": "acme",
+                },
+                {
+                    "id": 18,
+                    "plugin_kind": "camera",
+                    "label": "Not synchronized",
+                    "installed_key": None,
+                },
+            ),
+        )
+
+        by_key = {candidate.key: candidate for candidate in candidates}
+        self.assertNotIn("reolink", by_key)
+        self.assertNotIn("axis", by_key)
+        self.assertIn("aqara", by_key)
+        self.assertEqual(by_key["aqara"].install_url, "/plugin-sources#standard-source-aqara")
+        self.assertEqual(by_key["acme"].label, "Acme Cameras")
+        self.assertEqual(by_key["acme"].install_url, "/plugin-sources#source-17")
+        self.assertNotIn("not synchronized", {candidate.label.lower() for candidate in candidates})
+
+    def test_cloud_candidates_only_include_known_cloud_sources(self):
+        candidates = list_uninstalled_plugin_candidates(
+            "cloud",
+            installed_keys=(),
+            registered_sources=(
+                {
+                    "id": 21,
+                    "plugin_kind": "cloud",
+                    "label": "Example Cloud",
+                    "installed_key": "example-cloud",
+                },
+                {
+                    "id": 22,
+                    "plugin_kind": "camera",
+                    "label": "Example Camera",
+                    "installed_key": "example-camera",
+                },
+            ),
+        )
+
+        self.assertEqual([candidate.key for candidate in candidates], ["example-cloud"])
+        self.assertEqual(candidates[0].install_url, "/plugin-sources#source-21")
 
 class ExtractPluginArchiveTests(unittest.TestCase):
     def test_extracts_repo_root_when_no_subdirectory(self):
