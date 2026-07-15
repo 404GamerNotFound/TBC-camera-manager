@@ -638,6 +638,34 @@ button:focus-visible {
   background: rgba(224, 96, 96, 0.16);
 }
 
+.recording-glyph {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+
+.recording-glyph::before {
+  content: "";
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid currentColor;
+}
+
+.recording-indicator-inactive .recording-glyph::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: rotate(-45deg);
+}
+
 .probe-indicator::after {
   content: attr(data-tooltip);
   position: absolute;

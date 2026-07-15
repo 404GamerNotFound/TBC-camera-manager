@@ -22,8 +22,8 @@
       </div>
       <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'new' }}</span>
     </div>
-    {% if camera.last_probe_message %}
-    <div class="probe-status-list" aria-label="Connection status">
+    <div class="probe-status-list" aria-label="Camera status" data-i18n-aria-label="dashboard.camera_status">
+      {% if camera.last_probe_message %}
       {% for message in camera.last_probe_message.split(' | ') %}
       {% set normalized_message = message | lower %}
       {% set probe_failed = camera.last_probe_status == 'error' or 'fehl' in normalized_message or 'nicht ' in normalized_message or 'kein ' in normalized_message or 'abgelehnt' in normalized_message or 'timeout' in normalized_message %}
@@ -35,9 +35,7 @@
         <span aria-hidden="true">{{ '×' if probe_failed else '✓' }}</span>
       </span>
       {% endfor %}
-    </div>
-    {% elif camera.host.startswith('192.169.') %}
-    <div class="probe-status-list" aria-label="Connection status">
+      {% elif camera.host.startswith('192.169.') %}
       <span class="probe-indicator probe-indicator-error"
             tabindex="0"
             role="img"
@@ -45,8 +43,19 @@
             data-tooltip="Note: The host starts with 192.169. On home networks, 192.168 is often intended.">
         <span aria-hidden="true">×</span>
       </span>
+      {% endif %}
+      {% set recording_status_key = 'dashboard.recording_active' if camera.recording_enabled else 'dashboard.recording_inactive' %}
+      {% set recording_status_text = 'Recording is active' if camera.recording_enabled else 'Recording is disabled' %}
+      <span class="probe-indicator recording-indicator recording-indicator-{{ 'active' if camera.recording_enabled else 'inactive' }} probe-indicator-{{ 'ok' if camera.recording_enabled else 'error' }}"
+            tabindex="0"
+            role="img"
+            aria-label="{{ recording_status_text }}"
+            data-i18n-aria-label="{{ recording_status_key }}"
+            data-tooltip="{{ recording_status_text }}"
+            data-i18n-data-tooltip="{{ recording_status_key }}">
+        <span class="recording-glyph" aria-hidden="true"></span>
+      </span>
     </div>
-    {% endif %}
     {% if camera.stream_uri %}
     <figure class="camera-snapshot">
       <img src="/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
@@ -73,12 +82,7 @@
       </div>
     </dl>
     <div class="card-footer">
-      <span>
-        {{ camera.model or 'Model unknown' }}
-        {% if camera.recording_enabled %}
-        · Recording active
-        {% endif %}
-      </span>
+      <span>{{ camera.model or 'Model unknown' }}</span>
       <a class="text-button" href="/cameras/{{ camera.id }}">Open</a>
     </div>
   </article>
