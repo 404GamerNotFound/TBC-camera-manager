@@ -7,7 +7,7 @@ python-multipart==0.0.20
 itsdangerous==2.2.0
 onvif-zeep==0.2.12
 reolink-aio==0.21.3
-uiprotect==15.12.1
+uiprotect==15.12.2
 pyeufysecurity==0.4.4
 ewelink==0.2.1
 boto3>=1.43.46,<2
