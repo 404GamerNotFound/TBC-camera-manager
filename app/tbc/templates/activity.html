@@ -18,6 +18,10 @@
     <a class="secondary-button" href="/activity?day={{ prev_day }}">‹ Previous day</a>
     <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/activity?day={{ next_day }}">Next day ›</a>
   </div>
+  <label class="check-row{% if not any_sd_card_available %} is-disabled{% endif %}">
+    <input type="checkbox" data-activity-toggle="sdcard" {% if not any_sd_card_available %}disabled{% endif %}>
+    <span>SD card recordings{% if not any_sd_card_available %} (unavailable){% endif %}</span>
+  </label>
 </form>
 
 {% if not activity_cameras %}
@@ -29,12 +33,13 @@
   <script type="application/json" data-activity-json>{{ activity_data | tojson }}</script>
   <div class="section-title">
     <h2>Events on this day</h2>
-    <span>{{ total_events }}</span>
+    <span data-activity-count>{{ total_events }}</span>
   </div>
   <p class="hint-text">
     One block is shown for each event recording, grouped by event type and color. Select a block
     to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted
-    here; use the timeline for an individual camera instead.
+    here; use the timeline for an individual camera instead. Enable "SD card recordings" to also
+    include recordings stored on cameras that support an on-camera archive.
   </p>
   <div class="timeline-scroll" data-activity-scroll>
     <div class="timeline-inner" data-activity-inner>
@@ -43,9 +48,7 @@
       <div data-activity-lanes></div>
     </div>
   </div>
-  {% if not total_events %}
-  <p class="timeline-hint">No event recordings are available for this day.</p>
-  {% endif %}
+  <p class="timeline-hint" data-activity-empty {% if total_events %}hidden{% endif %}>No event recordings are available for this day.</p>
 </section>
 {% endif %}
 

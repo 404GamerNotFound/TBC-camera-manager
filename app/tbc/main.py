@@ -1451,10 +1451,12 @@ async def activity_view(request: Request, day: str | None = Query(None)):
             "id": int(camera["id"]),
             "name": camera["name"],
             "events": _timeline_payload(events_by_camera.get(int(camera["id"]), [])),
+            "sd_card_available": _camera_supports(camera, CameraCapability.ARCHIVE),
         }
         for camera in cameras
     ]
     total_events = sum(len(camera["events"]) for camera in activity_cameras)
+    any_sd_card_available = any(camera["sd_card_available"] for camera in activity_cameras)
 
     return templates.TemplateResponse(
         request,
@@ -1470,6 +1472,7 @@ async def activity_view(request: Request, day: str | None = Query(None)):
             "is_today": selected_day == date.today(),
             "activity_cameras": activity_cameras,
             "total_events": total_events,
+            "any_sd_card_available": any_sd_card_available,
             "activity_data": {
                 "day": selected_day.isoformat(),
                 "cameras": activity_cameras,
