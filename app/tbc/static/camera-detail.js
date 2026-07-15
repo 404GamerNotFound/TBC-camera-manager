@@ -32,6 +32,14 @@
 
   activate(location.hash.slice(1), false);
 
+  document.querySelectorAll("[data-open-detail-tab]").forEach((control) => {
+    control.addEventListener("click", () => {
+      const name = control.dataset.openDetailTab;
+      activate(name);
+      document.querySelector(`[data-detail-tab="${name}"]`)?.focus();
+    });
+  });
+
   document.querySelectorAll("[data-trigger-fieldset]").forEach((triggerFieldset) => {
     triggerFieldset.querySelectorAll("[data-trigger-selection]").forEach((button) => {
       button.addEventListener("click", () => {

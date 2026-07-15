@@ -322,18 +322,29 @@
       </fieldset>
       {% endif %}
       {% if ai_triggers %}
-      <fieldset class="span-2 checkbox-field" data-trigger-fieldset>
+      <fieldset class="span-2 checkbox-field{% if not local_ai_enabled %} is-feature-disabled{% endif %}"
+                data-trigger-fieldset
+                {% if not local_ai_enabled %}aria-disabled="true" aria-describedby="local-ai-recording-disabled"{% endif %}>
         <legend>Local AI detection (TBC)</legend>
+        {% if not local_ai_enabled %}
+        <p class="feature-disabled-note" id="local-ai-recording-disabled">
+          <span data-i18n="recording.local_ai_disabled_hint">Enable local AI detection for this camera before selecting these recording triggers.</span>
+          <button class="text-button" type="button" data-open-detail-tab="ai-zones" data-i18n="recording.open_ai_detection">Open AI detection settings</button>
+        </p>
+        {% endif %}
         <p class="hint-text">Detections produced by the TBC server's image model, independently of the events reported by the camera.</p>
         <div class="button-row trigger-actions">
-          <button class="text-button" type="button" data-trigger-selection="all">Select all</button>
+          <button class="text-button" type="button" data-trigger-selection="all" {% if not local_ai_enabled %}disabled{% endif %}>Select all</button>
         </div>
         <div class="checkbox-grid">
           {% for trigger in ai_triggers %}
           <label class="check-row">
-            <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %}>
+            <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %} {% if not local_ai_enabled %}disabled{% endif %}>
             <span>{{ trigger.label }}</span>
           </label>
+          {% if not local_ai_enabled and trigger.key in active_trigger_keys %}
+          <input name="trigger_keys" type="hidden" value="{{ trigger.key }}">
+          {% endif %}
           {% endfor %}
         </div>
       </fieldset>
