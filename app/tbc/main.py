@@ -104,6 +104,9 @@ LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
 BASE_DIR = Path(__file__).resolve().parent
 DEBUG_LOG = install_debug_log()
+# Cache-busting token for static assets: changes on every process restart (i.e. every
+# deploy) so browsers don't keep serving JS/CSS cached from before the restart.
+ASSET_VERSION = str(int(datetime.now().timestamp()))
 
 app = FastAPI(title="TBC - TB Camera")
 app.add_middleware(
@@ -145,6 +148,7 @@ templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 templates.env.filters["tojson"] = lambda value: Markup(
     json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 )
+templates.env.globals["asset_version"] = ASSET_VERSION
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 CONTINUOUS_RECORDING_MANAGER = ContinuousRecordingManager(SETTINGS.database_path)
 LIVE_MANAGER = LiveManager(SETTINGS.live_path)

@@ -96,5 +96,5 @@
     </table>
   </div>
 </section>
-<script src="{{ url_for('static', path='/health.js') }}" defer></script>
+<script src="{{ url_for('static', path='/health.js') }}?v={{ asset_version }}" defer></script>
 {% endblock %}

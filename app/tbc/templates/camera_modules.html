@@ -81,5 +81,5 @@
     <p class="quiet-box" data-plugin-search-empty hidden>No plugins found.</p>
   </section>
 </section>
-<script src="{{ url_for('static', path='/plugin-search.js') }}" defer></script>
+<script src="{{ url_for('static', path='/plugin-search.js') }}?v={{ asset_version }}" defer></script>
 {% endblock %}

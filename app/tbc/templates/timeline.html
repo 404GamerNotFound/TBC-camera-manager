@@ -93,6 +93,6 @@
 </section>
 {% endif %}
 
-<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
-<script src="{{ url_for('static', path='/timeline.js') }}" defer></script>
+<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ url_for('static', path='/timeline.js') }}?v={{ asset_version }}" defer></script>
 {% endblock %}

@@ -128,7 +128,7 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', path='/vendor/hls.min.js') }}" defer></script>
-<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
-<script src="{{ url_for('static', path='/live.js') }}" defer></script>
+<script src="{{ url_for('static', path='/vendor/hls.min.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ url_for('static', path='/live.js') }}?v={{ asset_version }}" defer></script>
 {% endblock %}

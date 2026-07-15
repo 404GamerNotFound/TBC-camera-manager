@@ -85,6 +85,6 @@
   <h2>No clips found</h2>
 </section>
 {% endif %}
-<script src="{{ url_for('static', path='/video-player.js') }}" defer></script>
-<script src="{{ url_for('static', path='/recordings.js') }}" defer></script>
+<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ url_for('static', path='/recordings.js') }}?v={{ asset_version }}" defer></script>
 {% endblock %}
