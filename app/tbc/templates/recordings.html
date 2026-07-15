@@ -35,10 +35,15 @@
     <span>To</span>
     <input name="date_to" type="date" value="{{ filters.date_to }}">
   </label>
+  <label class="span-2">
+    <span>Search</span>
+    <input name="search" type="search" value="{{ filters.search }}" placeholder="Event label, message, camera name…">
+  </label>
   <button class="primary-button" type="submit">Filter</button>
 </form>
 
 {% if recordings %}
+<p class="hint-text">{{ total }} clip{{ 's' if total != 1 else '' }} found · page {{ page }} of {{ total_pages }}</p>
 <section class="clip-grid">
   {% for clip in recordings %}
   <article class="clip-card">
@@ -80,6 +85,17 @@
   </article>
   {% endfor %}
 </section>
+{% set qs_parts = [] %}
+{% if filters.camera_id %}{% set _ = qs_parts.append('camera_id=' ~ filters.camera_id) %}{% endif %}
+{% if filters.detection_key %}{% set _ = qs_parts.append('detection_key=' ~ (filters.detection_key | urlencode)) %}{% endif %}
+{% if filters.date_from %}{% set _ = qs_parts.append('date_from=' ~ filters.date_from) %}{% endif %}
+{% if filters.date_to %}{% set _ = qs_parts.append('date_to=' ~ filters.date_to) %}{% endif %}
+{% if filters.search %}{% set _ = qs_parts.append('search=' ~ (filters.search | urlencode)) %}{% endif %}
+<div class="button-row timeline-day-nav">
+  <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}">‹ Previous page</a>
+  <span>Page {{ page }} / {{ total_pages }}</span>
+  <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}">Next page ›</a>
+</div>
 {% else %}
 <section class="empty-state">
   <h2>No clips found</h2>

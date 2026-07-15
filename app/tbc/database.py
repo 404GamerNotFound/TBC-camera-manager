@@ -1547,17 +1547,16 @@ def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | Non
     return dict(row) if row else None
 
 
-def list_recordings(
-    database_path: str,
+def _recording_filters(
     *,
-    camera_id: int | None = None,
-    detection_key: str | None = None,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    user_id: int | None = None,
-    role: str = "admin",
-    limit: int = 200,
-) -> list[dict[str, Any]]:
+    camera_id: int | None,
+    detection_key: str | None,
+    date_from: str | None,
+    date_to: str | None,
+    search: str | None,
+    user_id: int | None,
+    role: str,
+) -> tuple[str, str, list[Any]]:
     filters = []
     params: list[Any] = []
     if camera_id:
@@ -1574,11 +1573,41 @@ def list_recordings(
     if date_to:
         filters.append("r.started_at <= ?")
         params.append(date_to)
+    if search:
+        escaped = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        needle = f"%{escaped}%"
+        filters.append("(r.event_label LIKE ? ESCAPE '\\' OR r.message LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\')")
+        params.extend([needle, needle, needle])
     join_access = ""
     if role != "admin":
         join_access = "JOIN user_camera_access a ON a.camera_id = r.camera_id AND a.user_id = ?"
         params.insert(0, user_id)
     where = f"WHERE {' AND '.join(filters)}" if filters else ""
+    return join_access, where, params
+
+
+def list_recordings(
+    database_path: str,
+    *,
+    camera_id: int | None = None,
+    detection_key: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    search: str | None = None,
+    user_id: int | None = None,
+    role: str = "admin",
+    limit: int = 60,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    join_access, where, params = _recording_filters(
+        camera_id=camera_id,
+        detection_key=detection_key,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        user_id=user_id,
+        role=role,
+    )
     sql = f"""
         SELECT r.*, c.name AS camera_name
           FROM recordings r
@@ -1586,12 +1615,44 @@ def list_recordings(
           {join_access}
           {where}
          ORDER BY r.started_at DESC, r.id DESC
-         LIMIT ?
+         LIMIT ? OFFSET ?
     """
-    params.append(limit)
+    params = [*params, limit, offset]
     with connect(database_path) as db:
         rows = db.execute(sql, params).fetchall()
     return [dict(row) for row in rows]
+
+
+def count_recordings(
+    database_path: str,
+    *,
+    camera_id: int | None = None,
+    detection_key: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    search: str | None = None,
+    user_id: int | None = None,
+    role: str = "admin",
+) -> int:
+    join_access, where, params = _recording_filters(
+        camera_id=camera_id,
+        detection_key=detection_key,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        user_id=user_id,
+        role=role,
+    )
+    sql = f"""
+        SELECT COUNT(*) AS total
+          FROM recordings r
+          JOIN cameras c ON c.id = r.camera_id
+          {join_access}
+          {where}
+    """
+    with connect(database_path) as db:
+        row = db.execute(sql, params).fetchone()
+    return int(row["total"]) if row else 0
 
 
 def delete_recording_metadata(database_path: str, recording_id: int) -> None:

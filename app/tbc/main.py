@@ -4,6 +4,7 @@ import asyncio
 import importlib
 import json
 import logging
+import math
 from datetime import date, datetime, time, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -1320,6 +1321,9 @@ async def remove_storage_target(request: Request, storage_id: int):
     return _redirect("/storage")
 
 
+RECORDINGS_PAGE_SIZE = 60
+
+
 @app.get("/recordings", response_class=HTMLResponse)
 async def recordings(
     request: Request,
@@ -1327,19 +1331,31 @@ async def recordings(
     detection_key: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
+    search: str | None = Query(None),
+    page: int = Query(1),
 ):
     guard = _require_login(request)
     if guard:
         return guard
     user = _current_user(request)
+    current_page = max(1, page)
+    common_filters = {
+        "camera_id": camera_id,
+        "detection_key": detection_key or None,
+        "date_from": date_from or None,
+        "date_to": date_to or None,
+        "search": search or None,
+        "user_id": int(user["id"]),
+        "role": str(user["role"]),
+    }
+    total = database.count_recordings(SETTINGS.database_path, **common_filters)
+    total_pages = max(1, math.ceil(total / RECORDINGS_PAGE_SIZE))
+    current_page = min(current_page, total_pages)
     rows = database.list_recordings(
         SETTINGS.database_path,
-        camera_id=camera_id,
-        detection_key=detection_key or None,
-        date_from=date_from or None,
-        date_to=date_to or None,
-        user_id=int(user["id"]),
-        role=str(user["role"]),
+        **common_filters,
+        limit=RECORDINGS_PAGE_SIZE,
+        offset=(current_page - 1) * RECORDINGS_PAGE_SIZE,
     )
     cameras_for_user = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
     return templates.TemplateResponse(
@@ -1357,7 +1373,12 @@ async def recordings(
                 "detection_key": detection_key or "",
                 "date_from": date_from or "",
                 "date_to": date_to or "",
+                "search": search or "",
             },
+            "total": total,
+            "page": current_page,
+            "total_pages": total_pages,
+            "page_size": RECORDINGS_PAGE_SIZE,
             "flash": _pop_flash(request),
         },
     )

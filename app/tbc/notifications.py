@@ -35,6 +35,10 @@ def _send(channel: dict[str, Any], title: str, message: str, recording: dict[str
         _pushover(channel, title, message)
     elif kind == "home_assistant":
         _home_assistant(channel, title, message)
+    elif kind == "ntfy":
+        _ntfy(channel, title, message, recording, public_base_url)
+    elif kind == "gotify":
+        _gotify(channel, title, message, recording, public_base_url)
     else:
         _webhook(channel, title, message, recording, public_base_url)
 
@@ -112,6 +116,44 @@ def _home_assistant(channel: dict[str, Any], title: str, message: str) -> None:
         return
     domain, service_name = service.split(".", 1) if "." in service else ("notify", service)
     _post_json(f"{base_url}/api/services/{domain}/{service_name}", {"title": title, "message": message}, token=token)
+
+
+def _ntfy(channel: dict[str, Any], title: str, message: str, recording: dict[str, Any] | None, public_base_url: str) -> None:
+    """Publishes to a self-hosted (or ntfy.sh) topic. `url` is the full topic URL,
+    e.g. https://ntfy.example.com/tbc-alerts - see https://docs.ntfy.sh/publish/."""
+    url = channel.get("url")
+    if not url:
+        return
+    headers = {"Title": title, "Priority": "default"}
+    if channel.get("token"):
+        headers["Authorization"] = f"Bearer {channel['token']}"
+    if recording and public_base_url:
+        headers["Click"] = f"{public_base_url}/recordings/{recording['id']}/media"
+        if int(channel.get("include_snapshot") or 0) == 1:
+            headers["Attach"] = f"{public_base_url}/recordings/{recording['id']}/snapshot"
+    request = urllib.request.Request(url, data=message.encode("utf-8"), headers=headers, method="POST")
+    urllib.request.urlopen(request, timeout=10).read()
+
+
+def _gotify(channel: dict[str, Any], title: str, message: str, recording: dict[str, Any] | None, public_base_url: str) -> None:
+    """Posts to a self-hosted Gotify server. `url` is the server base URL, `token`
+    is the application token - see https://gotify.net/api-docs#/message/createMessage."""
+    base_url = (channel.get("url") or "").rstrip("/")
+    token = channel.get("token")
+    if not base_url or not token:
+        return
+    payload: dict[str, Any] = {"title": title, "message": message, "priority": 5}
+    if recording and public_base_url:
+        payload["extras"] = {
+            "client::notification": {"click": {"url": f"{public_base_url}/recordings/{recording['id']}/media"}}
+        }
+    request = urllib.request.Request(
+        f"{base_url}/message?token={urllib.parse.quote(token)}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    urllib.request.urlopen(request, timeout=10).read()
 
 
 def _post_json(url: str, payload: dict[str, Any], token: str | None = None) -> None:
