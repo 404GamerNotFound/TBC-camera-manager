@@ -162,9 +162,12 @@
               detection_key: "sdcard",
               source: "sdcard",
             }));
+        } else {
+          console.error(`[activity] SD card fetch for camera ${camera.id} failed (${response.status}):`, payload.error || payload);
         }
-      } catch (_) {
+      } catch (error) {
         // network/camera error: leave this camera's SD lane empty rather than breaking the page
+        console.error(`[activity] SD card fetch for camera ${camera.id} threw:`, error);
       } finally {
         entry.loading = false;
         entry.loaded = true;
