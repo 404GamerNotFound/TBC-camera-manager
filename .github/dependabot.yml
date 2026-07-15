@@ -29,6 +29,13 @@ updates:
       time: "04:30"
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    ignore:
+      # Python language-version upgrades require a manual compatibility check
+      # because the standard and optional Coral images use native packages.
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
     commit-message:
       prefix: "deps(docker)"
 

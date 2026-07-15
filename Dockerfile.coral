@@ -11,7 +11,9 @@
 # as a documented starting point, not a verified recipe; check
 # https://coral.ai/docs/accelerator/get-started/ for the current package locations
 # before relying on it, since Google has changed hosting for these packages before.
-FROM python:3.14-slim
+# Keep the Coral image on Python 3.11 because pycoral and tflite-runtime publish
+# wheels only for selected Python versions and currently do not support 3.14.
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

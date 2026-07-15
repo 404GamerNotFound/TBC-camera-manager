@@ -1,4 +1,6 @@
-FROM python:3.14-slim
+# Python 3.13 is intentional: some camera-provider dependencies are not yet
+# compatible with Python 3.14.
+FROM python:3.13-slim
 
 ARG BUILD_VERSION=dev
 ARG BUILD_ARCH=amd64
