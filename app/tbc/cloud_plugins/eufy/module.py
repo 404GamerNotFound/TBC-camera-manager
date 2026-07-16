@@ -68,7 +68,7 @@ class EufyCloudModule(CloudAccountModule):
             camera_count,
             station_count,
         )
-        return f"Mit Eufy Security verbunden ({camera_count} Kamera(s), {station_count} Station(en))"
+        return f"Connected to Eufy Security ({camera_count} camera(s), {station_count} station(s))"
 
     async def discover_devices(self, account: dict[str, Any]) -> list[CloudDevice]:
         debug_id = token_hex(4)
@@ -104,7 +104,7 @@ def _client_session():
     try:
         from aiohttp import ClientSession
     except ImportError as exc:
-        raise CloudConnectionError("aiohttp ist nicht installiert") from exc
+        raise CloudConnectionError("aiohttp is not installed") from exc
     return ClientSession()
 
 
@@ -113,14 +113,14 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
         from eufy_security import API, InvalidCredentialsError
         from eufy_security.errors import NeedVerifyCodeError
     except ImportError as exc:
-        raise CloudConnectionError("pyeufysecurity ist nicht installiert") from exc
+        raise CloudConnectionError("pyeufysecurity is not installed") from exc
     email = str(account.get("email") or "").strip()
     password = str(account.get("password") or "")
     country = str(account.get("country") or "DE").strip().upper()
     if not email or not password:
-        raise CloudConnectionError("E-Mail-Adresse und Passwort sind erforderlich")
+        raise CloudConnectionError("Email address and password are required")
     if len(country) != 2 or not country.isalpha():
-        raise CloudConnectionError("Der Ländercode muss aus zwei Buchstaben bestehen")
+        raise CloudConnectionError("The country code must consist of two letters")
     verification_code = str(account.get("verification_code") or "").strip()
     challenge_key = _challenge_key(account, email, country)
     pending = _get_pending_challenge(challenge_key) if verification_code else None
@@ -156,13 +156,13 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
     except InvalidCredentialsError as exc:
         if verification_code:
             raise CloudConnectionError(
-                "Der Eufy-Bestätigungscode ist ungültig oder abgelaufen"
+                "The Eufy verification code is invalid or has expired"
             ) from exc
         raise
     except NeedVerifyCodeError as exc:
         if verification_code:
             raise CloudConnectionError(
-                "Der Eufy-Bestätigungscode ist ungültig oder abgelaufen"
+                "The Eufy verification code is invalid or has expired"
             ) from exc
         await _send_verification_code(login_session, country)
         temporary_token = _temporary_token(login_session)
@@ -174,8 +174,8 @@ async def _login(account: dict[str, Any], session: Any, debug_id: str = "unknown
             CHALLENGE_TTL_SECONDS,
         )
         raise CloudVerificationRequired(
-            "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte eingeben, "
-            "um die Anmeldung abzuschließen.",
+            "Eufy sent a verification code by email. Please enter it "
+            "to complete sign-in.",
             field_key="verification_code",
         ) from exc
     await api.async_update_device_info()
@@ -195,7 +195,7 @@ def _temporary_token(session: "_EufyLoginSession") -> str:
     auth_data = session.login_response.get("data") or {}
     token = str(auth_data.get("auth_token") or "")
     if not token:
-        raise CloudConnectionError("Eufy hat für die Code-Sitzung keinen temporären Token geliefert")
+        raise CloudConnectionError("Eufy did not provide a temporary token for the code session")
     return token
 
 
@@ -356,12 +356,12 @@ async def _send_verification_code(session: _EufyLoginSession, country: str) -> N
     try:
         from eufy_security.api import DEFAULT_HEADERS
     except ImportError as exc:
-        raise CloudConnectionError("pyeufysecurity ist nicht installiert") from exc
+        raise CloudConnectionError("pyeufysecurity is not installed") from exc
     auth_data = session.login_response.get("data") or {}
     token = str(auth_data.get("auth_token") or "")
     if not session.api_base or not token:
         raise CloudConnectionError(
-            "Eufy verlangt einen Bestätigungscode, konnte ihn aber nicht anfordern"
+            "Eufy requires a verification code but it could not be requested"
         )
     headers = {**DEFAULT_HEADERS, "Country": country, "x-auth-token": token}
     async with session.raw_session.post(
@@ -378,9 +378,9 @@ async def _send_verification_code(session: _EufyLoginSession, country: str) -> N
             data=result,
         )
     if not isinstance(result, dict) or result.get("code") != 0:
-        message = result.get("msg") if isinstance(result, dict) else "unbekannter Fehler"
+        message = result.get("msg") if isinstance(result, dict) else "unknown error"
         raise CloudConnectionError(
-            f"Eufy-Bestätigungscode konnte nicht angefordert werden: {message}"
+            f"Eufy verification code could not be requested: {message}"
         )
     LOGGER.info(
         "Eufy-Bestätigungscode angefordert | debug_id=%s delivery=email",
@@ -400,7 +400,7 @@ async def _trust_device(api: Any, verification_code: str, debug_id: str) -> None
         )
     except Exception as exc:
         raise CloudConnectionError(
-            "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden"
+            "Eufy sign-in succeeded, but the device could not be saved as trusted"
         ) from exc
     LOGGER.info("Eufy-Client als vertrauenswürdig registriert | debug_id=%s", debug_id)
 
@@ -436,7 +436,7 @@ def _error_message(exc: Exception) -> str:
             VerifyCodeNoneMatchError,
         )
     except ImportError:
-        return f"Eufy-Verbindung fehlgeschlagen: {exc}"
+        return f"Eufy connection failed: {exc}"
     if isinstance(exc, InvalidCredentialsError):
         return "Eufy-Anmeldung fehlgeschlagen: E-Mail-Adresse oder Passwort falsch"
     if isinstance(
@@ -448,13 +448,13 @@ def _error_message(exc: Exception) -> str:
             VerifyCodeNoneMatchError,
         ),
     ):
-        return "Der Eufy-Bestätigungscode ist ungültig oder abgelaufen"
+        return "The Eufy verification code is invalid or has expired"
     if isinstance(exc, CaptchaRequiredError):
         return (
-            "Eufy verlangt eine CAPTCHA-Prüfung. Bitte das Konto einmal in der "
-            "Eufy-App bestätigen und danach erneut testen."
+            "Eufy requires a CAPTCHA check. Please confirm the account once in the "
+            "Eufy app and then test again."
         )
-    return f"Eufy-Verbindung fehlgeschlagen: {exc}"
+    return f"Eufy connection failed: {exc}"
 
 
 def create_module():

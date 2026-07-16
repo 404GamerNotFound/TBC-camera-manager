@@ -134,7 +134,7 @@ def probe_onvif(
 
         return OnvifProbe(
             success=True,
-            message="ONVIF-Verbindung erfolgreich",
+            message="ONVIF connection successful",
             manufacturer=_field(info_data, "Manufacturer"),
             model=_field(info_data, "Model"),
             firmware=_field(info_data, "FirmwareVersion"),
@@ -158,5 +158,5 @@ def _field(data: Any, name: str) -> str | None:
 def _friendly_error(exc: Exception) -> str:
     message = str(exc)
     if "authority failure" in message.lower() or "notauthorized" in message.lower():
-        return "ONVIF-Anmeldung abgelehnt: Kamera-Benutzer, Passwort und Kamerazeit prüfen"
-    return f"ONVIF-Verbindung fehlgeschlagen: {message}"
+        return "ONVIF sign-in rejected: check the camera username, password, and camera time"
+    return f"ONVIF connection failed: {message}"

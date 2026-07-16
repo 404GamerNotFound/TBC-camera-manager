@@ -47,7 +47,7 @@ def cleanup_preview(database_path: str) -> list[dict[str, Any]]:
             cutoff = now - timedelta(days=int(max_age_days))
             for recording in matching:
                 if _parse_dt(recording.get("started_at")) < cutoff:
-                    selected[int(recording["id"])] = {**recording, "cleanup_reason": f"älter als {max_age_days} Tage"}
+                    selected[int(recording["id"])] = {**recording, "cleanup_reason": f"older than {max_age_days} days"}
 
         max_size_gb = rule.get("max_size_gb")
         if max_size_gb not in (None, ""):
@@ -60,7 +60,7 @@ def cleanup_preview(database_path: str) -> list[dict[str, Any]]:
                     kept.append(recording)
                     total += size
                 else:
-                    selected[int(recording["id"])] = {**recording, "cleanup_reason": f"über {max_size_gb} GB Limit"}
+                    selected[int(recording["id"])] = {**recording, "cleanup_reason": f"over the {max_size_gb} GB limit"}
 
     return sorted(selected.values(), key=lambda item: str(item.get("started_at") or ""))
 

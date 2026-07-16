@@ -12,7 +12,7 @@ class RunPluginTestsTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(result.ran)
         self.assertFalse(result.passed)
-        self.assertIn("Keine Tests", result.summary)
+        self.assertIn("no tests", result.summary)
 
     async def test_passing_tests_are_reported_as_passed(self):
         with tempfile.TemporaryDirectory() as plugin_dir:

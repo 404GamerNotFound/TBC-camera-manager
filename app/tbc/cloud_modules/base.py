@@ -114,13 +114,13 @@ def normalize_account_configuration(
             if field.minimum is not None and number < field.minimum:
                 raise CloudAccountValidationError(f"{field.label} muss mindestens {field.minimum} sein")
             if field.maximum is not None and number > field.maximum:
-                raise CloudAccountValidationError(f"{field.label} darf höchstens {field.maximum} sein")
+                raise CloudAccountValidationError(f"{field.label} must be at most {field.maximum}")
             result[field.key] = number
             continue
         if field.field_type == CloudAccountFieldType.SELECT:
             allowed = {option.value for option in field.options}
             if value not in allowed:
-                raise CloudAccountValidationError(f"Ungültige Auswahl für {field.label}")
+                raise CloudAccountValidationError(f"Invalid selection for {field.label}")
         result[field.key] = value
     return result
 
@@ -151,8 +151,8 @@ class CloudAccountModule(ABC):
     label: str
     description: str = ""
     auth_type: CloudAuthType = CloudAuthType.CREDENTIALS
-    identifier_label: str = "Benutzername"
-    secret_label: str = "Passwort"
+    identifier_label: str = "Username"
+    secret_label: str = "Password"
     requires_host: bool = False
     default_port: int = 443
     account_fields: tuple[CloudAccountField, ...] = ()

@@ -160,7 +160,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
     async def test_connection_reports_camera_and_station_count(self):
         message = await self.module.test_connection(self.account)
 
-        self.assertIn("2 Kamera(s)", message)
+        self.assertIn("2 camera(s)", message)
         self.assertIn("1 Station(en)", message)
         self.assertEqual(FakeApi.last_instance.country, "DE")
         self.assertTrue(FakeClientSession.last_instance.closed)

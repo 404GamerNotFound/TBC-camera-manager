@@ -96,7 +96,7 @@ class DashboardSnapshotManager:
             LOGGER.warning(
                 "Dashboard-Snapshot für Kamera %s fehlgeschlagen: %s",
                 camera_id,
-                redact_rtsp_credentials(message[-1] if message else "unbekannter Fehler"),
+                redact_rtsp_credentials(message[-1] if message else "unknown error"),
             )
         except subprocess.TimeoutExpired:
             LOGGER.warning("Dashboard-Snapshot für Kamera %s hat das Zeitlimit überschritten", camera_id)

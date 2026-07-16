@@ -88,13 +88,13 @@ class ApiAuthGateTests(unittest.TestCase):
     def test_enabled_with_key_required_rejects_missing_key(self):
         key_hash = hash_api_key(generate_api_key())
         config = {"enabled": True, "require_api_key": True, "api_key_hash": key_hash}
-        self.assertEqual(api_auth_error(config, None, None), (401, "ungültiger oder fehlender API-Key"))
+        self.assertEqual(api_auth_error(config, None, None), (401, "invalid or missing API key"))
 
     def test_enabled_with_key_required_rejects_wrong_key(self):
         key_hash = hash_api_key(generate_api_key())
         config = {"enabled": True, "require_api_key": True, "api_key_hash": key_hash}
         error = api_auth_error(config, "Bearer wrong-key", None)
-        self.assertEqual(error, (401, "ungültiger oder fehlender API-Key"))
+        self.assertEqual(error, (401, "invalid or missing API key"))
 
     def test_enabled_with_key_required_accepts_correct_bearer_token(self):
         key = generate_api_key()
@@ -110,12 +110,12 @@ class ApiAuthGateTests(unittest.TestCase):
         key = generate_api_key()
         config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
         error = api_auth_error(config, "Bearer wrong-key", key)
-        self.assertEqual(error, (401, "ungültiger oder fehlender API-Key"))
+        self.assertEqual(error, (401, "invalid or missing API key"))
 
     def test_no_key_ever_generated_always_rejects(self):
         config = {"enabled": True, "require_api_key": True, "api_key_hash": None}
         error = api_auth_error(config, "Bearer anything", None)
-        self.assertEqual(error, (401, "ungültiger oder fehlender API-Key"))
+        self.assertEqual(error, (401, "invalid or missing API key"))
 
 
 class CameraPublicDictTests(unittest.TestCase):

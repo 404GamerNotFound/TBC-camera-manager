@@ -77,20 +77,20 @@ def read_manifest(path: Path) -> PluginManifest:
     except (OSError, json.JSONDecodeError) as exc:
         raise CameraPluginError(f"Manifest konnte nicht gelesen werden: {exc}") from exc
     if not isinstance(raw, dict):
-        raise CameraPluginError("manifest.json muss ein JSON-Objekt enthalten")
+        raise CameraPluginError("manifest.json must contain a JSON object")
     try:
         schema_version = int(raw.get("schema_version") or 0)
     except (TypeError, ValueError) as exc:
-        raise CameraPluginError("Plugin-Schemaversion muss eine Zahl sein") from exc
+        raise CameraPluginError("The plugin schema version must be a number") from exc
     if schema_version != PLUGIN_SCHEMA_VERSION:
-        raise CameraPluginError(f"Nicht unterstützte Plugin-Schemaversion: {schema_version}")
+        raise CameraPluginError(f"Unsupported plugin schema version: {schema_version}")
     key = str(raw.get("key") or "").strip().lower()
     if not PLUGIN_KEY_PATTERN.fullmatch(key):
-        raise CameraPluginError("Ungültiger Plugin-Schlüssel")
+        raise CameraPluginError("Invalid plugin key")
     label = str(raw.get("label") or "").strip()
     version = str(raw.get("version") or "").strip()
     if not label or not version:
-        raise CameraPluginError("Plugin-Name und Version sind erforderlich")
+        raise CameraPluginError("Plugin name and version are required")
     entrypoint = str(raw.get("entrypoint") or "plugin.py").strip()
     entrypoint_path = PurePosixPath(entrypoint)
     if (
@@ -99,17 +99,17 @@ def read_manifest(path: Path) -> PluginManifest:
         or len(entrypoint_path.parts) != 1
         or entrypoint_path.suffix != ".py"
     ):
-        raise CameraPluginError("Ungültiger Plugin-Einstiegspunkt")
+        raise CameraPluginError("Invalid plugin entry point")
     capability_values = raw.get("capabilities", [])
     if not isinstance(capability_values, list):
-        raise CameraPluginError("capabilities muss eine JSON-Liste sein")
+        raise CameraPluginError("capabilities must be a JSON list")
     try:
         capabilities = frozenset(CameraCapability(str(value)) for value in capability_values)
     except ValueError as exc:
-        raise CameraPluginError(f"Unbekannte Plugin-Fähigkeit: {exc}") from exc
+        raise CameraPluginError(f"Unknown plugin capability: {exc}") from exc
     ports = raw.get("ports") or {}
     if not isinstance(ports, dict):
-        raise CameraPluginError("ports muss ein JSON-Objekt sein")
+        raise CameraPluginError("ports must be a JSON object")
     return PluginManifest(
         schema_version=schema_version,
         key=key,
@@ -139,7 +139,7 @@ def load_plugin_module(package: PluginPackage) -> CameraModule:
         submodule_search_locations=[str(package.path)],
     )
     if spec is None or spec.loader is None:
-        raise CameraPluginError("Plugin-Einstiegspunkt konnte nicht geladen werden")
+        raise CameraPluginError("The plugin entry point could not be loaded")
     imported = importlib.util.module_from_spec(spec)
     sys.modules[import_name] = imported
     try:
@@ -150,7 +150,7 @@ def load_plugin_module(package: PluginPackage) -> CameraModule:
         sys.modules.pop(import_name, None)
         raise CameraPluginError(f"Plugin-Code konnte nicht geladen werden: {exc}") from exc
     if not isinstance(module, CameraModule):
-        raise CameraPluginError("plugin.py muss create_module() oder MODULE mit einem CameraModule bereitstellen")
+        raise CameraPluginError("plugin.py must provide create_module() or MODULE with a CameraModule")
     manifest = package.manifest
     module.key = manifest.key
     module.label = manifest.label
@@ -186,13 +186,13 @@ def _install_plugin_api() -> None:
 
 def install_plugin_archive(archive: bytes, external_path: str) -> PluginPackage:
     if not archive or len(archive) > MAX_ARCHIVE_BYTES:
-        raise CameraPluginError("Plugin-Datei ist leer oder größer als 10 MB")
+        raise CameraPluginError("The plugin file is empty or larger than 10 MB")
     root = Path(external_path)
     root.mkdir(parents=True, exist_ok=True)
     try:
         bundle = zipfile.ZipFile(BytesIO(archive))
     except zipfile.BadZipFile as exc:
-        raise CameraPluginError("Plugin-Datei ist kein gültiges ZIP-Archiv") from exc
+        raise CameraPluginError("The plugin file is not a valid ZIP archive") from exc
     with bundle:
         members, prefix = _validated_members(bundle)
         manifest_member = next(member for member in members if _relative_name(member.filename, prefix) == "manifest.json")
@@ -214,7 +214,7 @@ def install_plugin_archive(archive: bytes, external_path: str) -> PluginPackage:
             (staging / "manifest.json").write_bytes(manifest_raw)
             manifest = read_manifest(staging / "manifest.json")
             if (builtin_plugins_path() / manifest.key).exists():
-                raise CameraPluginError("Eingebaute Plugins können nicht überschrieben werden")
+                raise CameraPluginError("Built-in plugins cannot be overwritten")
             package = PluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key
@@ -247,42 +247,42 @@ def export_plugin_archive(package: PluginPackage) -> bytes:
 def remove_external_plugin(key: str, external_path: str) -> None:
     normalized = str(key).strip().lower()
     if not PLUGIN_KEY_PATTERN.fullmatch(normalized):
-        raise CameraPluginError("Ungültiger Plugin-Schlüssel")
+        raise CameraPluginError("Invalid plugin key")
     if (builtin_plugins_path() / normalized).exists():
-        raise CameraPluginError("Eingebaute Plugins können nicht entfernt werden")
+        raise CameraPluginError("Built-in plugins cannot be removed")
     target = Path(external_path) / normalized
     if not target.is_dir():
-        raise CameraPluginError("Plugin ist nicht installiert")
+        raise CameraPluginError("The plugin is not installed")
     shutil.rmtree(target)
 
 
 def _validated_members(bundle: zipfile.ZipFile) -> tuple[list[zipfile.ZipInfo], str]:
     members = bundle.infolist()
     if not members or len(members) > MAX_FILES:
-        raise CameraPluginError("Plugin-Archiv enthält zu viele oder keine Dateien")
+        raise CameraPluginError("The plugin archive contains too many files or no files")
     total_size = 0
     manifest_candidates: list[str] = []
     for member in members:
         path = PurePosixPath(member.filename)
         if path.is_absolute() or ".." in path.parts or "\\" in member.filename:
-            raise CameraPluginError("Plugin-Archiv enthält einen unsicheren Dateipfad")
+            raise CameraPluginError("The plugin archive contains an unsafe file path")
         mode = member.external_attr >> 16
         if mode and stat.S_ISLNK(mode):
-            raise CameraPluginError("Symbolische Links sind in Plugins nicht erlaubt")
+            raise CameraPluginError("Symbolic links are not allowed in plugins")
         if not member.is_dir() and path.suffix.lower() not in ALLOWED_SUFFIXES:
             raise CameraPluginError(f"Nicht erlaubter Dateityp: {path.suffix or member.filename}")
         total_size += member.file_size
         if total_size > MAX_EXTRACTED_BYTES:
-            raise CameraPluginError("Entpacktes Plugin ist größer als 25 MB")
+            raise CameraPluginError("The extracted plugin is larger than 25 MB")
         if path.name == "manifest.json" and len(path.parts) <= 2:
             manifest_candidates.append(member.filename)
     if len(manifest_candidates) != 1:
-        raise CameraPluginError("Plugin muss genau eine manifest.json im Hauptverzeichnis enthalten")
+        raise CameraPluginError("The plugin must contain exactly one manifest.json in its root directory")
     manifest_path = PurePosixPath(manifest_candidates[0])
     prefix = f"{manifest_path.parts[0]}/" if len(manifest_path.parts) == 2 else ""
     for member in members:
         if prefix and not member.filename.startswith(prefix):
-            raise CameraPluginError("Alle Plugin-Dateien müssen im selben Hauptverzeichnis liegen")
+            raise CameraPluginError("All plugin files must be in the same root directory")
     return members, prefix
 
 
@@ -294,7 +294,7 @@ def _valid_port(value: Any, fallback: int) -> int:
     try:
         port = int(value if value is not None else fallback)
     except (TypeError, ValueError) as exc:
-        raise CameraPluginError("Portangaben müssen Zahlen sein") from exc
+        raise CameraPluginError("Port values must be numbers") from exc
     if not 1 <= port <= 65535:
-        raise CameraPluginError("Portangaben müssen zwischen 1 und 65535 liegen")
+        raise CameraPluginError("Port values must be between 1 and 65535")
     return port

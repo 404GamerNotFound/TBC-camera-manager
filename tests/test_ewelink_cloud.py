@@ -101,7 +101,7 @@ class EwelinkCloudModuleTests(unittest.IsolatedAsyncioTestCase):
     async def test_connection_reports_device_count(self):
         message = await self.module.test_connection(self.account)
 
-        self.assertIn("2 Gerät(e)", message)
+        self.assertIn("2 device(s)", message)
         self.assertEqual(FakeEWeLink.instance.app_cred.id, "app-123")
         self.assertTrue(FakeEWeLink.instance.closed)
 

@@ -106,7 +106,7 @@ class DesignThemePackageTests(unittest.TestCase):
 
     def test_builtin_theme_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "nicht überschrieben"):
+            with self.assertRaisesRegex(ThemePackageError, "cannot be overwritten"):
                 install_theme_archive(theme_archive(key="standard"), external_path)
 
     def test_builtin_theme_cannot_be_removed(self):
@@ -116,7 +116,7 @@ class DesignThemePackageTests(unittest.TestCase):
 
     def test_invalid_zip_is_reported_as_theme_error(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "kein gültiges ZIP"):
+            with self.assertRaisesRegex(ThemePackageError, "not a valid ZIP"):
                 install_theme_archive(b"not a zip", external_path)
 
     def test_unknown_theme_key_falls_back_to_standard(self):
@@ -137,7 +137,7 @@ class DesignThemePackageTests(unittest.TestCase):
                     },
                     handle,
                 )
-            with self.assertRaisesRegex(ThemePackageError, "Ungültiges Stylesheet"):
+            with self.assertRaisesRegex(ThemePackageError, "Invalid stylesheet"):
                 read_manifest(__import__("pathlib").Path(manifest_path))
 
 

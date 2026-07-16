@@ -9,7 +9,7 @@ def build_camera_plugin_template() -> bytes:
 
     Meant to be downloaded, edited (key/label/probe() logic) and either
     re-uploaded as a ZIP or pushed to a public GitHub repo for use with
-    Admin -> Externe Quellen. See docs/plugin-sources.md.
+    Admin -> External sources. See docs/plugin-sources.md.
     """
     files = {
         "manifest.json": """{
@@ -17,7 +17,7 @@ def build_camera_plugin_template() -> bytes:
   "key": "acme_camera",
   "label": "Acme Camera",
   "version": "1.0.0",
-  "description": "Vorlage fuer ein eigenes Kamera-Plugin - Schluessel, Namen und probe() anpassen",
+  "description": "Template for a custom camera plugin - adjust the key, name, and probe()",
   "entrypoint": "plugin.py",
   "capabilities": ["live"],
   "ports": {"onvif": 8000, "http": 80, "rtsp": 554}
@@ -37,18 +37,18 @@ from tbc_camera_api import CameraModule, CameraSnapshot
 
 
 class AcmeCameraModule(CameraModule):
-    """Vorlage fuer ein eigenes TBC-Kamera-Plugin.
+    """Template for a custom TBC camera plugin.
 
-    Diese Klasse, den Schluessel in manifest.json und probe() an die eigene
-    Kamera-API anpassen. `camera` enthaelt host/onvif_port/http_port/
-    username/password aus der TBC-Kamerakonfiguration.
+    Adjust this class, the key in manifest.json, and probe() to match the
+    actual camera API. `camera` contains host/onvif_port/http_port/
+    username/password from the TBC camera configuration.
     """
 
     async def probe(self, camera: dict[str, Any]) -> CameraSnapshot:
-        # TODO: Hersteller-API abfragen und das Ergebnis hier eintragen.
+        # TODO: Query the vendor API and record the result here.
         return CameraSnapshot(
             status="ok",
-            message="Beispielantwort - probe() noch nicht implementiert",
+            message="Example response - probe() not implemented yet",
             manufacturer="Acme",
             model="Camera",
         )
@@ -74,18 +74,18 @@ class AcmeCameraModuleTests(unittest.IsolatedAsyncioTestCase):
 if __name__ == "__main__":
     unittest.main()
 ''',
-        "README.md": """# Acme Camera (Vorlage)
+        "README.md": """# Acme Camera (template)
 
-Diese Vorlage ist ein vollstaendiges, installierbares Kamera-Plugin fuer TBC.
-Vor der Verwendung anpassen:
+This template is a complete, installable camera plugin for TBC.
+Before using it:
 
-1. `manifest.json`: `key`, `label`, `description` und die Standard-Ports fuer die eigene Kamera setzen.
-2. `module.py`: `probe()` mit der eigenen Kamera-API implementieren.
-3. `tests/test_module.py`: eigene Tests ergaenzen - `Admin -> Kamera-Plugins -> Tests ausfuehren`
-   fuehrt sie direkt in TBC aus.
+1. `manifest.json`: set `key`, `label`, `description`, and the default ports for the actual camera.
+2. `module.py`: implement `probe()` against the actual camera API.
+3. `tests/test_module.py`: add your own tests - `Admin -> Camera plugins -> Run tests`
+   runs them directly in TBC.
 
-Siehe docs/camera-modules.md (im TBC-Repository) fuer den vollstaendigen Vertrag
-(`CameraModule`, `CameraSnapshot`, optionale Faehigkeiten wie `CONTROL`/`FIRMWARE`).
+See docs/camera-modules.md (in the TBC repository) for the full contract
+(`CameraModule`, `CameraSnapshot`, optional capabilities like `CONTROL`/`FIRMWARE`).
 """,
     }
     return _build_zip(files)
@@ -99,21 +99,21 @@ def build_cloud_plugin_template() -> bytes:
   "key": "acme_cloud",
   "label": "Acme Cloud",
   "version": "1.0.0",
-  "description": "Vorlage fuer ein eigenes Cloud-Konto-Plugin - Schluessel, Namen und Felder anpassen",
+  "description": "Template for a custom cloud-account plugin - adjust the key, name, and fields",
   "entrypoint": "plugin.py",
   "auth_type": "credentials",
   "verification_support": "not_applicable",
   "account_fields": [
     {
       "key": "email",
-      "label": "E-Mail-Adresse",
+      "label": "Email address",
       "type": "email",
       "required": true,
       "autocomplete": "username"
     },
     {
       "key": "password",
-      "label": "Passwort",
+      "label": "Password",
       "type": "password",
       "required": true,
       "autocomplete": "current-password"
@@ -135,27 +135,27 @@ from tbc_cloud_api import CloudAccountModule, CloudConnectionError, CloudDevice
 
 
 class AcmeCloudModule(CloudAccountModule):
-    """Vorlage fuer ein eigenes TBC-Cloud-Konto-Plugin.
+    """Template for a custom TBC cloud-account plugin.
 
-    Diese Klasse, den Schluessel in manifest.json und die Anmelde-/Geraetesuche-
-    Logik an die eigene Cloud-API anpassen. `account` enthaelt die in
-    manifest.json deklarierten Felder (hier: email, password).
+    Adjust this class, the key in manifest.json, and the sign-in/device-
+    discovery logic to match the actual cloud API. `account` contains the
+    fields declared in manifest.json (here: email, password).
 
-    Verlangt der Anbieter einen Bestaetigungscode (2FA/E-Mail/SMS), ein
-    eigenes account_fields-Feld mit "transient": true dafuer anlegen und bei
-    Bedarf `CloudVerificationRequired(message, field_key="...")` auslösen -
-    siehe docs/cloud-accounts.md, Abschnitt "Zwei-Faktor-/Bestaetigungscodes".
+    If the provider requires a verification code (2FA/email/SMS), add a
+    dedicated account_fields entry with "transient": true and raise
+    `CloudVerificationRequired(message, field_key="...")` where needed -
+    see docs/cloud-accounts.md, section "Two-factor/verification codes".
     """
 
     async def test_connection(self, account: dict[str, Any]) -> str:
         email = str(account.get("email") or "")
         if not email:
-            raise CloudConnectionError("E-Mail-Adresse ist erforderlich")
-        # TODO: bei der eigenen Cloud-API anmelden.
-        return "Beispielantwort - test_connection() noch nicht implementiert"
+            raise CloudConnectionError("Email address is required")
+        # TODO: Sign in to the actual cloud API.
+        return "Example response - test_connection() not implemented yet"
 
     async def discover_devices(self, account: dict[str, Any]) -> list[CloudDevice]:
-        # TODO: Geraeteliste von der eigenen Cloud-API abfragen.
+        # TODO: Query the device list from the actual cloud API.
         return []
 
 
@@ -187,21 +187,21 @@ class AcmeCloudModuleTests(unittest.IsolatedAsyncioTestCase):
 if __name__ == "__main__":
     unittest.main()
 ''',
-        "README.md": """# Acme Cloud (Vorlage)
+        "README.md": """# Acme Cloud (template)
 
-Diese Vorlage ist ein vollstaendiges, installierbares Cloud-Konto-Plugin fuer TBC.
-Vor der Verwendung anpassen:
+This template is a complete, installable cloud-account plugin for TBC.
+Before using it:
 
-1. `manifest.json`: `key`, `label`, `description`, `account_fields` (Kontoformular)
-   und `verification_support` (`supported`, falls der Anbieter Bestaetigungscodes
-   verlangen kann) an die eigene Cloud-API anpassen.
-2. `module.py`: `test_connection()` und `discover_devices()` implementieren.
-   `CloudDevice.manual_stream_uri` setzen, wenn die Cloud-API eine feste
-   RTSP-/RTSPS-URL liefert - dann bietet TBC automatisch "Als Kamera hinzufuegen" an.
-3. `tests/test_module.py`: eigene Tests ergaenzen - `Admin -> Cloud-Anbieter -> Tests ausfuehren`
-   fuehrt sie direkt in TBC aus.
+1. `manifest.json`: adjust `key`, `label`, `description`, `account_fields` (account form)
+   and `verification_support` (`supported` if the provider can require verification
+   codes) to match the actual cloud API.
+2. `module.py`: implement `test_connection()` and `discover_devices()`.
+   Set `CloudDevice.manual_stream_uri` if the cloud API provides a fixed
+   RTSP/RTSPS URL - TBC then automatically offers "Add as camera".
+3. `tests/test_module.py`: add your own tests - `Admin -> Cloud providers -> Run tests`
+   runs them directly in TBC.
 
-Siehe docs/cloud-accounts.md (im TBC-Repository) fuer den vollstaendigen Vertrag.
+See docs/cloud-accounts.md (in the TBC repository) for the full contract.
 """,
     }
     return _build_zip(files)
@@ -215,32 +215,32 @@ def build_design_theme_template() -> bytes:
   "key": "acme_design",
   "label": "Acme Design",
   "version": "1.0.0",
-  "description": "Vorlage fuer ein eigenes Design - Schluessel, Namen und styles.css anpassen",
+  "description": "Template for a custom design - adjust the key, name, and styles.css",
   "stylesheet": "styles.css"
 }
 """,
-        "static/styles.css": """/* Vorlage fuer ein eigenes TBC-Design.
-   Diese Datei ueberschreibt/ergaenzt das Standard-Stylesheet vollstaendig -
-   siehe docs/design-themes.md (im TBC-Repository) fuer die verwendeten
-   CSS-Variablen und Klassen. Minimal-Beispiel: */
+        "static/styles.css": """/* Template for a custom TBC design.
+   This file fully overrides/extends the standard stylesheet -
+   see docs/design-themes.md (in the TBC repository) for the
+   CSS variables and classes in use. Minimal example: */
 
 :root {
   --accent-color: #2f6f4f;
 }
 """,
-        "README.md": """# Acme Design (Vorlage)
+        "README.md": """# Acme Design (template)
 
-Diese Vorlage ist ein vollstaendiges, installierbares Design fuer TBC. Designs
-enthalten keinen ausfuehrbaren Code - nur `manifest.json` und `static/styles.css`
-(plus optional weitere Bilder/Icons unter `static/`).
+This template is a complete, installable design for TBC. Designs
+contain no executable code - only `manifest.json` and `static/styles.css`
+(plus optionally more images/icons under `static/`).
 
-Vor der Verwendung anpassen:
+Before using it:
 
-1. `manifest.json`: `key`, `label`, `description` anpassen.
-2. `static/styles.css`: eigenes Stylesheet ergaenzen.
+1. `manifest.json`: adjust `key`, `label`, `description`.
+2. `static/styles.css`: add the actual stylesheet.
 
-Siehe docs/design-themes.md (im TBC-Repository) fuer die vollstaendige Liste
-der verwendeten CSS-Variablen und Klassen.
+See docs/design-themes.md (in the TBC repository) for the full list
+of CSS variables and classes in use.
 """,
     }
     return _build_zip(files)

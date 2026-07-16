@@ -102,7 +102,7 @@ class UnifiProtectModuleTests(unittest.IsolatedAsyncioTestCase):
         message = await self.module.test_connection(self.account)
 
         self.assertIn("Zuhause NVR", message)
-        self.assertIn("2 Kamera(s)", message)
+        self.assertIn("2 camera(s)", message)
         self.assertTrue(FakeProtectApiClient.instance.closed)
 
     async def test_test_connection_wraps_auth_failure(self):

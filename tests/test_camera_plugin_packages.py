@@ -104,12 +104,12 @@ class CameraPluginPackageTests(unittest.TestCase):
 
     def test_builtin_plugin_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CameraPluginError, "nicht überschrieben"):
+            with self.assertRaisesRegex(CameraPluginError, "cannot be overwritten"):
                 install_plugin_archive(plugin_archive(key="standard_onvif"), external_path)
 
     def test_invalid_zip_is_reported_as_plugin_error(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CameraPluginError, "kein gültiges ZIP"):
+            with self.assertRaisesRegex(CameraPluginError, "not a valid ZIP"):
                 install_plugin_archive(b"not a zip", external_path)
 
 

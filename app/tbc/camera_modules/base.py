@@ -75,7 +75,7 @@ class CameraModule(ABC):
         end: datetime,
         stream: str = "main",
     ) -> list[dict[str, Any]]:
-        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt kein Kamera-Archiv")
+        raise ModuleFeatureUnsupported(f"The {self.label} module does not support a camera archive")
 
     async def open_archive_download(
         self,
@@ -87,16 +87,16 @@ class CameraModule(ABC):
         end_id: str,
         stream: str = "main",
     ) -> ArchiveDownload:
-        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt kein Kamera-Archiv")
+        raise ModuleFeatureUnsupported(f"The {self.label} module does not support a camera archive")
 
     async def get_control_state(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
-        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Kamerasteuerung")
+        raise ModuleFeatureUnsupported(f"The {self.label} module does not support camera control")
 
     async def send_control(self, camera: dict[str, Any], *, action: str, channel: int = 0, **params: Any) -> dict[str, Any]:
-        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Kamerasteuerung")
+        raise ModuleFeatureUnsupported(f"The {self.label} module does not support camera control")
 
     async def check_firmware(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
-        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Firmware-Prüfung")
+        raise ModuleFeatureUnsupported(f"The {self.label} module does not support firmware checks")
 
     async def update_firmware(
         self,
@@ -105,4 +105,4 @@ class CameraModule(ABC):
         channel: int = 0,
         progress_callback: Any = None,
     ) -> None:
-        raise ModuleFeatureUnsupported(f"Das Modul {self.label} unterstützt keine Firmware-Updates")
+        raise ModuleFeatureUnsupported(f"The {self.label} module does not support firmware updates")

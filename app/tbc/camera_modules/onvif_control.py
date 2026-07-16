@@ -67,7 +67,7 @@ def ptz_move(
     camera = _camera(host, port, username, password)
     token = _profile_token(camera)
     if token is None:
-        raise RuntimeError("ONVIF: Kein Medienprofil für PTZ gefunden")
+        raise RuntimeError("ONVIF: no media profile found for PTZ")
     ptz_service = camera.create_ptz_service()
 
     if command == "Stop":
@@ -123,7 +123,7 @@ async def get_ptz_control_state(camera: dict[str, Any], *, default_port: int = 8
 
 async def send_ptz_control(camera: dict[str, Any], *, action: str, default_port: int = 80, **params: Any) -> dict[str, Any]:
     if action != "ptz":
-        raise ValueError(f"Dieses Modul unterstützt die Aktion '{action}' nicht über ONVIF")
+        raise ValueError(f"This module does not support the action '{action}' via ONVIF")
     command = str(params.get("command") or "").strip()
     if command not in PTZ_COMMANDS:
         raise ValueError(f"Unbekannter PTZ-Befehl: {command}")

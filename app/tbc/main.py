@@ -209,10 +209,11 @@ APP_UPDATE_STATE: dict[str, Any] = {
     "checked_at": None,
     "error": None,
 }
-# MCP-Server (KI-Schnittstelle, siehe docs/mcp.md) - teilt sich Aktivieren-Schalter und
-# API-Key mit der /api/v1/...-Read-API (app/tbc/api_common.py). Der Session-Manager braucht
-# einen eigenen laufenden Task-Group-Kontext, den ein einfaches app.mount() nicht startet -
-# deshalb wird er unten explizit in zusätzlichen on_event-Handlern geöffnet/geschlossen.
+# MCP server (AI interface, see docs/mcp.md) - shares the enable switch and
+# API key with the /api/v1/... read API (app/tbc/api_common.py). The session
+# manager needs its own running task-group context, which a plain app.mount()
+# does not start - so it is opened/closed explicitly below in additional
+# on_event handlers.
 MCP_APP, MCP_SESSION_MANAGER_CM = build_mcp_app(
     database_path=SETTINGS.database_path,
     app_name=SETTINGS.app_name,
@@ -824,11 +825,11 @@ async def check_camera_firmware(request: Request, camera_id: int, channel: int =
             camera_module.check_firmware(camera, channel=channel), timeout=CONTROL_TIMEOUT_SECONDS
         )
     except asyncio.TimeoutError:
-        FIRMWARE_UPDATE_STATE[key] = {"status": "failed", "progress": 0, "message": "Zeitüberschreitung bei der Firmware-Prüfung"}
-        return JSONResponse({"ok": False, "message": "Zeitüberschreitung bei der Firmware-Prüfung"}, status_code=status.HTTP_504_GATEWAY_TIMEOUT)
+        FIRMWARE_UPDATE_STATE[key] = {"status": "failed", "progress": 0, "message": "Firmware check timed out"}
+        return JSONResponse({"ok": False, "message": "Firmware check timed out"}, status_code=status.HTTP_504_GATEWAY_TIMEOUT)
     except Exception as exc:
         FIRMWARE_UPDATE_STATE[key] = {"status": "failed", "progress": 0, "message": str(exc)}
-        return JSONResponse({"ok": False, "message": f"Prüfung fehlgeschlagen: {exc}"}, status_code=status.HTTP_502_BAD_GATEWAY)
+        return JSONResponse({"ok": False, "message": f"Check failed: {exc}"}, status_code=status.HTTP_502_BAD_GATEWAY)
     FIRMWARE_UPDATE_STATE[key] = {
         "status": "available" if result.get("update_available") else "up_to_date",
         "progress": 0,
@@ -850,10 +851,10 @@ async def start_camera_firmware_update(request: Request, camera_id: int, channel
     current = FIRMWARE_UPDATE_STATE.get(key)
     if not current or not current.get("update_available"):
         return JSONResponse(
-            {"ok": False, "message": "Bitte zuerst auf Updates prüfen"}, status_code=status.HTTP_400_BAD_REQUEST
+            {"ok": False, "message": "Check for updates first"}, status_code=status.HTTP_400_BAD_REQUEST
         )
     if current.get("status") == "updating":
-        return JSONResponse({"ok": False, "message": "Update läuft bereits"}, status_code=status.HTTP_409_CONFLICT)
+        return JSONResponse({"ok": False, "message": "An update is already running"}, status_code=status.HTTP_409_CONFLICT)
     FIRMWARE_UPDATE_STATE[key] = {**current, "status": "updating", "progress": 0, "message": "Update wird gestartet…"}
     asyncio.create_task(_run_firmware_update_task(camera_id, camera, camera_module, channel))
     return {"ok": True, "message": "Firmware-Update gestartet"}
@@ -871,14 +872,14 @@ async def camera_firmware_status(request: Request, camera_id: int, channel: int 
 def _firmware_camera_and_module(camera_id: int) -> tuple[dict[str, Any] | None, Any, Any]:
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        return None, None, JSONResponse({"ok": False, "message": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+        return None, None, JSONResponse({"ok": False, "message": "Camera was not found"}, status_code=status.HTTP_404_NOT_FOUND)
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError as exc:
         return None, None, JSONResponse({"ok": False, "message": str(exc)}, status_code=status.HTTP_404_NOT_FOUND)
     if not camera_module.supports(CameraCapability.FIRMWARE):
         return None, None, JSONResponse(
-            {"ok": False, "message": f"Das Modul {camera_module.label} unterstützt keine Firmware-Updates"},
+            {"ok": False, "message": f"The {camera_module.label} module does not support firmware updates"},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     return camera, camera_module, None
@@ -903,7 +904,7 @@ async def _run_firmware_update_task(camera_id: int, camera: dict[str, Any], came
         **entry,
         "status": "done",
         "progress": 100,
-        "message": "Firmware wurde aktualisiert",
+        "message": "Firmware was updated",
         "update_available": False,
     }
     for cache_key in [k for k in CONTROL_STATE_CACHE if k[0] == camera_id]:
@@ -926,16 +927,16 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
 
     guard = _require_admin(request)
     if guard:
-        return fail("Dafür werden Admin-Rechte benötigt", status_code=status.HTTP_403_FORBIDDEN) if is_ajax else guard
+        return fail("Administrator permissions are required", status_code=status.HTTP_403_FORBIDDEN) if is_ajax else guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        return fail("Kamera wurde nicht gefunden", status_code=status.HTTP_404_NOT_FOUND, redirect_to="/cameras")
+        return fail("Camera was not found", status_code=status.HTTP_404_NOT_FOUND, redirect_to="/cameras")
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError as exc:
         return fail(str(exc), status_code=status.HTTP_404_NOT_FOUND)
     if not camera_module.supports(CameraCapability.CONTROL):
-        return fail(f"Das Modul {camera_module.label} unterstützt keine Kamerasteuerung", status_code=status.HTTP_400_BAD_REQUEST)
+        return fail(f"The {camera_module.label} module does not support camera control", status_code=status.HTTP_400_BAD_REQUEST)
     try:
         await asyncio.wait_for(
             camera_module.send_control(camera, action=action, channel=channel, **params),
@@ -944,7 +945,7 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
     except asyncio.TimeoutError:
         LOGGER.info("Control action %s timed out for camera %s channel %s", action, camera_id, channel)
         return fail(
-            f"Befehl abgebrochen: Kamera antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s",
+            f"Command aborted: camera did not respond within {CONTROL_TIMEOUT_SECONDS}s",
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
         )
     except Exception as exc:
@@ -952,7 +953,7 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
         return fail(f"Befehl fehlgeschlagen: {exc}", status_code=status.HTTP_502_BAD_GATEWAY)
     _kick_off_control_probe(camera_id, camera, camera_module, channel=channel)
     if is_ajax:
-        return {"ok": True, "message": "Befehl wurde gesendet"}
+        return {"ok": True, "message": "Command was sent"}
     _set_flash(request, "camera.command_sent")
     return _redirect(f"/cameras/{camera_id}?control_channel={channel}#control")
 
@@ -1118,7 +1119,7 @@ async def create_camera_detection_zone_route(request: Request, camera_id: int):
         return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        return JSONResponse({"ok": False, "message": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse({"ok": False, "message": "Camera was not found"}, status_code=status.HTTP_404_NOT_FOUND)
     payload = await request.json()
     name = str(payload.get("name") or "").strip() or "Zone"
     mode = payload.get("mode") if payload.get("mode") in {"exclude", "loiter"} else "include"
@@ -1133,7 +1134,7 @@ async def create_camera_detection_zone_route(request: Request, camera_id: int):
             for point in raw_points
         ]
     except (TypeError, ValueError, IndexError):
-        return JSONResponse({"ok": False, "message": "Ungültige Punktkoordinaten"}, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse({"ok": False, "message": "Invalid point coordinates"}, status_code=status.HTTP_400_BAD_REQUEST)
     try:
         min_dwell_seconds = max(1, min(3600, int(payload.get("min_dwell_seconds") or 10)))
     except (TypeError, ValueError):
@@ -1682,14 +1683,14 @@ async def sd_card_recordings_api(
         return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
     selected_camera = database.get_camera(SETTINGS.database_path, camera_id)
     if selected_camera is None:
-        return JSONResponse({"error": "Kamera wurde nicht gefunden"}, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse({"error": "Camera was not found"}, status_code=status.HTTP_404_NOT_FOUND)
     try:
         camera_module = get_camera_module(selected_camera.get("module_key"))
     except UnknownCameraModuleError as exc:
         return JSONResponse({"error": str(exc)}, status_code=status.HTTP_400_BAD_REQUEST)
     if not camera_module.supports(CameraCapability.ARCHIVE):
         return JSONResponse(
-            {"error": f"Das Modul {camera_module.label} unterstützt kein Kamera-Archiv"},
+            {"error": f"The {camera_module.label} module does not support a camera archive"},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -1697,7 +1698,7 @@ async def sd_card_recordings_api(
     start_date = _parse_date(date_from, today)
     end_date = _parse_date(date_to, start_date)
     if start_date > end_date:
-        return JSONResponse({"error": "Das Startdatum darf nicht nach dem Enddatum liegen"}, status_code=status.HTTP_400_BAD_REQUEST)
+        return JSONResponse({"error": "The start date must not be after the end date"}, status_code=status.HTTP_400_BAD_REQUEST)
 
     channels = database.list_camera_channels(SETTINGS.database_path, camera_id)
     if not channels:
@@ -1755,7 +1756,7 @@ async def sd_card_media(
         return JSONResponse({"error": str(exc)}, status_code=status.HTTP_400_BAD_REQUEST)
     if not camera_module.supports(CameraCapability.ARCHIVE):
         return JSONResponse(
-            {"error": f"Das Modul {camera_module.label} unterstützt kein Kamera-Archiv"},
+            {"error": f"The {camera_module.label} module does not support a camera archive"},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     try:
@@ -2389,13 +2390,13 @@ async def create_known_face_route(request: Request, name: str = Form(...), photo
         raw = await photo.read(10 * 1024 * 1024 + 1)
         image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
         if image is None:
-            raise ValueError("Bilddatei konnte nicht gelesen werden")
+            raise ValueError("Image file could not be read")
         recognizer = get_face_recognizer(RECOGNITION_MODELS_DIR)
         if recognizer is None:
-            raise RuntimeError("Gesichtserkennungs-Modell konnte nicht geladen werden")
+            raise RuntimeError("Face recognition model could not be loaded")
         faces = recognizer.detect_and_embed(image)
         if not faces:
-            raise ValueError("Kein Gesicht im Foto gefunden")
+            raise ValueError("No face found in the photo")
         face = max(faces, key=lambda item: item["score"])
         database.create_known_face(
             SETTINGS.database_path, name=name.strip(), embedding=json.dumps(face["embedding"])
@@ -2507,7 +2508,7 @@ async def export_camera_module(request: Request, module_key: str):
         None,
     )
     if registration is None or registration.package is None:
-        return JSONResponse({"error": "Plugin kann nicht exportiert werden"}, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse({"error": "Plugin cannot be exported"}, status_code=status.HTTP_404_NOT_FOUND)
     archive = export_plugin_archive(registration.package)
     filename = f"tbc-camera-plugin-{registration.module.key}-{registration.version}.zip"
     return Response(
@@ -2612,7 +2613,7 @@ async def export_cloud_module(request: Request, module_key: str):
         None,
     )
     if registration is None:
-        return JSONResponse({"error": "Plugin kann nicht exportiert werden"}, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse({"error": "Plugin cannot be exported"}, status_code=status.HTTP_404_NOT_FOUND)
     archive = export_cloud_plugin_archive(registration.package)
     filename = f"tbc-cloud-plugin-{registration.module.key}-{registration.version}.zip"
     return Response(
@@ -2963,7 +2964,7 @@ async def import_cloud_device_route(
         camera_module = get_camera_module("rtsp_only")
     camera_id = database.create_camera(
         SETTINGS.database_path,
-        name=name.strip() or "Cloud-Kamera",
+        name=name.strip() or "Cloud camera",
         host="",
         onvif_port=camera_module.default_onvif_port,
         http_port=camera_module.default_http_port,
@@ -3079,7 +3080,7 @@ async def download_plugin_template(request: Request, plugin_kind: str):
         return guard
     entry = _PLUGIN_TEMPLATE_BUILDERS.get(plugin_kind)
     if entry is None:
-        return JSONResponse({"error": "Unbekannte Plugin-Art"}, status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse({"error": "Unknown plugin type"}, status_code=status.HTTP_404_NOT_FOUND)
     builder, name = entry
     return Response(
         builder(),
@@ -3341,10 +3342,10 @@ async def health_refresh_api(request: Request):
     }
 
 
-# --- Öffentliche, API-Key-gesicherte Read-API für externe Integrationen (/api/v1/...) ---
-# Getrennt von den internen /api/...-Routen oben, die Session-Cookie-Auth für die eigene
-# Web-UI nutzen. Siehe docs/api.md. Die Serialisierungs-/Auth-Helfer liegen in api_common.py,
-# damit auch mcp_server.py sie ohne Zirkelimport auf main.py nutzen kann.
+# --- Public, API-key-secured read API for external integrations (/api/v1/...) ---
+# Separate from the internal /api/... routes above, which use session-cookie auth
+# for the app's own web UI. See docs/api.md. The serialization/auth helpers live in
+# api_common.py so mcp_server.py can also use them without a circular import on main.py.
 
 
 def _example_camera() -> dict[str, Any]:
@@ -3359,7 +3360,7 @@ def _example_camera() -> dict[str, Any]:
         "model": "RLC-823A",
         "firmware": "v3.1.0.4171",
         "status": "ok",
-        "status_message": "ONVIF-Verbindung erfolgreich",
+        "status_message": "ONVIF connection successful",
         "stream_uri": "rtsp://192.168.1.50:554/h264Preview_01_main",
         "recording_enabled": True,
         "continuous_recording_enabled": False,
@@ -4148,7 +4149,7 @@ async def _cleanup_loop() -> None:
                     SETTINGS.database_path,
                     event_type="cleanup_finished",
                     title="TBC: Cleanup",
-                    message=f"{deleted} Clips wurden per Retention gelöscht",
+                    message=f"{deleted} clips were deleted by retention",
                     public_base_url=SETTINGS.public_base_url,
                 )
         except Exception:
@@ -4316,7 +4317,7 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
                     "key": f"camera-{camera_id}",
                     "name": str(camera["name"]),
                     "subtitle": str(camera.get("host") or ""),
-                    "kind": "Kamera",
+                    "kind": "Camera",
                     "camera_id": camera_id,
                     "control_channel": 0,
                     "ptz_supported": _control_ptz_supported(camera, camera_id, channel=0),
@@ -4339,7 +4340,7 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
                     "key": f"channel-{channel_id}",
                     "name": str(camera["name"]) if single_channel else str(channel.get("name") or f"Kanal {channel_index + 1}"),
                     "subtitle": str(camera.get("host") or "") if single_channel else f"{camera['name']} · Kanal {channel_index + 1}",
-                    "kind": "Kamera" if single_channel else "Kanal",
+                    "kind": "Camera" if single_channel else "Channel",
                     "camera_id": camera_id,
                     "control_channel": channel_index,
                     "ptz_supported": _control_ptz_supported(camera, camera_id, channel=channel_index),
@@ -4542,7 +4543,7 @@ async def _perform_cloud_account_login_attempt(
 ) -> Any:
     """Run test_connection() and translate the outcome into a redirect.
 
-    Shared by the plain "Verbindung testen" action and the verification-code
+    Shared by the plain "Test connection" action and the verification-code
     submission, since both are just different ways of retrying the same
     login attempt - a CloudVerificationRequired here always means routing the
     admin to the dedicated /verify page instead of a plain error redirect.
@@ -4550,7 +4551,7 @@ async def _perform_cloud_account_login_attempt(
     try:
         message = await asyncio.wait_for(cloud_module.test_connection(account), timeout=CONTROL_TIMEOUT_SECONDS)
     except asyncio.TimeoutError:
-        message = f"Verbindung antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
+        message = f"Connection did not respond within {CONTROL_TIMEOUT_SECONDS}s"
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
         _set_flash(request, "common.raw_message", {"message": message}, "error")
         return _redirect(success_redirect)

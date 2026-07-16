@@ -15,7 +15,7 @@ class FakeCameraModule(CameraModule):
     capabilities = frozenset({CameraCapability.LIVE})
 
     async def probe(self, camera):
-        return CameraSnapshot(status="ok", message="TP-Link geprüft")
+        return CameraSnapshot(status="ok", message="TP-Link checked")
 
 
 class FakeEntryPoint:

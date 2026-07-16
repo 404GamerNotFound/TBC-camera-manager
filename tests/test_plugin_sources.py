@@ -48,7 +48,7 @@ class ParseGithubRepoUrlTests(unittest.TestCase):
         self.assertEqual(repo.repo, "Hello-World")
 
     def test_rejects_non_github_host(self):
-        with self.assertRaisesRegex(PluginSourceError, "Ungültige"):
+        with self.assertRaisesRegex(PluginSourceError, "Invalid GitHub repository"):
             parse_github_repo_url("https://gitlab.com/owner/repo")
 
     def test_rejects_malformed_url(self):
@@ -176,7 +176,7 @@ class ExtractPluginArchiveTests(unittest.TestCase):
             extract_plugin_archive(archive, "does/not/exist")
 
     def test_invalid_zip_raises(self):
-        with self.assertRaisesRegex(PluginSourceError, "kein gültiges ZIP"):
+        with self.assertRaisesRegex(PluginSourceError, "not a valid ZIP"):
             extract_plugin_archive(b"not a zip", "")
 
     def test_bundled_tests_directory_is_preserved(self):
@@ -250,7 +250,7 @@ class FetchLatestCommitShaTests(unittest.TestCase):
 
     def test_malformed_response_is_rejected(self):
         with patch("app.tbc.plugin_sources.urllib.request.urlopen", return_value=_mock_response(b"not a sha")):
-            with self.assertRaisesRegex(PluginSourceError, "keine gültige Commit-SHA"):
+            with self.assertRaisesRegex(PluginSourceError, "valid commit SHA"):
                 fetch_latest_commit_sha("owner", "repo", "main")
 
 

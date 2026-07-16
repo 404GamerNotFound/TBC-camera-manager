@@ -193,8 +193,8 @@ def _control_discovery_payload(
         "device": {
             "identifiers": [f"tbc_camera_{camera['id']}"],
             "name": camera.get("name"),
-            "manufacturer": camera.get("manufacturer") or "Kamera",
-            "model": camera.get("model") or "Kamera",
+            "manufacturer": camera.get("manufacturer") or "Camera",
+            "model": camera.get("model") or "Camera",
         },
         **entity["extra"],
     }
@@ -296,8 +296,8 @@ def _discovery_payload(
         "device": {
             "identifiers": [f"tbc_camera_{camera['id']}"],
             "name": camera.get("name"),
-            "manufacturer": camera.get("manufacturer") or "Kamera",
-            "model": camera.get("model") or "Kamera",
+            "manufacturer": camera.get("manufacturer") or "Camera",
+            "model": camera.get("model") or "Camera",
         },
     }
 
