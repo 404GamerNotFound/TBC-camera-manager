@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__name__)
 
 DetectionCallback = Callable[[int, list[dict[str, Any]]], None]
 BackendFactory = Callable[[dict[str, Any], str | None], DetectionBackend]
+FrameDetectionCallback = Callable[[int, Any, list[Detection]], None]
 
 
 @dataclass
@@ -87,6 +88,7 @@ async def run_camera_detection_worker(
     *,
     backend_factory: BackendFactory,
     on_detections: DetectionCallback,
+    on_frame_detections: FrameDetectionCallback | None = None,
 ) -> None:
     while True:
         camera = database.get_camera(database_path, camera_id)
@@ -104,6 +106,7 @@ async def run_camera_detection_worker(
                 settings,
                 backend_factory,
                 on_detections,
+                on_frame_detections,
             )
         except asyncio.CancelledError:
             raise
@@ -120,6 +123,7 @@ async def _run_worker_once(
     settings: dict[str, Any],
     backend_factory: BackendFactory,
     on_detections: DetectionCallback,
+    on_frame_detections: FrameDetectionCallback | None = None,
 ) -> None:
     sample_fps = float(settings.get("sample_fps") or 2.0)
     grabber = FrameGrabber(stream_uri, sample_fps=sample_fps)
@@ -150,6 +154,8 @@ async def _run_worker_once(
             tracker.update(filtered_detections)
             rows = tracker.detection_rows() + _loitering_rows(loiter_tracker, zones)
             on_detections(camera_id, rows)
+            if on_frame_detections is not None and filtered_detections:
+                on_frame_detections(camera_id, frame, filtered_detections)
     finally:
         grabber.stop()
 
@@ -159,6 +165,7 @@ async def detection_supervisor(
     *,
     on_detections: DetectionCallback,
     backend_factory: BackendFactory,
+    on_frame_detections: FrameDetectionCallback | None = None,
     reconcile_interval_seconds: float = 10.0,
 ) -> None:
     """Keeps one detection worker task per enabled camera with local AI detection turned on.
@@ -203,6 +210,7 @@ async def detection_supervisor(
                             camera_id,
                             backend_factory=backend_factory,
                             on_detections=on_detections,
+                            on_frame_detections=on_frame_detections,
                         )
                     )
                     workers[camera_id] = (fingerprint, task)

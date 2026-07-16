@@ -161,6 +161,8 @@ class RecordingManager:
                 ended_at=result["ended_at"],
             )
             recording = database.get_recording(self.database_path, job.recording_id)
+            if result.get("snapshot_path"):
+                await asyncio.to_thread(_run_snapshot_recognition, self.database_path, job, result["snapshot_path"])
             notify_event(
                 self.database_path,
                 event_type="recording_finished",
@@ -795,6 +797,40 @@ def _bbox_for_active_event(detections: list[dict[str, Any]], detection_key: str)
 def _first_storage_target(database_path: str) -> dict[str, Any] | None:
     targets = database.list_storage_targets(database_path)
     return targets[0] if targets else None
+
+
+def _run_snapshot_recognition(database_path: str, job: RecordingJob, snapshot_path: str) -> None:
+    """Runs face/plate recognition on a just-finished recording's snapshot (mode="snapshot").
+
+    Called via asyncio.to_thread from _run_job since recognition inference is blocking; any
+    failure here (missing opencv, unreadable image, model errors) is caught and logged - it must
+    never break the recording job itself, matching the try/except discipline the rest of _run_job
+    already uses around notifications.
+    """
+    try:
+        import cv2
+
+        from .detection.recognition import process_recognition
+
+        image = cv2.imread(snapshot_path)
+        if image is None:
+            return
+        settings = load_settings()
+        process_recognition(
+            database_path,
+            Path(settings.detection_models_path),
+            camera_id=job.camera_id,
+            camera_name=job.camera_name,
+            recording_id=job.recording_id,
+            detection_key=job.detection_key,
+            mode="snapshot",
+            image=image,
+            box=job.bbox,
+            public_base_url=settings.public_base_url,
+            existing_snapshot_path=snapshot_path,
+        )
+    except Exception:
+        LOGGER.exception("Snapshot-Erkennung für Aufnahme %s fehlgeschlagen", job.recording_id)
 
 
 def _record_and_publish_event(

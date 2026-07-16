@@ -67,6 +67,15 @@ from .detection import factory as detection_factory
 from .detection.classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection.model_provisioning import ensure_default_coral_model, ensure_default_model
 from .detection.plugin_models import resolve_plugin_model
+from .detection.recognition import (
+    FACE_TRIGGER_DETECTION_KEYS,
+    PLATE_TRIGGER_DETECTION_KEYS,
+    ensure_face_models,
+    ensure_plate_models,
+    get_face_recognizer,
+    process_recognition,
+)
+from .detection.backend import Detection
 from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
@@ -229,6 +238,8 @@ DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
 DETECTION_CORAL_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.tflite"
 DETECTION_CORAL_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.json"
+RECOGNITION_MODELS_DIR = Path(SETTINGS.detection_models_path)
+RECOGNITION_SNAPSHOT_DIR = Path(SETTINGS.recordings_path) / "recognition-events"
 
 
 def _detection_backend_factory(settings: dict[str, Any], module_key: str | None = None):
@@ -253,11 +264,49 @@ def _detection_backend_factory(settings: dict[str, Any], module_key: str | None 
     )
 
 
+def _process_frame_detections(camera_id: int, frame: Any, detections: list[Detection]) -> None:
+    """Fired once per processed frame that has at least one filtered detection (see
+    detection.supervisor._run_worker_once). Fans out qualifying person/vehicle detections to
+    face/plate recognition in "live" mode - fire-and-forget via asyncio.create_task so a slow
+    first-time model download or a slow inference pass never stalls that camera's detection loop.
+    """
+    relevant = [
+        detection
+        for detection in detections
+        if detection.detection_key in FACE_TRIGGER_DETECTION_KEYS
+        or detection.detection_key in PLATE_TRIGGER_DETECTION_KEYS
+    ]
+    if not relevant:
+        return
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if camera is None:
+        return
+    frame_copy = frame.copy()
+    for detection in relevant:
+        asyncio.create_task(
+            asyncio.to_thread(
+                process_recognition,
+                SETTINGS.database_path,
+                RECOGNITION_MODELS_DIR,
+                camera_id=camera_id,
+                camera_name=str(camera["name"]),
+                recording_id=None,
+                detection_key=detection.detection_key,
+                mode="live",
+                image=frame_copy,
+                box=detection.box,
+                public_base_url=SETTINGS.public_base_url,
+                snapshot_dir=RECOGNITION_SNAPSHOT_DIR,
+            )
+        )
+
+
 async def _detection_supervisor_loop() -> None:
     await detection_supervisor(
         SETTINGS.database_path,
         on_detections=_process_detection_states,
         backend_factory=_detection_backend_factory,
+        on_frame_detections=_process_frame_detections,
     )
 
 
@@ -279,6 +328,28 @@ async def startup() -> None:
     asyncio.create_task(_app_update_check_loop())
     asyncio.create_task(mqtt.run_control_listener(SETTINGS.database_path))
     asyncio.create_task(asyncio.to_thread(ensure_default_model, DETECTION_MODEL_PATH, DETECTION_MODEL_METADATA_PATH))
+    # Face/plate recognition models are opt-in and otherwise download lazily on first use
+    # (see detection.recognition.get_face_recognizer/get_plate_recognizer) - if a previous
+    # session already enabled a feature, pre-warm it here so the first real detection after
+    # a restart doesn't stall on a multi-MB download.
+    recognition_settings = database.get_recognition_settings(SETTINGS.database_path)
+    if recognition_settings.get("face_enabled"):
+        asyncio.create_task(
+            asyncio.to_thread(
+                ensure_face_models,
+                RECOGNITION_MODELS_DIR / "face_detection_yunet.onnx",
+                RECOGNITION_MODELS_DIR / "face_recognition_sface.onnx",
+            )
+        )
+    if recognition_settings.get("plate_enabled"):
+        asyncio.create_task(
+            asyncio.to_thread(
+                ensure_plate_models,
+                RECOGNITION_MODELS_DIR / "plate_detector.onnx",
+                RECOGNITION_MODELS_DIR / "plate_ocr.onnx",
+                RECOGNITION_MODELS_DIR / "plate_ocr_config.yaml",
+            )
+        )
     asyncio.create_task(_detection_supervisor_loop())
 
 
@@ -2246,6 +2317,128 @@ async def detection_overview_page(request: Request):
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.get("/recognition", response_class=HTMLResponse)
+async def recognition_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "recognition.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "settings": database.get_recognition_settings(SETTINGS.database_path),
+            "known_faces": database.list_known_faces(SETTINGS.database_path),
+            "known_plates": database.list_known_plates(SETTINGS.database_path),
+            "recent_events": database.list_recognition_events(SETTINGS.database_path, limit=25),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/recognition/settings")
+async def update_recognition_settings_route(
+    request: Request,
+    face_enabled: str | None = Form(None),
+    face_mode: str = Form("snapshot"),
+    face_match_threshold: str = Form("0.363"),
+    plate_enabled: str | None = Form(None),
+    plate_mode: str = Form("snapshot"),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        threshold = max(0.0, min(1.0, float(face_match_threshold or 0.363)))
+    except ValueError:
+        threshold = 0.363
+    database.update_recognition_settings(
+        SETTINGS.database_path,
+        face_enabled=bool(face_enabled),
+        face_mode="live" if face_mode == "live" else "snapshot",
+        face_match_threshold=threshold,
+        plate_enabled=bool(plate_enabled),
+        plate_mode="live" if plate_mode == "live" else "snapshot",
+    )
+    _set_flash(request, "Einstellungen wurden gespeichert")
+    return _redirect("/recognition")
+
+
+@app.post("/recognition/faces")
+async def create_known_face_route(request: Request, name: str = Form(...), photo: UploadFile = File(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        import cv2
+        import numpy as np
+
+        raw = await photo.read(10 * 1024 * 1024 + 1)
+        image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Bilddatei konnte nicht gelesen werden")
+        recognizer = get_face_recognizer(RECOGNITION_MODELS_DIR)
+        if recognizer is None:
+            raise RuntimeError("Gesichtserkennungs-Modell konnte nicht geladen werden")
+        faces = recognizer.detect_and_embed(image)
+        if not faces:
+            raise ValueError("Kein Gesicht im Foto gefunden")
+        face = max(faces, key=lambda item: item["score"])
+        database.create_known_face(
+            SETTINGS.database_path, name=name.strip(), embedding=json.dumps(face["embedding"])
+        )
+        _set_flash(request, f"Gesicht für {name.strip()} wurde gespeichert")
+    except Exception as exc:
+        _set_flash(request, f"Gesicht konnte nicht gespeichert werden: {exc}", "error")
+    finally:
+        await photo.close()
+    return _redirect("/recognition")
+
+
+@app.post("/recognition/faces/{face_id}/delete")
+async def delete_known_face_route(request: Request, face_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.delete_known_face(SETTINGS.database_path, face_id)
+    _set_flash(request, "Gesicht wurde entfernt")
+    return _redirect("/recognition")
+
+
+@app.post("/recognition/plates")
+async def create_known_plate_route(request: Request, plate_text: str = Form(...), label: str = Form("")):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.create_known_plate(SETTINGS.database_path, plate_text=plate_text, label=label.strip() or None)
+    _set_flash(request, "Kennzeichen wurde gespeichert")
+    return _redirect("/recognition")
+
+
+@app.post("/recognition/plates/{plate_id}")
+async def update_known_plate_route(
+    request: Request, plate_id: int, plate_text: str = Form(...), label: str = Form("")
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.update_known_plate(SETTINGS.database_path, plate_id, plate_text=plate_text, label=label.strip() or None)
+    _set_flash(request, "Kennzeichen wurde aktualisiert")
+    return _redirect("/recognition")
+
+
+@app.post("/recognition/plates/{plate_id}/delete")
+async def delete_known_plate_route(request: Request, plate_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.delete_known_plate(SETTINGS.database_path, plate_id)
+    _set_flash(request, "Kennzeichen wurde entfernt")
+    return _redirect("/recognition")
 
 
 @app.get("/camera-modules", response_class=HTMLResponse)

@@ -12,7 +12,7 @@
   </select></label>
   <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span>active</span></label>
   <label class="check-row"><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span>Attach snapshot</span></label>
-  <label class="span-2"><span>Event-Filter</span><input name="event_filter" value="{{ values.event_filter if values is defined and values.event_filter else '' }}" placeholder="recording_finished,recording_failed"></label>
+  <label class="span-2"><span>Event-Filter</span><input name="event_filter" value="{{ values.event_filter if values is defined and values.event_filter else '' }}" placeholder="recording_finished,recording_failed,unknown_face_detected,unknown_plate_detected"></label>
   <label><span>URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" placeholder="https://ntfy.example.com/tbc-alerts"></label>
   <label><span>Token (ntfy Access Token / Gotify App Token)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
   <label><span>Telegram Chat ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>

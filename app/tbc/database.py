@@ -320,6 +320,47 @@ CREATE TABLE IF NOT EXISTS plugin_sources (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS recognition_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    face_enabled INTEGER NOT NULL DEFAULT 0,
+    face_mode TEXT NOT NULL DEFAULT 'snapshot',
+    face_match_threshold REAL NOT NULL DEFAULT 0.363,
+    plate_enabled INTEGER NOT NULL DEFAULT 0,
+    plate_mode TEXT NOT NULL DEFAULT 'snapshot',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS known_faces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    embedding TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS known_plates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plate_text TEXT NOT NULL,
+    label TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS recognition_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recording_id INTEGER,
+    camera_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    matched_face_id INTEGER,
+    matched_plate_id INTEGER,
+    label TEXT NOT NULL,
+    confidence REAL,
+    snapshot_path TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE,
+    FOREIGN KEY(matched_face_id) REFERENCES known_faces(id) ON DELETE SET NULL,
+    FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL
+);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -2229,3 +2270,133 @@ def _notification_values(values: dict[str, Any]) -> tuple[Any, ...]:
         values.get("ha_service"),
         1 if values.get("include_snapshot") else 0,
     )
+
+
+def get_recognition_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM recognition_settings WHERE id = 1").fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO recognition_settings (id) VALUES (1)")
+            row = db.execute("SELECT * FROM recognition_settings WHERE id = 1").fetchone()
+    return dict(row)
+
+
+def update_recognition_settings(
+    database_path: str,
+    *,
+    face_enabled: bool,
+    face_mode: str,
+    face_match_threshold: float,
+    plate_enabled: bool,
+    plate_mode: str,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO recognition_settings (
+                id, face_enabled, face_mode, face_match_threshold, plate_enabled, plate_mode
+            )
+            VALUES (1, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                face_enabled = excluded.face_enabled,
+                face_mode = excluded.face_mode,
+                face_match_threshold = excluded.face_match_threshold,
+                plate_enabled = excluded.plate_enabled,
+                plate_mode = excluded.plate_mode,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if face_enabled else 0, face_mode, face_match_threshold, 1 if plate_enabled else 0, plate_mode),
+        )
+
+
+def list_known_faces(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT * FROM known_faces ORDER BY name COLLATE NOCASE").fetchall()
+    return [dict(row) for row in rows]
+
+
+def create_known_face(database_path: str, *, name: str, embedding: str) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute("INSERT INTO known_faces (name, embedding) VALUES (?, ?)", (name, embedding))
+        return int(cursor.lastrowid)
+
+
+def delete_known_face(database_path: str, face_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM known_faces WHERE id = ?", (face_id,))
+
+
+def list_known_plates(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT * FROM known_plates ORDER BY plate_text COLLATE NOCASE").fetchall()
+    return [dict(row) for row in rows]
+
+
+def create_known_plate(database_path: str, *, plate_text: str, label: str | None) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            "INSERT INTO known_plates (plate_text, label) VALUES (?, ?)",
+            (plate_text.strip().upper(), label),
+        )
+        return int(cursor.lastrowid)
+
+
+def update_known_plate(database_path: str, plate_id: int, *, plate_text: str, label: str | None) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE known_plates SET plate_text = ?, label = ? WHERE id = ?",
+            (plate_text.strip().upper(), label, plate_id),
+        )
+
+
+def delete_known_plate(database_path: str, plate_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM known_plates WHERE id = ?", (plate_id,))
+
+
+def create_recognition_event(
+    database_path: str,
+    *,
+    recording_id: int | None,
+    camera_id: int,
+    kind: str,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+    label: str,
+    confidence: float | None,
+    snapshot_path: str | None = None,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO recognition_events (
+                recording_id, camera_id, kind, matched_face_id, matched_plate_id, label, confidence, snapshot_path
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (recording_id, camera_id, kind, matched_face_id, matched_plate_id, label, confidence, snapshot_path),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_recognition_events(database_path: str, *, kind: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+    filters = []
+    params: list[Any] = []
+    if kind:
+        filters.append("re.kind = ?")
+        params.append(kind)
+    where = f"WHERE {' AND '.join(filters)}" if filters else ""
+    params.append(limit)
+    with connect(database_path) as db:
+        rows = db.execute(
+            f"""
+            SELECT re.*, c.name AS camera_name
+              FROM recognition_events re
+              JOIN cameras c ON c.id = re.camera_id
+              {where}
+             ORDER BY re.created_at DESC, re.id DESC
+             LIMIT ?
+            """,
+            params,
+        ).fetchall()
+    return [dict(row) for row in rows]
