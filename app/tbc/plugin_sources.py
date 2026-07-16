@@ -61,63 +61,63 @@ STANDARD_PLUGIN_SOURCES = (
         key="aqara",
         plugin_kind="camera",
         label="Aqara",
-        description="Aqara-Kameras sowie kompatible Video-Türklingeln",
+        description="Aqara cameras and compatible video doorbells",
         repo_url="https://github.com/404GamerNotFound/TBC-aqara",
     ),
     StandardPluginSource(
         key="axis",
         plugin_kind="camera",
         label="Axis",
-        description="Axis-Netzwerkkameras über ONVIF Profile S/T",
+        description="Axis network cameras via ONVIF Profiles S/T",
         repo_url="https://github.com/404GamerNotFound/TBC-axis",
     ),
     StandardPluginSource(
         key="dahua",
         plugin_kind="camera",
         label="Dahua",
-        description="Dahua-Kameras und NVR (inkl. Amcrest/Annke-OEMs) über ONVIF und RTSP",
+        description="Dahua cameras and NVRs (including Amcrest/Annke OEMs) via ONVIF and RTSP",
         repo_url="https://github.com/404GamerNotFound/TBC-dahua",
     ),
     StandardPluginSource(
         key="foscam",
         plugin_kind="camera",
         label="Foscam",
-        description="Foscam-Kameras über ONVIF und RTSP",
+        description="Foscam cameras via ONVIF and RTSP",
         repo_url="https://github.com/404GamerNotFound/TBC-foscam",
     ),
     StandardPluginSource(
         key="hikvision",
         plugin_kind="camera",
         label="Hikvision",
-        description="Hikvision-Kameras und NVR über ONVIF und RTSP",
+        description="Hikvision cameras and NVRs via ONVIF and RTSP",
         repo_url="https://github.com/404GamerNotFound/TBC-hikvision",
     ),
     StandardPluginSource(
         key="reolink",
         plugin_kind="camera",
         label="Reolink",
-        description="Reolink-Kameras und NVR via ONVIF und reolink-aio",
+        description="Reolink cameras and NVRs via ONVIF and reolink-aio",
         repo_url="https://github.com/404GamerNotFound/TBC-reolink",
     ),
     StandardPluginSource(
         key="sonoff",
         plugin_kind="camera",
         label="SONOFF",
-        description="SONOFF-Kameras über den in eWeLink erzeugten RTSP-Link",
+        description="SONOFF cameras via the RTSP link generated in eWeLink",
         repo_url="https://github.com/404GamerNotFound/TBC-sonoff",
     ),
     StandardPluginSource(
         key="tplink",
         plugin_kind="camera",
         label="TP-Link / Tapo",
-        description="TP-Link-Tapo-Kameras via ONVIF und RTSP",
+        description="TP-Link Tapo cameras via ONVIF and RTSP",
         repo_url="https://github.com/404GamerNotFound/TBC-tplink",
     ),
     StandardPluginSource(
         key="ubiquiti",
         plugin_kind="camera",
         label="Ubiquiti / UniFi Protect",
-        description="UniFi-Protect-Kameras über einen erzeugten RTSP-/RTSPS-Link",
+        description="UniFi Protect cameras via a generated RTSP/RTSPS link",
         repo_url="https://github.com/404GamerNotFound/TBC-ubiquiti",
     ),
 )
@@ -179,8 +179,8 @@ def parse_github_repo_url(url: str) -> GithubRepo:
     match = GITHUB_REPO_PATTERN.match(url.strip())
     if not match:
         raise PluginSourceError(
-            "Ungültige GitHub-Repository-URL. Erwartet wird https://github.com/<besitzer>/<repository> "
-            "(nur öffentliche GitHub-Repositories werden unterstützt)."
+            "Invalid GitHub repository URL. Expected https://github.com/<owner>/<repository> "
+            "(only public GitHub repositories are supported)."
         )
     return GithubRepo(owner=match.group("owner"), repo=match.group("repo"))
 
@@ -214,7 +214,7 @@ def fetch_github_repo_archive(owner: str, repo: str, ref: str) -> bytes:
     except urllib.error.URLError as exc:
         raise _translate_urllib_error(exc, owner, repo, ref) from exc
     if len(data) > MAX_ARCHIVE_BYTES:
-        raise PluginSourceError("Repository-Archiv ist größer als 25 MB")
+        raise PluginSourceError("The repository archive is larger than 25 MB")
     return data
 
 
@@ -238,7 +238,7 @@ def fetch_latest_commit_sha(owner: str, repo: str, ref: str) -> str:
         raise _translate_urllib_error(exc, owner, repo, ref) from exc
     sha = data.decode("ascii", errors="replace").strip()
     if not SHA_PATTERN.fullmatch(sha):
-        raise PluginSourceError("GitHub hat keine gültige Commit-SHA geliefert")
+        raise PluginSourceError("GitHub did not return a valid commit SHA")
     return sha
 
 
@@ -249,7 +249,7 @@ def _translate_urllib_error(exc: urllib.error.URLError, owner: str, repo: str, r
         # with 422 instead - both mean the same thing to an admin here.
         if exc.code in (404, 422):
             return PluginSourceError(
-                f"Repository oder Branch/Tag nicht gefunden (ist '{owner}/{repo}' öffentlich, existiert '{ref}'?)"
+                f"Repository or branch/tag not found (is '{owner}/{repo}' public, does '{ref}' exist?)"
             )
         return PluginSourceError(f"GitHub-Anfrage fehlgeschlagen: HTTP {exc.code}")
     return PluginSourceError(f"GitHub konnte nicht erreicht werden: {exc.reason}")
@@ -272,12 +272,12 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
     try:
         bundle = zipfile.ZipFile(BytesIO(archive))
     except zipfile.BadZipFile as exc:
-        raise PluginSourceError("Von GitHub geladene Datei ist kein gültiges ZIP-Archiv") from exc
+        raise PluginSourceError("The file downloaded from GitHub is not a valid ZIP archive") from exc
     subdirectory = subdirectory.strip().strip("/")
     with bundle:
         names = bundle.namelist()
         if not names:
-            raise PluginSourceError("Repository-Archiv ist leer")
+            raise PluginSourceError("The repository archive is empty")
         repo_root = names[0].split("/", 1)[0]
         prefix = f"{repo_root}/{subdirectory}/" if subdirectory else f"{repo_root}/"
         members = [name for name in names if name.startswith(prefix) and name != prefix]
@@ -285,7 +285,7 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
             message = (
                 f"Kein Inhalt unter '{subdirectory}' im Repository gefunden"
                 if subdirectory
-                else "Repository-Archiv ist leer"
+                else "The repository archive is empty"
             )
             raise PluginSourceError(message)
         output = BytesIO()

@@ -56,11 +56,11 @@ class CloudAccountDatabaseTests(unittest.TestCase):
                 handle.name,
                 account_id,
                 field_key="verification_code",
-                message="Eufy hat einen Bestätigungscode per E-Mail gesendet.",
+                message="Eufy sent a verification code by email.",
             )
             pending = database.get_cloud_account(handle.name, account_id)
             self.assertEqual(pending["pending_verification_field"], "verification_code")
-            self.assertIn("Bestätigungscode", pending["pending_verification_message"])
+            self.assertIn("verification code", pending["pending_verification_message"])
             self.assertIsNotNone(pending["pending_verification_at"])
 
             database.clear_cloud_account_pending_verification(handle.name, account_id)

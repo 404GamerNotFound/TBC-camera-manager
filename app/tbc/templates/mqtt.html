@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Home Assistant</p>
+    <p class="eyebrow" data-i18n="mqtt.home_assistant">Home Assistant</p>
     <h1>MQTT</h1>
   </div>
 </section>
@@ -11,40 +11,40 @@
 <form class="editor-form" method="post" action="/mqtt">
   <label class="check-row">
     <input name="enabled" type="checkbox" {% if config.enabled %}checked{% endif %}>
-    <span>Enable MQTT</span>
+    <span data-i18n="mqtt.enable_mqtt">Enable MQTT</span>
   </label>
   <div class="form-grid">
     <label>
-      <span>Broker Host</span>
+      <span data-i18n="mqtt.broker_host">Broker Host</span>
       <input name="host" value="{{ config.host or '' }}">
     </label>
     <label>
-      <span>Port</span>
+      <span data-i18n="common.port">Port</span>
       <input name="port" type="number" min="1" max="65535" value="{{ config.port or 1883 }}">
     </label>
     <label>
-      <span>Username</span>
+      <span data-i18n="camera.username">Username</span>
       <input name="username" value="{{ config.username or '' }}" autocomplete="off">
     </label>
     <label>
-      <span>Password</span>
+      <span data-i18n="camera_form.password">Password</span>
       <input name="password" type="password" value="{{ config.password or '' }}" autocomplete="new-password">
     </label>
     <label>
-      <span>Topic Prefix</span>
+      <span data-i18n="mqtt.topic_prefix">Topic Prefix</span>
       <input name="topic_prefix" value="{{ config.topic_prefix or 'tbc' }}">
     </label>
     <label>
-      <span>Discovery Prefix</span>
+      <span data-i18n="mqtt.discovery_prefix">Discovery Prefix</span>
       <input name="discovery_prefix" value="{{ config.discovery_prefix or 'homeassistant' }}">
     </label>
     <label class="check-row span-2">
       <input name="discovery_enabled" type="checkbox" {% if config.discovery_enabled %}checked{% endif %}>
-      <span>Publish Home Assistant discovery</span>
+      <span data-i18n="mqtt.publish_home_assistant_discovery">Publish Home Assistant discovery</span>
     </label>
   </div>
   <div class="form-actions">
-    <button class="primary-button" type="submit">Save</button>
+    <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
   </div>
 </form>
 {% endblock %}

@@ -120,7 +120,7 @@ class OnnxCpuBackend(DetectionBackend):
             import onnxruntime  # noqa: F401
         except ImportError:
             return False, "onnxruntime ist nicht installiert"
-        return True, "CPU-Inferenz verfügbar"
+        return True, "CPU inference available"
 
     def load(self) -> None:
         if self._session is not None:
@@ -159,4 +159,4 @@ class OnnxGpuBackend(OnnxCpuBackend):
         available_providers = onnxruntime.get_available_providers()
         if "CUDAExecutionProvider" not in available_providers:
             return False, "Kein CUDAExecutionProvider gefunden (onnxruntime-gpu + passende CUDA/cuDNN-Laufzeit erforderlich)"
-        return True, "GPU-Inferenz (CUDA) verfügbar"
+        return True, "GPU inference (CUDA) available"

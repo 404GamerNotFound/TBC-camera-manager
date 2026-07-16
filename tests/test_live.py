@@ -15,7 +15,7 @@ class LiveTests(unittest.TestCase):
         )
 
     def test_redact_rtsp_credentials_masks_urls_inside_messages(self):
-        message = "Fehler bei rtsp://user:pw@camera.local/stream: Verbindung fehlgeschlagen"
+        message = "Error at rtsp://user:pw@camera.local/stream: connection failed"
 
         self.assertNotIn("user:pw", redact_rtsp_credentials(message))
 

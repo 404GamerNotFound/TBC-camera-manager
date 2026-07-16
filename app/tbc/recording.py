@@ -96,7 +96,7 @@ class RecordingManager:
                     camera_id,
                     "recording_skipped",
                     detection_key,
-                    "Kein Speicherziel konfiguriert",
+                    "No storage destination is configured",
                 )
                 continue
 
@@ -190,7 +190,7 @@ class RecordingManager:
             notify_event(
                 self.database_path,
                 event_type="recording_failed",
-                title="TBC: Aufnahme fehlgeschlagen",
+                title="TBC: Recording failed",
                 message=f"{job.camera_name}: {exc}",
                 public_base_url=load_settings().public_base_url,
             )
@@ -492,7 +492,7 @@ def _probe_duration(path: Path) -> int | None:
 
 def _record_clip(job: RecordingJob, active: ActiveRecording) -> dict[str, Any]:
     if shutil.which("ffmpeg") is None:
-        raise RuntimeError("ffmpeg ist im Container nicht installiert")
+        raise RuntimeError("ffmpeg is not installed in the container")
 
     target = job.storage_target
     target_is_s3 = target["kind"] == "s3"
@@ -618,7 +618,7 @@ def _build_mp4(pre_segments: list[Path], body_ts: Path, output_file: Path, work_
         ]
     result = subprocess.run(command, check=False)
     if result.returncode != 0 or not output_file.exists() or output_file.stat().st_size == 0:
-        raise RuntimeError("ffmpeg konnte den MP4-Clip nicht erzeugen")
+        raise RuntimeError("ffmpeg could not create the MP4 clip")
 
 
 def _create_snapshot(
@@ -741,7 +741,7 @@ def _s3_client(target: dict[str, Any]):
     try:
         import boto3
     except ImportError as exc:
-        raise RuntimeError("boto3 ist fuer S3-Speicherziele nicht installiert") from exc
+        raise RuntimeError("boto3 is not installed for S3 storage destinations") from exc
     return boto3.client(
         "s3",
         endpoint_url=target.get("s3_endpoint_url") or None,

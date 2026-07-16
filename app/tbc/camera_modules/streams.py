@@ -11,14 +11,14 @@ def validate_manual_stream_uri(value: str) -> str:
     """Validate a user-provided RTSP URI without ever logging its credentials."""
     uri = str(value or "").strip()
     if not uri or any(character in uri for character in ("\r", "\n", "\x00")):
-        raise ValueError("Eine gültige RTSP-/RTSPS-URL ist erforderlich")
+        raise ValueError("A valid RTSP/RTSPS URL is required")
     parsed = urlsplit(uri)
     if parsed.scheme.lower() not in {"rtsp", "rtsps"} or not parsed.hostname:
-        raise ValueError("Die Stream-URL muss mit rtsp:// oder rtsps:// beginnen und einen Host enthalten")
+        raise ValueError("The stream URL must start with rtsp:// or rtsps:// and contain a host")
     try:
         _ = parsed.port
     except ValueError as exc:
-        raise ValueError("Die RTSP-/RTSPS-URL enthält einen ungültigen Port") from exc
+        raise ValueError("The RTSP/RTSPS URL contains an invalid port") from exc
     return uri
 
 
@@ -52,7 +52,7 @@ def build_rtsp_uri(
 
 def probe_rtsp_stream(stream_uri: str, timeout_seconds: int = 8) -> tuple[str, str]:
     if shutil.which("ffprobe") is None:
-        return "warning", "ffprobe nicht installiert; RTSP-Adresse wurde konfiguriert"
+        return "warning", "ffprobe is not installed; an RTSP address was configured"
     command = [
         "ffprobe",
         "-v",
@@ -71,9 +71,9 @@ def probe_rtsp_stream(stream_uri: str, timeout_seconds: int = 8) -> tuple[str, s
     try:
         result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=timeout_seconds)
     except subprocess.TimeoutExpired:
-        return "error", "RTSP-Prüfung hat das Zeitlimit überschritten"
+        return "error", "RTSP check timed out"
     if result.returncode == 0 and "video" in result.stdout:
-        return "ok", "RTSP-Stream erreichbar"
-    lines = (result.stderr or result.stdout or "RTSP-Stream nicht erreichbar").strip().splitlines()
-    message = lines[-1] if lines else "RTSP-Stream nicht erreichbar"
+        return "ok", "RTSP stream reachable"
+    lines = (result.stderr or result.stdout or "RTSP stream not reachable").strip().splitlines()
+    message = lines[-1] if lines else "RTSP stream not reachable"
     return "error", redact_rtsp_credentials(message)

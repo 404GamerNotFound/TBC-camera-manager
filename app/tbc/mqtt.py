@@ -18,7 +18,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "floodlight",
         "component": "light",
-        "label": "Flutlicht",
+        "label": "Floodlight",
         "state_field": "floodlight_state",
         "supported_field": "floodlight_supported",
         "command": True,
@@ -27,7 +27,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "pir",
         "component": "switch",
-        "label": "PIR-Sensor",
+        "label": "PIR sensor",
         "state_field": "pir_enabled",
         "supported_field": "pir_supported",
         "command": True,
@@ -36,7 +36,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "reboot",
         "component": "button",
-        "label": "Neustart",
+        "label": "Restart",
         "state_field": None,
         "supported_field": "reboot_supported",
         "command": True,
@@ -45,7 +45,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "siren",
         "component": "button",
-        "label": "Sirene abspielen",
+        "label": "Play siren",
         "state_field": None,
         "supported_field": "siren_supported",
         "command": True,
@@ -54,7 +54,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "battery",
         "component": "sensor",
-        "label": "Akkustand",
+        "label": "Battery level",
         "state_field": "battery_percentage",
         "supported_field": "is_battery",
         "command": False,
@@ -193,8 +193,8 @@ def _control_discovery_payload(
         "device": {
             "identifiers": [f"tbc_camera_{camera['id']}"],
             "name": camera.get("name"),
-            "manufacturer": camera.get("manufacturer") or "Kamera",
-            "model": camera.get("model") or "Kamera",
+            "manufacturer": camera.get("manufacturer") or "Camera",
+            "model": camera.get("model") or "Camera",
         },
         **entity["extra"],
     }
@@ -296,8 +296,8 @@ def _discovery_payload(
         "device": {
             "identifiers": [f"tbc_camera_{camera['id']}"],
             "name": camera.get("name"),
-            "manufacturer": camera.get("manufacturer") or "Kamera",
-            "model": camera.get("model") or "Kamera",
+            "manufacturer": camera.get("manufacturer") or "Camera",
+            "model": camera.get("model") or "Camera",
         },
     }
 

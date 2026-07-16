@@ -3,14 +3,14 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Archive</p>
-    <h1>Timeline</h1>
+    <p class="eyebrow" data-i18n="activity.archive">Archive</p>
+    <h1 data-i18n="base.timeline">Timeline</h1>
   </div>
 </section>
 
 <form class="filter-bar" method="get" action="/timeline">
   <label>
-    <span>Camera</span>
+    <span data-i18n="camera_new_choice.camera">Camera</span>
     <select name="camera_id">
       {% for camera in cameras %}
       <option value="{{ camera.id }}" {% if selected_camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
@@ -18,21 +18,21 @@
     </select>
   </label>
   <label>
-    <span>Day</span>
+    <span data-i18n="activity.day">Day</span>
     <input name="day" type="date" value="{{ selected_day }}" max="{{ today }}">
   </label>
-  <button class="primary-button" type="submit">Show</button>
+  <button class="primary-button" type="submit" data-i18n="activity.show">Show</button>
   {% if selected_camera_id %}
   <div class="button-row timeline-day-nav">
-    <a class="secondary-button" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ prev_day }}">‹ Previous day</a>
-    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ next_day }}">Next day ›</a>
+    <a class="secondary-button" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
   </div>
   {% endif %}
 </form>
 
 {% if not selected_camera %}
 <section class="empty-state">
-  <h2>No camera available</h2>
+  <h2 data-i18n="activity.no_camera_available">No camera available</h2>
 </section>
 {% else %}
 <section class="timeline-player-panel">
@@ -50,7 +50,7 @@
     <div class="timeline-layers">
       <label class="check-row">
         <input type="checkbox" data-timeline-toggle="local" checked>
-        <span>Local recordings (from TBC)</span>
+        <span data-i18n="timeline.local_recordings_from_tbc">Local recordings (from TBC)</span>
       </label>
       <label class="check-row{% if not sd_card_available %} is-disabled{% endif %}">
         <input type="checkbox" data-timeline-toggle="sdcard" {% if sd_card_available %}checked{% endif %} {% if not sd_card_available %}disabled{% endif %}>
@@ -58,10 +58,10 @@
       </label>
     </div>
     <div class="timeline-zoom-controls">
-      <button type="button" class="icon-button" data-timeline-zoom-out aria-label="Zoom out">−</button>
+      <button type="button" class="icon-button" data-timeline-zoom-out aria-label="Zoom out" data-i18n-aria-label="player.zoom_out">−</button>
       <span data-timeline-zoom-label>1×</span>
-      <button type="button" class="icon-button" data-timeline-zoom-in aria-label="Zoom in">+</button>
-      <button type="button" class="text-button" data-timeline-zoom-reset>Full day</button>
+      <button type="button" class="icon-button" data-timeline-zoom-in aria-label="Zoom in" data-i18n-aria-label="player.zoom_in">+</button>
+      <button type="button" class="text-button" data-timeline-zoom-reset data-i18n="timeline.full_day">Full day</button>
     </div>
   </div>
 
@@ -70,23 +70,23 @@
       <div class="timeline-hours" data-timeline-hours aria-hidden="true"></div>
       <div class="timeline-grid" data-timeline-grid aria-hidden="true"></div>
       <div class="timeline-lane" data-lane-kind="continuous" data-timeline-lane-continuous>
-        <span class="timeline-lane-label">Continuous</span>
+        <span class="timeline-lane-label" data-i18n="timeline.continuous">Continuous</span>
       </div>
       <div class="timeline-lane" data-lane-kind="events" data-timeline-lane-events>
-        <span class="timeline-lane-label">Events</span>
+        <span class="timeline-lane-label" data-i18n="health.events">Events</span>
       </div>
       <div class="timeline-lane" data-lane-kind="sdcard" data-timeline-lane-sdcard hidden>
-        <span class="timeline-lane-label">SD card</span>
+        <span class="timeline-lane-label" data-i18n="base.sd_card">SD card</span>
       </div>
       <div class="timeline-cursor" data-timeline-cursor hidden></div>
     </div>
   </div>
-  <p class="timeline-hint" data-timeline-empty hidden>No recordings are available for this day.</p>
+  <p class="timeline-hint" data-timeline-empty hidden data-i18n="timeline.no_recordings_available_day">No recordings are available for this day.</p>
 </section>
 
 <section class="event-panel">
   <div class="section-title">
-    <h2>Events on this day</h2>
+    <h2 data-i18n="activity.events_day">Events on this day</h2>
     <span data-timeline-list-count>0</span>
   </div>
   <ol class="event-list" data-timeline-list></ol>

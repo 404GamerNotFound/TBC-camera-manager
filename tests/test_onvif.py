@@ -63,7 +63,7 @@ class OnvifTests(unittest.TestCase):
 
     def test_authority_failure_is_reported_in_plain_language(self):
         self.assertIn(
-            "ONVIF-Anmeldung abgelehnt",
+            "ONVIF sign-in rejected",
             onvif._friendly_error(RuntimeError("Unknown error: Authority failure")),
         )
 

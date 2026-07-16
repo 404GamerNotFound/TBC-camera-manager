@@ -1,29 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="login-language" aria-label="Change language">
-  <button class="secondary-button" type="button" data-language="de" lang="de">Deutsch</button>
-  <button class="secondary-button" type="button" data-language="en" lang="en">English</button>
-  <button class="secondary-button" type="button" data-language="es" lang="es">Español</button>
+<div class="login-language" aria-label="Change language" data-i18n-aria-label="nav.language">
+  <button class="secondary-button" type="button" data-language="de" lang="de" data-i18n="nav.language_de">Deutsch</button>
+  <button class="secondary-button" type="button" data-language="en" lang="en" data-i18n="nav.language_en">English</button>
+  <button class="secondary-button" type="button" data-language="es" lang="es" data-i18n="nav.language_es">Español</button>
 </div>
 <section class="auth-panel">
   <div>
-    <p class="eyebrow">TB Camera</p>
+    <p class="eyebrow" data-i18n="nav.app_name">TB Camera</p>
     <h1>TBC</h1>
   </div>
   <form class="login-form" method="post" action="/login">
     {% if error %}
-    <div class="inline-error">{{ error }}</div>
+    <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
     {% endif %}
     <label>
-      <span>Username</span>
+      <span data-i18n="camera.username">Username</span>
       <input name="username" autocomplete="username" required autofocus>
     </label>
     <label>
-      <span>Password</span>
+      <span data-i18n="camera_form.password">Password</span>
       <input name="password" type="password" autocomplete="current-password" required>
     </label>
-    <button class="primary-button" type="submit">Sign in</button>
+    <button class="primary-button" type="submit" data-i18n="login.sign">Sign in</button>
   </form>
 </section>
 {% endblock %}

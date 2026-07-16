@@ -1,0 +1,4373 @@
+{
+  "app/tbc/templates/activity.html": [
+    {
+      "kind": "text",
+      "text": "Archive",
+      "known_german": "Archiv"
+    },
+    {
+      "kind": "text",
+      "text": "Activity",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Day",
+      "known_german": "Tag"
+    },
+    {
+      "kind": "text",
+      "text": "Show",
+      "known_german": "Anzeigen"
+    },
+    {
+      "kind": "text",
+      "text": "‹ Previous day",
+      "known_german": "‹ Vorheriger Tag"
+    },
+    {
+      "kind": "text",
+      "text": "Next day ›",
+      "known_german": "Nächster Tag ›"
+    },
+    {
+      "kind": "text",
+      "text": "No camera available",
+      "known_german": "Keine Kamera verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Events on this day",
+      "known_german": "Ereignisse an diesem Tag"
+    },
+    {
+      "kind": "text",
+      "text": "One block is shown for each event recording, grouped by event type and color. Select a block\n    to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted\n    here; use the timeline for an individual camera instead. Enable \"SD card recordings\" to also\n    include recordings stored on cameras that support an on-camera archive.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "No event recordings are available for this day.",
+      "known_german": "Keine Ereignisaufnahmen für diesen Tag verfügbar."
+    }
+  ],
+  "app/tbc/templates/api_access.html": [
+    {
+      "kind": "text",
+      "text": "Integrations",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "API access",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Activate",
+      "known_german": "Aktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Provides read-only TBC content (cameras, recordings, activity, and status) under",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/api/v1/...",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "for external scripts, dashboards, or Home Assistant, and exposes the same content as MCP tools for an AI agent (Claude Desktop, Claude Code, etc.) under",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/mcp/mcp",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ". Disabled by default.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Enable API",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Require API key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "API key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Active:",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Not generated yet",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "REST",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/api/v1/...",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "MCP",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Generate new key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Revoke key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "REST API examples",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Each example shows the exact request and a realistic example response containing every field TBC actually returns. Replace",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "tbc_XXX...",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "with the generated API key above. See",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "docs/api.md",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "for details and all query parameters.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Request:",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Response:",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "MCP tools (AI interface)",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "The same content is available as MCP tools for an AI agent instead of REST endpoints. Every tool invokes the same logic as its corresponding REST endpoint above. See",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "docs/mcp.md",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "for client configuration details (Claude Code, Claude.ai, and generic JSON clients).",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Tool",
+      "known_german": "Werkzeug"
+    },
+    {
+      "kind": "text",
+      "text": "Description",
+      "known_german": "Beschreibung"
+    },
+    {
+      "kind": "text",
+      "text": "Example MCP tool call (JSON-RPC via",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/mcp/mcp",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "):",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Response (excerpt):",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/base.html": [
+    {
+      "kind": "text",
+      "text": "TBC",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "TB Camera",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cameras",
+      "known_german": "Kameras"
+    },
+    {
+      "kind": "text",
+      "text": "K",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cameras",
+      "known_german": "Kameras"
+    },
+    {
+      "kind": "text",
+      "text": "L",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Live",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Archive",
+      "known_german": "Archiv"
+    },
+    {
+      "kind": "text",
+      "text": "V",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Activity",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "T",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Timeline",
+      "known_german": "Timeline"
+    },
+    {
+      "kind": "text",
+      "text": "C",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Clips",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "SD card",
+      "known_german": "SD-Karte"
+    },
+    {
+      "kind": "text",
+      "text": "Storage",
+      "known_german": "Speicher"
+    },
+    {
+      "kind": "text",
+      "text": "Z",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Destinations",
+      "known_german": "Ziele"
+    },
+    {
+      "kind": "text",
+      "text": "E",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Explorer",
+      "known_german": "Explorer"
+    },
+    {
+      "kind": "text",
+      "text": "R",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Retention",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Operations",
+      "known_german": "Betrieb"
+    },
+    {
+      "kind": "text",
+      "text": "P",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Performance",
+      "known_german": "Leistung"
+    },
+    {
+      "kind": "text",
+      "text": "N",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Notifications",
+      "known_german": "Notify"
+    },
+    {
+      "kind": "text",
+      "text": "M",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "MQTT",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "B",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Users",
+      "known_german": "Benutzer"
+    },
+    {
+      "kind": "text",
+      "text": "P",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Camera plugins",
+      "known_german": "Kamera-Plugins"
+    },
+    {
+      "kind": "text",
+      "text": "E",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "AI detection",
+      "known_german": "KI-Erkennung"
+    },
+    {
+      "kind": "text",
+      "text": "R",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Face &amp; plate recognition",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "G",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Design",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "O",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cloud providers",
+      "known_german": "Cloud-Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "X",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "External sources",
+      "known_german": "Externe Quellen"
+    },
+    {
+      "kind": "text",
+      "text": "U",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "L",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "License",
+      "known_german": "Lizenz"
+    },
+    {
+      "kind": "text",
+      "text": "A",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Settings",
+      "known_german": "Einstellungen"
+    },
+    {
+      "kind": "text",
+      "text": "I",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "API access",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "D",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Debug Log",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "🌐",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "English",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Deutsch",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "English",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Español",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "⏻",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Debug Log",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "0 entries",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Refresh",
+      "known_german": "Aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "x",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Log",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "TBC Dashboard",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Toggle navigation",
+      "known_german": "Navigation umschalten"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "nav.toggle",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Main navigation",
+      "known_german": "Hauptnavigation"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "nav.main",
+      "known_german": null
+    },
+    {
+      "kind": "attr:title",
+      "text": "Debug Log",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Debug Log",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Change language",
+      "known_german": "Sprache wechseln"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "nav.language",
+      "known_german": null
+    },
+    {
+      "kind": "attr:title",
+      "text": "Sign out",
+      "known_german": "Abmelden"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Sign out",
+      "known_german": "Abmelden"
+    },
+    {
+      "kind": "attr:title",
+      "text": "nav.sign_out",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "nav.sign_out",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Debug Log",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Close debug log",
+      "known_german": "Debug Log schliessen"
+    }
+  ],
+  "app/tbc/templates/camera_detail.html": [
+    {
+      "kind": "text",
+      "text": "Recording active",
+      "known_german": "Aufnahme aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Refresh",
+      "known_german": "Aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    },
+    {
+      "kind": "text",
+      "text": "Note: The host starts with 192.169. On home networks, 192.168 is often intended.",
+      "known_german": "Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint."
+    },
+    {
+      "kind": "text",
+      "text": "Overview",
+      "known_german": "Übersicht"
+    },
+    {
+      "kind": "text",
+      "text": "Recording",
+      "known_german": "Aufnahme"
+    },
+    {
+      "kind": "text",
+      "text": "AI detection",
+      "known_german": "KI-Erkennung"
+    },
+    {
+      "kind": "text",
+      "text": "Controls",
+      "known_german": "Steuerung"
+    },
+    {
+      "kind": "text",
+      "text": "Connection",
+      "known_german": "Verbindung"
+    },
+    {
+      "kind": "text",
+      "text": "Detections",
+      "known_german": "Erkennungen"
+    },
+    {
+      "kind": "text",
+      "text": "Device",
+      "known_german": "Gerät"
+    },
+    {
+      "kind": "text",
+      "text": "CPU load",
+      "known_german": "CPU-Last"
+    },
+    {
+      "kind": "text",
+      "text": "–",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Not available",
+      "known_german": "Nicht verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Codec data rate",
+      "known_german": "Codec-Datenrate"
+    },
+    {
+      "kind": "text",
+      "text": "Bitrate reported by camera",
+      "known_german": "Bitrate laut Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "–",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Not available",
+      "known_german": "Nicht verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Network throughput",
+      "known_german": "Netzwerkdurchsatz"
+    },
+    {
+      "kind": "text",
+      "text": "Throughput reported by camera",
+      "known_german": "Durchsatz laut Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "–",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Not available",
+      "known_german": "Nicht verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Last check",
+      "known_german": "Letzte Prüfung"
+    },
+    {
+      "kind": "text",
+      "text": "Stream",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Live",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "SD card",
+      "known_german": "SD-Karte"
+    },
+    {
+      "kind": "text",
+      "text": "NVR channels",
+      "known_german": "NVR-Kanäle"
+    },
+    {
+      "kind": "text",
+      "text": "Channel",
+      "known_german": "Kanal"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "Stream",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "OK",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Live",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Recordings",
+      "known_german": "Aufnahmen"
+    },
+    {
+      "kind": "text",
+      "text": "Open clips",
+      "known_german": "Clips öffnen"
+    },
+    {
+      "kind": "text",
+      "text": "Open SD card",
+      "known_german": "SD-Karte öffnen"
+    },
+    {
+      "kind": "text",
+      "text": "Connection",
+      "known_german": "Verbindung"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Host / IP",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "ONVIF-Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "HTTP-Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "RTSP-Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Username",
+      "known_german": "Benutzername"
+    },
+    {
+      "kind": "text",
+      "text": "New RTSP/RTSPS URL",
+      "known_german": "Neue RTSP-/RTSPS-URL"
+    },
+    {
+      "kind": "text",
+      "text": "Current:",
+      "known_german": "Aktuell:"
+    },
+    {
+      "kind": "text",
+      "text": "The full URL is stored securely and redacted in the interface.",
+      "known_german": "Die vollständige URL wird geschützt gespeichert und in der Oberfläche zensiert."
+    },
+    {
+      "kind": "text",
+      "text": "Remove manual stream URL",
+      "known_german": "Manuelle Stream-URL entfernen"
+    },
+    {
+      "kind": "text",
+      "text": "New password",
+      "known_german": "Neues Passwort"
+    },
+    {
+      "kind": "text",
+      "text": "Save and check",
+      "known_german": "Speichern und prüfen"
+    },
+    {
+      "kind": "text",
+      "text": "Continuous recording",
+      "known_german": "Daueraufzeichnung"
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "off",
+      "known_german": "aus"
+    },
+    {
+      "kind": "text",
+      "text": "Record around the clock",
+      "known_german": "Rund um die Uhr aufzeichnen"
+    },
+    {
+      "kind": "text",
+      "text": "Segment length in seconds",
+      "known_german": "Segmentlänge in Sekunden"
+    },
+    {
+      "kind": "text",
+      "text": "Storage destination",
+      "known_german": "Speicherziel"
+    },
+    {
+      "kind": "text",
+      "text": "First available destination",
+      "known_german": "Erstes verfügbares Ziel"
+    },
+    {
+      "kind": "text",
+      "text": "Open timeline",
+      "known_german": "Timeline öffnen"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Motion recording",
+      "known_german": "Aufnahme bei Bewegung"
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "off",
+      "known_german": "aus"
+    },
+    {
+      "kind": "text",
+      "text": "Save motion recordings",
+      "known_german": "Motion-Aufnahmen speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Minimum duration in seconds",
+      "known_german": "Mindestdauer in Sekunden"
+    },
+    {
+      "kind": "text",
+      "text": "Pre-roll in seconds",
+      "known_german": "Vorlauf in Sekunden"
+    },
+    {
+      "kind": "text",
+      "text": "Post-roll in seconds",
+      "known_german": "Nachlauf in Sekunden"
+    },
+    {
+      "kind": "text",
+      "text": "Pause between clips",
+      "known_german": "Pause zwischen Clips"
+    },
+    {
+      "kind": "text",
+      "text": "Also save a snapshot/thumbnail",
+      "known_german": "Snapshot/Thumbnail zusätzlich speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Storage destination",
+      "known_german": "Speicherziel"
+    },
+    {
+      "kind": "text",
+      "text": "First available destination",
+      "known_german": "Erstes verfügbares Ziel"
+    },
+    {
+      "kind": "text",
+      "text": "Camera events",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Select all",
+      "known_german": "Alle auswählen"
+    },
+    {
+      "kind": "text",
+      "text": "Local AI detection (TBC)",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Enable local AI detection for this camera before selecting these recording triggers.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Open AI detection settings",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Detections produced by the TBC server's image model, independently of the events reported by the camera.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Select all",
+      "known_german": "Alle auswählen"
+    },
+    {
+      "kind": "text",
+      "text": "Manage storage",
+      "known_german": "Speicher verwalten"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Recent events",
+      "known_german": "Letzte Ereignisse"
+    },
+    {
+      "kind": "text",
+      "text": "No events yet",
+      "known_german": "Noch keine Ereignisse"
+    },
+    {
+      "kind": "text",
+      "text": "Local AI detection",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "off",
+      "known_german": "aus"
+    },
+    {
+      "kind": "text",
+      "text": "Enable local AI detection for this camera",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Images per second",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Minimum confidence",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Backend",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Backend-Status",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Zones &amp; masks",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Draw areas on the latest camera image. Exclusion zones ignore detections inside them (for example, a road in the background),\n      inclusion zones count a class only inside the zone (for example, the driveway), and loitering zones trigger only when a class\n      remains inside continuously for at least the configured duration (for example, a person waiting at the door). Without zones,\n      local AI detection evaluates the entire image.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Draw new zone",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cancel drawing",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Select points in the image (at least 3). Double-click to close the zone.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Mode",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Include (count only here)",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Exclude (ignore here)",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Loitering zone (after X seconds)",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Minimum dwell time in seconds",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Classes (empty = all)",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Discard",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Save zone",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    },
+    {
+      "kind": "text",
+      "text": "No zones have been defined yet",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Channel",
+      "known_german": "Kanal"
+    },
+    {
+      "kind": "text",
+      "text": "The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.",
+      "known_german": "Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell."
+    },
+    {
+      "kind": "text",
+      "text": "This camera does not report any of the controls supported here via ONVIF (PTZ, floodlight, PIR, siren, battery, restart).",
+      "known_german": "Diese Kamera meldet über ONVIF keine der hier unterstützten Steuerfunktionen (PTZ, Flutlicht, PIR, Sirene, Akku, Neustart)."
+    },
+    {
+      "kind": "text",
+      "text": "Live preview",
+      "known_german": "Live-Vorschau"
+    },
+    {
+      "kind": "text",
+      "text": "Stream is starting…",
+      "known_german": "Stream wird gestartet…"
+    },
+    {
+      "kind": "text",
+      "text": "Pan/tilt head (PTZ)",
+      "known_german": "Schwenk-/Neigekopf (PTZ)"
+    },
+    {
+      "kind": "text",
+      "text": "▲ Up",
+      "known_german": "▲ Hoch"
+    },
+    {
+      "kind": "text",
+      "text": "▼ Down",
+      "known_german": "▼ Runter"
+    },
+    {
+      "kind": "text",
+      "text": "◄ Left",
+      "known_german": "◄ Links"
+    },
+    {
+      "kind": "text",
+      "text": "► Right",
+      "known_german": "► Rechts"
+    },
+    {
+      "kind": "text",
+      "text": "＋ Zoom",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "－ Zoom",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "■ Stop",
+      "known_german": "■ Stopp"
+    },
+    {
+      "kind": "text",
+      "text": "PTZ presets",
+      "known_german": "PTZ-Positionen"
+    },
+    {
+      "kind": "text",
+      "text": "Zoom &amp; Fokus",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Apply zoom",
+      "known_german": "Zoom anwenden"
+    },
+    {
+      "kind": "text",
+      "text": "Apply focus",
+      "known_german": "Fokus anwenden"
+    },
+    {
+      "kind": "text",
+      "text": "Floodlight",
+      "known_german": "Flutlicht"
+    },
+    {
+      "kind": "text",
+      "text": "Turn on",
+      "known_german": "Einschalten"
+    },
+    {
+      "kind": "text",
+      "text": "Turn off",
+      "known_german": "Ausschalten"
+    },
+    {
+      "kind": "text",
+      "text": "PIR sensor",
+      "known_german": "PIR-Sensor"
+    },
+    {
+      "kind": "text",
+      "text": "Activate",
+      "known_german": "Aktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Deactivate",
+      "known_german": "Deaktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Siren",
+      "known_german": "Sirene"
+    },
+    {
+      "kind": "text",
+      "text": "Duration (sec.)",
+      "known_german": "Dauer (Sek.)"
+    },
+    {
+      "kind": "text",
+      "text": "Play siren",
+      "known_german": "Sirene abspielen"
+    },
+    {
+      "kind": "text",
+      "text": "Quick replies",
+      "known_german": "Schnellantworten"
+    },
+    {
+      "kind": "text",
+      "text": "Battery level",
+      "known_german": "Akkustand"
+    },
+    {
+      "kind": "text",
+      "text": "–",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Not available",
+      "known_german": "Nicht verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Restart",
+      "known_german": "Neustart"
+    },
+    {
+      "kind": "text",
+      "text": "Restart camera",
+      "known_german": "Kamera neu starten"
+    },
+    {
+      "kind": "text",
+      "text": "Firmware",
+      "known_german": "Firmware"
+    },
+    {
+      "kind": "text",
+      "text": "Firmware updates are downloaded directly from reolink.com and written to the camera. The camera is unavailable during the update and restarts afterward. Do not interrupt the process.",
+      "known_german": "Firmware-Updates werden direkt von reolink.com heruntergeladen und auf die Kamera geschrieben. Die Kamera ist währenddessen nicht erreichbar und startet danach neu. Den Vorgang nicht unterbrechen."
+    },
+    {
+      "kind": "text",
+      "text": "Check for updates",
+      "known_german": "Auf Updates prüfen"
+    },
+    {
+      "kind": "text",
+      "text": "Update now",
+      "known_german": "Jetzt aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Detections",
+      "known_german": "Erkennungen"
+    },
+    {
+      "kind": "text",
+      "text": "Function",
+      "known_german": "Funktion"
+    },
+    {
+      "kind": "text",
+      "text": "Category",
+      "known_german": "Kategorie"
+    },
+    {
+      "kind": "text",
+      "text": "Source",
+      "known_german": "Quelle"
+    },
+    {
+      "kind": "text",
+      "text": "Supported",
+      "known_german": "Unterstützt"
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "inactive",
+      "known_german": "inaktiv"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Camera sections",
+      "known_german": "Kamerabereiche"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Camera overview",
+      "known_german": "Kameraübersicht"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "leave blank = unchanged",
+      "known_german": "leer lassen = unverändert"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "leave blank = unchanged",
+      "known_german": "leer lassen = unverändert"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "e.g. driveway",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/camera_form.html": [
+    {
+      "kind": "text",
+      "text": "Camera module",
+      "known_german": "Kameramodul"
+    },
+    {
+      "kind": "text",
+      "text": "Add camera",
+      "known_german": "Kamera hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Module",
+      "known_german": "Modul"
+    },
+    {
+      "kind": "text",
+      "text": "Need another camera manufacturer?",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Open External sources",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Host / IP",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "ONVIF-Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "HTTP-Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "RTSP-Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Username",
+      "known_german": "Benutzername"
+    },
+    {
+      "kind": "text",
+      "text": "Password",
+      "known_german": "Passwort"
+    },
+    {
+      "kind": "text",
+      "text": "RTSP-/RTSPS-URL",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "The full URL is stored securely and is always redacted in the interface.",
+      "known_german": "Die vollständige URL wird geschützt gespeichert und in der Oberfläche immer zensiert."
+    },
+    {
+      "kind": "text",
+      "text": "Cancel",
+      "known_german": "Abbrechen"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "rtsp://benutzer:passwort@kamera:554/pfad",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/camera_modules.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "Camera plugins",
+      "known_german": "Kamera-Plugins"
+    },
+    {
+      "kind": "text",
+      "text": "Import plugin",
+      "known_german": "Plugin importieren"
+    },
+    {
+      "kind": "text",
+      "text": "Plugin file",
+      "known_german": "Plugin-Datei"
+    },
+    {
+      "kind": "text",
+      "text": "ZIP",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Camera plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.",
+      "known_german": "Kamera-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB."
+    },
+    {
+      "kind": "text",
+      "text": "Plugin file",
+      "known_german": "Plugin-Datei"
+    },
+    {
+      "kind": "text",
+      "text": "Import",
+      "known_german": "Importieren"
+    },
+    {
+      "kind": "text",
+      "text": "Search plugins",
+      "known_german": "Plugins durchsuchen"
+    },
+    {
+      "kind": "text",
+      "text": "Installed plugins",
+      "known_german": "Installierte Plugins"
+    },
+    {
+      "kind": "text",
+      "text": "Key",
+      "known_german": "Schlüssel"
+    },
+    {
+      "kind": "text",
+      "text": "Source",
+      "known_german": "Quelle"
+    },
+    {
+      "kind": "text",
+      "text": "Cameras",
+      "known_german": "Kameras"
+    },
+    {
+      "kind": "text",
+      "text": "Export ZIP",
+      "known_german": "ZIP exportieren"
+    },
+    {
+      "kind": "text",
+      "text": "Run tests",
+      "known_german": "Tests ausführen"
+    },
+    {
+      "kind": "text",
+      "text": "Remove",
+      "known_german": "Entfernen"
+    },
+    {
+      "kind": "text",
+      "text": "No plugins found.",
+      "known_german": "Keine Plugins gefunden."
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "Search plugins…",
+      "known_german": "Plugins durchsuchen…"
+    }
+  ],
+  "app/tbc/templates/camera_new_choice.html": [
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Add camera",
+      "known_german": "Kamera hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Local camera",
+      "known_german": "Lokale Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Enter the host/IP, ONVIF settings, and credentials directly for a single camera or an NVR on the local network.",
+      "known_german": "Host/IP, ONVIF und Zugangsdaten direkt eintragen - für eine einzelne Kamera oder ein NVR im lokalen Netzwerk."
+    },
+    {
+      "kind": "text",
+      "text": "Set up local camera",
+      "known_german": "Lokale Kamera einrichten"
+    },
+    {
+      "kind": "text",
+      "text": "Cloud account",
+      "known_german": "Cloud-Konto"
+    },
+    {
+      "kind": "text",
+      "text": "Sign in to a vendor cloud account (e.g. UniFi Protect, Eufy Security, eWeLink) and discover devices automatically.",
+      "known_german": "Bei einem Hersteller-Cloud-Konto (z. B. UniFi Protect, Eufy Security, eWeLink) anmelden und Geräte automatisch suchen."
+    },
+    {
+      "kind": "text",
+      "text": "Connect cloud account",
+      "known_german": "Cloud-Konto verbinden"
+    }
+  ],
+  "app/tbc/templates/cloud_account_devices.html": [
+    {
+      "kind": "text",
+      "text": "Back to cloud accounts",
+      "known_german": "Zurück zu Cloud-Konten"
+    },
+    {
+      "kind": "text",
+      "text": "Edit account details or verification code",
+      "known_german": "Kontodaten oder Bestätigungscode bearbeiten"
+    },
+    {
+      "kind": "text",
+      "text": "No devices were found in this cloud account.",
+      "known_german": "Es wurden keine Geräte in diesem Cloud-Konto gefunden."
+    },
+    {
+      "kind": "text",
+      "text": "Already imported as a camera.",
+      "known_german": "Bereits als Kamera importiert."
+    },
+    {
+      "kind": "text",
+      "text": "Add as camera",
+      "known_german": "Als Kamera hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "No RTSP stream is available. Enable RTSP for this device in the vendor interface first.",
+      "known_german": "Kein RTSP-Stream verfügbar. Bitte RTSP für dieses Gerät zuerst in der Herstelleroberfläche aktivieren."
+    }
+  ],
+  "app/tbc/templates/cloud_account_edit.html": [
+    {
+      "kind": "text",
+      "text": "Edit cloud account",
+      "known_german": "Cloud-Konto bearbeiten"
+    },
+    {
+      "kind": "text",
+      "text": "Back to cloud accounts",
+      "known_german": "Zurück zu Cloud-Konten"
+    },
+    {
+      "kind": "text",
+      "text": "Provider",
+      "known_german": "Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "Label",
+      "known_german": "Bezeichnung"
+    },
+    {
+      "kind": "text",
+      "text": "Save changes",
+      "known_german": "Änderungen speichern"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "Leave unchanged",
+      "known_german": "Unverändert lassen"
+    }
+  ],
+  "app/tbc/templates/cloud_account_verify.html": [
+    {
+      "kind": "text",
+      "text": "Verification required",
+      "known_german": "Bestätigung erforderlich"
+    },
+    {
+      "kind": "text",
+      "text": "Back to cloud accounts",
+      "known_german": "Zurück zu Cloud-Konten"
+    },
+    {
+      "kind": "text",
+      "text": "Confirm",
+      "known_german": "Bestätigen"
+    }
+  ],
+  "app/tbc/templates/cloud_accounts.html": [
+    {
+      "kind": "text",
+      "text": "Add camera",
+      "known_german": "Kamera hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Cloud accounts",
+      "known_german": "Cloud-Konten"
+    },
+    {
+      "kind": "text",
+      "text": "Back to cameras",
+      "known_german": "Zurück zu Kameras"
+    },
+    {
+      "kind": "text",
+      "text": "Manage cloud providers",
+      "known_german": "Cloud-Anbieter verwalten"
+    },
+    {
+      "kind": "text",
+      "text": "No cloud provider is installed yet. Install a",
+      "known_german": "Es ist noch kein Cloud-Anbieter installiert. Installiere zuerst ein"
+    },
+    {
+      "kind": "text",
+      "text": "cloud plugin from External sources",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "before you can add an account.",
+      "known_german": ", bevor du ein Konto hinzufügen kannst."
+    },
+    {
+      "kind": "text",
+      "text": "Add account",
+      "known_german": "Konto hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Provider",
+      "known_german": "Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "Need another cloud provider?",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Open External sources",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Label",
+      "known_german": "Bezeichnung"
+    },
+    {
+      "kind": "text",
+      "text": "Add account",
+      "known_german": "Konto hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Configured accounts",
+      "known_german": "Konfigurierte Konten"
+    },
+    {
+      "kind": "text",
+      "text": "Edit account",
+      "known_german": "Konto bearbeiten"
+    },
+    {
+      "kind": "text",
+      "text": "Enter verification code",
+      "known_german": "Bestätigungscode eingeben"
+    },
+    {
+      "kind": "text",
+      "text": "Test connection",
+      "known_german": "Verbindung testen"
+    },
+    {
+      "kind": "text",
+      "text": "Discover devices",
+      "known_german": "Geräte suchen"
+    },
+    {
+      "kind": "text",
+      "text": "Remove",
+      "known_german": "Entfernen"
+    },
+    {
+      "kind": "text",
+      "text": "No cloud accounts have been configured yet.",
+      "known_german": "Noch keine Cloud-Konten konfiguriert."
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "e.g. Home",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "plugin.account_label_placeholder",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/cloud_modules.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "Cloud providers",
+      "known_german": "Cloud-Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "Import plugin",
+      "known_german": "Plugin importieren"
+    },
+    {
+      "kind": "text",
+      "text": "Plugin file",
+      "known_german": "Plugin-Datei"
+    },
+    {
+      "kind": "text",
+      "text": "ZIP",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cloud plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.",
+      "known_german": "Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB."
+    },
+    {
+      "kind": "text",
+      "text": "Plugin file",
+      "known_german": "Plugin-Datei"
+    },
+    {
+      "kind": "text",
+      "text": "Import",
+      "known_german": "Importieren"
+    },
+    {
+      "kind": "text",
+      "text": "Search plugins",
+      "known_german": "Plugins durchsuchen"
+    },
+    {
+      "kind": "text",
+      "text": "Installed plugins",
+      "known_german": "Installierte Plugins"
+    },
+    {
+      "kind": "text",
+      "text": "Key",
+      "known_german": "Schlüssel"
+    },
+    {
+      "kind": "text",
+      "text": "Source",
+      "known_german": "Quelle"
+    },
+    {
+      "kind": "text",
+      "text": "Accounts",
+      "known_german": "Konten"
+    },
+    {
+      "kind": "text",
+      "text": "2FA supported",
+      "known_german": "2FA-fähig"
+    },
+    {
+      "kind": "text",
+      "text": "No 2FA",
+      "known_german": "Kein 2FA"
+    },
+    {
+      "kind": "text",
+      "text": "Export ZIP",
+      "known_german": "ZIP exportieren"
+    },
+    {
+      "kind": "text",
+      "text": "Run tests",
+      "known_german": "Tests ausführen"
+    },
+    {
+      "kind": "text",
+      "text": "Remove",
+      "known_german": "Entfernen"
+    },
+    {
+      "kind": "text",
+      "text": "No plugins found.",
+      "known_german": "Keine Plugins gefunden."
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "Search plugins…",
+      "known_german": "Plugins durchsuchen…"
+    }
+  ],
+  "app/tbc/templates/dashboard.html": [
+    {
+      "kind": "text",
+      "text": "Camera Manager",
+      "known_german": "Kamera-Manager"
+    },
+    {
+      "kind": "text",
+      "text": "Cameras",
+      "known_german": "Kameras"
+    },
+    {
+      "kind": "text",
+      "text": "+ Camera",
+      "known_german": "+ Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "×",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "No stream is available for a preview image yet",
+      "known_german": "Noch kein Stream für ein Vorschaubild verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Supported",
+      "known_german": "Unterstützt"
+    },
+    {
+      "kind": "text",
+      "text": "Active",
+      "known_german": "Aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Features",
+      "known_german": "Funktionen"
+    },
+    {
+      "kind": "text",
+      "text": "Open",
+      "known_german": "Öffnen"
+    },
+    {
+      "kind": "text",
+      "text": "No camera yet",
+      "known_german": "Noch keine Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "+ Camera",
+      "known_german": "+ Kamera"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Camera list",
+      "known_german": "Kameraliste"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Camera status",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "dashboard.camera_status",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Note: The host starts with 192.169. On home networks, 192.168 is often intended.",
+      "known_german": "Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint."
+    },
+    {
+      "kind": "attr:data-tooltip",
+      "text": "Note: The host starts with 192.169. On home networks, 192.168 is often intended.",
+      "known_german": "Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint."
+    }
+  ],
+  "app/tbc/templates/design.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "Design",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Import design",
+      "known_german": "Design importieren"
+    },
+    {
+      "kind": "text",
+      "text": "Design file",
+      "known_german": "Design-Datei"
+    },
+    {
+      "kind": "text",
+      "text": "ZIP",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Design packages contain only stylesheets, metadata, and images, with no executable code. Maximum file size: 5 MB.",
+      "known_german": "Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB."
+    },
+    {
+      "kind": "text",
+      "text": "Design file",
+      "known_german": "Design-Datei"
+    },
+    {
+      "kind": "text",
+      "text": "Import",
+      "known_german": "Importieren"
+    },
+    {
+      "kind": "text",
+      "text": "Search designs",
+      "known_german": "Designs durchsuchen"
+    },
+    {
+      "kind": "text",
+      "text": "Installed designs",
+      "known_german": "Installierte Designs"
+    },
+    {
+      "kind": "text",
+      "text": "Key",
+      "known_german": "Schlüssel"
+    },
+    {
+      "kind": "text",
+      "text": "Source",
+      "known_german": "Quelle"
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "Activate",
+      "known_german": "Aktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Active",
+      "known_german": "Aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Export ZIP",
+      "known_german": "ZIP exportieren"
+    },
+    {
+      "kind": "text",
+      "text": "Remove",
+      "known_german": "Entfernen"
+    },
+    {
+      "kind": "text",
+      "text": "No designs found.",
+      "known_german": "Keine Designs gefunden."
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "Search designs…",
+      "known_german": "Designs durchsuchen…"
+    }
+  ],
+  "app/tbc/templates/detection.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "AI detection",
+      "known_german": "KI-Erkennung"
+    },
+    {
+      "kind": "text",
+      "text": "Backend-Status",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Backend",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "Message",
+      "known_german": "Meldung"
+    },
+    {
+      "kind": "text",
+      "text": "GPU (CUDA) requires a separately built image with",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "onnxruntime-gpu",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "(see",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Dockerfile.gpu",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ") and a compatible NVIDIA runtime.\n    Coral (Edge TPU) requires a separately built image with",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "pycoral",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "tflite-runtime",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "(see",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Dockerfile.coral",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ") and a connected\n    Edge TPU device. Both backends are implemented independently but could not be tested against real GPU or Coral hardware in this development environment;\n    verify them before production use.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Model",
+      "known_german": "Modell"
+    },
+    {
+      "kind": "text",
+      "text": "TBC_DETECTION_SAMPLE_FPS",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "and",
+      "known_german": "und"
+    },
+    {
+      "kind": "text",
+      "text": "TBC_DETECTION_CONFIDENCE_THRESHOLD",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "to change them globally.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cameras with local AI detection",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Backend",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Images/s",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Minimum confidence",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Zones",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Open",
+      "known_german": "Öffnen"
+    },
+    {
+      "kind": "text",
+      "text": "No camera has local AI detection enabled yet",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/health.html": [
+    {
+      "kind": "text",
+      "text": "Monitoring",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Performance",
+      "known_german": "Leistung"
+    },
+    {
+      "kind": "text",
+      "text": "Check running",
+      "known_german": "Prüfung läuft"
+    },
+    {
+      "kind": "text",
+      "text": "Refresh",
+      "known_german": "Aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "CPU",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "RAM",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "Component",
+      "known_german": "Komponente"
+    },
+    {
+      "kind": "text",
+      "text": "ID",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "Message",
+      "known_german": "Meldung"
+    },
+    {
+      "kind": "text",
+      "text": "Checked",
+      "known_german": "Geprüft"
+    },
+    {
+      "kind": "text",
+      "text": "Events",
+      "known_german": "Ereignisse"
+    },
+    {
+      "kind": "text",
+      "text": "Time",
+      "known_german": "Zeit"
+    },
+    {
+      "kind": "text",
+      "text": "Component",
+      "known_german": "Komponente"
+    },
+    {
+      "kind": "text",
+      "text": "Previous",
+      "known_german": "Vorher"
+    },
+    {
+      "kind": "text",
+      "text": "Status",
+      "known_german": "Status"
+    },
+    {
+      "kind": "text",
+      "text": "Message",
+      "known_german": "Meldung"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Current system performance",
+      "known_german": "Aktuelle Systemleistung"
+    }
+  ],
+  "app/tbc/templates/license.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "License",
+      "known_german": "Lizenz"
+    },
+    {
+      "kind": "text",
+      "text": "TBC Camera Manager is built on top of the open-source projects below. Each is used under its own license, listed\n    with a link to its source. This list covers direct dependencies and the pretrained models TBC downloads\n    automatically (e.g. for AI detection and face/plate recognition) - it does not cover every transitive dependency.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Tool",
+      "known_german": "Werkzeug"
+    },
+    {
+      "kind": "text",
+      "text": "License",
+      "known_german": "Lizenz"
+    },
+    {
+      "kind": "text",
+      "text": "Source",
+      "known_german": "Quelle"
+    }
+  ],
+  "app/tbc/templates/live.html": [
+    {
+      "kind": "text",
+      "text": "HLS",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Live",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Streams are starting",
+      "known_german": "Streams werden gestartet"
+    },
+    {
+      "kind": "text",
+      "text": "Refresh",
+      "known_german": "Aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Full screen",
+      "known_german": "Vollbild"
+    },
+    {
+      "kind": "text",
+      "text": "Layout",
+      "known_german": "Layout"
+    },
+    {
+      "kind": "text",
+      "text": "Rotate automatically",
+      "known_german": "Automatisch durchschalten"
+    },
+    {
+      "kind": "text",
+      "text": "Wall layout",
+      "known_german": "Wandlayout"
+    },
+    {
+      "kind": "text",
+      "text": "Admin",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Grid columns",
+      "known_german": "Raster-Spalten"
+    },
+    {
+      "kind": "text",
+      "text": "Rotation enabled by default",
+      "known_german": "Rotation standardmäßig aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Rotation interval (seconds)",
+      "known_german": "Rotationsintervall (Sekunden)"
+    },
+    {
+      "kind": "text",
+      "text": "The size and order of each tile are adjusted directly on the image: tools appear in the top-right corner on hover (⠿ moves, ⤡ resizes).",
+      "known_german": "Größe und Reihenfolge jeder Kachel werden direkt am Bild eingestellt: Werkzeuge oben rechts erscheinen beim Überfahren mit der Maus (⠿ verschiebt, ⤡ ändert die Größe)."
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "HLS",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "⠿",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "⤡",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "No camera available",
+      "known_german": "Keine Kamera verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Exit full screen (Esc)",
+      "known_german": "Vollbild verlassen (Esc)"
+    },
+    {
+      "kind": "text",
+      "text": "×",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Live streams",
+      "known_german": "Livestreams"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Open HLS playlist",
+      "known_german": "HLS-Playlist öffnen"
+    },
+    {
+      "kind": "attr:title",
+      "text": "HLS-Playlist",
+      "known_german": null
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Move tile",
+      "known_german": "Kachel verschieben"
+    },
+    {
+      "kind": "attr:title",
+      "text": "Move",
+      "known_german": "Verschieben"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Drag to resize tile",
+      "known_german": "Kachelgröße ändern, ziehen"
+    },
+    {
+      "kind": "attr:title",
+      "text": "Resize",
+      "known_german": "Größe ändern"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Close",
+      "known_german": "Schließen"
+    }
+  ],
+  "app/tbc/templates/login.html": [
+    {
+      "kind": "text",
+      "text": "Deutsch",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "English",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Español",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "TB Camera",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "TBC",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Username",
+      "known_german": "Benutzername"
+    },
+    {
+      "kind": "text",
+      "text": "Password",
+      "known_german": "Passwort"
+    },
+    {
+      "kind": "text",
+      "text": "Sign in",
+      "known_german": "Anmelden"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Change language",
+      "known_german": "Sprache wechseln"
+    }
+  ],
+  "app/tbc/templates/mqtt.html": [
+    {
+      "kind": "text",
+      "text": "Home Assistant",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "MQTT",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Enable MQTT",
+      "known_german": "MQTT aktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Broker Host",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Username",
+      "known_german": "Benutzername"
+    },
+    {
+      "kind": "text",
+      "text": "Password",
+      "known_german": "Passwort"
+    },
+    {
+      "kind": "text",
+      "text": "Topic Prefix",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Discovery Prefix",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Publish Home Assistant discovery",
+      "known_german": "Home-Assistant-Discovery publizieren"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    }
+  ],
+  "app/tbc/templates/notifications.html": [
+    {
+      "kind": "text",
+      "text": "Events",
+      "known_german": "Ereignisse"
+    },
+    {
+      "kind": "text",
+      "text": "Notifications",
+      "known_german": "Notify"
+    },
+    {
+      "kind": "text",
+      "text": "New channel",
+      "known_german": "Neuer Kanal"
+    },
+    {
+      "kind": "text",
+      "text": "Create",
+      "known_german": "Anlegen"
+    },
+    {
+      "kind": "text",
+      "text": "Channels",
+      "known_german": "Kanäle"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    }
+  ],
+  "app/tbc/templates/partials/notification_fields.html": [
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Type",
+      "known_german": "Typ"
+    },
+    {
+      "kind": "text",
+      "text": "Webhook",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Telegram",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "E-Mail",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Pushover",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Home Assistant Notify",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "ntfy (self-hosted push)",
+      "known_german": "ntfy (selbstgehosteter Push)"
+    },
+    {
+      "kind": "text",
+      "text": "Gotify (self-hosted push)",
+      "known_german": "Gotify (selbstgehosteter Push)"
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Attach snapshot",
+      "known_german": "Snapshot anhängen"
+    },
+    {
+      "kind": "text",
+      "text": "Event-Filter",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL",
+      "known_german": "URL / Nutzer bei Pushover / HA-URL / ntfy-Themen-URL / Gotify-Server-URL"
+    },
+    {
+      "kind": "text",
+      "text": "Token (ntfy Access Token / Gotify App Token)",
+      "known_german": "Token (ntfy-Zugriffstoken / Gotify-App-Token)"
+    },
+    {
+      "kind": "text",
+      "text": "Telegram Chat ID",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "HA Service",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Email to",
+      "known_german": "E-Mail an"
+    },
+    {
+      "kind": "text",
+      "text": "Email from",
+      "known_german": "E-Mail von"
+    },
+    {
+      "kind": "text",
+      "text": "SMTP Host",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "SMTP Port",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "SMTP username",
+      "known_german": "SMTP Benutzer"
+    },
+    {
+      "kind": "text",
+      "text": "SMTP password",
+      "known_german": "SMTP Passwort"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "recording_finished,recording_failed,unknown_face_detected,unknown_plate_detected",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "https://ntfy.example.com/tbc-alerts",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "notify.mobile_app",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/plugin_sources.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "External sources",
+      "known_german": "Externe Quellen"
+    },
+    {
+      "kind": "text",
+      "text": "External sources install plugins directly from a public GitHub repository instead of requiring a manual ZIP upload. Synchronizing downloads and installs the latest version again; only public repositories are supported. Each registered source is also checked hourly for a newer update; see",
+      "known_german": "Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe"
+    },
+    {
+      "kind": "text",
+      "text": "Admin → Updates",
+      "known_german": "Admin → Updates"
+    },
+    {
+      "kind": "text",
+      "text": ".",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Standard repositories",
+      "known_german": "Standard-Repositories"
+    },
+    {
+      "kind": "text",
+      "text": "Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.",
+      "known_german": "Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden."
+    },
+    {
+      "kind": "text",
+      "text": "Synchronize",
+      "known_german": "Synchronisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Install directly",
+      "known_german": "Direkt installieren"
+    },
+    {
+      "kind": "text",
+      "text": "Required plugin structure",
+      "known_german": "Erforderliche Plugin-Struktur"
+    },
+    {
+      "kind": "text",
+      "text": "A repository (or the specified subdirectory within it) must have the same structure as a manual ZIP import:",
+      "known_german": "Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:"
+    },
+    {
+      "kind": "text",
+      "text": "Camera plugin",
+      "known_german": "Kamera-Plugin"
+    },
+    {
+      "kind": "text",
+      "text": "manifest.json",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "plugin.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "module.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ", optional",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "detections.json",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "and",
+      "known_german": "und"
+    },
+    {
+      "kind": "text",
+      "text": "tests/test_*.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Cloud providers",
+      "known_german": "Cloud-Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "manifest.json",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "plugin.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "module.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ", optional",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "tests/test_*.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Design",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "manifest.json",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "static/styles.css",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "- no code, no tests",
+      "known_german": "- kein Code, keine Tests"
+    },
+    {
+      "kind": "text",
+      "text": "manifest.json",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "must",
+      "known_german": "muss"
+    },
+    {
+      "kind": "text",
+      "text": "schema_version",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "label",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ",",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "version",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "and (except for designs)",
+      "known_german": "und (außer bei Designs)"
+    },
+    {
+      "kind": "text",
+      "text": "entrypoint",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "contain;",
+      "known_german": "enthalten;"
+    },
+    {
+      "kind": "text",
+      "text": "plugin.py",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "provides",
+      "known_german": "stellt"
+    },
+    {
+      "kind": "text",
+      "text": "create_module()",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "which returns a",
+      "known_german": "bereit, das eine"
+    },
+    {
+      "kind": "text",
+      "text": "CameraModule",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "or",
+      "known_german": "- bzw."
+    },
+    {
+      "kind": "text",
+      "text": "CloudAccountModule",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "instance. An optional",
+      "known_german": "-Instanz zurückgibt. Ein optionaler"
+    },
+    {
+      "kind": "text",
+      "text": "tests/",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in",
+      "known_german": "-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in"
+    },
+    {
+      "kind": "text",
+      "text": "docs/plugin-sources.md",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "in the TBC repository, as well as",
+      "known_german": "im TBC-Repository sowie"
+    },
+    {
+      "kind": "text",
+      "text": "docs/camera-modules.md",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "docs/cloud-accounts.md",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "/",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "docs/design-themes.md",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ".",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Template: camera plugin",
+      "known_german": "Vorlage: Kamera-Plugin"
+    },
+    {
+      "kind": "text",
+      "text": "Template: cloud provider",
+      "known_german": "Vorlage: Cloud-Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "Template: design",
+      "known_german": "Vorlage: Design"
+    },
+    {
+      "kind": "text",
+      "text": "Add source",
+      "known_german": "Quelle hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Plugin type",
+      "known_german": "Plugin-Art"
+    },
+    {
+      "kind": "text",
+      "text": "Camera plugin",
+      "known_german": "Kamera-Plugin"
+    },
+    {
+      "kind": "text",
+      "text": "Cloud providers",
+      "known_german": "Cloud-Anbieter"
+    },
+    {
+      "kind": "text",
+      "text": "Design",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Label",
+      "known_german": "Bezeichnung"
+    },
+    {
+      "kind": "text",
+      "text": "GitHub repository URL",
+      "known_german": "GitHub-Repository-URL"
+    },
+    {
+      "kind": "text",
+      "text": "Branch/tag",
+      "known_german": "Branch/Tag"
+    },
+    {
+      "kind": "text",
+      "text": "Subdirectory (optional)",
+      "known_german": "Unterordner (optional)"
+    },
+    {
+      "kind": "text",
+      "text": "Add source",
+      "known_german": "Quelle hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Registered sources",
+      "known_german": "Registrierte Quellen"
+    },
+    {
+      "kind": "text",
+      "text": "Plugin type",
+      "known_german": "Plugin-Art"
+    },
+    {
+      "kind": "text",
+      "text": "Installed as",
+      "known_german": "Installiert als"
+    },
+    {
+      "kind": "text",
+      "text": "Synchronize",
+      "known_german": "Synchronisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Manage camera plugins",
+      "known_german": "Kamera-Plugins verwalten"
+    },
+    {
+      "kind": "text",
+      "text": "Manage cloud providers",
+      "known_german": "Cloud-Anbieter verwalten"
+    },
+    {
+      "kind": "text",
+      "text": "Manage designs",
+      "known_german": "Designs verwalten"
+    },
+    {
+      "kind": "text",
+      "text": "Remove source",
+      "known_german": "Quelle entfernen"
+    },
+    {
+      "kind": "text",
+      "text": "No external sources have been registered yet.",
+      "known_german": "Noch keine externen Quellen registriert."
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "e.g. Acme camera plugin",
+      "known_german": "z. B. Acme Kamera-Plugin"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "https://github.com/besitzer/repository",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "main",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "z. B. plugins/acme",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/plugin_updates.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "Updates",
+      "known_german": "Updates"
+    },
+    {
+      "kind": "text",
+      "text": "Manage external sources",
+      "known_german": "Externe Quellen verwalten"
+    },
+    {
+      "kind": "text",
+      "text": "TBC application",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Installed",
+      "known_german": "Installiert"
+    },
+    {
+      "kind": "text",
+      "text": "Latest version",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Published GitHub releases are checked hourly. Updating to a new version is a manual operation\n      (rebuild or pull the Docker image, or run",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "git pull",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "); there is intentionally no\n      one-click installer for the application itself.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "View release",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Every registered external source is checked hourly to see whether its branch/tag has advanced since the last installation (by comparing the commit SHA without downloading the entire repository). Only sources with an update that is actually available appear here.",
+      "known_german": "Jede registrierte externe Quelle wird stündlich darauf geprüft, ob sich der Branch/Tag seit der letzten Installation weiterbewegt hat (Vergleich der Commit-SHA, ohne das ganze Repository herunterzuladen). Hier erscheinen nur Quellen mit einem tatsächlich verfügbaren Update."
+    },
+    {
+      "kind": "text",
+      "text": "Available updates",
+      "known_german": "Verfügbare Updates"
+    },
+    {
+      "kind": "text",
+      "text": "Update available",
+      "known_german": "Update verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Installed",
+      "known_german": "Installiert"
+    },
+    {
+      "kind": "text",
+      "text": "Available",
+      "known_german": "Verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Last checked",
+      "known_german": "Zuletzt geprüft"
+    },
+    {
+      "kind": "text",
+      "text": "Update now",
+      "known_german": "Jetzt aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "All external sources are up to date.",
+      "known_german": "Alle externen Quellen sind aktuell."
+    }
+  ],
+  "app/tbc/templates/recognition.html": [
+    {
+      "kind": "text",
+      "text": "Extensions",
+      "known_german": "Erweiterungen"
+    },
+    {
+      "kind": "text",
+      "text": "Face &amp; plate recognition",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Settings",
+      "known_german": "Einstellungen"
+    },
+    {
+      "kind": "text",
+      "text": "Both features run entirely locally (no cloud service involved) and are off by default. \"Snapshot\" mode runs\n    once a matching recording's clip has finished saving; \"Live\" mode runs during the camera's own local-AI\n    detection loop, before any recording exists, for lower latency at the cost of extra CPU load per frame.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Enable face recognition",
+      "known_german": "Gesichtserkennung aktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Face recognition mode",
+      "known_german": "Modus der Gesichtserkennung"
+    },
+    {
+      "kind": "text",
+      "text": "Snapshot (after recording)",
+      "known_german": "Snapshot (nach der Aufnahme)"
+    },
+    {
+      "kind": "text",
+      "text": "Live (during detection)",
+      "known_german": "Live (während der Erkennung)"
+    },
+    {
+      "kind": "text",
+      "text": "Match threshold (0-1, higher = stricter)",
+      "known_german": "Übereinstimmungsschwelle (0-1, höher = strenger)"
+    },
+    {
+      "kind": "text",
+      "text": "Enable license plate recognition",
+      "known_german": "Kennzeichenerkennung aktivieren"
+    },
+    {
+      "kind": "text",
+      "text": "Plate recognition mode",
+      "known_german": "Modus der Kennzeichenerkennung"
+    },
+    {
+      "kind": "text",
+      "text": "Snapshot (after recording)",
+      "known_german": "Snapshot (nach der Aufnahme)"
+    },
+    {
+      "kind": "text",
+      "text": "Live (during detection)",
+      "known_german": "Live (während der Erkennung)"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Models (opencv_zoo's YuNet/SFace for faces, fast-alpr's detector/OCR for plates) download automatically on\n    first use into the detection-models volume - no manual download step needed.",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Enroll a known face",
+      "known_german": "Bekanntes Gesicht anlernen"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Photo (one clear, front-facing face)",
+      "known_german": "Foto (ein klares, frontales Gesicht)"
+    },
+    {
+      "kind": "text",
+      "text": "Enroll",
+      "known_german": "Anlernen"
+    },
+    {
+      "kind": "text",
+      "text": "Known faces",
+      "known_german": "Bekannte Gesichter"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    },
+    {
+      "kind": "text",
+      "text": "No known faces enrolled yet - every detected face will be reported as \"unknown\".",
+      "known_german": "Noch keine Gesichter angelernt - jedes erkannte Gesicht wird als \"unbekannt\" gemeldet."
+    },
+    {
+      "kind": "text",
+      "text": "Add a known plate",
+      "known_german": "Bekanntes Kennzeichen hinzufügen"
+    },
+    {
+      "kind": "text",
+      "text": "Plate text",
+      "known_german": "Kennzeichentext"
+    },
+    {
+      "kind": "text",
+      "text": "Label",
+      "known_german": "Bezeichnung"
+    },
+    {
+      "kind": "text",
+      "text": "Add",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Known plates",
+      "known_german": "Bekannte Kennzeichen"
+    },
+    {
+      "kind": "text",
+      "text": "Plate text",
+      "known_german": "Kennzeichentext"
+    },
+    {
+      "kind": "text",
+      "text": "Label",
+      "known_german": "Bezeichnung"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    },
+    {
+      "kind": "text",
+      "text": "No known plates yet - every recognized plate will be reported as \"unknown\".",
+      "known_german": "Noch keine bekannten Kennzeichen - jedes erkannte Kennzeichen wird als \"unbekannt\" gemeldet."
+    },
+    {
+      "kind": "text",
+      "text": "Recent recognition events",
+      "known_german": "Letzte Erkennungsereignisse"
+    },
+    {
+      "kind": "text",
+      "text": "When",
+      "known_german": "Wann"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Type",
+      "known_german": "Typ"
+    },
+    {
+      "kind": "text",
+      "text": "Result",
+      "known_german": "Ergebnis"
+    },
+    {
+      "kind": "text",
+      "text": "Confidence",
+      "known_german": "Konfidenz"
+    },
+    {
+      "kind": "text",
+      "text": "No recognition events yet",
+      "known_german": "Noch keine Erkennungsereignisse"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "B-TB 1234",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "e.g. own car, neighbor",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/recordings.html": [
+    {
+      "kind": "text",
+      "text": "Archive",
+      "known_german": "Archiv"
+    },
+    {
+      "kind": "text",
+      "text": "Clips",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "All",
+      "known_german": "Alle"
+    },
+    {
+      "kind": "text",
+      "text": "Event",
+      "known_german": "Ereignis"
+    },
+    {
+      "kind": "text",
+      "text": "All",
+      "known_german": "Alle"
+    },
+    {
+      "kind": "text",
+      "text": "From",
+      "known_german": "Von"
+    },
+    {
+      "kind": "text",
+      "text": "To",
+      "known_german": "Bis"
+    },
+    {
+      "kind": "text",
+      "text": "Search",
+      "known_german": "Suchen"
+    },
+    {
+      "kind": "text",
+      "text": "Filter",
+      "known_german": "Filtern"
+    },
+    {
+      "kind": "text",
+      "text": "Download",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    },
+    {
+      "kind": "text",
+      "text": "‹ Previous page",
+      "known_german": "‹ Vorherige Seite"
+    },
+    {
+      "kind": "text",
+      "text": "Next page ›",
+      "known_german": "Nächste Seite ›"
+    },
+    {
+      "kind": "text",
+      "text": "No clips found",
+      "known_german": "Keine Clips gefunden"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "Event label, message, camera name…",
+      "known_german": "Event-Label, Nachricht, Kameraname…"
+    }
+  ],
+  "app/tbc/templates/retention.html": [
+    {
+      "kind": "text",
+      "text": "Cleanup",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Retention",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "New rule",
+      "known_german": "Neue Regel"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "All",
+      "known_german": "Alle"
+    },
+    {
+      "kind": "text",
+      "text": "Event",
+      "known_german": "Ereignis"
+    },
+    {
+      "kind": "text",
+      "text": "All",
+      "known_german": "Alle"
+    },
+    {
+      "kind": "text",
+      "text": "Maximum age in days",
+      "known_german": "Max. Alter Tage"
+    },
+    {
+      "kind": "text",
+      "text": "Maximum size in GB",
+      "known_german": "Max. Größe GB"
+    },
+    {
+      "kind": "text",
+      "text": "Create",
+      "known_german": "Anlegen"
+    },
+    {
+      "kind": "text",
+      "text": "Rules",
+      "known_german": "Regeln"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "active",
+      "known_german": "aktiv"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "All",
+      "known_german": "Alle"
+    },
+    {
+      "kind": "text",
+      "text": "Event",
+      "known_german": "Ereignis"
+    },
+    {
+      "kind": "text",
+      "text": "All",
+      "known_german": "Alle"
+    },
+    {
+      "kind": "text",
+      "text": "Maximum age in days",
+      "known_german": "Max. Alter Tage"
+    },
+    {
+      "kind": "text",
+      "text": "Maximum size in GB",
+      "known_german": "Max. Größe GB"
+    },
+    {
+      "kind": "text",
+      "text": "Save",
+      "known_german": "Speichern"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    }
+  ],
+  "app/tbc/templates/sd_card.html": [
+    {
+      "kind": "text",
+      "text": "Camera archive",
+      "known_german": "Kamera-Archiv"
+    },
+    {
+      "kind": "text",
+      "text": "SD card",
+      "known_german": "SD-Karte"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Channel",
+      "known_german": "Kanal"
+    },
+    {
+      "kind": "text",
+      "text": "Stream",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Main",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Sub",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "From",
+      "known_german": "Von"
+    },
+    {
+      "kind": "text",
+      "text": "To",
+      "known_german": "Bis"
+    },
+    {
+      "kind": "text",
+      "text": "Search",
+      "known_german": "Suchen"
+    },
+    {
+      "kind": "text",
+      "text": "Preview",
+      "known_german": "Vorschau"
+    },
+    {
+      "kind": "text",
+      "text": "Loading SD card content...",
+      "known_german": "SD-Karteninhalt wird geladen..."
+    },
+    {
+      "kind": "text",
+      "text": "Recordings on SD card",
+      "known_german": "Aufnahmen auf SD-Karte"
+    },
+    {
+      "kind": "text",
+      "text": "Start",
+      "known_german": "Start"
+    },
+    {
+      "kind": "text",
+      "text": "End",
+      "known_german": "Ende"
+    },
+    {
+      "kind": "text",
+      "text": "Duration",
+      "known_german": "Dauer"
+    },
+    {
+      "kind": "text",
+      "text": "Type",
+      "known_german": "Typ"
+    },
+    {
+      "kind": "text",
+      "text": "File",
+      "known_german": "Datei"
+    },
+    {
+      "kind": "text",
+      "text": "Size",
+      "known_german": "Größe"
+    },
+    {
+      "kind": "text",
+      "text": "No SD card recordings found",
+      "known_german": "Keine SD-Card-Aufnahmen gefunden"
+    }
+  ],
+  "app/tbc/templates/settings.html": [
+    {
+      "kind": "text",
+      "text": "System",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Settings",
+      "known_german": "Einstellungen"
+    },
+    {
+      "kind": "text",
+      "text": "API &amp; AI interface",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "API activation, API-key management, and examples of the available data and response\n      formats are now collected on a dedicated page:",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Open API access",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": ".",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Debug Log",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "The debug log collects ongoing messages from the app and ffmpeg live processes. It is available as a pull-up in the bottom-right corner of every admin page.",
+      "known_german": "Das Debug Log sammelt laufende Meldungen der App und ffmpeg-Live-Prozesse. Es ist auf jeder Admin-Seite unten rechts als Pull-up verfuegbar."
+    },
+    {
+      "kind": "text",
+      "text": "Open debug log",
+      "known_german": "Debug Log oeffnen"
+    },
+    {
+      "kind": "text",
+      "text": "Clear",
+      "known_german": "Leeren"
+    }
+  ],
+  "app/tbc/templates/storage.html": [
+    {
+      "kind": "text",
+      "text": "Recording destinations",
+      "known_german": "Aufnahmeziele"
+    },
+    {
+      "kind": "text",
+      "text": "Storage",
+      "known_german": "Speicher"
+    },
+    {
+      "kind": "text",
+      "text": "Cameras",
+      "known_german": "Kameras"
+    },
+    {
+      "kind": "text",
+      "text": "New storage destination",
+      "known_german": "Neues Speicherziel"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Type",
+      "known_german": "Typ"
+    },
+    {
+      "kind": "text",
+      "text": "Local or mounted path",
+      "known_german": "Lokaler oder gemounteter Pfad"
+    },
+    {
+      "kind": "text",
+      "text": "S3-compatible cloud storage",
+      "known_german": "S3-kompatibler Cloud-Speicher"
+    },
+    {
+      "kind": "text",
+      "text": "Local path in the container",
+      "known_german": "Lokaler Pfad im Container"
+    },
+    {
+      "kind": "text",
+      "text": "S3 Endpoint URL",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S3 Region",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S3 Bucket",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S3 Prefix",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Access Key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Secret key",
+      "known_german": "Secret Key"
+    },
+    {
+      "kind": "text",
+      "text": "Create",
+      "known_german": "Anlegen"
+    },
+    {
+      "kind": "text",
+      "text": "Existing destinations",
+      "known_german": "Vorhandene Ziele"
+    },
+    {
+      "kind": "text",
+      "text": "Name",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Type",
+      "known_german": "Typ"
+    },
+    {
+      "kind": "text",
+      "text": "Local/mounted path",
+      "known_german": "Lokaler/gemounteter Pfad"
+    },
+    {
+      "kind": "text",
+      "text": "S3 Cloud",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Local path",
+      "known_german": "Lokaler Pfad"
+    },
+    {
+      "kind": "text",
+      "text": "S3 Endpoint",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S3 Region",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S3 Bucket",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "S3 Prefix",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Access Key",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Secret key",
+      "known_german": "Secret Key"
+    },
+    {
+      "kind": "text",
+      "text": "Retention days",
+      "known_german": "Retention Tage"
+    },
+    {
+      "kind": "text",
+      "text": "Retention GB",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Refresh",
+      "known_german": "Aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    },
+    {
+      "kind": "text",
+      "text": "No storage destination has been created yet",
+      "known_german": "Noch kein Speicherziel angelegt"
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "https://s3.example.com",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "eu-central-1",
+      "known_german": null
+    },
+    {
+      "kind": "attr:placeholder",
+      "text": "tbc/aufnahmen",
+      "known_german": null
+    }
+  ],
+  "app/tbc/templates/storage_explorer.html": [
+    {
+      "kind": "text",
+      "text": "Storage analysis",
+      "known_german": "Speicheranalyse"
+    },
+    {
+      "kind": "text",
+      "text": "Explorer",
+      "known_german": "Explorer"
+    },
+    {
+      "kind": "text",
+      "text": "Run cleanup",
+      "known_german": "Cleanup ausführen"
+    },
+    {
+      "kind": "text",
+      "text": "Clips",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Free",
+      "known_german": "Frei"
+    },
+    {
+      "kind": "text",
+      "text": "Type",
+      "known_german": "Typ"
+    },
+    {
+      "kind": "text",
+      "text": "Usage by camera/event",
+      "known_german": "Belegung pro Kamera/Ereignis"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Event",
+      "known_german": "Ereignis"
+    },
+    {
+      "kind": "text",
+      "text": "Clips",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Size",
+      "known_german": "Größe"
+    },
+    {
+      "kind": "text",
+      "text": "Cleanup preview",
+      "known_german": "Cleanup-Vorschau"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Event",
+      "known_german": "Ereignis"
+    },
+    {
+      "kind": "text",
+      "text": "Date",
+      "known_german": "Datum"
+    },
+    {
+      "kind": "text",
+      "text": "Reason",
+      "known_german": "Grund"
+    },
+    {
+      "kind": "text",
+      "text": "Size",
+      "known_german": "Größe"
+    }
+  ],
+  "app/tbc/templates/timeline.html": [
+    {
+      "kind": "text",
+      "text": "Archive",
+      "known_german": "Archiv"
+    },
+    {
+      "kind": "text",
+      "text": "Timeline",
+      "known_german": "Timeline"
+    },
+    {
+      "kind": "text",
+      "text": "Camera",
+      "known_german": "Kamera"
+    },
+    {
+      "kind": "text",
+      "text": "Day",
+      "known_german": "Tag"
+    },
+    {
+      "kind": "text",
+      "text": "Show",
+      "known_german": "Anzeigen"
+    },
+    {
+      "kind": "text",
+      "text": "‹ Previous day",
+      "known_german": "‹ Vorheriger Tag"
+    },
+    {
+      "kind": "text",
+      "text": "Next day ›",
+      "known_german": "Nächster Tag ›"
+    },
+    {
+      "kind": "text",
+      "text": "No camera available",
+      "known_german": "Keine Kamera verfügbar"
+    },
+    {
+      "kind": "text",
+      "text": "Local recordings (from TBC)",
+      "known_german": "Lokale Aufzeichnungen (von TBC)"
+    },
+    {
+      "kind": "text",
+      "text": "−",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "1×",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "+",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Full day",
+      "known_german": "Ganzer Tag"
+    },
+    {
+      "kind": "text",
+      "text": "Continuous",
+      "known_german": "Daueraufnahme"
+    },
+    {
+      "kind": "text",
+      "text": "Events",
+      "known_german": "Ereignisse"
+    },
+    {
+      "kind": "text",
+      "text": "SD card",
+      "known_german": "SD-Karte"
+    },
+    {
+      "kind": "text",
+      "text": "No recordings are available for this day.",
+      "known_german": "Für diesen Tag liegen keine Aufnahmen vor."
+    },
+    {
+      "kind": "text",
+      "text": "Events on this day",
+      "known_german": "Ereignisse an diesem Tag"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Zoom out",
+      "known_german": "Verkleinern"
+    },
+    {
+      "kind": "attr:aria-label",
+      "text": "Zoom in",
+      "known_german": "Vergrößern"
+    }
+  ],
+  "app/tbc/templates/users.html": [
+    {
+      "kind": "text",
+      "text": "Access",
+      "known_german": "Zugriff"
+    },
+    {
+      "kind": "text",
+      "text": "Users",
+      "known_german": "Benutzer"
+    },
+    {
+      "kind": "text",
+      "text": "New user",
+      "known_german": "Neuer Benutzer"
+    },
+    {
+      "kind": "text",
+      "text": "Username",
+      "known_german": "Benutzername"
+    },
+    {
+      "kind": "text",
+      "text": "Password",
+      "known_german": "Passwort"
+    },
+    {
+      "kind": "text",
+      "text": "Role",
+      "known_german": "Rolle"
+    },
+    {
+      "kind": "text",
+      "text": "Viewer",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Admin",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Camera access for viewers",
+      "known_german": "Kamerazugriff für Viewer"
+    },
+    {
+      "kind": "text",
+      "text": "Create",
+      "known_german": "Anlegen"
+    },
+    {
+      "kind": "text",
+      "text": "Existing users",
+      "known_german": "Vorhandene Benutzer"
+    },
+    {
+      "kind": "text",
+      "text": "Username",
+      "known_german": "Benutzername"
+    },
+    {
+      "kind": "text",
+      "text": "New password",
+      "known_german": "Neues Passwort"
+    },
+    {
+      "kind": "text",
+      "text": "Role",
+      "known_german": "Rolle"
+    },
+    {
+      "kind": "text",
+      "text": "Viewer",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Admin",
+      "known_german": null
+    },
+    {
+      "kind": "text",
+      "text": "Camera access",
+      "known_german": "Kamerazugriff"
+    },
+    {
+      "kind": "text",
+      "text": "Refresh",
+      "known_german": "Aktualisieren"
+    },
+    {
+      "kind": "text",
+      "text": "Delete",
+      "known_german": "Löschen"
+    }
+  ]
+}

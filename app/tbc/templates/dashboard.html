@@ -3,16 +3,16 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Camera Manager</p>
-    <h1>Cameras</h1>
+    <p class="eyebrow" data-i18n="dashboard.camera_manager">Camera Manager</p>
+    <h1 data-i18n="nav.cameras">Cameras</h1>
   </div>
   {% if role == 'admin' %}
-  <a class="primary-button" href="/cameras/new">+ Camera</a>
+  <a class="primary-button" href="/cameras/new" data-i18n="dashboard.camera">+ Camera</a>
   {% endif %}
 </section>
 
 {% if cameras %}
-<section class="camera-grid" aria-label="Camera list">
+<section class="camera-grid" aria-label="Camera list" data-i18n-aria-label="dashboard.camera_list">
   {% for camera in cameras %}
   <article class="camera-card">
     <div class="card-header">
@@ -26,7 +26,7 @@
       {% if camera.last_probe_message %}
       {% for message in camera.last_probe_message.split(' | ') %}
       {% set normalized_message = message | lower %}
-      {% set probe_failed = camera.last_probe_status == 'error' or 'fehl' in normalized_message or 'nicht ' in normalized_message or 'kein ' in normalized_message or 'abgelehnt' in normalized_message or 'timeout' in normalized_message %}
+      {% set probe_failed = camera.last_probe_status == 'error' or 'fail' in normalized_message or 'not ' in normalized_message or 'no ' in normalized_message or 'reject' in normalized_message or 'timeout' in normalized_message %}
       <span class="probe-indicator probe-indicator-{{ 'error' if probe_failed else 'ok' }}"
             tabindex="0"
             role="img"
@@ -39,8 +39,8 @@
       <span class="probe-indicator probe-indicator-error"
             tabindex="0"
             role="img"
-            aria-label="Note: The host starts with 192.169. On home networks, 192.168 is often intended."
-            data-tooltip="Note: The host starts with 192.169. On home networks, 192.168 is often intended.">
+            aria-label="Note: The host starts with 192.169. On home networks, 192.168 is often intended." data-i18n-aria-label="camera.note_host_starts_192_169"
+            data-tooltip="Note: The host starts with 192.169. On home networks, 192.168 is often intended." data-i18n-data-tooltip="camera.note_host_starts_192_169">
         <span aria-hidden="true">×</span>
       </span>
       {% endif %}
@@ -65,34 +65,34 @@
       <figcaption>Vorschaubild · Aktualisierung alle {{ snapshot_interval_minutes }} Minuten</figcaption>
     </figure>
     {% else %}
-    <div class="camera-snapshot camera-snapshot-empty">No stream is available for a preview image yet</div>
+    <div class="camera-snapshot camera-snapshot-empty" data-i18n="dashboard.no_stream_available_preview_image">No stream is available for a preview image yet</div>
     {% endif %}
     <dl class="metric-row camera-metrics">
       <div class="camera-metric camera-metric-supported">
-        <dt>Supported</dt>
+        <dt data-i18n="camera.supported">Supported</dt>
         <dd>{{ camera.supported_count or 0 }}</dd>
       </div>
       <div class="camera-metric camera-metric-active{% if not camera.active_count %} is-empty{% endif %}">
-        <dt>Active</dt>
+        <dt data-i18n="design.active_state">Active</dt>
         <dd>{{ camera.active_count or 0 }}</dd>
       </div>
       <div class="camera-metric camera-metric-features">
-        <dt>Features</dt>
+        <dt data-i18n="dashboard.features">Features</dt>
         <dd>{{ camera.detection_count or 0 }}</dd>
       </div>
     </dl>
     <div class="card-footer">
       <span>{{ camera.model or 'Model unknown' }}</span>
-      <a class="text-button" href="/cameras/{{ camera.id }}">Open</a>
+      <a class="text-button" href="/cameras/{{ camera.id }}" data-i18n="dashboard.open">Open</a>
     </div>
   </article>
   {% endfor %}
 </section>
 {% else %}
 <section class="empty-state">
-  <h2>No camera yet</h2>
+  <h2 data-i18n="dashboard.no_camera_yet">No camera yet</h2>
   {% if role == 'admin' %}
-  <a class="primary-button" href="/cameras/new">+ Camera</a>
+  <a class="primary-button" href="/cameras/new" data-i18n="dashboard.camera">+ Camera</a>
   {% endif %}
 </section>
 {% endif %}

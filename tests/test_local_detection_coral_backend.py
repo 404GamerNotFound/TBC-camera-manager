@@ -38,7 +38,7 @@ class CoralAvailabilityTests(unittest.TestCase):
         with patch.dict("sys.modules", {"pycoral": MagicMock(), "pycoral.utils": fake_pycoral_utils, "pycoral.utils.edgetpu": fake_edgetpu}):
             available, message = CoralEdgeTpuBackend.available()
         self.assertFalse(available)
-        self.assertIn("Edge-TPU-Gerät", message)
+        self.assertIn("Edge TPU device", message)
 
     def test_available_when_tpu_device_found(self):
         fake_edgetpu = MagicMock()

@@ -1,6 +1,6 @@
 <div class="form-grid">
-  <label><span>Name</span><input name="name" value="{{ values.name if values is defined else '' }}" required></label>
-  <label><span>Type</span><select name="kind">
+  <label><span data-i18n="common.name">Name</span><input name="name" value="{{ values.name if values is defined else '' }}" required></label>
+  <label><span data-i18n="notification.type">Type</span><select name="kind">
     {% set kind = values.kind if values is defined else 'webhook' %}
     <option value="webhook" {% if kind == 'webhook' %}selected{% endif %}>Webhook</option>
     <option value="telegram" {% if kind == 'telegram' %}selected{% endif %}>Telegram</option>
@@ -10,17 +10,17 @@
     <option value="ntfy" {% if kind == 'ntfy' %}selected{% endif %}>ntfy (self-hosted push)</option>
     <option value="gotify" {% if kind == 'gotify' %}selected{% endif %}>Gotify (self-hosted push)</option>
   </select></label>
-  <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span>active</span></label>
-  <label class="check-row"><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span>Attach snapshot</span></label>
-  <label class="span-2"><span>Event-Filter</span><input name="event_filter" value="{{ values.event_filter if values is defined and values.event_filter else '' }}" placeholder="recording_finished,recording_failed,unknown_face_detected,unknown_plate_detected"></label>
-  <label><span>URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" placeholder="https://ntfy.example.com/tbc-alerts"></label>
-  <label><span>Token (ntfy Access Token / Gotify App Token)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
-  <label><span>Telegram Chat ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>
-  <label><span>HA Service</span><input name="ha_service" value="{{ values.ha_service if values is defined and values.ha_service else '' }}" placeholder="notify.mobile_app"></label>
-  <label><span>Email to</span><input name="email_to" value="{{ values.email_to if values is defined and values.email_to else '' }}"></label>
-  <label><span>Email from</span><input name="email_from" value="{{ values.email_from if values is defined and values.email_from else '' }}"></label>
-  <label><span>SMTP Host</span><input name="smtp_host" value="{{ values.smtp_host if values is defined and values.smtp_host else '' }}"></label>
-  <label><span>SMTP Port</span><input name="smtp_port" type="number" value="{{ values.smtp_port if values is defined and values.smtp_port else '' }}"></label>
-  <label><span>SMTP username</span><input name="smtp_username" value="{{ values.smtp_username if values is defined and values.smtp_username else '' }}"></label>
-  <label><span>SMTP password</span><input name="smtp_password" type="password" value="{{ values.smtp_password if values is defined and values.smtp_password else '' }}"></label>
+  <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
+  <label class="check-row"><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span data-i18n="notification.attach_snapshot">Attach snapshot</span></label>
+  <label class="span-2"><span data-i18n="notification.event_filter">Event-Filter</span><input name="event_filter" value="{{ values.event_filter if values is defined and values.event_filter else '' }}" placeholder="recording_finished,recording_failed,unknown_face_detected,unknown_plate_detected"></label>
+  <label><span data-i18n="notification.url_pushover_user_ha_url">URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" placeholder="https://ntfy.example.com/tbc-alerts"></label>
+  <label><span data-i18n="notification.token_ntfy_access_token_gotify">Token (ntfy Access Token / Gotify App Token)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+  <label><span data-i18n="notification.telegram_chat_id">Telegram Chat ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>
+  <label><span data-i18n="notification.ha_service">HA Service</span><input name="ha_service" value="{{ values.ha_service if values is defined and values.ha_service else '' }}" placeholder="notify.mobile_app"></label>
+  <label><span data-i18n="notification.email">Email to</span><input name="email_to" value="{{ values.email_to if values is defined and values.email_to else '' }}"></label>
+  <label><span data-i18n="notification.email_from">Email from</span><input name="email_from" value="{{ values.email_from if values is defined and values.email_from else '' }}"></label>
+  <label><span data-i18n="notification.smtp_host">SMTP Host</span><input name="smtp_host" value="{{ values.smtp_host if values is defined and values.smtp_host else '' }}"></label>
+  <label><span data-i18n="notification.smtp_port">SMTP Port</span><input name="smtp_port" type="number" value="{{ values.smtp_port if values is defined and values.smtp_port else '' }}"></label>
+  <label><span data-i18n="notification.smtp_username">SMTP username</span><input name="smtp_username" value="{{ values.smtp_username if values is defined and values.smtp_username else '' }}"></label>
+  <label><span data-i18n="notification.smtp_password">SMTP password</span><input name="smtp_password" type="password" value="{{ values.smtp_password if values is defined and values.smtp_password else '' }}"></label>
 </div>

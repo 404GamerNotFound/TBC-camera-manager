@@ -99,17 +99,17 @@ class CameraPluginPackageTests(unittest.TestCase):
         archive = plugin_archive(extra_files=[("../outside.py", "bad")])
 
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CameraPluginError, "unsicheren Dateipfad"):
+            with self.assertRaisesRegex(CameraPluginError, "unsafe file path"):
                 install_plugin_archive(archive, external_path)
 
     def test_builtin_plugin_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CameraPluginError, "nicht überschrieben"):
+            with self.assertRaisesRegex(CameraPluginError, "cannot be overwritten"):
                 install_plugin_archive(plugin_archive(key="standard_onvif"), external_path)
 
     def test_invalid_zip_is_reported_as_plugin_error(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CameraPluginError, "kein gültiges ZIP"):
+            with self.assertRaisesRegex(CameraPluginError, "not a valid ZIP"):
                 install_plugin_archive(b"not a zip", external_path)
 
 

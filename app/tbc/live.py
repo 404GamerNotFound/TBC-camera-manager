@@ -22,7 +22,7 @@ class LiveManager:
 
     def start(self, key: str, stream_uri: str) -> Path:
         if shutil.which("ffmpeg") is None:
-            raise RuntimeError("ffmpeg ist nicht installiert")
+            raise RuntimeError("ffmpeg is not installed")
         playlist = self.playlist_path(key)
         process = self._processes.get(key)
         if process and process.poll() is None and playlist.exists():

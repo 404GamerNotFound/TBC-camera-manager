@@ -10,8 +10,8 @@ from .service import probe_camera
 
 class StandardOnvifCameraModule(CameraModule):
     key = "standard_onvif"
-    label = "Standard ONVIF Verbindung"
-    description = "Herstellerneutraler ONVIF-Fallback für weitere Kameramodelle"
+    label = "Standard ONVIF connection"
+    description = "Vendor-neutral ONVIF fallback for additional camera models"
     default_onvif_port = 80
     default_http_port = 80
     default_rtsp_port = 554

@@ -23,7 +23,7 @@ class UnifiProtectCloudModule(CloudAccountModule):
         finally:
             await client.close_session()
         nvr = bootstrap.nvr
-        return f"Verbunden mit {nvr.name} (UniFi Protect {nvr.version}, {len(bootstrap.cameras)} Kamera(s))"
+        return f"Connected to {nvr.name} (UniFi Protect {nvr.version}, {len(bootstrap.cameras)} camera(s))"
 
     async def discover_devices(self, account: dict[str, Any]) -> list[CloudDevice]:
         client = _client(account)
@@ -56,11 +56,11 @@ def _client(account: dict[str, Any]) -> Any:
     try:
         from uiprotect import ProtectApiClient
     except ImportError as exc:
-        raise CloudConnectionError("uiprotect ist nicht installiert") from exc
+        raise CloudConnectionError("uiprotect is not installed") from exc
 
     host = str(account.get("host") or "").strip()
     if not host:
-        raise CloudConnectionError("Host ist erforderlich (Controller-IP oder <id>.ui.com)")
+        raise CloudConnectionError("Host is required (controller IP or <id>.ui.com)")
     return ProtectApiClient(
         host,
         int(account.get("port") or 443),
@@ -75,15 +75,15 @@ def _error_message(exc: Exception) -> str:
     try:
         from uiprotect.exceptions import NotAuthorized
     except ImportError:
-        return f"Verbindung fehlgeschlagen: {exc}"
+        return f"Connection failed: {exc}"
     if isinstance(exc, NotAuthorized):
         return (
-            "Anmeldung fehlgeschlagen: Benutzername oder Passwort falsch. Falls für "
-            "dieses Konto die Zwei-Faktor-Authentifizierung aktiviert ist: Dieses Plugin "
-            "unterstützt keine 2FA-Codes (die zugrunde liegende uiprotect-Bibliothek bietet "
-            "dafür keine Schnittstelle) - bitte ein separates lokales Konto ohne 2FA anlegen."
+            "Sign-in failed: incorrect username or password. If two-factor authentication is "
+            "enabled for this account: this plugin does not support 2FA codes (the underlying "
+            "uiprotect library has no interface for it) - please create a separate local "
+            "account without 2FA."
         )
-    return f"Verbindung fehlgeschlagen: {exc}"
+    return f"Connection failed: {exc}"
 
 
 def create_module():

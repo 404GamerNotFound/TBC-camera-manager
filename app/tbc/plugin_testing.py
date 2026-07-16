@@ -47,7 +47,7 @@ async def run_plugin_tests(plugin_dir: Path, plugin_kind: str) -> PluginTestResu
     """
     tests_dir = plugin_dir / "tests"
     if not tests_dir.is_dir() or not any(tests_dir.glob("test_*.py")):
-        return PluginTestResult(ran=False, passed=False, summary="Keine Tests im Plugin enthalten", output="")
+        return PluginTestResult(ran=False, passed=False, summary="The plugin contains no tests", output="")
 
     bootstrap_args = []
     bootstrap_module = _BOOTSTRAP_MODULE.get(plugin_kind)
@@ -79,11 +79,11 @@ async def run_plugin_tests(plugin_dir: Path, plugin_kind: str) -> PluginTestResu
             return PluginTestResult(
                 ran=True,
                 passed=False,
-                summary=f"Tests abgebrochen: keine Rückmeldung innerhalb von {TEST_TIMEOUT_SECONDS}s",
+                summary=f"Tests aborted: no response within {TEST_TIMEOUT_SECONDS}s",
                 output="",
             )
     except OSError as exc:
-        return PluginTestResult(ran=False, passed=False, summary=f"Tests konnten nicht gestartet werden: {exc}", output="")
+        return PluginTestResult(ran=False, passed=False, summary=f"Tests could not be started: {exc}", output="")
 
     output = stdout.decode("utf-8", errors="replace")
     return PluginTestResult(

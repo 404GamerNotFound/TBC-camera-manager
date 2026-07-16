@@ -63,15 +63,15 @@ def fetch_latest_release() -> LatestRelease:
             raw = response.read(MAX_RESPONSE_BYTES)
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
-            raise AppUpdateCheckError("Es wurde noch kein GitHub-Release veröffentlicht") from exc
+            raise AppUpdateCheckError("No GitHub release has been published yet") from exc
         raise AppUpdateCheckError(f"GitHub-Release konnte nicht abgerufen werden: HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
         raise AppUpdateCheckError(f"GitHub-Release konnte nicht abgerufen werden: {exc.reason}") from exc
     try:
         data = json.loads(raw)
     except ValueError as exc:
-        raise AppUpdateCheckError("GitHub hat keine gültige Antwort geliefert") from exc
+        raise AppUpdateCheckError("GitHub did not return a valid response") from exc
     tag_name = str(data.get("tag_name") or "").strip()
     if parse_version(tag_name) is None:
-        raise AppUpdateCheckError(f"GitHub-Release hat keinen gültigen Versions-Tag: {tag_name!r}")
+        raise AppUpdateCheckError(f"GitHub release does not have a valid version tag: {tag_name!r}")
     return LatestRelease(version=tag_name.lstrip("vV"), html_url=str(data.get("html_url") or ""))

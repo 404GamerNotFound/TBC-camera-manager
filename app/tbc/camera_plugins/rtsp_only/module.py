@@ -5,6 +5,6 @@ class RtspOnlyCameraModule(ManualRtspCameraModule):
     def __init__(self) -> None:
         super().__init__(
             manufacturer="RTSP",
-            model_hint="Manueller Stream",
-            setup_hint="Die manuelle RTSP-/RTSPS-Adresse wird ohne ONVIF verwendet",
+            model_hint="Manual stream",
+            setup_hint="The manual RTSP/RTSPS address is used without ONVIF",
         )

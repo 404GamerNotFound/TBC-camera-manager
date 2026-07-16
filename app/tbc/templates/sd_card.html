@@ -3,14 +3,14 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Camera archive</p>
-    <h1>SD card</h1>
+    <p class="eyebrow" data-i18n="sd_card.camera_archive">Camera archive</p>
+    <h1 data-i18n="base.sd_card">SD card</h1>
   </div>
 </section>
 
 <form class="filter-bar sd-filter" method="get" action="/sd-card" data-sd-filter-form>
   <label>
-    <span>Camera</span>
+    <span data-i18n="camera_new_choice.camera">Camera</span>
     <select name="camera_id">
       {% for camera in cameras %}
       <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
@@ -18,7 +18,7 @@
     </select>
   </label>
   <label>
-    <span>Channel</span>
+    <span data-i18n="camera.channel">Channel</span>
     <select name="channel">
       {% for item in channels %}
       <option value="{{ item.channel_index }}" {% if filters.channel == item.channel_index %}selected{% endif %}>
@@ -28,53 +28,53 @@
     </select>
   </label>
   <label>
-    <span>Stream</span>
+    <span data-i18n="camera.stream">Stream</span>
     <select name="stream">
       <option value="main" {% if filters.stream == 'main' %}selected{% endif %}>Main</option>
       <option value="sub" {% if filters.stream == 'sub' %}selected{% endif %}>Sub</option>
     </select>
   </label>
   <label>
-    <span>From</span>
+    <span data-i18n="recordings.from">From</span>
     <input name="date_from" type="date" value="{{ filters.date_from }}">
   </label>
   <label>
-    <span>To</span>
+    <span data-i18n="recordings.to">To</span>
     <input name="date_to" type="date" value="{{ filters.date_to }}">
   </label>
-  <button class="primary-button" type="submit">Search</button>
+  <button class="primary-button" type="submit" data-i18n="recordings.search">Search</button>
 </form>
 
-<div class="inline-error" data-sd-error {% if not error %}hidden{% endif %}>{{ error or '' }}</div>
+<div class="inline-error" data-sd-error {% if not error %}hidden{% endif %} data-i18n="{{ error_key or '' }}">{{ error or '' }}</div>
 
 <section data-sd-content data-sd-can-load="{% if selected_camera and not error %}1{% else %}0{% endif %}">
   <section class="sd-preview-panel" data-sd-preview-panel hidden>
     <div class="section-title">
-      <h2 data-sd-preview-title>Preview</h2>
+      <h2 data-sd-preview-title data-i18n="sd_card.preview">Preview</h2>
       <span data-sd-preview-meta></span>
     </div>
     <video class="sd-preview-player" preload="none" data-sd-preview-player></video>
   </section>
 
-  <section class="quiet-box" data-sd-loading>
+  <section class="quiet-box" data-sd-loading data-i18n="sd_card.loading_sd_card_content">
     Loading SD card content...
   </section>
 
   <section class="table-section" data-sd-table-section hidden>
     <div class="section-title">
-      <h2>Recordings on SD card</h2>
+      <h2 data-i18n="sd_card.recordings_sd_card">Recordings on SD card</h2>
       <span data-sd-count>0</span>
     </div>
     <div class="table-wrap">
       <table class="sd-table">
         <thead>
           <tr>
-            <th>Start</th>
-            <th>End</th>
-            <th>Duration</th>
-            <th>Type</th>
-            <th>File</th>
-            <th>Size</th>
+            <th data-i18n="sd_card.start">Start</th>
+            <th data-i18n="sd_card.end">End</th>
+            <th data-i18n="sd_card.duration">Duration</th>
+            <th data-i18n="notification.type">Type</th>
+            <th data-i18n="sd_card.file">File</th>
+            <th data-i18n="sd_card.size">Size</th>
             <th></th>
           </tr>
         </thead>
@@ -84,7 +84,7 @@
   </section>
 
   <section class="empty-state" data-sd-empty hidden>
-    <h2>No SD card recordings found</h2>
+    <h2 data-i18n="sd_card.no_sd_card_recordings_found">No SD card recordings found</h2>
   </section>
 </section>
 

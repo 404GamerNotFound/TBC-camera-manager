@@ -87,7 +87,7 @@ class DesignThemePackageTests(unittest.TestCase):
         archive = theme_archive(extra_files=[("../outside.css", "bad")])
 
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "unsicheren Dateipfad"):
+            with self.assertRaisesRegex(ThemePackageError, "unsafe file path"):
                 install_theme_archive(archive, external_path)
 
     def test_disallowed_file_type_is_rejected(self):
@@ -101,22 +101,22 @@ class DesignThemePackageTests(unittest.TestCase):
         archive = theme_archive(include_stylesheet=False)
 
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "Stylesheet"):
+            with self.assertRaisesRegex(ThemePackageError, "does not contain the stylesheet"):
                 install_theme_archive(archive, external_path)
 
     def test_builtin_theme_cannot_be_overwritten(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "nicht überschrieben"):
+            with self.assertRaisesRegex(ThemePackageError, "cannot be overwritten"):
                 install_theme_archive(theme_archive(key="standard"), external_path)
 
     def test_builtin_theme_cannot_be_removed(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "nicht entfernt"):
+            with self.assertRaisesRegex(ThemePackageError, "cannot be removed"):
                 remove_external_theme("standard", external_path)
 
     def test_invalid_zip_is_reported_as_theme_error(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "kein gültiges ZIP"):
+            with self.assertRaisesRegex(ThemePackageError, "not a valid ZIP"):
                 install_theme_archive(b"not a zip", external_path)
 
     def test_unknown_theme_key_falls_back_to_standard(self):
@@ -137,7 +137,7 @@ class DesignThemePackageTests(unittest.TestCase):
                     },
                     handle,
                 )
-            with self.assertRaisesRegex(ThemePackageError, "Ungültiges Stylesheet"):
+            with self.assertRaisesRegex(ThemePackageError, "Invalid stylesheet"):
                 read_manifest(__import__("pathlib").Path(manifest_path))
 
 

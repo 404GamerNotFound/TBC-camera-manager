@@ -25,7 +25,7 @@ class EwelinkCloudModule(CloudAccountModule):
             raise CloudConnectionError(_error_message(exc)) from exc
         finally:
             await client.close()
-        return f"Mit eWeLink verbunden ({len(devices)} Gerät(e))"
+        return f"Connected to eWeLink ({len(devices)} device(s))"
 
     async def discover_devices(self, account: dict[str, Any]) -> list[CloudDevice]:
         client = await _login(account)
@@ -43,17 +43,17 @@ async def _login(account: dict[str, Any]) -> Any:
         from ewelink import EWeLink
         from ewelink.types import AppCredentials, EmailUserCredentials
     except ImportError as exc:
-        raise CloudConnectionError("ewelink ist nicht installiert") from exc
+        raise CloudConnectionError("ewelink is not installed") from exc
     app_id = str(account.get("app_id") or "").strip()
     app_secret = str(account.get("app_secret") or "").strip()
     email = str(account.get("email") or "").strip()
     password = str(account.get("password") or "")
     if not app_id or not app_secret:
         raise CloudConnectionError(
-            "App-ID und App-Secret sind erforderlich (kostenlose Registrierung unter dev.ewelink.cc)"
+            "App ID and app secret are required (free registration at dev.ewelink.cc)"
         )
     if not email or not password:
-        raise CloudConnectionError("E-Mail-Adresse und Passwort sind erforderlich")
+        raise CloudConnectionError("Email address and password are required")
     client = EWeLink(
         AppCredentials(id=app_id, secret=app_secret),
         EmailUserCredentials(email=email, password=password),
@@ -83,10 +83,10 @@ def _error_message(exc: Exception) -> str:
     try:
         from ewelink.ewelink import EWeLinkError
     except ImportError:
-        return f"eWeLink-Verbindung fehlgeschlagen: {exc}"
+        return f"eWeLink connection failed: {exc}"
     if isinstance(exc, EWeLinkError):
         return f"eWeLink-Anmeldung fehlgeschlagen: {exc.msg} (Fehlercode {exc.error})"
-    return f"eWeLink-Verbindung fehlgeschlagen: {exc}"
+    return f"eWeLink connection failed: {exc}"
 
 
 def create_module():

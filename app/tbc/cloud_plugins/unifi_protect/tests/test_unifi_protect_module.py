@@ -102,12 +102,12 @@ class UnifiProtectModuleTests(unittest.IsolatedAsyncioTestCase):
         message = await self.module.test_connection(self.account)
 
         self.assertIn("Zuhause NVR", message)
-        self.assertIn("2 Kamera(s)", message)
+        self.assertIn("2 camera(s)", message)
         self.assertTrue(FakeProtectApiClient.instance.closed)
 
     async def test_test_connection_wraps_auth_failure(self):
         with patch("uiprotect.ProtectApiClient", FakeNotAuthorizedClient):
-            with self.assertRaisesRegex(CloudConnectionError, "Benutzername oder Passwort"):
+            with self.assertRaisesRegex(CloudConnectionError, "incorrect username or password"):
                 await self.module.test_connection(self.account)
 
     async def test_discover_devices_resolves_rtsp_url_for_enabled_channel_only(self):
@@ -128,7 +128,7 @@ class UnifiProtectModuleTests(unittest.IsolatedAsyncioTestCase):
                 await self.module.discover_devices(self.account)
 
     async def test_missing_host_raises_before_import(self):
-        with self.assertRaisesRegex(CloudConnectionError, "Host ist erforderlich"):
+        with self.assertRaisesRegex(CloudConnectionError, "Host is required"):
             await self.module.test_connection({**self.account, "host": ""})
 
 
@@ -141,7 +141,7 @@ class UnifiProtectModuleWithoutLibraryTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_library_is_reported_gracefully(self):
         account = {"host": "10.0.0.1", "port": 443, "identifier": "admin", "secret": "secret"}
-        with self.assertRaisesRegex(CloudConnectionError, "nicht installiert"):
+        with self.assertRaisesRegex(CloudConnectionError, "not installed"):
             await self.module.test_connection(account)
 
 

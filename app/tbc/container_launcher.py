@@ -46,10 +46,10 @@ def persistent_secret(path: Path = DEFAULT_SECRET_PATH) -> str:
             handle.write(value)
             handle.write("\n")
     except OSError as exc:
-        raise RuntimeError(f"Persistenter Sitzungsschlüssel kann nicht gelesen werden: {exc}") from exc
+        raise RuntimeError(f"Persistent session key could not be read: {exc}") from exc
 
     if not value:
-        raise RuntimeError("Persistenter Sitzungsschlüssel ist leer")
+        raise RuntimeError("Persistent session key is empty")
     return value
 
 

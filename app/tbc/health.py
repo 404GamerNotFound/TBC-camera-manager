@@ -15,7 +15,7 @@ from . import database
 def run_health_checks(database_path: str) -> None:
     for camera in database.list_cameras(database_path):
         status = "ok" if camera.get("last_probe_status") == "ok" else "error"
-        message = camera.get("last_probe_message") or "Noch keine Prüfung"
+        message = camera.get("last_probe_message") or "Not checked yet"
         database.upsert_health_status(
             database_path,
             component_type="camera",
@@ -74,12 +74,12 @@ def run_health_checks(database_path: str) -> None:
 
     mqtt_config = database.get_mqtt_config(database_path)
     if int(mqtt_config.get("enabled") or 0) != 1:
-        database.upsert_health_status(database_path, component_type="mqtt", component_id="broker", status="warning", message="MQTT deaktiviert")
+        database.upsert_health_status(database_path, component_type="mqtt", component_id="broker", status="warning", message="MQTT disabled")
     else:
         try:
             with socket.create_connection((mqtt_config.get("host"), int(mqtt_config.get("port") or 1883)), timeout=5):
                 pass
-            database.upsert_health_status(database_path, component_type="mqtt", component_id="broker", status="ok", message="Broker erreichbar")
+            database.upsert_health_status(database_path, component_type="mqtt", component_id="broker", status="ok", message="Broker reachable")
         except Exception as exc:
             database.upsert_health_status(database_path, component_type="mqtt", component_id="broker", status="error", message=str(exc))
 
@@ -104,7 +104,7 @@ def current_system_usage(sample_seconds: float = 0.1) -> dict[str, Any]:
 
 def _probe_stream(stream_uri: str) -> tuple[str, str]:
     if shutil.which("ffprobe") is None:
-        return "warning", "ffprobe nicht installiert; Stream URI vorhanden"
+        return "warning", "ffprobe is not installed; a stream URI is available"
     command = [
         "ffprobe",
         "-v",
@@ -123,11 +123,11 @@ def _probe_stream(stream_uri: str) -> tuple[str, str]:
     try:
         result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=8)
     except subprocess.TimeoutExpired:
-        return "error", "Stream-Pruefung Timeout"
+        return "error", "Stream check timed out"
     if result.returncode == 0 and "video" in result.stdout:
-        return "ok", "Stream lesbar"
-    message = (result.stderr or result.stdout or "Stream nicht lesbar").strip().splitlines()
-    return "error", message[-1] if message else "Stream nicht lesbar"
+        return "ok", "Stream readable"
+    message = (result.stderr or result.stdout or "Stream not readable").strip().splitlines()
+    return "error", message[-1] if message else "Stream not readable"
 
 
 def _current_cpu_percent(sample_seconds: float) -> float | None:
@@ -222,7 +222,7 @@ def _format_load_average(load_average: tuple[float, float, float] | None) -> str
 
 def _format_memory_detail(memory: dict[str, float | int] | None) -> str:
     if not memory:
-        return "Keine RAM-Daten verfügbar"
+        return "No RAM data available"
     used_gb = float(memory["used_mb"]) / 1024
     total_gb = float(memory["total_mb"]) / 1024
     return f"{used_gb:.1f} von {total_gb:.1f} GB belegt"

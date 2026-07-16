@@ -15,7 +15,7 @@ class StandardOnvifServiceTests(unittest.IsolatedAsyncioTestCase):
         }
         onvif = OnvifProbe(
             success=True,
-            message="ONVIF-Verbindung erfolgreich",
+            message="ONVIF connection successful",
             manufacturer="Generic",
             model="IPC",
             stream_uris=["rtsp://192.0.2.30:554/main"],
@@ -31,7 +31,7 @@ class StandardOnvifServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(motion["supported"])
 
     async def test_probe_requires_successful_onvif_connection(self):
-        onvif = OnvifProbe(False, "ONVIF-Verbindung fehlgeschlagen")
+        onvif = OnvifProbe(False, "ONVIF connection failed")
         camera = {"host": "192.0.2.30", "username": "camera", "password": "secret", "onvif_port": 80}
 
         with patch.object(service, "probe_onvif", return_value=onvif):

@@ -1,0 +1,1667 @@
+{
+  "activity.archive": {
+    "en": "Archive",
+    "de": "Archiv",
+    "es": "Archivo"
+  },
+  "activity.day": {
+    "en": "Day",
+    "de": "Tag",
+    "es": "Día"
+  },
+  "activity.show": {
+    "en": "Show",
+    "de": "Anzeigen",
+    "es": "Mostrar"
+  },
+  "activity.previous_day": {
+    "en": "‹ Previous day",
+    "de": "‹ Vorheriger Tag",
+    "es": "‹ Día anterior"
+  },
+  "activity.next_day": {
+    "en": "Next day ›",
+    "de": "Nächster Tag ›",
+    "es": "Día siguiente ›"
+  },
+  "activity.no_camera_available": {
+    "en": "No camera available",
+    "de": "Keine Kamera verfügbar",
+    "es": "No hay cámaras disponibles"
+  },
+  "activity.events_day": {
+    "en": "Events on this day",
+    "de": "Ereignisse an diesem Tag",
+    "es": "Eventos de este día"
+  },
+  "activity.no_event_recordings_available_day": {
+    "en": "No event recordings are available for this day.",
+    "de": "Keine Ereignisaufnahmen für diesen Tag verfügbar.",
+    "es": "No hay grabaciones de eventos disponibles para este día."
+  },
+  "api_access.save": {
+    "en": "Save",
+    "de": "Speichern",
+    "es": "Guardar"
+  },
+  "api_access.tool": {
+    "en": "Tool",
+    "de": "Werkzeug",
+    "es": "Herramienta"
+  },
+  "api_access.description": {
+    "en": "Description",
+    "de": "Beschreibung",
+    "es": "Descripción"
+  },
+  "base.timeline": {
+    "en": "Timeline",
+    "de": "Timeline",
+    "es": "Cronología"
+  },
+  "base.sd_card": {
+    "en": "SD card",
+    "de": "SD-Karte",
+    "es": "Tarjeta SD"
+  },
+  "base.storage": {
+    "en": "Storage",
+    "de": "Speicher",
+    "es": "Almacenamiento"
+  },
+  "base.destinations": {
+    "en": "Destinations",
+    "de": "Ziele",
+    "es": "Destinos"
+  },
+  "base.explorer": {
+    "en": "Explorer",
+    "de": "Explorer",
+    "es": "Explorador"
+  },
+  "base.operations": {
+    "en": "Operations",
+    "de": "Betrieb",
+    "es": "Operación"
+  },
+  "base.performance": {
+    "en": "Performance",
+    "de": "Leistung",
+    "es": "Rendimiento"
+  },
+  "base.notifications": {
+    "en": "Notifications",
+    "de": "Notify",
+    "es": "Notificaciones"
+  },
+  "base.users": {
+    "en": "Users",
+    "de": "Benutzer",
+    "es": "Usuarios"
+  },
+  "base.camera_plugins": {
+    "en": "Camera plugins",
+    "de": "Kamera-Plugins",
+    "es": "Plugins de cámara"
+  },
+  "base.ai_detection": {
+    "en": "AI detection",
+    "de": "KI-Erkennung",
+    "es": "Detección por IA"
+  },
+  "base.cloud_providers": {
+    "en": "Cloud providers",
+    "de": "Cloud-Anbieter",
+    "es": "Proveedores en la nube"
+  },
+  "base.external_sources": {
+    "en": "External sources",
+    "de": "Externe Quellen",
+    "es": "Fuentes externas"
+  },
+  "base.license": {
+    "en": "License",
+    "de": "Lizenz",
+    "es": "Licencia"
+  },
+  "base.settings": {
+    "en": "Settings",
+    "de": "Einstellungen",
+    "es": "Ajustes"
+  },
+  "base.close_debug_log": {
+    "en": "Close debug log",
+    "de": "Debug Log schliessen",
+    "es": "Cerrar registro de depuración"
+  },
+  "camera.recording_active": {
+    "en": "Recording active",
+    "de": "Aufnahme aktiv",
+    "es": "Grabación activa"
+  },
+  "camera.note_host_starts_192_169": {
+    "en": "Note: The host starts with 192.169. On home networks, 192.168 is often intended.",
+    "de": "Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint.",
+    "es": "Nota: el host comienza por 192.169. En redes domésticas normalmente se pretende usar 192.168."
+  },
+  "camera.overview": {
+    "en": "Overview",
+    "de": "Übersicht",
+    "es": "Resumen"
+  },
+  "camera.recording": {
+    "en": "Recording",
+    "de": "Aufnahme",
+    "es": "Grabación"
+  },
+  "camera.controls": {
+    "en": "Controls",
+    "de": "Steuerung",
+    "es": "Controles"
+  },
+  "camera.connection": {
+    "en": "Connection",
+    "de": "Verbindung",
+    "es": "Conexión"
+  },
+  "camera.detections": {
+    "en": "Detections",
+    "de": "Erkennungen",
+    "es": "Detecciones"
+  },
+  "camera.device": {
+    "en": "Device",
+    "de": "Gerät",
+    "es": "Dispositivo"
+  },
+  "camera.cpu_load": {
+    "en": "CPU load",
+    "de": "CPU-Last",
+    "es": "Carga de CPU"
+  },
+  "camera.not_available": {
+    "en": "Not available",
+    "de": "Nicht verfügbar",
+    "es": "No disponible"
+  },
+  "camera.codec_data_rate": {
+    "en": "Codec data rate",
+    "de": "Codec-Datenrate",
+    "es": "Tasa de datos del códec"
+  },
+  "camera.bitrate_reported_by_camera": {
+    "en": "Bitrate reported by camera",
+    "de": "Bitrate laut Kamera",
+    "es": "Tasa de bits indicada por la cámara"
+  },
+  "camera.network_throughput": {
+    "en": "Network throughput",
+    "de": "Netzwerkdurchsatz",
+    "es": "Rendimiento de red"
+  },
+  "camera.throughput_reported_by_camera": {
+    "en": "Throughput reported by camera",
+    "de": "Durchsatz laut Kamera",
+    "es": "Rendimiento indicado por la cámara"
+  },
+  "camera.last_check": {
+    "en": "Last check",
+    "de": "Letzte Prüfung",
+    "es": "Última comprobación"
+  },
+  "camera.nvr_channels": {
+    "en": "NVR channels",
+    "de": "NVR-Kanäle",
+    "es": "Canales NVR"
+  },
+  "camera.channel": {
+    "en": "Channel",
+    "de": "Kanal",
+    "es": "Canal"
+  },
+  "camera.status": {
+    "en": "Status",
+    "de": "Status",
+    "es": "Estado"
+  },
+  "camera.active": {
+    "en": "active",
+    "de": "aktiv",
+    "es": "activo"
+  },
+  "camera.recordings": {
+    "en": "Recordings",
+    "de": "Aufnahmen",
+    "es": "Grabaciones"
+  },
+  "camera.open_clips": {
+    "en": "Open clips",
+    "de": "Clips öffnen",
+    "es": "Abrir clips"
+  },
+  "camera.open_sd_card": {
+    "en": "Open SD card",
+    "de": "SD-Karte öffnen",
+    "es": "Abrir tarjeta SD"
+  },
+  "camera.username": {
+    "en": "Username",
+    "de": "Benutzername",
+    "es": "Nombre de usuario"
+  },
+  "camera.new_rtsp_rtsps_url": {
+    "en": "New RTSP/RTSPS URL",
+    "de": "Neue RTSP-/RTSPS-URL",
+    "es": "Nueva URL RTSP/RTSPS"
+  },
+  "camera.current": {
+    "en": "Current:",
+    "de": "Aktuell:",
+    "es": "Actual:"
+  },
+  "camera.full_url_stored_securely_redacted": {
+    "en": "The full URL is stored securely and redacted in the interface.",
+    "de": "Die vollständige URL wird geschützt gespeichert und in der Oberfläche zensiert.",
+    "es": "La URL completa se almacena de forma segura y se oculta en la interfaz."
+  },
+  "camera.remove_manual_stream_url": {
+    "en": "Remove manual stream URL",
+    "de": "Manuelle Stream-URL entfernen",
+    "es": "Eliminar URL manual de transmisión"
+  },
+  "camera.new_password": {
+    "en": "New password",
+    "de": "Neues Passwort",
+    "es": "Nueva contraseña"
+  },
+  "camera.save_check": {
+    "en": "Save and check",
+    "de": "Speichern und prüfen",
+    "es": "Guardar y comprobar"
+  },
+  "camera.continuous_recording": {
+    "en": "Continuous recording",
+    "de": "Daueraufzeichnung",
+    "es": "Grabación continua"
+  },
+  "camera.off": {
+    "en": "off",
+    "de": "aus",
+    "es": "desactivado"
+  },
+  "camera.record_around_clock": {
+    "en": "Record around the clock",
+    "de": "Rund um die Uhr aufzeichnen",
+    "es": "Grabar las 24 horas"
+  },
+  "camera.segment_length_seconds": {
+    "en": "Segment length in seconds",
+    "de": "Segmentlänge in Sekunden",
+    "es": "Duración del segmento en segundos"
+  },
+  "camera.storage_destination": {
+    "en": "Storage destination",
+    "de": "Speicherziel",
+    "es": "Destino de almacenamiento"
+  },
+  "camera.first_available_destination": {
+    "en": "First available destination",
+    "de": "Erstes verfügbares Ziel",
+    "es": "Primer destino disponible"
+  },
+  "camera.open_timeline": {
+    "en": "Open timeline",
+    "de": "Timeline öffnen",
+    "es": "Abrir cronología"
+  },
+  "camera.motion_recording": {
+    "en": "Motion recording",
+    "de": "Aufnahme bei Bewegung",
+    "es": "Grabación por movimiento"
+  },
+  "camera.save_motion_recordings": {
+    "en": "Save motion recordings",
+    "de": "Motion-Aufnahmen speichern",
+    "es": "Guardar grabaciones de movimiento"
+  },
+  "camera.minimum_duration_seconds": {
+    "en": "Minimum duration in seconds",
+    "de": "Mindestdauer in Sekunden",
+    "es": "Duración mínima en segundos"
+  },
+  "camera.pre_roll_seconds": {
+    "en": "Pre-roll in seconds",
+    "de": "Vorlauf in Sekunden",
+    "es": "Tiempo previo en segundos"
+  },
+  "camera.post_roll_seconds": {
+    "en": "Post-roll in seconds",
+    "de": "Nachlauf in Sekunden",
+    "es": "Tiempo posterior en segundos"
+  },
+  "camera.pause_between_clips": {
+    "en": "Pause between clips",
+    "de": "Pause zwischen Clips",
+    "es": "Pausa entre clips"
+  },
+  "camera.also_save_snapshot_thumbnail": {
+    "en": "Also save a snapshot/thumbnail",
+    "de": "Snapshot/Thumbnail zusätzlich speichern",
+    "es": "Guardar también instantánea/miniatura"
+  },
+  "camera.select_all": {
+    "en": "Select all",
+    "de": "Alle auswählen",
+    "es": "Seleccionar todos"
+  },
+  "camera.manage_storage": {
+    "en": "Manage storage",
+    "de": "Speicher verwalten",
+    "es": "Gestionar almacenamiento"
+  },
+  "camera.recent_events": {
+    "en": "Recent events",
+    "de": "Letzte Ereignisse",
+    "es": "Eventos recientes"
+  },
+  "camera.device_status_being_retrieved_background": {
+    "en": "The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.",
+    "de": "Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.",
+    "es": "El estado del dispositivo se está consultando en segundo plano o no se pudo obtener recientemente. Los comandos pueden enviarse si la cámara los admite; el estado estará actualizado la próxima vez que se abra esta página."
+  },
+  "camera.camera_does_not_report_any": {
+    "en": "This camera does not report any of the controls supported here via ONVIF (PTZ, floodlight, PIR, siren, battery, restart).",
+    "de": "Diese Kamera meldet über ONVIF keine der hier unterstützten Steuerfunktionen (PTZ, Flutlicht, PIR, Sirene, Akku, Neustart).",
+    "es": "Esta cámara no comunica mediante ONVIF ninguna de las funciones de control admitidas aquí (PTZ, foco, PIR, sirena, batería y reinicio)."
+  },
+  "camera.live_preview": {
+    "en": "Live preview",
+    "de": "Live-Vorschau",
+    "es": "Vista previa en directo"
+  },
+  "camera.pan_tilt_head_ptz": {
+    "en": "Pan/tilt head (PTZ)",
+    "de": "Schwenk-/Neigekopf (PTZ)",
+    "es": "Cabezal de giro/inclinación (PTZ)"
+  },
+  "camera.up": {
+    "en": "▲ Up",
+    "de": "▲ Hoch",
+    "es": "▲ Arriba"
+  },
+  "camera.down": {
+    "en": "▼ Down",
+    "de": "▼ Runter",
+    "es": "▼ Abajo"
+  },
+  "camera.left": {
+    "en": "◄ Left",
+    "de": "◄ Links",
+    "es": "◄ Izquierda"
+  },
+  "camera.right": {
+    "en": "► Right",
+    "de": "► Rechts",
+    "es": "► Derecha"
+  },
+  "camera.stop": {
+    "en": "■ Stop",
+    "de": "■ Stopp",
+    "es": "■ Detener"
+  },
+  "camera.ptz_presets": {
+    "en": "PTZ presets",
+    "de": "PTZ-Positionen",
+    "es": "Posiciones PTZ"
+  },
+  "camera.apply_zoom": {
+    "en": "Apply zoom",
+    "de": "Zoom anwenden",
+    "es": "Aplicar zoom"
+  },
+  "camera.apply_focus": {
+    "en": "Apply focus",
+    "de": "Fokus anwenden",
+    "es": "Aplicar enfoque"
+  },
+  "camera.floodlight": {
+    "en": "Floodlight",
+    "de": "Flutlicht",
+    "es": "Foco"
+  },
+  "camera.turn": {
+    "en": "Turn on",
+    "de": "Einschalten",
+    "es": "Encender"
+  },
+  "camera.turn_off": {
+    "en": "Turn off",
+    "de": "Ausschalten",
+    "es": "Apagar"
+  },
+  "camera.pir_sensor": {
+    "en": "PIR sensor",
+    "de": "PIR-Sensor",
+    "es": "Sensor PIR"
+  },
+  "camera.deactivate": {
+    "en": "Deactivate",
+    "de": "Deaktivieren",
+    "es": "Desactivar"
+  },
+  "camera.siren": {
+    "en": "Siren",
+    "de": "Sirene",
+    "es": "Sirena"
+  },
+  "camera.duration_sec": {
+    "en": "Duration (sec.)",
+    "de": "Dauer (Sek.)",
+    "es": "Duración (s)"
+  },
+  "camera.play_siren": {
+    "en": "Play siren",
+    "de": "Sirene abspielen",
+    "es": "Reproducir sirena"
+  },
+  "camera.quick_replies": {
+    "en": "Quick replies",
+    "de": "Schnellantworten",
+    "es": "Respuestas rápidas"
+  },
+  "camera.battery_level": {
+    "en": "Battery level",
+    "de": "Akkustand",
+    "es": "Nivel de batería"
+  },
+  "camera.restart": {
+    "en": "Restart",
+    "de": "Neustart",
+    "es": "Reinicio"
+  },
+  "camera.restart_camera": {
+    "en": "Restart camera",
+    "de": "Kamera neu starten",
+    "es": "Reiniciar cámara"
+  },
+  "camera.firmware": {
+    "en": "Firmware",
+    "de": "Firmware",
+    "es": "Firmware"
+  },
+  "camera.firmware_updates_downloaded_directly_from": {
+    "en": "Firmware updates are downloaded directly from reolink.com and written to the camera. The camera is unavailable during the update and restarts afterward. Do not interrupt the process.",
+    "de": "Firmware-Updates werden direkt von reolink.com heruntergeladen und auf die Kamera geschrieben. Die Kamera ist währenddessen nicht erreichbar und startet danach neu. Den Vorgang nicht unterbrechen.",
+    "es": "Las actualizaciones de firmware se descargan directamente de reolink.com y se escriben en la cámara. Durante el proceso la cámara no está disponible y después se reinicia. No interrumpa el proceso."
+  },
+  "camera.check_updates": {
+    "en": "Check for updates",
+    "de": "Auf Updates prüfen",
+    "es": "Buscar actualizaciones"
+  },
+  "camera.update_now": {
+    "en": "Update now",
+    "de": "Jetzt aktualisieren",
+    "es": "Actualizar ahora"
+  },
+  "camera.function": {
+    "en": "Function",
+    "de": "Funktion",
+    "es": "Función"
+  },
+  "camera.category": {
+    "en": "Category",
+    "de": "Kategorie",
+    "es": "Categoría"
+  },
+  "camera.source": {
+    "en": "Source",
+    "de": "Quelle",
+    "es": "Fuente"
+  },
+  "camera.supported": {
+    "en": "Supported",
+    "de": "Unterstützt",
+    "es": "Compatible"
+  },
+  "camera.inactive": {
+    "en": "inactive",
+    "de": "inaktiv",
+    "es": "inactivo"
+  },
+  "camera.camera_sections": {
+    "en": "Camera sections",
+    "de": "Kamerabereiche",
+    "es": "Secciones de la cámara"
+  },
+  "camera.camera_overview": {
+    "en": "Camera overview",
+    "de": "Kameraübersicht",
+    "es": "Resumen de la cámara"
+  },
+  "camera.leave_blank_unchanged": {
+    "en": "leave blank = unchanged",
+    "de": "leer lassen = unverändert",
+    "es": "dejar vacío = sin cambios"
+  },
+  "camera_form.camera_module": {
+    "en": "Camera module",
+    "de": "Kameramodul",
+    "es": "Módulo de cámara"
+  },
+  "camera_form.add_camera": {
+    "en": "Add camera",
+    "de": "Kamera hinzufügen",
+    "es": "Añadir cámara"
+  },
+  "camera_form.module": {
+    "en": "Module",
+    "de": "Modul",
+    "es": "Módulo"
+  },
+  "camera_form.password": {
+    "en": "Password",
+    "de": "Passwort",
+    "es": "Contraseña"
+  },
+  "camera_form.full_url_stored_securely_always": {
+    "en": "The full URL is stored securely and is always redacted in the interface.",
+    "de": "Die vollständige URL wird geschützt gespeichert und in der Oberfläche immer zensiert.",
+    "es": "La URL completa se almacena de forma segura y siempre se oculta en la interfaz."
+  },
+  "camera_form.cancel": {
+    "en": "Cancel",
+    "de": "Abbrechen",
+    "es": "Cancelar"
+  },
+  "plugin.extensions": {
+    "en": "Extensions",
+    "de": "Erweiterungen",
+    "es": "Extensiones"
+  },
+  "plugin.import_plugin": {
+    "en": "Import plugin",
+    "de": "Plugin importieren",
+    "es": "Importar plugin"
+  },
+  "plugin.plugin_file": {
+    "en": "Plugin file",
+    "de": "Plugin-Datei",
+    "es": "Archivo de plugin"
+  },
+  "plugin.camera_plugins_contain_executable_python": {
+    "en": "Camera plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.",
+    "de": "Kamera-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.",
+    "es": "Los plugins de cámara contienen código Python ejecutable. Importe únicamente paquetes de fuentes de confianza. Tamaño máximo del archivo: 10 MB."
+  },
+  "plugin.import": {
+    "en": "Import",
+    "de": "Importieren",
+    "es": "Importar"
+  },
+  "plugin.search_plugins": {
+    "en": "Search plugins",
+    "de": "Plugins durchsuchen",
+    "es": "Buscar plugins"
+  },
+  "plugin.installed_plugins": {
+    "en": "Installed plugins",
+    "de": "Installierte Plugins",
+    "es": "Plugins instalados"
+  },
+  "plugin.key": {
+    "en": "Key",
+    "de": "Schlüssel",
+    "es": "Clave"
+  },
+  "plugin.export_zip": {
+    "en": "Export ZIP",
+    "de": "ZIP exportieren",
+    "es": "Exportar ZIP"
+  },
+  "plugin.run_tests": {
+    "en": "Run tests",
+    "de": "Tests ausführen",
+    "es": "Ejecutar pruebas"
+  },
+  "plugin.remove": {
+    "en": "Remove",
+    "de": "Entfernen",
+    "es": "Eliminar"
+  },
+  "plugin.no_plugins_found": {
+    "en": "No plugins found.",
+    "de": "Keine Plugins gefunden.",
+    "es": "No se encontraron plugins."
+  },
+  "plugin.search_plugins_2": {
+    "en": "Search plugins…",
+    "de": "Plugins durchsuchen…",
+    "es": "Buscar plugins…"
+  },
+  "camera_new_choice.camera": {
+    "en": "Camera",
+    "de": "Kamera",
+    "es": "Cámara"
+  },
+  "camera_new_choice.local_camera": {
+    "en": "Local camera",
+    "de": "Lokale Kamera",
+    "es": "Cámara local"
+  },
+  "camera_new_choice.enter_host_ip_onvif_settings": {
+    "en": "Enter the host/IP, ONVIF settings, and credentials directly for a single camera or an NVR on the local network.",
+    "de": "Host/IP, ONVIF und Zugangsdaten direkt eintragen - für eine einzelne Kamera oder ein NVR im lokalen Netzwerk.",
+    "es": "Introduzca directamente el host/IP, ONVIF y las credenciales para una cámara individual o un NVR de la red local."
+  },
+  "camera_new_choice.set_up_local_camera": {
+    "en": "Set up local camera",
+    "de": "Lokale Kamera einrichten",
+    "es": "Configurar cámara local"
+  },
+  "camera_new_choice.cloud_account": {
+    "en": "Cloud account",
+    "de": "Cloud-Konto",
+    "es": "Cuenta en la nube"
+  },
+  "camera_new_choice.sign_vendor_cloud_account_e": {
+    "en": "Sign in to a vendor cloud account (e.g. UniFi Protect, Eufy Security, eWeLink) and discover devices automatically.",
+    "de": "Bei einem Hersteller-Cloud-Konto (z. B. UniFi Protect, Eufy Security, eWeLink) anmelden und Geräte automatisch suchen.",
+    "es": "Inicie sesión en una cuenta en la nube del fabricante (p. ej., UniFi Protect, Eufy Security o eWeLink) y busque dispositivos automáticamente."
+  },
+  "camera_new_choice.connect_cloud_account": {
+    "en": "Connect cloud account",
+    "de": "Cloud-Konto verbinden",
+    "es": "Conectar cuenta en la nube"
+  },
+  "cloud_account.back_cloud_accounts": {
+    "en": "Back to cloud accounts",
+    "de": "Zurück zu Cloud-Konten",
+    "es": "Volver a las cuentas en la nube"
+  },
+  "cloud_account.edit_account_details_or_verification": {
+    "en": "Edit account details or verification code",
+    "de": "Kontodaten oder Bestätigungscode bearbeiten",
+    "es": "Editar datos de la cuenta o código de verificación"
+  },
+  "cloud_account.no_devices_were_found_cloud": {
+    "en": "No devices were found in this cloud account.",
+    "de": "Es wurden keine Geräte in diesem Cloud-Konto gefunden.",
+    "es": "No se encontraron dispositivos en esta cuenta en la nube."
+  },
+  "cloud_account.already_imported_as_camera": {
+    "en": "Already imported as a camera.",
+    "de": "Bereits als Kamera importiert.",
+    "es": "Ya se ha importado como cámara."
+  },
+  "cloud_account.add_as_camera": {
+    "en": "Add as camera",
+    "de": "Als Kamera hinzufügen",
+    "es": "Añadir como cámara"
+  },
+  "cloud_account.no_rtsp_stream_available_enable": {
+    "en": "No RTSP stream is available. Enable RTSP for this device in the vendor interface first.",
+    "de": "Kein RTSP-Stream verfügbar. Bitte RTSP für dieses Gerät zuerst in der Herstelleroberfläche aktivieren.",
+    "es": "No hay ninguna transmisión RTSP disponible. Active primero RTSP para este dispositivo en la interfaz del fabricante."
+  },
+  "cloud_account.edit_cloud_account": {
+    "en": "Edit cloud account",
+    "de": "Cloud-Konto bearbeiten",
+    "es": "Editar cuenta en la nube"
+  },
+  "cloud_account.provider": {
+    "en": "Provider",
+    "de": "Anbieter",
+    "es": "Proveedor"
+  },
+  "cloud_account.label": {
+    "en": "Label",
+    "de": "Bezeichnung",
+    "es": "Nombre"
+  },
+  "cloud_account.save_changes": {
+    "en": "Save changes",
+    "de": "Änderungen speichern",
+    "es": "Guardar cambios"
+  },
+  "cloud_account.leave_unchanged": {
+    "en": "Leave unchanged",
+    "de": "Unverändert lassen",
+    "es": "Dejar sin cambios"
+  },
+  "cloud_account.verification_required": {
+    "en": "Verification required",
+    "de": "Bestätigung erforderlich",
+    "es": "Se requiere verificación"
+  },
+  "cloud_account.confirm": {
+    "en": "Confirm",
+    "de": "Bestätigen",
+    "es": "Confirmar"
+  },
+  "cloud_account.cloud_accounts": {
+    "en": "Cloud accounts",
+    "de": "Cloud-Konten",
+    "es": "Cuentas en la nube"
+  },
+  "cloud_account.back_cameras": {
+    "en": "Back to cameras",
+    "de": "Zurück zu Kameras",
+    "es": "Volver a las cámaras"
+  },
+  "cloud_account.manage_cloud_providers": {
+    "en": "Manage cloud providers",
+    "de": "Cloud-Anbieter verwalten",
+    "es": "Gestionar proveedores en la nube"
+  },
+  "cloud_account.add_account": {
+    "en": "Add account",
+    "de": "Konto hinzufügen",
+    "es": "Añadir cuenta"
+  },
+  "cloud_account.configured_accounts": {
+    "en": "Configured accounts",
+    "de": "Konfigurierte Konten",
+    "es": "Cuentas configuradas"
+  },
+  "cloud_account.edit_account": {
+    "en": "Edit account",
+    "de": "Konto bearbeiten",
+    "es": "Editar cuenta"
+  },
+  "cloud_account.enter_verification_code": {
+    "en": "Enter verification code",
+    "de": "Bestätigungscode eingeben",
+    "es": "Introducir código de verificación"
+  },
+  "cloud_account.test_connection": {
+    "en": "Test connection",
+    "de": "Verbindung testen",
+    "es": "Probar conexión"
+  },
+  "cloud_account.discover_devices": {
+    "en": "Discover devices",
+    "de": "Geräte suchen",
+    "es": "Buscar dispositivos"
+  },
+  "cloud_account.no_cloud_accounts_have_been": {
+    "en": "No cloud accounts have been configured yet.",
+    "de": "Noch keine Cloud-Konten konfiguriert.",
+    "es": "Aún no hay cuentas en la nube configuradas."
+  },
+  "plugin.cloud_plugins_contain_executable_python": {
+    "en": "Cloud plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.",
+    "de": "Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.",
+    "es": "Los plugins de nube contienen código Python ejecutable. Importe únicamente paquetes de fuentes de confianza. Tamaño máximo del archivo: 10 MB."
+  },
+  "plugin.accounts": {
+    "en": "Accounts",
+    "de": "Konten",
+    "es": "Cuentas"
+  },
+  "plugin.2fa_supported": {
+    "en": "2FA supported",
+    "de": "2FA-fähig",
+    "es": "Compatible con 2FA"
+  },
+  "plugin.no_2fa": {
+    "en": "No 2FA",
+    "de": "Kein 2FA",
+    "es": "Sin 2FA"
+  },
+  "dashboard.camera_manager": {
+    "en": "Camera Manager",
+    "de": "Kamera-Manager",
+    "es": "Gestor de cámaras"
+  },
+  "dashboard.camera": {
+    "en": "+ Camera",
+    "de": "+ Kamera",
+    "es": "+ Cámara"
+  },
+  "dashboard.no_stream_available_preview_image": {
+    "en": "No stream is available for a preview image yet",
+    "de": "Noch kein Stream für ein Vorschaubild verfügbar",
+    "es": "Aún no hay ninguna transmisión disponible para la vista previa"
+  },
+  "dashboard.features": {
+    "en": "Features",
+    "de": "Funktionen",
+    "es": "Funciones"
+  },
+  "dashboard.open": {
+    "en": "Open",
+    "de": "Öffnen",
+    "es": "Abrir"
+  },
+  "dashboard.no_camera_yet": {
+    "en": "No camera yet",
+    "de": "Noch keine Kamera",
+    "es": "Aún no hay cámaras"
+  },
+  "dashboard.camera_list": {
+    "en": "Camera list",
+    "de": "Kameraliste",
+    "es": "Lista de cámaras"
+  },
+  "design.import_design": {
+    "en": "Import design",
+    "de": "Design importieren",
+    "es": "Importar diseño"
+  },
+  "design.design_file": {
+    "en": "Design file",
+    "de": "Design-Datei",
+    "es": "Archivo de diseño"
+  },
+  "design.design_packages_contain_only_stylesheets": {
+    "en": "Design packages contain only stylesheets, metadata, and images, with no executable code. Maximum file size: 5 MB.",
+    "de": "Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.",
+    "es": "Los paquetes de diseño solo contienen hojas de estilo, metadatos e imágenes, sin código ejecutable. Tamaño máximo del archivo: 5 MB."
+  },
+  "design.search_designs": {
+    "en": "Search designs",
+    "de": "Designs durchsuchen",
+    "es": "Buscar diseños"
+  },
+  "design.installed_designs": {
+    "en": "Installed designs",
+    "de": "Installierte Designs",
+    "es": "Diseños instalados"
+  },
+  "design.no_designs_found": {
+    "en": "No designs found.",
+    "de": "Keine Designs gefunden.",
+    "es": "No se encontraron diseños."
+  },
+  "design.search_designs_2": {
+    "en": "Search designs…",
+    "de": "Designs durchsuchen…",
+    "es": "Buscar diseños…"
+  },
+  "detection.message": {
+    "en": "Message",
+    "de": "Meldung",
+    "es": "Mensaje"
+  },
+  "detection.model": {
+    "en": "Model",
+    "de": "Modell",
+    "es": "Modelo"
+  },
+  "detection.and": {
+    "en": "and",
+    "de": "und",
+    "es": "y"
+  },
+  "health.component": {
+    "en": "Component",
+    "de": "Komponente",
+    "es": "Componente"
+  },
+  "health.checked": {
+    "en": "Checked",
+    "de": "Geprüft",
+    "es": "Comprobado"
+  },
+  "health.events": {
+    "en": "Events",
+    "de": "Ereignisse",
+    "es": "Eventos"
+  },
+  "health.time": {
+    "en": "Time",
+    "de": "Zeit",
+    "es": "Hora"
+  },
+  "health.previous": {
+    "en": "Previous",
+    "de": "Vorher",
+    "es": "Anterior"
+  },
+  "health.current_system_performance": {
+    "en": "Current system performance",
+    "de": "Aktuelle Systemleistung",
+    "es": "Rendimiento actual del sistema"
+  },
+  "live.full_screen": {
+    "en": "Full screen",
+    "de": "Vollbild",
+    "es": "Pantalla completa"
+  },
+  "live.layout": {
+    "en": "Layout",
+    "de": "Layout",
+    "es": "Diseño"
+  },
+  "live.rotate_automatically": {
+    "en": "Rotate automatically",
+    "de": "Automatisch durchschalten",
+    "es": "Rotar automáticamente"
+  },
+  "live.wall_layout": {
+    "en": "Wall layout",
+    "de": "Wandlayout",
+    "es": "Diseño del mural"
+  },
+  "live.grid_columns": {
+    "en": "Grid columns",
+    "de": "Raster-Spalten",
+    "es": "Columnas de cuadrícula"
+  },
+  "live.rotation_enabled_by_default": {
+    "en": "Rotation enabled by default",
+    "de": "Rotation standardmäßig aktiv",
+    "es": "Rotación activada de forma predeterminada"
+  },
+  "live.rotation_interval_seconds": {
+    "en": "Rotation interval (seconds)",
+    "de": "Rotationsintervall (Sekunden)",
+    "es": "Intervalo de rotación (segundos)"
+  },
+  "live.size_order_each_tile_adjusted": {
+    "en": "The size and order of each tile are adjusted directly on the image: tools appear in the top-right corner on hover (⠿ moves, ⤡ resizes).",
+    "de": "Größe und Reihenfolge jeder Kachel werden direkt am Bild eingestellt: Werkzeuge oben rechts erscheinen beim Überfahren mit der Maus (⠿ verschiebt, ⤡ ändert die Größe).",
+    "es": "El tamaño y el orden de cada mosaico se ajustan directamente sobre la imagen. Las herramientas aparecen en la esquina superior derecha al pasar el ratón (⠿ mueve, ⤡ cambia el tamaño)."
+  },
+  "live.exit_full_screen_esc": {
+    "en": "Exit full screen (Esc)",
+    "de": "Vollbild verlassen (Esc)",
+    "es": "Salir de pantalla completa (Esc)"
+  },
+  "live.live_streams": {
+    "en": "Live streams",
+    "de": "Livestreams",
+    "es": "Transmisiones en directo"
+  },
+  "live.open_hls_playlist": {
+    "en": "Open HLS playlist",
+    "de": "HLS-Playlist öffnen",
+    "es": "Abrir lista HLS"
+  },
+  "live.move_tile": {
+    "en": "Move tile",
+    "de": "Kachel verschieben",
+    "es": "Mover mosaico"
+  },
+  "live.move": {
+    "en": "Move",
+    "de": "Verschieben",
+    "es": "Mover"
+  },
+  "live.drag_resize_tile": {
+    "en": "Drag to resize tile",
+    "de": "Kachelgröße ändern, ziehen",
+    "es": "Arrastrar para cambiar el tamaño"
+  },
+  "live.resize": {
+    "en": "Resize",
+    "de": "Größe ändern",
+    "es": "Cambiar tamaño"
+  },
+  "login.sign": {
+    "en": "Sign in",
+    "de": "Anmelden",
+    "es": "Iniciar sesión"
+  },
+  "mqtt.enable_mqtt": {
+    "en": "Enable MQTT",
+    "de": "MQTT aktivieren",
+    "es": "Activar MQTT"
+  },
+  "mqtt.publish_home_assistant_discovery": {
+    "en": "Publish Home Assistant discovery",
+    "de": "Home-Assistant-Discovery publizieren",
+    "es": "Publicar el descubrimiento de Home Assistant"
+  },
+  "notifications.new_channel": {
+    "en": "New channel",
+    "de": "Neuer Kanal",
+    "es": "Nuevo canal"
+  },
+  "notifications.create": {
+    "en": "Create",
+    "de": "Anlegen",
+    "es": "Crear"
+  },
+  "notifications.channels": {
+    "en": "Channels",
+    "de": "Kanäle",
+    "es": "Canales"
+  },
+  "notification.type": {
+    "en": "Type",
+    "de": "Typ",
+    "es": "Tipo"
+  },
+  "notification.ntfy_self_hosted_push": {
+    "en": "ntfy (self-hosted push)",
+    "de": "ntfy (selbstgehosteter Push)",
+    "es": "ntfy (push autoalojado)"
+  },
+  "notification.gotify_self_hosted_push": {
+    "en": "Gotify (self-hosted push)",
+    "de": "Gotify (selbstgehosteter Push)",
+    "es": "Gotify (push autoalojado)"
+  },
+  "notification.attach_snapshot": {
+    "en": "Attach snapshot",
+    "de": "Snapshot anhängen",
+    "es": "Adjuntar instantánea"
+  },
+  "notification.url_pushover_user_ha_url": {
+    "en": "URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL",
+    "de": "URL / Nutzer bei Pushover / HA-URL / ntfy-Themen-URL / Gotify-Server-URL",
+    "es": "URL / usuario de Pushover / URL de HA / URL del tema de ntfy / URL del servidor Gotify"
+  },
+  "notification.token_ntfy_access_token_gotify": {
+    "en": "Token (ntfy Access Token / Gotify App Token)",
+    "de": "Token (ntfy-Zugriffstoken / Gotify-App-Token)",
+    "es": "Token (token de acceso de ntfy / token de app de Gotify)"
+  },
+  "notification.email": {
+    "en": "Email to",
+    "de": "E-Mail an",
+    "es": "Correo para"
+  },
+  "notification.email_from": {
+    "en": "Email from",
+    "de": "E-Mail von",
+    "es": "Correo de"
+  },
+  "notification.smtp_username": {
+    "en": "SMTP username",
+    "de": "SMTP Benutzer",
+    "es": "Usuario SMTP"
+  },
+  "notification.smtp_password": {
+    "en": "SMTP password",
+    "de": "SMTP Passwort",
+    "es": "Contraseña SMTP"
+  },
+  "plugin_source.external_sources_install_plugins_directly": {
+    "en": "External sources install plugins directly from a public GitHub repository instead of requiring a manual ZIP upload. Synchronizing downloads and installs the latest version again; only public repositories are supported. Each registered source is also checked hourly for a newer update; see",
+    "de": "Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe",
+    "es": "Las fuentes externas instalan plugins directamente desde un repositorio público de GitHub en lugar de cargar manualmente un archivo ZIP. La sincronización vuelve a descargar e instalar la versión actual; solo se admiten repositorios públicos. Además, cada fuente registrada se comprueba cada hora para buscar actualizaciones; consulte"
+  },
+  "plugin_source.admin_updates": {
+    "en": "Admin → Updates",
+    "de": "Admin → Updates",
+    "es": "Administración → Actualizaciones"
+  },
+  "plugin_source.standard_repositories": {
+    "en": "Standard repositories",
+    "de": "Standard-Repositories",
+    "es": "Repositorios estándar"
+  },
+  "plugin_source.preconfigured_public_repositories_can_be": {
+    "en": "Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.",
+    "de": "Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.",
+    "es": "Los repositorios públicos preconfigurados pueden registrarse con un clic e instalarse mediante el proceso normal de validación de plugins."
+  },
+  "plugin_source.synchronize": {
+    "en": "Synchronize",
+    "de": "Synchronisieren",
+    "es": "Sincronizar"
+  },
+  "plugin_source.install_directly": {
+    "en": "Install directly",
+    "de": "Direkt installieren",
+    "es": "Instalar directamente"
+  },
+  "plugin_source.required_plugin_structure": {
+    "en": "Required plugin structure",
+    "de": "Erforderliche Plugin-Struktur",
+    "es": "Estructura requerida del plugin"
+  },
+  "plugin_source.repository_or_specified_subdirectory_within": {
+    "en": "A repository (or the specified subdirectory within it) must have the same structure as a manual ZIP import:",
+    "de": "Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:",
+    "es": "Un repositorio, o el subdirectorio indicado, debe tener la misma estructura que una importación ZIP manual:"
+  },
+  "plugin_source.camera_plugin": {
+    "en": "Camera plugin",
+    "de": "Kamera-Plugin",
+    "es": "Plugin de cámara"
+  },
+  "plugin_source.no_code_no_tests": {
+    "en": "- no code, no tests",
+    "de": "- kein Code, keine Tests",
+    "es": "- sin código ni pruebas"
+  },
+  "plugin_source.must": {
+    "en": "must",
+    "de": "muss",
+    "es": "debe"
+  },
+  "plugin_source.except_designs": {
+    "en": "and (except for designs)",
+    "de": "und (außer bei Designs)",
+    "es": "y (excepto en los diseños)"
+  },
+  "plugin_source.contain": {
+    "en": "contain;",
+    "de": "enthalten;",
+    "es": "contener;"
+  },
+  "plugin_source.provides": {
+    "en": "provides",
+    "de": "stellt",
+    "es": "proporciona"
+  },
+  "plugin_source.which_returns": {
+    "en": "which returns a",
+    "de": "bereit, das eine",
+    "es": "que devuelve una"
+  },
+  "plugin_source.or": {
+    "en": "or",
+    "de": "- bzw.",
+    "es": "o"
+  },
+  "plugin_source.instance_optional": {
+    "en": "instance. An optional",
+    "de": "-Instanz zurückgibt. Ein optionaler",
+    "es": "instancia. Una carpeta opcional"
+  },
+  "plugin_source.folder_containing_pytest_tests_can": {
+    "en": "folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in",
+    "de": "-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in",
+    "es": "con pruebas pytest puede ejecutarse directamente en TBC mediante «Ejecutar pruebas». La referencia completa está en"
+  },
+  "plugin_source.tbc_repository_as_well_as": {
+    "en": "in the TBC repository, as well as",
+    "de": "im TBC-Repository sowie",
+    "es": "en el repositorio de TBC y en"
+  },
+  "plugin_source.template_camera_plugin": {
+    "en": "Template: camera plugin",
+    "de": "Vorlage: Kamera-Plugin",
+    "es": "Plantilla: plugin de cámara"
+  },
+  "plugin_source.template_cloud_provider": {
+    "en": "Template: cloud provider",
+    "de": "Vorlage: Cloud-Anbieter",
+    "es": "Plantilla: proveedor en la nube"
+  },
+  "plugin_source.template_design": {
+    "en": "Template: design",
+    "de": "Vorlage: Design",
+    "es": "Plantilla: diseño"
+  },
+  "plugin_source.add_source": {
+    "en": "Add source",
+    "de": "Quelle hinzufügen",
+    "es": "Añadir fuente"
+  },
+  "plugin_source.plugin_type": {
+    "en": "Plugin type",
+    "de": "Plugin-Art",
+    "es": "Tipo de plugin"
+  },
+  "plugin_source.github_repository_url": {
+    "en": "GitHub repository URL",
+    "de": "GitHub-Repository-URL",
+    "es": "URL del repositorio de GitHub"
+  },
+  "plugin_source.branch_tag": {
+    "en": "Branch/tag",
+    "de": "Branch/Tag",
+    "es": "Rama/etiqueta"
+  },
+  "plugin_source.subdirectory_optional": {
+    "en": "Subdirectory (optional)",
+    "de": "Unterordner (optional)",
+    "es": "Subdirectorio (opcional)"
+  },
+  "plugin_source.registered_sources": {
+    "en": "Registered sources",
+    "de": "Registrierte Quellen",
+    "es": "Fuentes registradas"
+  },
+  "plugin_source.installed_as": {
+    "en": "Installed as",
+    "de": "Installiert als",
+    "es": "Instalado como"
+  },
+  "plugin_source.manage_camera_plugins": {
+    "en": "Manage camera plugins",
+    "de": "Kamera-Plugins verwalten",
+    "es": "Gestionar plugins de cámara"
+  },
+  "plugin_source.manage_designs": {
+    "en": "Manage designs",
+    "de": "Designs verwalten",
+    "es": "Gestionar diseños"
+  },
+  "plugin_source.remove_source": {
+    "en": "Remove source",
+    "de": "Quelle entfernen",
+    "es": "Eliminar fuente"
+  },
+  "plugin_source.no_external_sources_have_been": {
+    "en": "No external sources have been registered yet.",
+    "de": "Noch keine externen Quellen registriert.",
+    "es": "Aún no hay fuentes externas registradas."
+  },
+  "plugin_source.e_g_acme_camera_plugin": {
+    "en": "e.g. Acme camera plugin",
+    "de": "z. B. Acme Kamera-Plugin",
+    "es": "p. ej., plugin de cámara Acme"
+  },
+  "plugin_updates.updates": {
+    "en": "Updates",
+    "de": "Updates",
+    "es": "Actualizaciones"
+  },
+  "plugin_updates.manage_external_sources": {
+    "en": "Manage external sources",
+    "de": "Externe Quellen verwalten",
+    "es": "Gestionar fuentes externas"
+  },
+  "plugin_updates.installed": {
+    "en": "Installed",
+    "de": "Installiert",
+    "es": "Instalado"
+  },
+  "plugin_updates.every_registered_external_source_checked": {
+    "en": "Every registered external source is checked hourly to see whether its branch/tag has advanced since the last installation (by comparing the commit SHA without downloading the entire repository). Only sources with an update that is actually available appear here.",
+    "de": "Jede registrierte externe Quelle wird stündlich darauf geprüft, ob sich der Branch/Tag seit der letzten Installation weiterbewegt hat (Vergleich der Commit-SHA, ohne das ganze Repository herunterzuladen). Hier erscheinen nur Quellen mit einem tatsächlich verfügbaren Update.",
+    "es": "Cada fuente externa registrada se comprueba cada hora para saber si su rama/etiqueta ha avanzado desde la última instalación, comparando el SHA del commit sin descargar todo el repositorio. Aquí solo aparecen las fuentes con una actualización realmente disponible."
+  },
+  "plugin_updates.available_updates": {
+    "en": "Available updates",
+    "de": "Verfügbare Updates",
+    "es": "Actualizaciones disponibles"
+  },
+  "plugin_updates.available": {
+    "en": "Available",
+    "de": "Verfügbar",
+    "es": "Disponible"
+  },
+  "plugin_updates.last_checked": {
+    "en": "Last checked",
+    "de": "Zuletzt geprüft",
+    "es": "Última comprobación"
+  },
+  "plugin_updates.all_external_sources_up_date": {
+    "en": "All external sources are up to date.",
+    "de": "Alle externen Quellen sind aktuell.",
+    "es": "Todas las fuentes externas están actualizadas."
+  },
+  "recognition.enable_face_recognition": {
+    "en": "Enable face recognition",
+    "de": "Gesichtserkennung aktivieren",
+    "es": "Activar reconocimiento facial"
+  },
+  "recognition.face_recognition_mode": {
+    "en": "Face recognition mode",
+    "de": "Modus der Gesichtserkennung",
+    "es": "Modo de reconocimiento facial"
+  },
+  "recognition.snapshot_after_recording": {
+    "en": "Snapshot (after recording)",
+    "de": "Snapshot (nach der Aufnahme)",
+    "es": "Instantánea (después de grabar)"
+  },
+  "recognition.live_during_detection": {
+    "en": "Live (during detection)",
+    "de": "Live (während der Erkennung)",
+    "es": "En vivo (durante la detección)"
+  },
+  "recognition.match_threshold_0_1_higher": {
+    "en": "Match threshold (0-1, higher = stricter)",
+    "de": "Übereinstimmungsschwelle (0-1, höher = strenger)",
+    "es": "Umbral de coincidencia (0-1, más alto = más estricto)"
+  },
+  "recognition.enable_license_plate_recognition": {
+    "en": "Enable license plate recognition",
+    "de": "Kennzeichenerkennung aktivieren",
+    "es": "Activar reconocimiento de matrículas"
+  },
+  "recognition.plate_recognition_mode": {
+    "en": "Plate recognition mode",
+    "de": "Modus der Kennzeichenerkennung",
+    "es": "Modo de reconocimiento de matrículas"
+  },
+  "recognition.enroll_known_face": {
+    "en": "Enroll a known face",
+    "de": "Bekanntes Gesicht anlernen",
+    "es": "Registrar un rostro conocido"
+  },
+  "recognition.photo_one_clear_front_facing": {
+    "en": "Photo (one clear, front-facing face)",
+    "de": "Foto (ein klares, frontales Gesicht)",
+    "es": "Foto (un rostro claro, de frente)"
+  },
+  "recognition.enroll": {
+    "en": "Enroll",
+    "de": "Anlernen",
+    "es": "Registrar"
+  },
+  "recognition.known_faces": {
+    "en": "Known faces",
+    "de": "Bekannte Gesichter",
+    "es": "Rostros conocidos"
+  },
+  "recognition.no_known_faces_enrolled_yet": {
+    "en": "No known faces enrolled yet - every detected face will be reported as \"unknown\".",
+    "de": "Noch keine Gesichter angelernt - jedes erkannte Gesicht wird als \"unbekannt\" gemeldet.",
+    "es": "Aún no se ha registrado ningún rostro - cada rostro detectado se reportará como \"desconocido\"."
+  },
+  "recognition.add_known_plate": {
+    "en": "Add a known plate",
+    "de": "Bekanntes Kennzeichen hinzufügen",
+    "es": "Añadir una matrícula conocida"
+  },
+  "recognition.plate_text": {
+    "en": "Plate text",
+    "de": "Kennzeichentext",
+    "es": "Texto de la matrícula"
+  },
+  "recognition.known_plates": {
+    "en": "Known plates",
+    "de": "Bekannte Kennzeichen",
+    "es": "Matrículas conocidas"
+  },
+  "recognition.no_known_plates_yet_every": {
+    "en": "No known plates yet - every recognized plate will be reported as \"unknown\".",
+    "de": "Noch keine bekannten Kennzeichen - jedes erkannte Kennzeichen wird als \"unbekannt\" gemeldet.",
+    "es": "Aún no hay matrículas conocidas - cada matrícula reconocida se reportará como \"desconocida\"."
+  },
+  "recognition.recent_recognition_events": {
+    "en": "Recent recognition events",
+    "de": "Letzte Erkennungsereignisse",
+    "es": "Eventos de reconocimiento recientes"
+  },
+  "recognition.when": {
+    "en": "When",
+    "de": "Wann",
+    "es": "Cuándo"
+  },
+  "recognition.result": {
+    "en": "Result",
+    "de": "Ergebnis",
+    "es": "Resultado"
+  },
+  "recognition.confidence": {
+    "en": "Confidence",
+    "de": "Konfidenz",
+    "es": "Confianza"
+  },
+  "recognition.no_recognition_events_yet": {
+    "en": "No recognition events yet",
+    "de": "Noch keine Erkennungsereignisse",
+    "es": "Aún no hay eventos de reconocimiento"
+  },
+  "recordings.all": {
+    "en": "All",
+    "de": "Alle",
+    "es": "Todos"
+  },
+  "recordings.event": {
+    "en": "Event",
+    "de": "Ereignis",
+    "es": "Evento"
+  },
+  "recordings.from": {
+    "en": "From",
+    "de": "Von",
+    "es": "Desde"
+  },
+  "recordings.to": {
+    "en": "To",
+    "de": "Bis",
+    "es": "Hasta"
+  },
+  "recordings.search": {
+    "en": "Search",
+    "de": "Suchen",
+    "es": "Buscar"
+  },
+  "recordings.filter": {
+    "en": "Filter",
+    "de": "Filtern",
+    "es": "Filtrar"
+  },
+  "recordings.previous_page": {
+    "en": "‹ Previous page",
+    "de": "‹ Vorherige Seite",
+    "es": "‹ Página anterior"
+  },
+  "recordings.next_page": {
+    "en": "Next page ›",
+    "de": "Nächste Seite ›",
+    "es": "Página siguiente ›"
+  },
+  "recordings.no_clips_found": {
+    "en": "No clips found",
+    "de": "Keine Clips gefunden",
+    "es": "No se encontraron clips"
+  },
+  "recordings.event_label_message_camera_name": {
+    "en": "Event label, message, camera name…",
+    "de": "Event-Label, Nachricht, Kameraname…",
+    "es": "Etiqueta del evento, mensaje, nombre de la cámara…"
+  },
+  "retention.new_rule": {
+    "en": "New rule",
+    "de": "Neue Regel",
+    "es": "Nueva regla"
+  },
+  "retention.maximum_age_days": {
+    "en": "Maximum age in days",
+    "de": "Max. Alter Tage",
+    "es": "Antigüedad máxima en días"
+  },
+  "retention.maximum_size_gb": {
+    "en": "Maximum size in GB",
+    "de": "Max. Größe GB",
+    "es": "Tamaño máximo en GB"
+  },
+  "retention.rules": {
+    "en": "Rules",
+    "de": "Regeln",
+    "es": "Reglas"
+  },
+  "sd_card.camera_archive": {
+    "en": "Camera archive",
+    "de": "Kamera-Archiv",
+    "es": "Archivo de cámara"
+  },
+  "sd_card.loading_sd_card_content": {
+    "en": "Loading SD card content...",
+    "de": "SD-Karteninhalt wird geladen...",
+    "es": "Cargando contenido de la tarjeta SD..."
+  },
+  "sd_card.recordings_sd_card": {
+    "en": "Recordings on SD card",
+    "de": "Aufnahmen auf SD-Karte",
+    "es": "Grabaciones en la tarjeta SD"
+  },
+  "sd_card.start": {
+    "en": "Start",
+    "de": "Start",
+    "es": "Inicio"
+  },
+  "sd_card.end": {
+    "en": "End",
+    "de": "Ende",
+    "es": "Fin"
+  },
+  "sd_card.duration": {
+    "en": "Duration",
+    "de": "Dauer",
+    "es": "Duración"
+  },
+  "sd_card.file": {
+    "en": "File",
+    "de": "Datei",
+    "es": "Archivo"
+  },
+  "sd_card.size": {
+    "en": "Size",
+    "de": "Größe",
+    "es": "Tamaño"
+  },
+  "sd_card.no_sd_card_recordings_found": {
+    "en": "No SD card recordings found",
+    "de": "Keine SD-Card-Aufnahmen gefunden",
+    "es": "No se encontraron grabaciones en la tarjeta SD"
+  },
+  "settings.debug_log_collects_ongoing_messages": {
+    "en": "The debug log collects ongoing messages from the app and ffmpeg live processes. It is available as a pull-up in the bottom-right corner of every admin page.",
+    "de": "Das Debug Log sammelt laufende Meldungen der App und ffmpeg-Live-Prozesse. Es ist auf jeder Admin-Seite unten rechts als Pull-up verfuegbar.",
+    "es": "El registro de depuración recopila mensajes de la aplicación y de los procesos de ffmpeg en directo. Está disponible como panel desplegable en la esquina inferior derecha de todas las páginas de administración."
+  },
+  "settings.open_debug_log": {
+    "en": "Open debug log",
+    "de": "Debug Log oeffnen",
+    "es": "Abrir registro de depuración"
+  },
+  "settings.clear": {
+    "en": "Clear",
+    "de": "Leeren",
+    "es": "Vaciar"
+  },
+  "storage.recording_destinations": {
+    "en": "Recording destinations",
+    "de": "Aufnahmeziele",
+    "es": "Destinos de grabación"
+  },
+  "storage.new_storage_destination": {
+    "en": "New storage destination",
+    "de": "Neues Speicherziel",
+    "es": "Nuevo destino de almacenamiento"
+  },
+  "storage.local_or_mounted_path": {
+    "en": "Local or mounted path",
+    "de": "Lokaler oder gemounteter Pfad",
+    "es": "Ruta local o montada"
+  },
+  "storage.s3_compatible_cloud_storage": {
+    "en": "S3-compatible cloud storage",
+    "de": "S3-kompatibler Cloud-Speicher",
+    "es": "Almacenamiento en la nube compatible con S3"
+  },
+  "storage.local_path_container": {
+    "en": "Local path in the container",
+    "de": "Lokaler Pfad im Container",
+    "es": "Ruta local en el contenedor"
+  },
+  "storage.secret_key": {
+    "en": "Secret key",
+    "de": "Secret Key",
+    "es": "Clave secreta"
+  },
+  "storage.existing_destinations": {
+    "en": "Existing destinations",
+    "de": "Vorhandene Ziele",
+    "es": "Destinos existentes"
+  },
+  "storage.local_mounted_path": {
+    "en": "Local/mounted path",
+    "de": "Lokaler/gemounteter Pfad",
+    "es": "Ruta local/montada"
+  },
+  "storage.local_path": {
+    "en": "Local path",
+    "de": "Lokaler Pfad",
+    "es": "Ruta local"
+  },
+  "storage.retention_days": {
+    "en": "Retention days",
+    "de": "Retention Tage",
+    "es": "Días de retención"
+  },
+  "storage.no_storage_destination_has_been": {
+    "en": "No storage destination has been created yet",
+    "de": "Noch kein Speicherziel angelegt",
+    "es": "Aún no se ha creado ningún destino de almacenamiento"
+  },
+  "storage.storage_analysis": {
+    "en": "Storage analysis",
+    "de": "Speicheranalyse",
+    "es": "Análisis de almacenamiento"
+  },
+  "storage.run_cleanup": {
+    "en": "Run cleanup",
+    "de": "Cleanup ausführen",
+    "es": "Ejecutar limpieza"
+  },
+  "storage.free": {
+    "en": "Free",
+    "de": "Frei",
+    "es": "Libre"
+  },
+  "storage.usage_by_camera_event": {
+    "en": "Usage by camera/event",
+    "de": "Belegung pro Kamera/Ereignis",
+    "es": "Uso por cámara/evento"
+  },
+  "storage.cleanup_preview": {
+    "en": "Cleanup preview",
+    "de": "Cleanup-Vorschau",
+    "es": "Vista previa de limpieza"
+  },
+  "storage.date": {
+    "en": "Date",
+    "de": "Datum",
+    "es": "Fecha"
+  },
+  "storage.reason": {
+    "en": "Reason",
+    "de": "Grund",
+    "es": "Motivo"
+  },
+  "timeline.local_recordings_from_tbc": {
+    "en": "Local recordings (from TBC)",
+    "de": "Lokale Aufzeichnungen (von TBC)",
+    "es": "Grabaciones locales (de TBC)"
+  },
+  "timeline.full_day": {
+    "en": "Full day",
+    "de": "Ganzer Tag",
+    "es": "Todo el día"
+  },
+  "timeline.continuous": {
+    "en": "Continuous",
+    "de": "Daueraufnahme",
+    "es": "Grabación continua"
+  },
+  "timeline.no_recordings_available_day": {
+    "en": "No recordings are available for this day.",
+    "de": "Für diesen Tag liegen keine Aufnahmen vor.",
+    "es": "No hay grabaciones disponibles para este día."
+  },
+  "users.access": {
+    "en": "Access",
+    "de": "Zugriff",
+    "es": "Acceso"
+  },
+  "users.new_user": {
+    "en": "New user",
+    "de": "Neuer Benutzer",
+    "es": "Nuevo usuario"
+  },
+  "users.role": {
+    "en": "Role",
+    "de": "Rolle",
+    "es": "Rol"
+  },
+  "users.camera_access_viewers": {
+    "en": "Camera access for viewers",
+    "de": "Kamerazugriff für Viewer",
+    "es": "Acceso a cámaras para espectadores"
+  },
+  "users.existing_users": {
+    "en": "Existing users",
+    "de": "Vorhandene Benutzer",
+    "es": "Usuarios existentes"
+  },
+  "users.camera_access": {
+    "en": "Camera access",
+    "de": "Kamerazugriff",
+    "es": "Acceso a cámaras"
+  }
+}

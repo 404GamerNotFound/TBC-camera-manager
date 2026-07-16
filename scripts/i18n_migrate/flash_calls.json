@@ -1,0 +1,981 @@
+[
+  {
+    "kind": "literal",
+    "text": "Kamera wurde angelegt und geprüft",
+    "en": "Camera was created and checked",
+    "es": "Se creó y comprobó la cámara",
+    "line": 589,
+    "level": "success"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "snapshot.message",
+    "line": 729,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Befehl wurde gesendet",
+    "en": "Command was sent",
+    "es": "Se envió el comando",
+    "line": 946,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Aufnahmeeinstellungen wurden gespeichert",
+    "en": "Recording settings were saved",
+    "es": "Se guardaron los ajustes de grabación",
+    "line": 1031,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Einstellungen für lokale KI-Erkennung wurden gespeichert",
+    "en": null,
+    "es": null,
+    "line": 1060,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Daueraufzeichnung wurde gespeichert",
+    "en": "Continuous recording settings were saved",
+    "es": "Se guardó la grabación continua",
+    "line": 1184,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde entfernt",
+    "en": "Camera was removed",
+    "es": "Se eliminó la cámara",
+    "line": 1280,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "{deleted} Clips wurden gelöscht",
+    "params": [
+      "deleted"
+    ],
+    "line": 1344,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Speicherziel wurde aktualisiert",
+    "en": "Storage destination was updated",
+    "es": "Se actualizó el destino de almacenamiento",
+    "line": 1382,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Speicherziel wurde entfernt",
+    "en": "Storage destination was removed",
+    "es": "Se eliminó el destino de almacenamiento",
+    "line": 1392,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Benutzer wurde angelegt",
+    "en": "User was created",
+    "es": "Se creó el usuario",
+    "line": 1868,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Benutzer wurde aktualisiert",
+    "en": "User was updated",
+    "es": "Se actualizó el usuario",
+    "line": 1895,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Benutzer wurde gelöscht",
+    "en": "User was deleted",
+    "es": "Se eliminó el usuario",
+    "line": 1908,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "MQTT-Einstellungen wurden gespeichert",
+    "en": "MQTT settings were saved",
+    "es": "Se guardaron los ajustes de MQTT",
+    "line": 1956,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kanal wurde aktualisiert",
+    "en": "Channel was updated",
+    "es": "Se actualizó el canal",
+    "line": 2009,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "API-Einstellungen wurden gespeichert",
+    "en": null,
+    "es": null,
+    "line": 2265,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "Neuer API-Key erzeugt (wird nur jetzt angezeigt, danach nicht mehr abrufbar): {key}",
+    "params": [
+      "key"
+    ],
+    "line": 2276,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "API-Key wurde widerrufen",
+    "en": null,
+    "es": null,
+    "line": 2289,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Einstellungen wurden gespeichert",
+    "en": "Settings were saved",
+    "es": "Se guardaron los ajustes",
+    "line": 2368,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Gesicht wurde entfernt",
+    "en": "Face was removed",
+    "es": "Se eliminó el rostro",
+    "line": 2409,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kennzeichen wurde gespeichert",
+    "en": "Plate was saved",
+    "es": "Se guardó la matrícula",
+    "line": 2419,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kennzeichen wurde aktualisiert",
+    "en": "Plate was updated",
+    "es": "Se actualizó la matrícula",
+    "line": 2431,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kennzeichen wurde entfernt",
+    "en": "Plate was removed",
+    "es": "Se eliminó la matrícula",
+    "line": 2441,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde hinzugefügt",
+    "en": "Cloud account was added",
+    "es": "Se añadió la cuenta en la nube",
+    "line": 2706,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde aktualisiert",
+    "en": "Cloud account was updated",
+    "es": "Se actualizó la cuenta en la nube",
+    "line": 2771,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde entfernt",
+    "en": "Cloud account was removed",
+    "es": "Se eliminó la cuenta en la nube",
+    "line": 2781,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde aus dem Cloud-Konto übernommen",
+    "en": "Camera was imported from the cloud account",
+    "es": "Se importó la cámara desde la cuenta en la nube",
+    "line": 2962,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Design wurde aktiviert",
+    "en": "Design was activated",
+    "es": "Se activó el diseño",
+    "line": 2997,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Externe Quelle wurde hinzugefügt",
+    "en": "External source was added",
+    "es": "Se añadió la fuente externa",
+    "line": 3131,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin '{installed_key}' wurde installiert/aktualisiert",
+    "params": [
+      "installed_key"
+    ],
+    "line": 3180,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Externe Quelle wurde entfernt",
+    "en": "External source was removed",
+    "es": "Se eliminó la fuente externa",
+    "line": 3225,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Debug Log wurde geleert",
+    "en": "Debug log was cleared",
+    "es": "Se vació el registro de depuración",
+    "line": 3291,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Retention-Regel wurde angelegt",
+    "en": "Retention rule was created",
+    "es": "Se creó la regla de retención",
+    "line": 3847,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Retention-Regel wurde aktualisiert",
+    "en": "Retention rule was updated",
+    "es": "Se actualizó la regla de retención",
+    "line": 3866,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Retention-Regel wurde gelöscht",
+    "en": "Retention rule was deleted",
+    "es": "Se eliminó la regla de retención",
+    "line": 3876,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Benachrichtigung wurde angelegt",
+    "en": "Notification was created",
+    "es": "Se creó la notificación",
+    "line": 3904,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Benachrichtigung wurde aktualisiert",
+    "en": "Notification was updated",
+    "es": "Se actualizó la notificación",
+    "line": 3914,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Benachrichtigung wurde gelöscht",
+    "en": "Notification was deleted",
+    "es": "Se eliminó la notificación",
+    "line": 3924,
+    "level": "success"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "message",
+    "line": 4562,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde nicht gefunden",
+    "en": "Camera was not found",
+    "es": "No se encontró la cámara",
+    "line": 601,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde nicht gefunden",
+    "en": "Camera was not found",
+    "es": "No se encontró la cámara",
+    "line": 722,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "message",
+    "line": 914,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde nicht gefunden",
+    "en": "Camera was not found",
+    "es": "No se encontró la cámara",
+    "line": 1006,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Das Modul {camera_module.label} unterstützt keine Ereignisaufnahmen",
+    "params": [
+      "camera_module.label"
+    ],
+    "line": 1016,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde nicht gefunden",
+    "en": "Camera was not found",
+    "es": "No se encontró la cámara",
+    "line": 1049,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde nicht gefunden",
+    "en": "Camera was not found",
+    "es": "No se encontró la cámara",
+    "line": 1166,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Das Modul {camera_module.label} unterstützt keine Daueraufzeichnung",
+    "params": [
+      "camera_module.label"
+    ],
+    "line": 1174,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera wurde nicht gefunden",
+    "en": "Camera was not found",
+    "es": "No se encontró la cámara",
+    "line": 1207,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Das Modul {camera_module.label} akzeptiert keine manuelle Stream-URL",
+    "params": [
+      "camera_module.label"
+    ],
+    "line": 1226,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich",
+    "en": "An RTSP/RTSPS URL is required for this profile",
+    "es": "Este perfil requiere una URL RTSP/RTSPS",
+    "line": 1229,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich",
+    "en": "Name, host, and the credentials required by this module must be provided",
+    "es": "Se requieren el nombre, el host y las credenciales necesarias para este módulo",
+    "line": 1244,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "snapshot.message",
+    "line": 1262,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Speicherziel wurde angelegt",
+    "en": "Storage destination was created",
+    "es": "Se creó el destino de almacenamiento",
+    "line": 1332,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Clip wurde gelöscht",
+    "en": "Clip was deleted",
+    "es": "Se eliminó el clip",
+    "line": 1823,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Der aktuell angemeldete Benutzer kann nicht gelöscht werden",
+    "en": "The currently signed-in user cannot be deleted",
+    "es": "No se puede eliminar el usuario que ha iniciado sesión",
+    "line": 1905,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Das Kameramodul unterstützt keine Live-Ansicht",
+    "en": "The camera module does not support live view",
+    "es": "El módulo de cámara no admite la vista en directo",
+    "line": 2125,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kein Stream für Live-Ansicht bekannt",
+    "en": "No stream is known for live view",
+    "es": "No se conoce ninguna transmisión para la vista en directo",
+    "line": 2134,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Dieser Kanal ist deaktiviert",
+    "en": "This channel is disabled",
+    "es": "Este canal está desactivado",
+    "line": 2154,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Das Kameramodul unterstützt keine Live-Ansicht",
+    "en": "The camera module does not support live view",
+    "es": "El módulo de cámara no admite la vista en directo",
+    "line": 2158,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kein Stream für diesen Kanal bekannt",
+    "en": "No stream is known for this channel",
+    "es": "No se conoce ninguna transmisión para este canal",
+    "line": 2168,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Gesicht für {name.strip()} wurde gespeichert",
+    "params": [
+      "name.strip()"
+    ],
+    "line": 2395,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "Kamera-Plugin {package.manifest.label} wurde installiert",
+    "params": [
+      "package.manifest.label"
+    ],
+    "line": 2484,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin wird noch von {camera_count} Kamera(s) verwendet",
+    "params": [
+      "camera_count"
+    ],
+    "line": 2519,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Kamera-Plugin wurde entfernt",
+    "en": "Camera plugin was removed",
+    "es": "Se eliminó el plugin de cámara",
+    "line": 2524,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Für dieses Plugin sind keine Tests verfügbar",
+    "en": "No tests are available for this plugin",
+    "es": "No hay pruebas disponibles para este plugin",
+    "line": 2540,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "result.summary",
+    "line": 2544,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "{module_key}: {result.summary}",
+    "params": [
+      "module_key",
+      "result.summary"
+    ],
+    "line": 2547,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "Cloud-Plugin {package.manifest.label} wurde installiert",
+    "params": [
+      "package.manifest.label"
+    ],
+    "line": 2589,
+    "level": "success"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin wird noch von {account_count} Cloud-Konto(s) verwendet",
+    "params": [
+      "account_count"
+    ],
+    "line": 2624,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Plugin wurde entfernt",
+    "en": "Cloud plugin was removed",
+    "es": "Se eliminó el plugin de nube",
+    "line": 2629,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Für dieses Plugin sind keine Tests verfügbar",
+    "en": "No tests are available for this plugin",
+    "es": "No hay pruebas disponibles para este plugin",
+    "line": 2645,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "result.summary",
+    "line": 2649,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "{module_key}: {result.summary}",
+    "params": [
+      "module_key",
+      "result.summary"
+    ],
+    "line": 2652,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde nicht gefunden",
+    "en": "Cloud account was not found",
+    "es": "No se encontró la cuenta en la nube",
+    "line": 2717,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde nicht gefunden",
+    "en": "Cloud account was not found",
+    "es": "No se encontró la cuenta en la nube",
+    "line": 2745,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde nicht gefunden",
+    "en": "Cloud account was not found",
+    "es": "No se encontró la cuenta en la nube",
+    "line": 2792,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde nicht gefunden",
+    "en": "Cloud account was not found",
+    "es": "No se encontró la cuenta en la nube",
+    "line": 2812,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Für dieses Konto ist aktuell keine Bestätigung ausstehend",
+    "en": "No verification is currently pending for this account",
+    "es": "No hay ninguna verificación pendiente para esta cuenta",
+    "line": 2816,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde nicht gefunden",
+    "en": "Cloud account was not found",
+    "es": "No se encontró la cuenta en la nube",
+    "line": 2846,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Für dieses Konto ist aktuell keine Bestätigung ausstehend",
+    "en": "No verification is currently pending for this account",
+    "es": "No hay ninguna verificación pendiente para esta cuenta",
+    "line": 2850,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Bitte einen Code eingeben",
+    "en": "Enter a code",
+    "es": "Introduzca un código",
+    "line": 2858,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Cloud-Konto wurde nicht gefunden",
+    "en": "Cloud account was not found",
+    "es": "No se encontró la cuenta en la nube",
+    "line": 2882,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Design {package.manifest.label} wurde installiert",
+    "params": [
+      "package.manifest.label"
+    ],
+    "line": 3010,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Das aktive Design kann nicht entfernt werden",
+    "en": "The active design cannot be removed",
+    "es": "No se puede eliminar el diseño activo",
+    "line": 3043,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Design wurde entfernt",
+    "en": "Design was removed",
+    "es": "Se eliminó el diseño",
+    "line": 3048,
+    "level": "success"
+  },
+  {
+    "kind": "literal",
+    "text": "Ungültige Plugin-Art",
+    "en": "Invalid plugin type",
+    "es": "Tipo de plugin no válido",
+    "line": 3116,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Externe Quelle wurde nicht gefunden",
+    "en": "External source was not found",
+    "es": "No se encontró la fuente externa",
+    "line": 3153,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Standard-Repository wurde nicht gefunden",
+    "en": "Standard repository was not found",
+    "es": "No se encontró el repositorio estándar",
+    "line": 3191,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Dafür werden Admin-Rechte benötigt",
+    "en": "Administrator permissions are required",
+    "es": "Se requieren permisos de administrador",
+    "line": 4185,
+    "level": "error"
+  },
+  {
+    "kind": "literal",
+    "text": "Keine Berechtigung für diese Kamera",
+    "en": "No permission for this camera",
+    "es": "Sin permiso para esta cámara",
+    "line": 4205,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 727,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 1011,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 1171,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 1212,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 1221,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Verbindung gespeichert, Probe fehlgeschlagen: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 1265,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Speicherziel konnte nicht angelegt werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 1334,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "SD-Card-Medium konnte nicht geoeffnet werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 1762,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Live-Ansicht konnte nicht gestartet werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2141,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Live-Ansicht konnte nicht gestartet werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2175,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Gesicht konnte nicht gespeichert werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2397,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin-Import fehlgeschlagen: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2486,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin konnte nicht entfernt werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2526,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin-Import fehlgeschlagen: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2591,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Plugin konnte nicht entfernt werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 2631,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2687,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2698,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2722,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2750,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2762,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2798,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2821,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2855,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2887,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2900,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2944,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 2994,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Design-Import fehlgeschlagen: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 3012,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Design konnte nicht entfernt werden: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 3050,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 3121,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "message",
+    "line": 3166,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 3170,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "message",
+    "line": 4541,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 4548,
+    "level": "error"
+  },
+  {
+    "kind": "passthrough",
+    "expr": "str(exc)",
+    "line": 4553,
+    "level": "error"
+  },
+  {
+    "kind": "fstring",
+    "template": "Verbindung fehlgeschlagen: {exc}",
+    "params": [
+      "exc"
+    ],
+    "line": 4558,
+    "level": "error"
+  }
+]

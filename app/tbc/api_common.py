@@ -27,7 +27,7 @@ def api_auth_error(
         token = auth_header[7:].strip()
     token = token or (api_key_header or "").strip()
     if not token or not config.get("api_key_hash") or not verify_api_key(token, config["api_key_hash"]):
-        return (401, "ungültiger oder fehlender API-Key")
+        return (401, "invalid or missing API key")
     return None
 
 

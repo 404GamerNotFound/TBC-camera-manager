@@ -87,4 +87,4 @@ def get_camera_module(key: str | None) -> CameraModule:
     for module in list_camera_modules():
         if str(module.key).strip().lower() == normalized:
             return module
-    raise UnknownCameraModuleError(f"Kamera-Modul '{normalized}' ist nicht installiert")
+    raise UnknownCameraModuleError(f"Camera module '{normalized}' is not installed")

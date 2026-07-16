@@ -1,0 +1,46 @@
+[
+  [
+    "app/tbc/templates/api_access.html",
+    "docs/api.md"
+  ],
+  [
+    "app/tbc/templates/api_access.html",
+    "docs/mcp.md"
+  ],
+  [
+    "app/tbc/templates/base.html",
+    "0 entries"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "tests/test_*.py"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "tests/test_*.py"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "static/styles.css"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "docs/plugin-sources.md"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "docs/camera-modules.md"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "docs/cloud-accounts.md"
+  ],
+  [
+    "app/tbc/templates/plugin_sources.html",
+    "docs/design-themes.md"
+  ],
+  [
+    "app/tbc/templates/timeline.html",
+    "1×"
+  ]
+]

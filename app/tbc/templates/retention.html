@@ -3,40 +3,40 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Cleanup</p>
-    <h1>Retention</h1>
+    <p class="eyebrow" data-i18n="retention.cleanup">Cleanup</p>
+    <h1 data-i18n="common.retention">Retention</h1>
   </div>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/retention">
-    <div class="section-title"><h2>New rule</h2></div>
+    <div class="section-title"><h2 data-i18n="retention.new_rule">New rule</h2></div>
     <div class="form-grid">
-      <label><span>Name</span><input name="name" required></label>
-      <label class="check-row"><input name="enabled" type="checkbox" checked><span>active</span></label>
-      <label><span>Camera</span><select name="camera_id"><option value="">All</option>{% for camera in cameras %}<option value="{{ camera.id }}">{{ camera.name }}</option>{% endfor %}</select></label>
-      <label><span>Event</span><select name="detection_key"><option value="">All</option>{% for key in event_keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}</select></label>
-      <label><span>Maximum age in days</span><input name="max_age_days" type="number" min="0"></label>
-      <label><span>Maximum size in GB</span><input name="max_size_gb" type="number" min="0" step="0.1"></label>
+      <label><span data-i18n="common.name">Name</span><input name="name" required></label>
+      <label class="check-row"><input name="enabled" type="checkbox" checked><span data-i18n="camera.active">active</span></label>
+      <label><span data-i18n="camera_new_choice.camera">Camera</span><select name="camera_id"><option value="" data-i18n="recordings.all">All</option>{% for camera in cameras %}<option value="{{ camera.id }}">{{ camera.name }}</option>{% endfor %}</select></label>
+      <label><span data-i18n="recordings.event">Event</span><select name="detection_key"><option value="" data-i18n="recordings.all">All</option>{% for key in event_keys %}<option value="{{ key }}">{{ key }}</option>{% endfor %}</select></label>
+      <label><span data-i18n="retention.maximum_age_days">Maximum age in days</span><input name="max_age_days" type="number" min="0"></label>
+      <label><span data-i18n="retention.maximum_size_gb">Maximum size in GB</span><input name="max_size_gb" type="number" min="0" step="0.1"></label>
     </div>
-    <div class="form-actions"><button class="primary-button" type="submit">Create</button></div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="notifications.create">Create</button></div>
   </form>
   <section class="storage-list">
-    <div class="section-title"><h2>Rules</h2><span>{{ rules | length }}</span></div>
+    <div class="section-title"><h2 data-i18n="retention.rules">Rules</h2><span>{{ rules | length }}</span></div>
     {% for rule in rules %}
     <article class="storage-item">
       <form method="post" action="/retention/{{ rule.id }}">
         <div class="form-grid">
-          <label><span>Name</span><input name="name" value="{{ rule.name }}" required></label>
-          <label class="check-row"><input name="enabled" type="checkbox" {% if rule.enabled %}checked{% endif %}><span>active</span></label>
-          <label><span>Camera</span><select name="camera_id"><option value="">All</option>{% for camera in cameras %}<option value="{{ camera.id }}" {% if rule.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>{% endfor %}</select></label>
-          <label><span>Event</span><select name="detection_key"><option value="">All</option>{% for key in event_keys %}<option value="{{ key }}" {% if rule.detection_key == key %}selected{% endif %}>{{ key }}</option>{% endfor %}</select></label>
-          <label><span>Maximum age in days</span><input name="max_age_days" type="number" min="0" value="{{ rule.max_age_days or '' }}"></label>
-          <label><span>Maximum size in GB</span><input name="max_size_gb" type="number" min="0" step="0.1" value="{{ rule.max_size_gb or '' }}"></label>
+          <label><span data-i18n="common.name">Name</span><input name="name" value="{{ rule.name }}" required></label>
+          <label class="check-row"><input name="enabled" type="checkbox" {% if rule.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
+          <label><span data-i18n="camera_new_choice.camera">Camera</span><select name="camera_id"><option value="" data-i18n="recordings.all">All</option>{% for camera in cameras %}<option value="{{ camera.id }}" {% if rule.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>{% endfor %}</select></label>
+          <label><span data-i18n="recordings.event">Event</span><select name="detection_key"><option value="" data-i18n="recordings.all">All</option>{% for key in event_keys %}<option value="{{ key }}" {% if rule.detection_key == key %}selected{% endif %}>{{ key }}</option>{% endfor %}</select></label>
+          <label><span data-i18n="retention.maximum_age_days">Maximum age in days</span><input name="max_age_days" type="number" min="0" value="{{ rule.max_age_days or '' }}"></label>
+          <label><span data-i18n="retention.maximum_size_gb">Maximum size in GB</span><input name="max_size_gb" type="number" min="0" step="0.1" value="{{ rule.max_size_gb or '' }}"></label>
         </div>
-        <div class="form-actions"><button class="primary-button" type="submit">Save</button></div>
+        <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
       </form>
-      <form method="post" action="/retention/{{ rule.id }}/delete"><button class="danger-button" type="submit">Delete</button></form>
+      <form method="post" action="/retention/{{ rule.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
     </article>
     {% endfor %}
   </section>

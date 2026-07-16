@@ -3,8 +3,8 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Extensions</p>
-    <h1>Camera plugins</h1>
+    <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
+    <h1 data-i18n="base.camera_plugins">Camera plugins</h1>
   </div>
 </section>
 
@@ -12,33 +12,33 @@
   <details class="plugin-import-panel">
     <summary>
       <span>
-        <strong>Import plugin</strong>
-        <small>Plugin file</small>
+        <strong data-i18n="plugin.import_plugin">Import plugin</strong>
+        <small data-i18n="plugin.plugin_file">Plugin file</small>
       </span>
       <span class="status-pill status-idle">ZIP</span>
     </summary>
     <form class="editor-form compact-form" method="post" action="/camera-modules/import" enctype="multipart/form-data">
-      <div class="quiet-box">
+      <div class="quiet-box" data-i18n="plugin.camera_plugins_contain_executable_python">
         Camera plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.
       </div>
       <label>
-        <span>Plugin file</span>
+        <span data-i18n="plugin.plugin_file">Plugin file</span>
         <input name="plugin_file" type="file" accept=".zip,application/zip" required>
       </label>
       <div class="form-actions">
-        <button class="primary-button" type="submit">Import</button>
+        <button class="primary-button" type="submit" data-i18n="plugin.import">Import</button>
       </div>
     </form>
   </details>
 
   <div class="plugin-search-bar">
-    <label class="visually-hidden" for="camera-module-search">Search plugins</label>
-    <input type="search" id="camera-module-search" placeholder="Search plugins…" autocomplete="off" data-plugin-search="#camera-module-list">
+    <label class="visually-hidden" for="camera-module-search" data-i18n="plugin.search_plugins">Search plugins</label>
+    <input type="search" id="camera-module-search" placeholder="Search plugins…" data-i18n-placeholder="plugin.search_plugins_2" autocomplete="off" data-plugin-search="#camera-module-list">
   </div>
 
   <section class="storage-list plugin-grid" id="camera-module-list">
     <div class="section-title">
-      <h2>Installed plugins</h2>
+      <h2 data-i18n="plugin.installed_plugins">Installed plugins</h2>
       <span>{{ registrations | length }}</span>
     </div>
     {% for registration in registrations %}
@@ -52,9 +52,9 @@
         <span>{{ registration.version }}</span>
       </div>
       <dl class="metric-row plugin-card-meta">
-        <div><dt>Key</dt><dd>{{ camera_module.key }}</dd></div>
-        <div><dt>Source</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else ('ZIP-Import' if registration.origin == 'uploaded' else 'Python-Paket') }}</dd></div>
-        <div><dt>Cameras</dt><dd>{{ camera_counts[camera_module.key] }}</dd></div>
+        <div><dt data-i18n="plugin.key">Key</dt><dd>{{ camera_module.key }}</dd></div>
+        <div><dt data-i18n="camera.source">Source</dt><dd>{{ 'eingebaut' if registration.origin == 'builtin' else ('ZIP-Import' if registration.origin == 'uploaded' else 'Python-Paket') }}</dd></div>
+        <div><dt data-i18n="nav.cameras">Cameras</dt><dd>{{ camera_counts[camera_module.key] }}</dd></div>
       </dl>
       <p class="plugin-card-capabilities">
         {% for capability in camera_module.capabilities %}
@@ -63,11 +63,11 @@
       </p>
       <div class="form-actions plugin-card-actions">
         {% if registration.package %}
-        <a class="secondary-button" href="/camera-modules/{{ camera_module.key }}/export">Export ZIP</a>
+        <a class="secondary-button" href="/camera-modules/{{ camera_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
         {% endif %}
         {% if has_tests[camera_module.key] %}
         <form method="post" action="/camera-modules/{{ camera_module.key }}/run-tests">
-          <button class="secondary-button" type="submit">Run tests</button>
+          <button class="secondary-button" type="submit" data-i18n="plugin.run_tests">Run tests</button>
         </form>
         {% endif %}
         {% if registration.origin == 'uploaded' %}
@@ -78,7 +78,7 @@
       </div>
     </article>
     {% endfor %}
-    <p class="quiet-box" data-plugin-search-empty hidden>No plugins found.</p>
+    <p class="quiet-box" data-plugin-search-empty hidden data-i18n="plugin.no_plugins_found">No plugins found.</p>
   </section>
 </section>
 <script src="{{ url_for('static', path='/plugin-search.js') }}?v={{ asset_version }}" defer></script>

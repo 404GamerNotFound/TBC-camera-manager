@@ -67,8 +67,8 @@ class CoralEdgeTpuBackend(DetectionBackend):
         except Exception as exc:
             return False, f"Edge-TPU-Laufzeit konnte nicht abgefragt werden: {exc}"
         if not tpus:
-            return False, "Kein Coral Edge-TPU-Gerät gefunden"
-        return True, f"{len(tpus)} Edge-TPU-Gerät(e) gefunden"
+            return False, "No Coral Edge TPU device found"
+        return True, f"{len(tpus)} Edge TPU device(s) found"
 
     def load(self) -> None:
         if self._interpreter is not None:

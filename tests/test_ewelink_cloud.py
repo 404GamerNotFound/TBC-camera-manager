@@ -101,7 +101,7 @@ class EwelinkCloudModuleTests(unittest.IsolatedAsyncioTestCase):
     async def test_connection_reports_device_count(self):
         message = await self.module.test_connection(self.account)
 
-        self.assertIn("2 Gerät(e)", message)
+        self.assertIn("2 device(s)", message)
         self.assertEqual(FakeEWeLink.instance.app_cred.id, "app-123")
         self.assertTrue(FakeEWeLink.instance.closed)
 
@@ -122,13 +122,13 @@ class EwelinkCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(by_name["Garage"].online)
 
     async def test_missing_app_credentials_are_rejected_before_login(self):
-        with self.assertRaisesRegex(CloudConnectionError, "App-ID und App-Secret"):
+        with self.assertRaisesRegex(CloudConnectionError, "App ID and app secret are required"):
             await self.module.test_connection({**self.account, "app_id": ""})
 
         self.assertIsNone(FakeEWeLink.instance)
 
     async def test_missing_account_credentials_are_rejected_before_login(self):
-        with self.assertRaisesRegex(CloudConnectionError, "E-Mail-Adresse und Passwort"):
+        with self.assertRaisesRegex(CloudConnectionError, "Email address and password are required"):
             await self.module.test_connection({**self.account, "password": ""})
 
     async def test_login_failure_is_reported_with_error_code(self):
@@ -141,7 +141,7 @@ class EwelinkCloudModuleTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_library_is_reported_gracefully(self):
         with patch.dict(sys.modules, {"ewelink": None}):
-            with self.assertRaisesRegex(CloudConnectionError, "nicht installiert"):
+            with self.assertRaisesRegex(CloudConnectionError, "is not installed"):
                 await self.module.test_connection(self.account)
 
 
