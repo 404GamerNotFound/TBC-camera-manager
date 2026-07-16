@@ -195,6 +195,13 @@ a {
   font-weight: 800;
 }
 
+.dropdown-item span:not(.nav-shortcut) {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .dropdown-item:hover,
 .dropdown-item:focus {
   color: var(--text);
@@ -835,12 +842,15 @@ dt {
 }
 
 .camera-metrics dt {
+  width: 100%;
   max-width: 100%;
   color: var(--muted);
   font-size: clamp(0.58rem, 0.65vw, 0.68rem);
   letter-spacing: 0.045em;
   line-height: 1.2;
-  white-space: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .camera-metrics dd {
