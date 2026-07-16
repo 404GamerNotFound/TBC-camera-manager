@@ -51,7 +51,7 @@ class HealthTests(unittest.TestCase):
                 status, message = health._probe_stream("rtsp://example/stream")
 
         self.assertEqual(status, "ok")
-        self.assertEqual(message, "Stream lesbar")
+        self.assertEqual(message, "Stream readable")
 
     def test_cpu_percent_from_proc_totals(self):
         percent = health._cpu_percent_from_totals((100, 40), (200, 60))

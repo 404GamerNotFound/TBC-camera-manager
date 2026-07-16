@@ -161,7 +161,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         message = await self.module.test_connection(self.account)
 
         self.assertIn("2 camera(s)", message)
-        self.assertIn("1 Station(en)", message)
+        self.assertIn("1 station(s)", message)
         self.assertEqual(FakeApi.last_instance.country, "DE")
         self.assertTrue(FakeClientSession.last_instance.closed)
 
@@ -192,7 +192,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
             await self.module.test_connection(self.account)
 
     async def test_invalid_country_is_rejected_before_login(self):
-        with self.assertRaisesRegex(CloudConnectionError, "zwei Buchstaben"):
+        with self.assertRaisesRegex(CloudConnectionError, "must consist of two letters"):
             await self.module.test_connection({**self.account, "country": "Germany"})
 
     async def test_verification_requirement_requests_email_code(self):
@@ -204,7 +204,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         FakeApi.authenticate_callback = needs_verification
         send_code = AsyncMock()
         with patch.object(eufy_plugin, "_send_verification_code", send_code):
-            with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet") as cm:
+            with self.assertRaisesRegex(CloudConnectionError, "sent a verification code by email") as cm:
                 await self.module.test_connection(self.account)
 
         send_code.assert_awaited_once()
@@ -254,7 +254,7 @@ class EufyCloudModuleTests(unittest.IsolatedAsyncioTestCase):
         FakeApi.authenticate_callback = needs_verification
         send_code = AsyncMock()
         with patch.object(eufy_plugin, "_send_verification_code", send_code):
-            with self.assertRaisesRegex(CloudConnectionError, "per E-Mail gesendet"):
+            with self.assertRaisesRegex(CloudConnectionError, "sent a verification code by email"):
                 await self.module.test_connection(
                     {**self.account, "verification_code": "stale-code"}
                 )

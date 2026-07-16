@@ -26,7 +26,7 @@
       {% if camera.last_probe_message %}
       {% for message in camera.last_probe_message.split(' | ') %}
       {% set normalized_message = message | lower %}
-      {% set probe_failed = camera.last_probe_status == 'error' or 'fehl' in normalized_message or 'nicht ' in normalized_message or 'kein ' in normalized_message or 'abgelehnt' in normalized_message or 'timeout' in normalized_message %}
+      {% set probe_failed = camera.last_probe_status == 'error' or 'fail' in normalized_message or 'not ' in normalized_message or 'no ' in normalized_message or 'reject' in normalized_message or 'timeout' in normalized_message %}
       <span class="probe-indicator probe-indicator-{{ 'error' if probe_failed else 'ok' }}"
             tabindex="0"
             role="img"

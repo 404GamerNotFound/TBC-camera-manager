@@ -34,7 +34,7 @@ class FrameGrabber:
 
     def start(self) -> None:
         if shutil.which("ffmpeg") is None:
-            raise RuntimeError("ffmpeg ist nicht installiert")
+            raise RuntimeError("ffmpeg is not installed")
         command = [
             "ffmpeg",
             "-nostdin",

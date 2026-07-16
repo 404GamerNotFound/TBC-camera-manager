@@ -87,7 +87,7 @@ class DesignThemePackageTests(unittest.TestCase):
         archive = theme_archive(extra_files=[("../outside.css", "bad")])
 
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "unsicheren Dateipfad"):
+            with self.assertRaisesRegex(ThemePackageError, "unsafe file path"):
                 install_theme_archive(archive, external_path)
 
     def test_disallowed_file_type_is_rejected(self):
@@ -101,7 +101,7 @@ class DesignThemePackageTests(unittest.TestCase):
         archive = theme_archive(include_stylesheet=False)
 
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "Stylesheet"):
+            with self.assertRaisesRegex(ThemePackageError, "does not contain the stylesheet"):
                 install_theme_archive(archive, external_path)
 
     def test_builtin_theme_cannot_be_overwritten(self):
@@ -111,7 +111,7 @@ class DesignThemePackageTests(unittest.TestCase):
 
     def test_builtin_theme_cannot_be_removed(self):
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(ThemePackageError, "nicht entfernt"):
+            with self.assertRaisesRegex(ThemePackageError, "cannot be removed"):
                 remove_external_theme("standard", external_path)
 
     def test_invalid_zip_is_reported_as_theme_error(self):

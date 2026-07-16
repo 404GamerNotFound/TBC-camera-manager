@@ -216,7 +216,7 @@ class FetchGithubRepoArchiveTests(unittest.TestCase):
     def test_404_is_reported_as_plugin_source_error(self):
         with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
             urlopen.side_effect = urllib.error.HTTPError("url", 404, "Not Found", {}, None)
-            with self.assertRaisesRegex(PluginSourceError, "nicht gefunden"):
+            with self.assertRaisesRegex(PluginSourceError, "not found"):
                 fetch_github_repo_archive("owner", "repo", "main")
 
     def test_network_error_is_reported(self):
@@ -245,7 +245,7 @@ class FetchLatestCommitShaTests(unittest.TestCase):
     def test_422_for_unknown_ref_is_reported_as_not_found(self):
         with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
             urlopen.side_effect = urllib.error.HTTPError("url", 422, "Unprocessable", {}, None)
-            with self.assertRaisesRegex(PluginSourceError, "nicht gefunden"):
+            with self.assertRaisesRegex(PluginSourceError, "not found"):
                 fetch_latest_commit_sha("owner", "repo", "no-such-branch")
 
     def test_malformed_response_is_rejected(self):

@@ -18,7 +18,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "floodlight",
         "component": "light",
-        "label": "Flutlicht",
+        "label": "Floodlight",
         "state_field": "floodlight_state",
         "supported_field": "floodlight_supported",
         "command": True,
@@ -27,7 +27,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "pir",
         "component": "switch",
-        "label": "PIR-Sensor",
+        "label": "PIR sensor",
         "state_field": "pir_enabled",
         "supported_field": "pir_supported",
         "command": True,
@@ -36,7 +36,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "reboot",
         "component": "button",
-        "label": "Neustart",
+        "label": "Restart",
         "state_field": None,
         "supported_field": "reboot_supported",
         "command": True,
@@ -45,7 +45,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "siren",
         "component": "button",
-        "label": "Sirene abspielen",
+        "label": "Play siren",
         "state_field": None,
         "supported_field": "siren_supported",
         "command": True,
@@ -54,7 +54,7 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
     {
         "key": "battery",
         "component": "sensor",
-        "label": "Akkustand",
+        "label": "Battery level",
         "state_field": "battery_percentage",
         "supported_field": "is_battery",
         "command": False,

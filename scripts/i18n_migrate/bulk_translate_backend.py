@@ -19,35 +19,13 @@ ROOT = HERE.parents[1]
 dicts = json.loads((HERE / "dicts.json").read_text())
 GERMAN_TO_EN = dicts["english"]
 
+# Glob the whole tree rather than a hand-curated list: a curated list missed
+# real files twice already (app/tbc/detection/backend.py, app/tbc/mqtt.py,
+# app/tbc/live.py, camera_plugins/rtsp_only/module.py never made the cut).
 TARGET_FILES = [
-    "app/tbc/api_common.py",
-    "app/tbc/app_updates.py",
-    "app/tbc/camera_modules/base.py",
-    "app/tbc/camera_modules/onvif.py",
-    "app/tbc/camera_modules/onvif_control.py",
-    "app/tbc/camera_modules/packages.py",
-    "app/tbc/camera_modules/streams.py",
-    "app/tbc/camera_plugins/standard_onvif/module.py",
-    "app/tbc/cloud_modules/base.py",
-    "app/tbc/cloud_modules/packages.py",
-    "app/tbc/cloud_plugins/eufy/module.py",
-    "app/tbc/cloud_plugins/ewelink/module.py",
-    "app/tbc/cloud_plugins/unifi_protect/module.py",
-    "app/tbc/container_launcher.py",
-    "app/tbc/detection/coral_backend.py",
-    "app/tbc/detection/onnx_backend.py",
-    "app/tbc/detection/plugin_models.py",
-    "app/tbc/detection/recognition.py",
-    "app/tbc/detection/supervisor.py",
-    "app/tbc/health.py",
-    "app/tbc/maintenance.py",
-    "app/tbc/plugin_sources.py",
-    "app/tbc/plugin_templates.py",
-    "app/tbc/plugin_testing.py",
-    "app/tbc/recording.py",
-    "app/tbc/snapshots.py",
-    "app/tbc/themes/packages.py",
-    "app/tbc/main.py",
+    str(path.relative_to(ROOT))
+    for path in sorted((ROOT / "app" / "tbc").rglob("*.py"))
+    if "__pycache__" not in path.parts
 ]
 
 

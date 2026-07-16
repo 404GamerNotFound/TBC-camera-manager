@@ -99,7 +99,7 @@ class CameraPluginPackageTests(unittest.TestCase):
         archive = plugin_archive(extra_files=[("../outside.py", "bad")])
 
         with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CameraPluginError, "unsicheren Dateipfad"):
+            with self.assertRaisesRegex(CameraPluginError, "unsafe file path"):
                 install_plugin_archive(archive, external_path)
 
     def test_builtin_plugin_cannot_be_overwritten(self):
