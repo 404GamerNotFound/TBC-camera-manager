@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "tbc-language";
-  const SUPPORTED_LANGUAGES = ["de", "en", "es"];
-  const LANGUAGE_NAMES = { de: "Deutsch", en: "English", es: "Español" };
+  const SUPPORTED_LANGUAGES = ["de", "en", "es", "pt"];
+  const LANGUAGE_NAMES = { de: "Deutsch", en: "English", es: "Español", pt: "Português" };
 
   const selectedLanguage = () => {
     try {
