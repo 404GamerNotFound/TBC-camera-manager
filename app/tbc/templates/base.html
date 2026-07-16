@@ -239,7 +239,7 @@
 
     <main class="shell container-xxl">
       {% if flash %}
-      <div class="flash flash-{{ flash.level }} alert" role="alert">{{ flash.message }}</div>
+      <div class="flash flash-{{ flash.level }} alert" role="alert" data-i18n="{{ flash.key }}" data-i18n-params='{{ flash.params | tojson }}'>{{ flash.text }}</div>
       {% endif %}
       {% block content %}{% endblock %}
     </main>

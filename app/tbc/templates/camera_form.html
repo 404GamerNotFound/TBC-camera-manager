@@ -10,7 +10,7 @@
 
 <form class="editor-form" method="post" action="/cameras" data-plugin-selector-form>
   {% if error %}
-  <div class="inline-error">{{ error }}</div>
+  <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
   {% endif %}
   <div class="form-grid">
     <label class="span-2">

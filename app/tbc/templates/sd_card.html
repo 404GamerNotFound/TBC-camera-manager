@@ -45,7 +45,7 @@
   <button class="primary-button" type="submit" data-i18n="recordings.search">Search</button>
 </form>
 
-<div class="inline-error" data-sd-error {% if not error %}hidden{% endif %}>{{ error or '' }}</div>
+<div class="inline-error" data-sd-error {% if not error %}hidden{% endif %} data-i18n="{{ error_key or '' }}">{{ error or '' }}</div>
 
 <section data-sd-content data-sd-can-load="{% if selected_camera and not error %}1{% else %}0{% endif %}">
   <section class="sd-preview-panel" data-sd-preview-panel hidden>

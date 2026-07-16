@@ -1,5 +1,10 @@
 {
   "nav.recognition": {"en": "Face & plate recognition", "de": "Gesichts- und Kennzeichenerkennung", "es": "Reconocimiento facial y de matrículas"},
+  "login.sign_in_failed": {"en": "Sign-in failed", "de": "Anmeldung fehlgeschlagen", "es": "Error al iniciar sesión"},
+  "sd_card.no_archive_camera": {"en": "No camera with a supported camera archive is available", "de": "Keine Kamera mit unterstütztem Kamera-Archiv verfügbar", "es": "No hay cámaras disponibles con archivo compatible"},
+  "sd_card.start_after_end": {"en": "The start date must not be after the end date", "de": "Das Startdatum darf nicht nach dem Enddatum liegen", "es": "La fecha de inicio no puede ser posterior a la fecha de fin"},
+  "cloud_account.discovery_timeout": {"en": "Device discovery did not respond within {seconds}s", "de": "Geräte-Suche antwortet nicht innerhalb von {seconds}s", "es": "La búsqueda de dispositivos no respondió en {seconds}s"},
+  "cloud_account.discovery_failed": {"en": "Device discovery failed: {error}", "de": "Geräte-Suche fehlgeschlagen: {error}", "es": "La búsqueda de dispositivos falló: {error}"},
   "camera.yes": {"en": "yes", "de": "ja", "es": "sí"},
   "camera.channel_unknown": {"en": "unknown", "de": "unbekannt", "es": "desconocido"},
   "camera.on": {"en": "on", "de": "an", "es": "activado"},

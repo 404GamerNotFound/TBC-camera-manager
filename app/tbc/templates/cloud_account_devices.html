@@ -10,7 +10,7 @@
 </section>
 
 {% if error %}
-<div class="inline-error">{{ error }}</div>
+<div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
 <div class="form-actions">
   <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit" data-i18n="cloud_account.edit_account_details_or_verification">Edit account details or verification code</a>
 </div>

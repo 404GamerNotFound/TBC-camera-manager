@@ -115,6 +115,10 @@ LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
 BASE_DIR = Path(__file__).resolve().parent
 DEBUG_LOG = install_debug_log()
+# English is the deterministic server-rendered fallback language: the actual
+# translation for the request's chosen language happens client-side (see
+# static/i18n.js), keyed by the same identifiers stored here.
+_LOCALE_EN: dict[str, str] = json.loads((BASE_DIR / "static" / "i18n" / "en.json").read_text(encoding="utf-8"))
 # Cache-busting token for static assets: changes on every process restart (i.e. every
 # deploy) so browsers don't keep serving JS/CSS cached from before the restart.
 ASSET_VERSION = str(int(datetime.now().timestamp()))
@@ -405,7 +409,9 @@ async def login(
             "login.html",
             {
                 "app_name": SETTINGS.app_name,
-                "error": "Anmeldung fehlgeschlagen",
+                "error": _t_en("login.sign_in_failed"),
+                "error_key": "login.sign_in_failed",
+                "error_params": {},
                 "flash": None,
             },
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -538,7 +544,9 @@ async def create_camera(
                 "flash": None,
                 "values": values,
                 "camera_module_options": _camera_module_selector_options(),
-                "error": str(exc),
+                "error": _t_en("common.raw_message", message=str(exc)),
+                "error_key": "common.raw_message",
+                "error_params": {"message": str(exc)},
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -549,11 +557,11 @@ async def create_camera(
             else None
         )
     except ValueError as exc:
-        return _camera_form_error(request, values, str(exc))
+        return _camera_form_error(request, values, "common.raw_message", {"message": str(exc)})
     if normalized_manual_uri and not camera_module.supports_manual_stream_uri:
-        return _camera_form_error(request, values, f"Das Modul {camera_module.label} akzeptiert keine manuelle Stream-URL")
+        return _camera_form_error(request, values, "camera.module_no_manual_stream", {"label": camera_module.label})
     if camera_module.requires_manual_stream_uri and not normalized_manual_uri:
-        return _camera_form_error(request, values, "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich")
+        return _camera_form_error(request, values, "camera.rtsp_url_required")
     if not values["host"] and normalized_manual_uri:
         values["host"] = str(urlsplit(normalized_manual_uri).hostname or "")
     credentials_missing = camera_module.requires_credentials and (not values["username"] or not password)
@@ -568,7 +576,9 @@ async def create_camera(
                 "flash": None,
                 "values": values,
                 "camera_module_options": _camera_module_selector_options(),
-                "error": "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich",
+                "error": _t_en("camera.name_host_credentials_required"),
+                "error_key": "camera.name_host_credentials_required",
+                "error_params": {},
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -586,7 +596,7 @@ async def create_camera(
         manual_stream_uri=normalized_manual_uri,
     )
     await _refresh_camera(camera_id)
-    _set_flash(request, "Kamera wurde angelegt und geprüft")
+    _set_flash(request, "camera.created_and_checked")
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -598,7 +608,7 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
     user = _current_user(request)
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
     detections = database.list_detections(SETTINGS.database_path, camera_id)
     storage_targets = database.list_storage_targets(SETTINGS.database_path)
@@ -719,14 +729,14 @@ async def refresh_camera(request: Request, camera_id: int):
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
     try:
         snapshot = await _refresh_camera(camera_id)
     except UnknownCameraModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cameras/{camera_id}")
-    _set_flash(request, snapshot.message, "success" if snapshot.status == "ok" else "warning")
+    _set_flash(request, "common.raw_message", {"message": snapshot.message})
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -911,7 +921,7 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
     def fail(message: str, *, status_code: int, redirect_to: str | None = None) -> Any:
         if is_ajax:
             return JSONResponse({"ok": False, "message": message}, status_code=status_code)
-        _set_flash(request, message, "error")
+        _set_flash(request, "common.raw_message", {"message": message}, "error")
         return _redirect(redirect_to or f"/cameras/{camera_id}?control_channel={channel}#control")
 
     guard = _require_admin(request)
@@ -943,7 +953,7 @@ async def _execute_control(request: Request, camera_id: int, *, action: str, par
     _kick_off_control_probe(camera_id, camera, camera_module, channel=channel)
     if is_ajax:
         return {"ok": True, "message": "Befehl wurde gesendet"}
-    _set_flash(request, "Befehl wurde gesendet")
+    _set_flash(request, "camera.command_sent")
     return _redirect(f"/cameras/{camera_id}?control_channel={channel}#control")
 
 
@@ -1003,17 +1013,17 @@ async def update_camera_recording(
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cameras/{camera_id}")
     detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
     local_ai_enabled = bool(detection_settings and detection_settings.get("enabled"))
     if not local_ai_enabled and not camera_module.supports(CameraCapability.RECORDING):
-        _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Ereignisaufnahmen", "error")
+        _set_flash(request, "camera.module_no_event_recording", {"label": camera_module.label}, "error")
         return _redirect(f"/cameras/{camera_id}")
     storage_id = int(recording_storage_id) if recording_storage_id else None
     database.update_camera_recording_settings(
@@ -1028,7 +1038,7 @@ async def update_camera_recording(
         recording_storage_id=storage_id,
         trigger_keys=trigger_keys or ["motion"],
     )
-    _set_flash(request, "Aufnahmeeinstellungen wurden gespeichert")
+    _set_flash(request, "recording.event_settings_saved")
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -1046,7 +1056,7 @@ async def update_camera_detection(
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
     backend = detection_backend if detection_backend in detection_factory.BACKEND_CHOICES else "cpu"
     database.update_camera_detection_settings(
@@ -1057,7 +1067,7 @@ async def update_camera_detection(
         confidence_threshold=min(1.0, max(0.05, detection_confidence_threshold)),
         sample_fps=min(10.0, max(0.2, detection_sample_fps)),
     )
-    _set_flash(request, "Einstellungen für lokale KI-Erkennung wurden gespeichert")
+    _set_flash(request, "detection.settings_saved")
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -1163,15 +1173,15 @@ async def update_camera_continuous_recording(
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cameras/{camera_id}")
     if not camera_module.supports(CameraCapability.RECORDING):
-        _set_flash(request, f"Das Modul {camera_module.label} unterstützt keine Daueraufzeichnung", "error")
+        _set_flash(request, "camera.module_no_continuous_recording", {"label": camera_module.label}, "error")
         return _redirect(f"/cameras/{camera_id}")
     storage_id = int(continuous_storage_id) if continuous_storage_id else None
     database.update_camera_continuous_settings(
@@ -1181,7 +1191,7 @@ async def update_camera_continuous_recording(
         continuous_segment_seconds=max(60, min(1800, int(continuous_segment_seconds))),
         continuous_storage_id=storage_id,
     )
-    _set_flash(request, "Daueraufzeichnung wurde gespeichert")
+    _set_flash(request, "recording.continuous_settings_saved")
     return _redirect(f"/cameras/{camera_id}#recording")
 
 
@@ -1204,12 +1214,12 @@ async def update_camera_connection(
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if not camera:
-        _set_flash(request, "Kamera wurde nicht gefunden", "error")
+        _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
     try:
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cameras/{camera_id}")
     try:
         normalized_manual_uri = (
@@ -1218,15 +1228,15 @@ async def update_camera_connection(
             else None
         )
     except ValueError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cameras/{camera_id}")
     clear_manual = clear_manual_stream_uri == "on"
     effective_manual_uri = normalized_manual_uri or (None if clear_manual else camera.get("manual_stream_uri"))
     if normalized_manual_uri and not camera_module.supports_manual_stream_uri:
-        _set_flash(request, f"Das Modul {camera_module.label} akzeptiert keine manuelle Stream-URL", "error")
+        _set_flash(request, "camera.module_no_manual_stream", {"label": camera_module.label}, "error")
         return _redirect(f"/cameras/{camera_id}")
     if camera_module.requires_manual_stream_uri and not effective_manual_uri:
-        _set_flash(request, "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich", "error")
+        _set_flash(request, "camera.rtsp_url_required", None, "error")
         return _redirect(f"/cameras/{camera_id}")
     normalized_host = host.strip()
     if not normalized_host and effective_manual_uri:
@@ -1241,7 +1251,7 @@ async def update_camera_connection(
         "password": password.strip() or None,
     }
     if not values["name"] or not values["host"] or (camera_module.requires_credentials and not values["username"]):
-        _set_flash(request, "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich", "error")
+        _set_flash(request, "camera.name_host_credentials_required", None, "error")
         return _redirect(f"/cameras/{camera_id}")
     database.update_camera_connection(
         SETTINGS.database_path,
@@ -1259,10 +1269,10 @@ async def update_camera_connection(
     SNAPSHOT_MANAGER.delete(camera_id)
     try:
         snapshot = await _refresh_camera(camera_id)
-        _set_flash(request, snapshot.message, "success" if snapshot.status == "ok" else "warning")
+        _set_flash(request, "common.raw_message", {"message": snapshot.message})
     except Exception as exc:
         LOGGER.exception("Kamera %s konnte nach Verbindungsupdate nicht geprüft werden", camera_id)
-        _set_flash(request, f"Verbindung gespeichert, Probe fehlgeschlagen: {exc}", "error")
+        _set_flash(request, "connection.saved_probe_failed", {"error": exc}, "error")
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -1277,7 +1287,7 @@ async def remove_camera(request: Request, camera_id: int):
         CONTROL_STATE_CACHE.pop(cache_key, None)
     for cache_key in [key for key in CONTROL_STATE_PROBE_RETRY_AFTER if key[0] == camera_id]:
         CONTROL_STATE_PROBE_RETRY_AFTER.pop(cache_key, None)
-    _set_flash(request, "Kamera wurde entfernt")
+    _set_flash(request, "camera.removed")
     return _redirect("/cameras")
 
 
@@ -1329,9 +1339,9 @@ async def create_storage_target(
             s3_access_key_id=_none_if_blank(s3_access_key_id),
             s3_secret_access_key=_none_if_blank(s3_secret_access_key),
         )
-        _set_flash(request, "Speicherziel wurde angelegt")
+        _set_flash(request, "storage.created")
     except Exception as exc:
-        _set_flash(request, f"Speicherziel konnte nicht angelegt werden: {exc}", "error")
+        _set_flash(request, "storage.create_failed", {"error": exc}, "error")
     return _redirect("/storage")
 
 
@@ -1341,7 +1351,7 @@ async def run_cleanup(request: Request):
     if guard:
         return guard
     deleted = apply_cleanup(SETTINGS.database_path)
-    _set_flash(request, f"{deleted} Clips wurden gelöscht")
+    _set_flash(request, "recording.clips_deleted", {"count": deleted})
     return _redirect("/storage/explorer")
 
 
@@ -1379,7 +1389,7 @@ async def update_storage_target(
         retention_days=int(retention_days) if retention_days else None,
         retention_max_gb=float(retention_max_gb) if retention_max_gb else None,
     )
-    _set_flash(request, "Speicherziel wurde aktualisiert")
+    _set_flash(request, "storage.updated")
     return _redirect("/storage")
 
 
@@ -1389,7 +1399,7 @@ async def remove_storage_target(request: Request, storage_id: int):
     if guard:
         return guard
     database.delete_storage_target(SETTINGS.database_path, storage_id)
-    _set_flash(request, "Speicherziel wurde entfernt")
+    _set_flash(request, "storage.removed")
     return _redirect("/storage")
 
 
@@ -1601,7 +1611,7 @@ async def sd_card(
     selected_camera_id = camera_id if camera_id in available_camera_ids else (int(cameras[0]["id"]) if cameras else None)
     selected_camera = None
     channels: list[dict[str, Any]] = []
-    error = None
+    error_key: str | None = None
     today = date.today()
     start_date = _parse_date(date_from, today)
     end_date = _parse_date(date_to, start_date)
@@ -1609,14 +1619,14 @@ async def sd_card(
     selected_channel = channel or 0
 
     if selected_camera_id is None:
-        error = "Keine Kamera mit unterstütztem Kamera-Archiv verfügbar"
+        error_key = "sd_card.no_archive_camera"
     else:
         access_guard = _require_camera_access(request, selected_camera_id)
         if access_guard:
             return access_guard
         selected_camera = database.get_camera(SETTINGS.database_path, selected_camera_id)
         if selected_camera is None:
-            error = "Kamera wurde nicht gefunden"
+            error_key = "camera.not_found"
         else:
             channels = database.list_camera_channels(SETTINGS.database_path, selected_camera_id)
             if not channels:
@@ -1631,7 +1641,7 @@ async def sd_card(
             known_channel_indices = {int(item["channel_index"]) for item in channels}
             selected_channel = channel if channel in known_channel_indices else int(channels[0]["channel_index"])
             if start_date > end_date:
-                error = "Das Startdatum darf nicht nach dem Enddatum liegen"
+                error_key = "sd_card.start_after_end"
     return templates.TemplateResponse(
         request,
         "sd_card.html",
@@ -1642,7 +1652,8 @@ async def sd_card(
             "cameras": cameras,
             "selected_camera": selected_camera,
             "channels": channels,
-            "error": error,
+            "error": _t_en(error_key) if error_key else None,
+            "error_key": error_key,
             "filters": {
                 "camera_id": selected_camera_id,
                 "channel": selected_channel,
@@ -1759,7 +1770,7 @@ async def sd_card_media(
     except Exception as exc:
         if embed:
             return JSONResponse({"error": str(exc)}, status_code=status.HTTP_502_BAD_GATEWAY)
-        _set_flash(request, f"SD-Card-Medium konnte nicht geoeffnet werden: {exc}", "error")
+        _set_flash(request, "sd_card.open_failed", {"error": exc}, "error")
         return _redirect(f"/sd-card?camera_id={camera_id}&channel={channel}&stream={stream}")
     disposition = "attachment" if download else "inline"
     headers = {
@@ -1820,7 +1831,7 @@ async def recording_delete(request: Request, recording_id: int):
     if recording:
         delete_recording_files(recording)
         database.delete_recording_metadata(SETTINGS.database_path, recording_id)
-        _set_flash(request, "Clip wurde gelöscht")
+        _set_flash(request, "recording.clip_deleted")
     return _redirect("/recordings")
 
 
@@ -1865,7 +1876,7 @@ async def create_user(
         role=role,
     )
     database.set_user_camera_access(SETTINGS.database_path, user_id, camera_ids)
-    _set_flash(request, "Benutzer wurde angelegt")
+    _set_flash(request, "user.created")
     return _redirect("/users")
 
 
@@ -1892,7 +1903,7 @@ async def update_user(
     if request.session.get("user_id") == user_id:
         request.session["username"] = username.strip()
         request.session["role"] = "viewer" if role == "viewer" else "admin"
-    _set_flash(request, "Benutzer wurde aktualisiert")
+    _set_flash(request, "user.updated")
     return _redirect("/users")
 
 
@@ -1902,10 +1913,10 @@ async def remove_user(request: Request, user_id: int):
     if guard:
         return guard
     if request.session.get("user_id") == user_id:
-        _set_flash(request, "Der aktuell angemeldete Benutzer kann nicht gelöscht werden", "error")
+        _set_flash(request, "user.cannot_delete_self", None, "error")
         return _redirect("/users")
     database.delete_user(SETTINGS.database_path, user_id)
-    _set_flash(request, "Benutzer wurde gelöscht")
+    _set_flash(request, "user.deleted")
     return _redirect("/users")
 
 
@@ -1953,7 +1964,7 @@ async def update_mqtt_settings(
         discovery_enabled=discovery_enabled == "on",
         discovery_prefix=discovery_prefix.strip() or "homeassistant",
     )
-    _set_flash(request, "MQTT-Einstellungen wurden gespeichert")
+    _set_flash(request, "mqtt.settings_saved")
     return _redirect("/mqtt")
 
 
@@ -2006,7 +2017,7 @@ async def update_channel(request: Request, camera_id: int, channel_id: int, name
     if guard:
         return guard
     database.update_camera_channel(SETTINGS.database_path, channel_id, name=name.strip(), enabled=enabled == "on")
-    _set_flash(request, "Kanal wurde aktualisiert")
+    _set_flash(request, "camera.channel_updated")
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -2122,7 +2133,7 @@ async def start_camera_live(request: Request, camera_id: int):
         return guard
     camera = database.get_camera(SETTINGS.database_path, camera_id)
     if camera and not _camera_supports(camera, CameraCapability.LIVE):
-        _set_flash(request, "Das Kameramodul unterstützt keine Live-Ansicht", "error")
+        _set_flash(request, "camera.live_not_supported", None, "error")
         return _redirect("/live")
     uri = stream_uri_for(camera) if camera else None
     if camera and not uri:
@@ -2131,14 +2142,14 @@ async def start_camera_live(request: Request, camera_id: int):
         camera = database.get_camera(SETTINGS.database_path, camera_id)
         uri = stream_uri_for(camera) if camera else None
     if not uri:
-        _set_flash(request, "Kein Stream für Live-Ansicht bekannt", "error")
+        _set_flash(request, "live.no_stream_known", None, "error")
         return _redirect("/live")
     try:
         live_key = f"camera-{camera_id}"
         LIVE_MANAGER.start(live_key, uri)
     except Exception as exc:
         LOGGER.exception("Live-Ansicht konnte fuer Kamera %s nicht gestartet werden", camera_id)
-        _set_flash(request, f"Live-Ansicht konnte nicht gestartet werden: {exc}", "error")
+        _set_flash(request, "live.start_failed", {"error": exc}, "error")
     return _redirect("/live")
 
 
@@ -2151,11 +2162,11 @@ async def start_channel_live(request: Request, channel_id: int):
     if guard:
         return guard
     if int(channel.get("enabled") or 0) != 1:
-        _set_flash(request, "Dieser Kanal ist deaktiviert", "error")
+        _set_flash(request, "camera.channel_disabled", None, "error")
         return _redirect("/live")
     camera = database.get_camera(SETTINGS.database_path, int(channel["camera_id"]))
     if camera and not _camera_supports(camera, CameraCapability.LIVE):
-        _set_flash(request, "Das Kameramodul unterstützt keine Live-Ansicht", "error")
+        _set_flash(request, "camera.live_not_supported", None, "error")
         return _redirect("/live")
     uri = stream_uri_for(camera, channel)
     if camera and not uri:
@@ -2165,14 +2176,14 @@ async def start_channel_live(request: Request, channel_id: int):
         camera = database.get_camera(SETTINGS.database_path, int(channel["camera_id"])) if channel else None
         uri = stream_uri_for(camera, channel) if camera and channel else None
     if not uri:
-        _set_flash(request, "Kein Stream für diesen Kanal bekannt", "error")
+        _set_flash(request, "camera.channel_no_stream", None, "error")
         return _redirect("/live")
     try:
         live_key = f"channel-{channel_id}"
         LIVE_MANAGER.start(live_key, uri)
     except Exception as exc:
         LOGGER.exception("Live-Ansicht konnte fuer Kanal %s nicht gestartet werden", channel_id)
-        _set_flash(request, f"Live-Ansicht konnte nicht gestartet werden: {exc}", "error")
+        _set_flash(request, "live.start_failed", {"error": exc}, "error")
     return _redirect("/live")
 
 
@@ -2262,7 +2273,7 @@ async def update_api_settings(
         enabled=enabled == "on",
         require_api_key=require_api_key == "on",
     )
-    _set_flash(request, "API-Einstellungen wurden gespeichert")
+    _set_flash(request, "api.settings_saved")
     return _redirect("/api-access")
 
 
@@ -2273,10 +2284,7 @@ async def generate_api_key_route(request: Request):
         return guard
     key = generate_api_key()
     database.set_api_key(SETTINGS.database_path, key_hash=hash_api_key(key), key_prefix=key[:12])
-    _set_flash(
-        request,
-        f"Neuer API-Key erzeugt (wird nur jetzt angezeigt, danach nicht mehr abrufbar): {key}",
-    )
+    _set_flash(request, "api.key_generated", {"key": key})
     return _redirect("/api-access")
 
 
@@ -2286,7 +2294,7 @@ async def revoke_api_key_route(request: Request):
     if guard:
         return guard
     database.clear_api_key(SETTINGS.database_path)
-    _set_flash(request, "API-Key wurde widerrufen")
+    _set_flash(request, "api.key_revoked")
     return _redirect("/api-access")
 
 
@@ -2365,7 +2373,7 @@ async def update_recognition_settings_route(
         plate_enabled=bool(plate_enabled),
         plate_mode="live" if plate_mode == "live" else "snapshot",
     )
-    _set_flash(request, "Einstellungen wurden gespeichert")
+    _set_flash(request, "recognition.settings_saved")
     return _redirect("/recognition")
 
 
@@ -2392,9 +2400,9 @@ async def create_known_face_route(request: Request, name: str = Form(...), photo
         database.create_known_face(
             SETTINGS.database_path, name=name.strip(), embedding=json.dumps(face["embedding"])
         )
-        _set_flash(request, f"Gesicht für {name.strip()} wurde gespeichert")
+        _set_flash(request, "face.saved", {"name": name.strip()})
     except Exception as exc:
-        _set_flash(request, f"Gesicht konnte nicht gespeichert werden: {exc}", "error")
+        _set_flash(request, "face.save_failed", {"error": exc}, "error")
     finally:
         await photo.close()
     return _redirect("/recognition")
@@ -2406,7 +2414,7 @@ async def delete_known_face_route(request: Request, face_id: int):
     if guard:
         return guard
     database.delete_known_face(SETTINGS.database_path, face_id)
-    _set_flash(request, "Gesicht wurde entfernt")
+    _set_flash(request, "face.removed")
     return _redirect("/recognition")
 
 
@@ -2416,7 +2424,7 @@ async def create_known_plate_route(request: Request, plate_text: str = Form(...)
     if guard:
         return guard
     database.create_known_plate(SETTINGS.database_path, plate_text=plate_text, label=label.strip() or None)
-    _set_flash(request, "Kennzeichen wurde gespeichert")
+    _set_flash(request, "plate.saved")
     return _redirect("/recognition")
 
 
@@ -2428,7 +2436,7 @@ async def update_known_plate_route(
     if guard:
         return guard
     database.update_known_plate(SETTINGS.database_path, plate_id, plate_text=plate_text, label=label.strip() or None)
-    _set_flash(request, "Kennzeichen wurde aktualisiert")
+    _set_flash(request, "plate.updated")
     return _redirect("/recognition")
 
 
@@ -2438,7 +2446,7 @@ async def delete_known_plate_route(request: Request, plate_id: int):
     if guard:
         return guard
     database.delete_known_plate(SETTINGS.database_path, plate_id)
-    _set_flash(request, "Kennzeichen wurde entfernt")
+    _set_flash(request, "plate.removed")
     return _redirect("/recognition")
 
 
@@ -2481,9 +2489,9 @@ async def import_camera_module(request: Request, plugin_file: UploadFile = File(
         archive = await plugin_file.read(10 * 1024 * 1024 + 1)
         package = install_plugin_archive(archive, SETTINGS.camera_modules_path)
         reload_camera_modules()
-        _set_flash(request, f"Kamera-Plugin {package.manifest.label} wurde installiert")
+        _set_flash(request, "plugin.camera_installed", {"label": package.manifest.label})
     except (CameraPluginError, OSError) as exc:
-        _set_flash(request, f"Plugin-Import fehlgeschlagen: {exc}", "error")
+        _set_flash(request, "plugin.camera_import_failed", {"error": exc}, "error")
     finally:
         await plugin_file.close()
     return _redirect("/camera-modules")
@@ -2516,14 +2524,14 @@ async def delete_camera_module(request: Request, module_key: str):
         return guard
     camera_count = database.count_cameras_by_module(SETTINGS.database_path, module_key)
     if camera_count:
-        _set_flash(request, f"Plugin wird noch von {camera_count} Kamera(s) verwendet", "error")
+        _set_flash(request, "plugin.camera_still_in_use", {"count": camera_count}, "error")
         return _redirect("/camera-modules")
     try:
         remove_external_plugin(module_key, SETTINGS.camera_modules_path)
         reload_camera_modules()
-        _set_flash(request, "Kamera-Plugin wurde entfernt")
+        _set_flash(request, "plugin.camera_removed")
     except (CameraPluginError, OSError) as exc:
-        _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
+        _set_flash(request, "plugin.camera_remove_failed", {"error": exc}, "error")
     return _redirect("/camera-modules")
 
 
@@ -2537,14 +2545,14 @@ async def run_camera_module_tests(request: Request, module_key: str):
         None,
     )
     if registration is None or registration.package is None:
-        _set_flash(request, "Für dieses Plugin sind keine Tests verfügbar", "error")
+        _set_flash(request, "plugin.no_tests_available", None, "error")
         return _redirect("/camera-modules")
     result = await run_plugin_tests(registration.package.path, "camera")
     if not result.ran:
-        _set_flash(request, result.summary, "error")
+        _set_flash(request, "common.raw_message", {"message": result.summary}, "error")
     else:
         LOGGER.info("Plugin-Tests für %s: %s\n%s", module_key, result.summary, result.output)
-        _set_flash(request, f"{module_key}: {result.summary}", "success" if result.passed else "error")
+        _set_flash(request, "plugin.test_result", {"module_key": module_key, "summary": result.summary})
     return _redirect("/camera-modules")
 
 
@@ -2586,9 +2594,9 @@ async def import_cloud_module(request: Request, plugin_file: UploadFile = File(.
         archive = await plugin_file.read(10 * 1024 * 1024 + 1)
         package = install_cloud_plugin_archive(archive, SETTINGS.cloud_modules_path)
         reload_cloud_modules()
-        _set_flash(request, f"Cloud-Plugin {package.manifest.label} wurde installiert")
+        _set_flash(request, "plugin.cloud_installed", {"label": package.manifest.label})
     except (CloudPluginError, OSError) as exc:
-        _set_flash(request, f"Plugin-Import fehlgeschlagen: {exc}", "error")
+        _set_flash(request, "plugin.cloud_import_failed", {"error": exc}, "error")
     finally:
         await plugin_file.close()
     return _redirect("/cloud-modules")
@@ -2621,14 +2629,14 @@ async def delete_cloud_module(request: Request, module_key: str):
         return guard
     account_count = database.count_cloud_accounts_by_module(SETTINGS.database_path, module_key)
     if account_count:
-        _set_flash(request, f"Plugin wird noch von {account_count} Cloud-Konto(s) verwendet", "error")
+        _set_flash(request, "plugin.cloud_still_in_use", {"count": account_count}, "error")
         return _redirect("/cloud-modules")
     try:
         remove_external_cloud_plugin(module_key, SETTINGS.cloud_modules_path)
         reload_cloud_modules()
-        _set_flash(request, "Cloud-Plugin wurde entfernt")
+        _set_flash(request, "plugin.cloud_removed")
     except (CloudPluginError, OSError) as exc:
-        _set_flash(request, f"Plugin konnte nicht entfernt werden: {exc}", "error")
+        _set_flash(request, "plugin.cloud_remove_failed", {"error": exc}, "error")
     return _redirect("/cloud-modules")
 
 
@@ -2642,14 +2650,14 @@ async def run_cloud_module_tests(request: Request, module_key: str):
         None,
     )
     if registration is None:
-        _set_flash(request, "Für dieses Plugin sind keine Tests verfügbar", "error")
+        _set_flash(request, "plugin.no_tests_available", None, "error")
         return _redirect("/cloud-modules")
     result = await run_plugin_tests(registration.package.path, "cloud")
     if not result.ran:
-        _set_flash(request, result.summary, "error")
+        _set_flash(request, "common.raw_message", {"message": result.summary}, "error")
     else:
         LOGGER.info("Plugin-Tests für %s: %s\n%s", module_key, result.summary, result.output)
-        _set_flash(request, f"{module_key}: {result.summary}", "success" if result.passed else "error")
+        _set_flash(request, "plugin.test_result", {"module_key": module_key, "summary": result.summary})
     return _redirect("/cloud-modules")
 
 
@@ -2684,7 +2692,7 @@ async def create_cloud_account_route(request: Request):
     try:
         cloud_module = get_cloud_module(module_key)
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     try:
         config = normalize_account_configuration(
@@ -2695,7 +2703,7 @@ async def create_cloud_account_route(request: Request):
             },
         )
     except CloudAccountValidationError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     database.create_cloud_account(
         SETTINGS.database_path,
@@ -2703,7 +2711,7 @@ async def create_cloud_account_route(request: Request):
         label=label.strip() or cloud_module.label,
         config=config,
     )
-    _set_flash(request, "Cloud-Konto wurde hinzugefügt")
+    _set_flash(request, "cloud_account.added")
     return _redirect("/cloud-accounts")
 
 
@@ -2714,12 +2722,12 @@ async def edit_cloud_account_page(request: Request, account_id: int):
         return guard
     account = database.get_cloud_account(SETTINGS.database_path, account_id)
     if not account:
-        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        _set_flash(request, "cloud_account.not_found", None, "error")
         return _redirect("/cloud-accounts")
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     return templates.TemplateResponse(
         request,
@@ -2742,12 +2750,12 @@ async def update_cloud_account_route(request: Request, account_id: int):
         return guard
     account = database.get_cloud_account(SETTINGS.database_path, account_id)
     if not account:
-        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        _set_flash(request, "cloud_account.not_found", None, "error")
         return _redirect("/cloud-accounts")
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     form = await request.form()
     submitted: dict[str, Any] = {}
@@ -2759,7 +2767,7 @@ async def update_cloud_account_route(request: Request, account_id: int):
     try:
         config = normalize_account_configuration(cloud_module.account_fields, submitted)
     except CloudAccountValidationError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cloud-accounts/{account_id}/edit")
     label = str(form.get("label") or "").strip() or cloud_module.label
     database.update_cloud_account_configuration(
@@ -2768,7 +2776,7 @@ async def update_cloud_account_route(request: Request, account_id: int):
         label=label,
         config=config,
     )
-    _set_flash(request, "Cloud-Konto wurde aktualisiert")
+    _set_flash(request, "cloud_account.updated")
     return _redirect(f"/cloud-accounts#account-{account_id}")
 
 
@@ -2778,7 +2786,7 @@ async def delete_cloud_account_route(request: Request, account_id: int):
     if guard:
         return guard
     database.delete_cloud_account(SETTINGS.database_path, account_id)
-    _set_flash(request, "Cloud-Konto wurde entfernt")
+    _set_flash(request, "cloud_account.removed")
     return _redirect("/cloud-accounts")
 
 
@@ -2789,13 +2797,13 @@ async def test_cloud_account_route(request: Request, account_id: int):
         return guard
     account = database.get_cloud_account(SETTINGS.database_path, account_id)
     if not account:
-        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        _set_flash(request, "cloud_account.not_found", None, "error")
         return _redirect("/cloud-accounts")
     account_url = f"/cloud-accounts#account-{account_id}"
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(account_url)
     return await _perform_cloud_account_login_attempt(
         request, account_id, cloud_module, account, success_redirect=account_url
@@ -2809,16 +2817,16 @@ async def cloud_account_verify_page(request: Request, account_id: int):
         return guard
     account = database.get_cloud_account(SETTINGS.database_path, account_id)
     if not account:
-        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        _set_flash(request, "cloud_account.not_found", None, "error")
         return _redirect("/cloud-accounts")
     field_key = account.get("pending_verification_field")
     if not field_key:
-        _set_flash(request, "Für dieses Konto ist aktuell keine Bestätigung ausstehend", "error")
+        _set_flash(request, "cloud_account.no_pending_verification", None, "error")
         return _redirect("/cloud-accounts")
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     field = next((item for item in cloud_module.account_fields if item.key == field_key), None)
     return templates.TemplateResponse(
@@ -2843,19 +2851,19 @@ async def submit_cloud_account_verification_route(request: Request, account_id: 
         return guard
     account = database.get_cloud_account(SETTINGS.database_path, account_id)
     if not account:
-        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        _set_flash(request, "cloud_account.not_found", None, "error")
         return _redirect("/cloud-accounts")
     field_key = account.get("pending_verification_field")
     if not field_key:
-        _set_flash(request, "Für dieses Konto ist aktuell keine Bestätigung ausstehend", "error")
+        _set_flash(request, "cloud_account.no_pending_verification", None, "error")
         return _redirect("/cloud-accounts")
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     if not code.strip():
-        _set_flash(request, "Bitte einen Code eingeben", "error")
+        _set_flash(request, "cloud_account.enter_code", None, "error")
         return _redirect(f"/cloud-accounts/{account_id}/verify")
     config = dict(account.get("config") or {})
     config[field_key] = code.strip()
@@ -2879,32 +2887,36 @@ async def cloud_account_devices_page(request: Request, account_id: int):
         return guard
     account = database.get_cloud_account(SETTINGS.database_path, account_id)
     if not account:
-        _set_flash(request, "Cloud-Konto wurde nicht gefunden", "error")
+        _set_flash(request, "cloud_account.not_found", None, "error")
         return _redirect("/cloud-accounts")
     try:
         cloud_module = get_cloud_module(account["module_key"])
     except UnknownCloudModuleError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/cloud-accounts")
     devices: list[Any] = []
-    error: str | None = None
+    error_key: str | None = None
+    error_params: dict[str, Any] = {}
     try:
         devices = await asyncio.wait_for(cloud_module.discover_devices(account), timeout=CONTROL_TIMEOUT_SECONDS)
         _clear_transient_cloud_account_fields(account_id, cloud_module)
     except asyncio.TimeoutError:
-        error = f"Geräte-Suche antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
+        error_key = "cloud_account.discovery_timeout"
+        error_params = {"seconds": CONTROL_TIMEOUT_SECONDS}
     except CloudVerificationRequired as exc:
         database.set_cloud_account_pending_verification(
             SETTINGS.database_path, account_id, field_key=exc.field_key, message=str(exc)
         )
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cloud-accounts/{account_id}/verify")
     except CloudConnectionError as exc:
         _clear_transient_cloud_account_fields(account_id, cloud_module)
-        error = str(exc)
+        error_key = "common.raw_message"
+        error_params = {"message": str(exc)}
     except Exception as exc:
         LOGGER.info("Cloud device discovery failed for %s: %s", account_id, exc)
-        error = f"Geräte-Suche fehlgeschlagen: {exc}"
+        error_key = "cloud_account.discovery_failed"
+        error_params = {"error": str(exc)}
     existing_uris = {
         camera.get("manual_stream_uri")
         for camera in database.list_cameras(SETTINGS.database_path)
@@ -2921,7 +2933,9 @@ async def cloud_account_devices_page(request: Request, account_id: int):
             "cloud_module": cloud_module,
             "devices": devices,
             "existing_uris": existing_uris,
-            "error": error,
+            "error": _t_en(error_key, **error_params) if error_key else None,
+            "error_key": error_key,
+            "error_params": error_params,
             "flash": _pop_flash(request),
         },
     )
@@ -2941,7 +2955,7 @@ async def import_cloud_device_route(
     try:
         normalized_uri = validate_manual_stream_uri(manual_stream_uri)
     except ValueError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cloud-accounts/{account_id}/devices")
     try:
         camera_module = get_camera_module(module_key)
@@ -2959,7 +2973,7 @@ async def import_cloud_device_route(
         rtsp_port=camera_module.default_rtsp_port,
         manual_stream_uri=normalized_uri,
     )
-    _set_flash(request, "Kamera wurde aus dem Cloud-Konto übernommen")
+    _set_flash(request, "camera.imported_from_cloud_account")
     return _redirect(f"/cameras/{camera_id}")
 
 
@@ -2991,10 +3005,10 @@ async def activate_design_theme(request: Request, theme_key: str = Form(...)):
     try:
         get_theme_registration(theme_key)
     except UnknownThemeError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/design")
     database.set_active_theme_key(SETTINGS.database_path, theme_key.strip().lower())
-    _set_flash(request, "Design wurde aktiviert")
+    _set_flash(request, "design.activated")
     return _redirect("/design")
 
 
@@ -3007,9 +3021,9 @@ async def import_design_theme(request: Request, theme_file: UploadFile = File(..
         archive = await theme_file.read(5 * 1024 * 1024 + 1)
         package = install_theme_archive(archive, SETTINGS.theme_modules_path)
         reload_themes()
-        _set_flash(request, f"Design {package.manifest.label} wurde installiert")
+        _set_flash(request, "design.installed", {"label": package.manifest.label})
     except (ThemePackageError, OSError) as exc:
-        _set_flash(request, f"Design-Import fehlgeschlagen: {exc}", "error")
+        _set_flash(request, "design.import_failed", {"error": exc}, "error")
     finally:
         await theme_file.close()
     return _redirect("/design")
@@ -3040,14 +3054,14 @@ async def delete_design_theme(request: Request, theme_key: str):
         return guard
     active_theme_key = database.get_active_theme_key(SETTINGS.database_path)
     if theme_key.strip().lower() == active_theme_key:
-        _set_flash(request, "Das aktive Design kann nicht entfernt werden", "error")
+        _set_flash(request, "design.cannot_remove_active", None, "error")
         return _redirect("/design")
     try:
         remove_external_theme(theme_key, SETTINGS.theme_modules_path)
         reload_themes()
-        _set_flash(request, "Design wurde entfernt")
+        _set_flash(request, "design.removed")
     except (ThemePackageError, OSError) as exc:
-        _set_flash(request, f"Design konnte nicht entfernt werden: {exc}", "error")
+        _set_flash(request, "design.remove_failed", {"error": exc}, "error")
     return _redirect("/design")
 
 
@@ -3113,12 +3127,12 @@ async def create_plugin_source_route(
     if guard:
         return guard
     if plugin_kind not in ("camera", "cloud", "design"):
-        _set_flash(request, "Ungültige Plugin-Art", "error")
+        _set_flash(request, "plugin.invalid_kind", None, "error")
         return _redirect("/plugin-sources")
     try:
         parse_github_repo_url(repo_url)
     except PluginSourceError as exc:
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect("/plugin-sources")
     database.create_plugin_source(
         SETTINGS.database_path,
@@ -3128,7 +3142,7 @@ async def create_plugin_source_route(
         ref=ref.strip() or "main",
         subdirectory=subdirectory.strip(),
     )
-    _set_flash(request, "Externe Quelle wurde hinzugefügt")
+    _set_flash(request, "plugin_source.added")
     return _redirect("/plugin-sources")
 
 
@@ -3150,7 +3164,7 @@ def _find_registered_standard_source(
 async def _sync_plugin_source(request: Request, source_id: int, redirect_target: str):
     source = database.get_plugin_source(SETTINGS.database_path, source_id)
     if not source:
-        _set_flash(request, "Externe Quelle wurde nicht gefunden", "error")
+        _set_flash(request, "plugin_source.not_found", None, "error")
         return _redirect(redirect_target)
     try:
         archive, resolved_sha = await asyncio.wait_for(
@@ -3163,11 +3177,11 @@ async def _sync_plugin_source(request: Request, source_id: int, redirect_target:
     except asyncio.TimeoutError:
         message = f"GitHub antwortet nicht innerhalb von {PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS}s"
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=message)
-        _set_flash(request, message, "error")
+        _set_flash(request, "common.raw_message", {"message": message}, "error")
         return _redirect(redirect_target)
     except (PluginSourceError, ValueError, OSError) as exc:
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=str(exc))
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(redirect_target)
     database.update_plugin_source_sync_result(
         SETTINGS.database_path,
@@ -3177,7 +3191,7 @@ async def _sync_plugin_source(request: Request, source_id: int, redirect_target:
         installed_key=installed_key,
         installed_ref_sha=resolved_sha,
     )
-    _set_flash(request, f"Plugin '{installed_key}' wurde installiert/aktualisiert")
+    _set_flash(request, "plugin.installed_or_updated", {"key": installed_key})
     return _redirect(redirect_target)
 
 
@@ -3188,7 +3202,7 @@ async def install_standard_plugin_source_route(request: Request, source_key: str
         return guard
     standard_source = get_standard_plugin_source(source_key)
     if standard_source is None:
-        _set_flash(request, "Standard-Repository wurde nicht gefunden", "error")
+        _set_flash(request, "plugin_source.standard_not_found", None, "error")
         return _redirect("/plugin-sources")
     registered_source = _find_registered_standard_source(
         standard_source, database.list_plugin_sources(SETTINGS.database_path)
@@ -3222,7 +3236,7 @@ async def delete_plugin_source_route(request: Request, source_id: int):
     if guard:
         return guard
     database.delete_plugin_source(SETTINGS.database_path, source_id)
-    _set_flash(request, "Externe Quelle wurde entfernt")
+    _set_flash(request, "plugin_source.removed")
     return _redirect("/plugin-sources")
 
 
@@ -3288,7 +3302,7 @@ async def clear_debug_log(request: Request):
     if guard:
         return guard
     clear_debug_log_entries()
-    _set_flash(request, "Debug Log wurde geleert")
+    _set_flash(request, "debug.cleared")
     return _redirect("/settings")
 
 
@@ -3844,7 +3858,7 @@ async def create_retention(request: Request, name: str = Form(...), camera_id: s
         max_age_days=int(max_age_days) if max_age_days else None,
         max_size_gb=float(max_size_gb) if max_size_gb else None,
     )
-    _set_flash(request, "Retention-Regel wurde angelegt")
+    _set_flash(request, "retention.created")
     return _redirect("/retention")
 
 
@@ -3863,7 +3877,7 @@ async def update_retention(request: Request, rule_id: int, name: str = Form(...)
         max_age_days=int(max_age_days) if max_age_days else None,
         max_size_gb=float(max_size_gb) if max_size_gb else None,
     )
-    _set_flash(request, "Retention-Regel wurde aktualisiert")
+    _set_flash(request, "retention.updated")
     return _redirect("/retention")
 
 
@@ -3873,7 +3887,7 @@ async def delete_retention(request: Request, rule_id: int):
     if guard:
         return guard
     database.delete_retention_rule(SETTINGS.database_path, rule_id)
-    _set_flash(request, "Retention-Regel wurde gelöscht")
+    _set_flash(request, "retention.deleted")
     return _redirect("/retention")
 
 
@@ -3901,7 +3915,7 @@ async def create_notification(request: Request, name: str = Form(...), kind: str
     if guard:
         return guard
     database.create_notification_channel(SETTINGS.database_path, **_notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service))
-    _set_flash(request, "Benachrichtigung wurde angelegt")
+    _set_flash(request, "notification.created")
     return _redirect("/notifications")
 
 
@@ -3911,7 +3925,7 @@ async def update_notification(request: Request, channel_id: int, name: str = For
     if guard:
         return guard
     database.update_notification_channel(SETTINGS.database_path, channel_id, **_notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service))
-    _set_flash(request, "Benachrichtigung wurde aktualisiert")
+    _set_flash(request, "notification.updated")
     return _redirect("/notifications")
 
 
@@ -3921,7 +3935,7 @@ async def delete_notification(request: Request, channel_id: int):
     if guard:
         return guard
     database.delete_notification_channel(SETTINGS.database_path, channel_id)
-    _set_flash(request, "Benachrichtigung wurde gelöscht")
+    _set_flash(request, "notification.deleted")
     return _redirect("/notifications")
 
 
@@ -4182,7 +4196,7 @@ def _require_admin(request: Request):
         return guard
     user = _current_user(request)
     if user.get("role") != "admin":
-        _set_flash(request, "Dafür werden Admin-Rechte benötigt", "error")
+        _set_flash(request, "common.admin_required", None, "error")
         return _redirect("/cameras")
     return None
 
@@ -4202,7 +4216,7 @@ def _require_camera_access(request: Request, camera_id: int):
         return guard
     user = _current_user(request)
     if not database.user_can_access_camera(SETTINGS.database_path, int(user["id"]), str(user["role"]), camera_id):
-        _set_flash(request, "Keine Berechtigung für diese Kamera", "error")
+        _set_flash(request, "common.camera_forbidden", None, "error")
         return _redirect("/cameras")
     return None
 
@@ -4538,36 +4552,36 @@ async def _perform_cloud_account_login_attempt(
     except asyncio.TimeoutError:
         message = f"Verbindung antwortet nicht innerhalb von {CONTROL_TIMEOUT_SECONDS}s"
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
-        _set_flash(request, message, "error")
+        _set_flash(request, "common.raw_message", {"message": message}, "error")
         return _redirect(success_redirect)
     except CloudVerificationRequired as exc:
         database.set_cloud_account_pending_verification(
             SETTINGS.database_path, account_id, field_key=exc.field_key, message=str(exc)
         )
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(f"/cloud-accounts/{account_id}/verify")
     except CloudConnectionError as exc:
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
         _clear_transient_cloud_account_fields(account_id, cloud_module)
-        _set_flash(request, str(exc), "error")
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(success_redirect)
     except Exception as exc:
         LOGGER.info("Cloud account test failed for %s: %s", account_id, exc)
         database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
-        _set_flash(request, f"Verbindung fehlgeschlagen: {exc}", "error")
+        _set_flash(request, "connection.failed", {"error": exc}, "error")
         return _redirect(success_redirect)
     database.update_cloud_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
     _clear_transient_cloud_account_fields(account_id, cloud_module)
-    _set_flash(request, message)
+    _set_flash(request, "common.raw_message", {"message": message})
     return _redirect(success_redirect)
 
 
-def _set_flash(request: Request, message: str, level: str = "success") -> None:
-    request.session["flash"] = {"message": message, "level": level}
+def _set_flash(request: Request, key: str, params: dict[str, Any] | None = None, level: str = "success") -> None:
+    request.session["flash"] = {"key": key, "params": params or {}, "level": level}
 
 
-def _camera_form_error(request: Request, values: dict[str, Any], message: str):
+def _camera_form_error(request: Request, values: dict[str, Any], key: str, params: dict[str, Any] | None = None):
     return templates.TemplateResponse(
         request,
         "camera_form.html",
@@ -4578,7 +4592,9 @@ def _camera_form_error(request: Request, values: dict[str, Any], message: str):
             "flash": None,
             "values": values,
             "camera_module_options": _camera_module_selector_options(),
-            "error": message,
+            "error": _t_en(key, **(params or {})),
+            "error_key": key,
+            "error_params": params or {},
         },
         status_code=status.HTTP_400_BAD_REQUEST,
     )
@@ -4588,7 +4604,17 @@ def _pop_flash(request: Request) -> dict[str, Any] | None:
     flash = request.session.get("flash")
     if flash is not None:
         request.session.pop("flash", None)
+        flash = dict(flash)
+        flash["text"] = _t_en(flash["key"], **flash.get("params", {}))
     return flash
+
+
+def _t_en(key: str, **params: Any) -> str:
+    template = _LOCALE_EN.get(key, key)
+    try:
+        return template.format(**params)
+    except (KeyError, IndexError):
+        return template
 
 
 def _none_if_blank(value: str) -> str | None:
