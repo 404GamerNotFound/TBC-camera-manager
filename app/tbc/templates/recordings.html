@@ -43,7 +43,7 @@
 </form>
 
 {% if recordings %}
-<p class="hint-text">{{ total }} clip{{ 's' if total != 1 else '' }} found · page {{ page }} of {{ total_pages }}</p>
+<p class="hint-text">{{ total }} Clips gefunden · Seite {{ page }} von {{ total_pages }}</p>
 <section class="clip-grid">
   {% for clip in recordings %}
   <article class="clip-card">
@@ -93,7 +93,7 @@
 {% if filters.search %}{% set _ = qs_parts.append('search=' ~ (filters.search | urlencode)) %}{% endif %}
 <div class="button-row timeline-day-nav">
   <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}">‹ Previous page</a>
-  <span>Page {{ page }} / {{ total_pages }}</span>
+  <span>Seite {{ page }} / {{ total_pages }}</span>
   <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}">Next page ›</a>
 </div>
 {% else %}

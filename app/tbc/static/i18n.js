@@ -614,7 +614,66 @@
     "Repository-Archiv ist leer": "The repository archive is empty",
     "Eufy hat für die Code-Sitzung keinen temporären Token geliefert": "Eufy did not provide a temporary token for the code session",
     "Eufy verlangt einen Bestätigungscode, konnte ihn aber nicht anfordern": "Eufy requires a verification code but it could not be requested",
-    "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "Eufy sign-in succeeded, but the device could not be saved as trusted"
+    "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "Eufy sign-in succeeded, but the device could not be saved as trusted",
+
+    "Gesichts- und Kennzeichenerkennung": "Face & plate recognition",
+    "Beide Funktionen laufen vollständig lokal (keine Cloud-Anbindung) und sind standardmäßig deaktiviert. Der \"Snapshot\"-Modus läuft, sobald der Clip einer passenden Aufnahme fertig gespeichert wurde; der \"Live\"-Modus läuft während der lokalen KI-Erkennung der Kamera, noch bevor eine Aufnahme existiert - für geringere Latenz auf Kosten von mehr CPU-Last pro Bild.":
+      "Both features run entirely locally (no cloud service involved) and are off by default. \"Snapshot\" mode runs once a matching recording's clip has finished saving; \"Live\" mode runs during the camera's own local-AI detection loop, before any recording exists, for lower latency at the cost of extra CPU load per frame.",
+    "Gesichtserkennung aktivieren": "Enable face recognition",
+    "Modus der Gesichtserkennung": "Face recognition mode",
+    "Snapshot (nach der Aufnahme)": "Snapshot (after recording)",
+    "Live (während der Erkennung)": "Live (during detection)",
+    "Übereinstimmungsschwelle (0-1, höher = strenger)": "Match threshold (0-1, higher = stricter)",
+    "Kennzeichenerkennung aktivieren": "Enable license plate recognition",
+    "Modus der Kennzeichenerkennung": "Plate recognition mode",
+    "Modelle (YuNet/SFace von opencv_zoo für Gesichter, Detektor/OCR von fast-alpr für Kennzeichen) werden bei der ersten Verwendung automatisch in das Erkennungsmodell-Volume heruntergeladen - kein manueller Download nötig.":
+      "Models (opencv_zoo's YuNet/SFace for faces, fast-alpr's detector/OCR for plates) download automatically on first use into the detection-models volume - no manual download step needed.",
+    "Bekanntes Gesicht anlernen": "Enroll a known face",
+    "Foto (ein klares, frontales Gesicht)": "Photo (one clear, front-facing face)",
+    "Anlernen": "Enroll",
+    "Bekannte Gesichter": "Known faces",
+    "Noch keine Gesichter angelernt - jedes erkannte Gesicht wird als \"unbekannt\" gemeldet.": "No known faces enrolled yet - every detected face will be reported as \"unknown\".",
+    "Bekanntes Kennzeichen hinzufügen": "Add a known plate",
+    "Kennzeichentext": "Plate text",
+    "Noch keine bekannten Kennzeichen - jedes erkannte Kennzeichen wird als \"unbekannt\" gemeldet.": "No known plates yet - every recognized plate will be reported as \"unknown\".",
+    "Bekannte Kennzeichen": "Known plates",
+    "Letzte Erkennungsereignisse": "Recent recognition events",
+    "Wann": "When",
+    "Ergebnis": "Result",
+    "Konfidenz": "Confidence",
+    "Noch keine Erkennungsereignisse": "No recognition events yet",
+    "Kennzeichen": "Plate",
+
+    "Lizenz": "License",
+    "TBC Camera Manager basiert auf den folgenden Open-Source-Projekten. Jedes wird unter seiner eigenen Lizenz verwendet, mit einem Link zur Quelle. Diese Liste umfasst direkte Abhängigkeiten und die vortrainierten Modelle, die TBC automatisch herunterlädt (z. B. für KI-Erkennung und Gesichts-/Kennzeichenerkennung) - sie deckt nicht jede transitive Abhängigkeit ab.":
+      "TBC Camera Manager is built on top of the open-source projects below. Each is used under its own license, listed with a link to its source. This list covers direct dependencies and the pretrained models TBC downloads automatically (e.g. for AI detection and face/plate recognition) - it does not cover every transitive dependency.",
+    "Werkzeug": "Tool",
+    "Web-Framework & Kern": "Web framework & core",
+    "Kamera- und Cloud-Integrationen": "Camera & cloud integrations",
+    "KI-Erkennung und -Wiedererkennung": "AI detection & recognition",
+
+    "Event-Label, Nachricht, Kameraname…": "Event label, message, camera name…",
+    "‹ Vorherige Seite": "‹ Previous page",
+    "Nächste Seite ›": "Next page ›",
+
+    "SD-Karten-Aufzeichnungen (nicht verfügbar)": "SD card recordings (unavailable)",
+    "Ein Balken wird für jede Ereignisaufnahme angezeigt, gruppiert nach Ereignistyp und Farbe. Wähle einen Balken, um die Timeline dieser Kamera für den Tag zu öffnen. Durchgehende 24/7-Aufzeichnung wird hier bewusst weggelassen; nutze dafür die Timeline für eine einzelne Kamera. Aktiviere \"SD card recordings\", um auch auf der Kamera gespeicherte Aufnahmen einzubeziehen, sofern sie ein Kamera-Archiv unterstützt.":
+      "One block is shown for each event recording, grouped by event type and color. Select a block to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted here; use the timeline for an individual camera instead. Enable \"SD card recordings\" to also include recordings stored on cameras that support an on-camera archive.",
+    "Keine Ereignisaufnahmen für diesen Tag verfügbar.": "No event recordings are available for this day.",
+
+    "ntfy (selbstgehosteter Push)": "ntfy (self-hosted push)",
+    "Gotify (selbstgehosteter Push)": "Gotify (self-hosted push)",
+    "URL / Nutzer bei Pushover / HA-URL / ntfy-Themen-URL / Gotify-Server-URL": "URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL",
+    "Token (ntfy-Zugriffstoken / Gotify-App-Token)": "Token (ntfy Access Token / Gotify App Token)",
+
+    "Einstellungen wurden gespeichert": "Settings were saved",
+    "Gesicht wurde entfernt": "Face was removed",
+    "Kennzeichen wurde gespeichert": "Plate was saved",
+    "Kennzeichen wurde aktualisiert": "Plate was updated",
+    "Kennzeichen wurde entfernt": "Plate was removed",
+    "Gesichtserkennungs-Modell konnte nicht geladen werden": "Face recognition model could not be loaded",
+    "Kein Gesicht im Foto gefunden": "No face found in the photo",
+    "Bilddatei konnte nicht gelesen werden": "Image file could not be read"
   };
 
   const spanish = {
@@ -1229,7 +1288,66 @@
     "Repository-Archiv ist leer": "El archivo del repositorio está vacío",
     "Eufy hat für die Code-Sitzung keinen temporären Token geliefert": "Eufy no proporcionó un token temporal para la sesión del código",
     "Eufy verlangt einen Bestätigungscode, konnte ihn aber nicht anfordern": "Eufy requiere un código de verificación, pero no se pudo solicitar",
-    "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "El inicio de sesión en Eufy fue correcto, pero el dispositivo no se pudo guardar como de confianza"
+    "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "El inicio de sesión en Eufy fue correcto, pero el dispositivo no se pudo guardar como de confianza",
+
+    "Gesichts- und Kennzeichenerkennung": "Reconocimiento facial y de matrículas",
+    "Beide Funktionen laufen vollständig lokal (keine Cloud-Anbindung) und sind standardmäßig deaktiviert. Der \"Snapshot\"-Modus läuft, sobald der Clip einer passenden Aufnahme fertig gespeichert wurde; der \"Live\"-Modus läuft während der lokalen KI-Erkennung der Kamera, noch bevor eine Aufnahme existiert - für geringere Latenz auf Kosten von mehr CPU-Last pro Bild.":
+      "Ambas funciones se ejecutan completamente en local (sin ningún servicio en la nube) y están desactivadas de forma predeterminada. El modo \"instantánea\" se ejecuta una vez que se ha guardado el clip de una grabación coincidente; el modo \"en vivo\" se ejecuta durante la detección de IA local de la cámara, antes de que exista ninguna grabación, con menor latencia a costa de más carga de CPU por fotograma.",
+    "Gesichtserkennung aktivieren": "Activar reconocimiento facial",
+    "Modus der Gesichtserkennung": "Modo de reconocimiento facial",
+    "Snapshot (nach der Aufnahme)": "Instantánea (después de grabar)",
+    "Live (während der Erkennung)": "En vivo (durante la detección)",
+    "Übereinstimmungsschwelle (0-1, höher = strenger)": "Umbral de coincidencia (0-1, más alto = más estricto)",
+    "Kennzeichenerkennung aktivieren": "Activar reconocimiento de matrículas",
+    "Modus der Kennzeichenerkennung": "Modo de reconocimiento de matrículas",
+    "Modelle (YuNet/SFace von opencv_zoo für Gesichter, Detektor/OCR von fast-alpr für Kennzeichen) werden bei der ersten Verwendung automatisch in das Erkennungsmodell-Volume heruntergeladen - kein manueller Download nötig.":
+      "Los modelos (YuNet/SFace de opencv_zoo para rostros, detector/OCR de fast-alpr para matrículas) se descargan automáticamente en el primer uso al volumen de modelos de detección - no se requiere ninguna descarga manual.",
+    "Bekanntes Gesicht anlernen": "Registrar un rostro conocido",
+    "Foto (ein klares, frontales Gesicht)": "Foto (un rostro claro, de frente)",
+    "Anlernen": "Registrar",
+    "Bekannte Gesichter": "Rostros conocidos",
+    "Noch keine Gesichter angelernt - jedes erkannte Gesicht wird als \"unbekannt\" gemeldet.": "Aún no se ha registrado ningún rostro - cada rostro detectado se reportará como \"desconocido\".",
+    "Bekanntes Kennzeichen hinzufügen": "Añadir una matrícula conocida",
+    "Kennzeichentext": "Texto de la matrícula",
+    "Noch keine bekannten Kennzeichen - jedes erkannte Kennzeichen wird als \"unbekannt\" gemeldet.": "Aún no hay matrículas conocidas - cada matrícula reconocida se reportará como \"desconocida\".",
+    "Bekannte Kennzeichen": "Matrículas conocidas",
+    "Letzte Erkennungsereignisse": "Eventos de reconocimiento recientes",
+    "Wann": "Cuándo",
+    "Ergebnis": "Resultado",
+    "Konfidenz": "Confianza",
+    "Noch keine Erkennungsereignisse": "Aún no hay eventos de reconocimiento",
+    "Kennzeichen": "Matrícula",
+
+    "Lizenz": "Licencia",
+    "TBC Camera Manager basiert auf den folgenden Open-Source-Projekten. Jedes wird unter seiner eigenen Lizenz verwendet, mit einem Link zur Quelle. Diese Liste umfasst direkte Abhängigkeiten und die vortrainierten Modelle, die TBC automatisch herunterlädt (z. B. für KI-Erkennung und Gesichts-/Kennzeichenerkennung) - sie deckt nicht jede transitive Abhängigkeit ab.":
+      "TBC Camera Manager está construido sobre los proyectos de código abierto que se muestran a continuación. Cada uno se usa bajo su propia licencia, con un enlace a su fuente. Esta lista cubre las dependencias directas y los modelos preentrenados que TBC descarga automáticamente (por ejemplo, para la detección de IA y el reconocimiento facial/de matrículas) - no cubre todas las dependencias transitivas.",
+    "Werkzeug": "Herramienta",
+    "Web-Framework & Kern": "Framework web y núcleo",
+    "Kamera- und Cloud-Integrationen": "Integraciones de cámaras y nube",
+    "KI-Erkennung und -Wiedererkennung": "Detección y reconocimiento por IA",
+
+    "Event-Label, Nachricht, Kameraname…": "Etiqueta del evento, mensaje, nombre de la cámara…",
+    "‹ Vorherige Seite": "‹ Página anterior",
+    "Nächste Seite ›": "Página siguiente ›",
+
+    "SD-Karten-Aufzeichnungen (nicht verfügbar)": "Grabaciones de la tarjeta SD (no disponible)",
+    "Ein Balken wird für jede Ereignisaufnahme angezeigt, gruppiert nach Ereignistyp und Farbe. Wähle einen Balken, um die Timeline dieser Kamera für den Tag zu öffnen. Durchgehende 24/7-Aufzeichnung wird hier bewusst weggelassen; nutze dafür die Timeline für eine einzelne Kamera. Aktiviere \"SD card recordings\", um auch auf der Kamera gespeicherte Aufnahmen einzubeziehen, sofern sie ein Kamera-Archiv unterstützt.":
+      "Se muestra un bloque por cada grabación de evento, agrupado por tipo de evento y color. Selecciona un bloque para abrir la línea de tiempo de esa cámara para el día. La grabación continua 24/7 se omite aquí a propósito; usa la línea de tiempo de una cámara individual para eso. Activa \"grabaciones de la tarjeta SD\" para incluir también las grabaciones almacenadas en cámaras que admiten un archivo propio de la cámara.",
+    "Keine Ereignisaufnahmen für diesen Tag verfügbar.": "No hay grabaciones de eventos disponibles para este día.",
+
+    "ntfy (selbstgehosteter Push)": "ntfy (push autoalojado)",
+    "Gotify (selbstgehosteter Push)": "Gotify (push autoalojado)",
+    "URL / Nutzer bei Pushover / HA-URL / ntfy-Themen-URL / Gotify-Server-URL": "URL / usuario de Pushover / URL de HA / URL del tema de ntfy / URL del servidor Gotify",
+    "Token (ntfy-Zugriffstoken / Gotify-App-Token)": "Token (token de acceso de ntfy / token de app de Gotify)",
+
+    "Einstellungen wurden gespeichert": "Se guardaron los ajustes",
+    "Gesicht wurde entfernt": "Se eliminó el rostro",
+    "Kennzeichen wurde gespeichert": "Se guardó la matrícula",
+    "Kennzeichen wurde aktualisiert": "Se actualizó la matrícula",
+    "Kennzeichen wurde entfernt": "Se eliminó la matrícula",
+    "Gesichtserkennungs-Modell konnte nicht geladen werden": "No se pudo cargar el modelo de reconocimiento facial",
+    "Kein Gesicht im Foto gefunden": "No se encontró ningún rostro en la foto",
+    "Bilddatei konnte nicht gelesen werden": "No se pudo leer el archivo de imagen"
   };
 
   // Explicit keys are used by templates that carry data-i18n attributes and
@@ -1479,7 +1597,10 @@
     [/^(.+) · (UniFi-Protect-Kameras über einen erzeugten RTSP-\/RTSPS-Link)$/, "$1 · UniFi Protect cameras via a generated RTSP/RTSPS link"],
     [/^(.+) · (Eufy-Security-Cloud-Konto und Kamerasuche via pyeufysecurity)$/, "$1 · Eufy Security cloud account and camera discovery via pyeufysecurity"],
     [/^(.+) · (SONOFF-Geräte über das offizielle eWeLink\/CoolKit-Open-Platform-Cloud-Konto)$/, "$1 · SONOFF devices via the official eWeLink/CoolKit Open Platform cloud account"],
-    [/^(.+) · (Ubiquiti UniFi Protect Controller \(lokal oder über die ui\.com-Cloud-Konsole\) via uiprotect)$/, "$1 · Ubiquiti UniFi Protect controller (local or via the ui.com cloud console) using uiprotect"]
+    [/^(.+) · (Ubiquiti UniFi Protect Controller \(lokal oder über die ui\.com-Cloud-Konsole\) via uiprotect)$/, "$1 · Ubiquiti UniFi Protect controller (local or via the ui.com cloud console) using uiprotect"],
+    [/^(\d+) Clips gefunden · Seite (\d+) von (\d+)$/, "$1 clips found · page $2 of $3"],
+    [/^Gesicht für (.+) wurde gespeichert$/, "Face for $1 was saved"],
+    [/^Gesicht konnte nicht gespeichert werden: (.+)$/, "Face could not be saved: $1"]
   ];
 
   const spanishPatterns = [
@@ -1581,7 +1702,10 @@
     [/^Design '(.+)' ist nicht installiert$/, "El diseño '$1' no está instalado"],
     [/^ONVIF-Bibliothek ist nicht installiert: (.+)$/, "La biblioteca ONVIF no está instalada: $1"],
     [/^ONVIF-Verbindung fehlgeschlagen: (.+)$/, "Error de conexión ONVIF: $1"],
-    [/^Reolink-Status konnte nicht abgefragt werden: (.+)$/, "No se pudo consultar el estado de Reolink: $1"]
+    [/^Reolink-Status konnte nicht abgefragt werden: (.+)$/, "No se pudo consultar el estado de Reolink: $1"],
+    [/^(\d+) Clips gefunden · Seite (\d+) von (\d+)$/, "$1 clips encontrados · página $2 de $3"],
+    [/^Gesicht für (.+) wurde gespeichert$/, "Se guardó el rostro de $1"],
+    [/^Gesicht konnte nicht gespeichert werden: (.+)$/, "No se pudo guardar el rostro: $1"]
   ];
 
   const translateCompound = (value) => {
