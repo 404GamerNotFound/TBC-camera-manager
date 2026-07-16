@@ -54,7 +54,7 @@ jobs:
         run: docker build --tag tbc-camera-manager:ci .
 
       - name: Scan container image
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: tbc-camera-manager:ci
