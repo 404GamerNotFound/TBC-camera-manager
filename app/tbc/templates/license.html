@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow">Extensions</p>
+    <h1>License</h1>
+  </div>
+</section>
+
+<section class="table-section">
+  <p class="hint-text">
+    TBC Camera Manager is built on top of the open-source projects below. Each is used under its own license, listed
+    with a link to its source. This list covers direct dependencies and the pretrained models TBC downloads
+    automatically (e.g. for AI detection and face/plate recognition) - it does not cover every transitive dependency.
+  </p>
+</section>
+
+{% for category in categories %}
+<section class="table-section">
+  <div class="section-title">
+    <h2>{{ category.name }}</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tool</th>
+          <th>License</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tool in category.tools %}
+        <tr>
+          <td>{{ tool.name }}</td>
+          <td>{{ tool.license }}</td>
+          <td><a href="{{ tool.url }}" target="_blank" rel="noopener noreferrer">{{ tool.url }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

@@ -19,6 +19,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import __version__, database, mqtt
+from .licenses import THIRD_PARTY_LICENSES
 from .api_common import (
     api_auth_error,
     camera_public_dict as _camera_public_dict,
@@ -3243,6 +3244,31 @@ async def plugin_updates_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "sources": pending_sources,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/license", response_class=HTMLResponse)
+async def license_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    categories: list[dict[str, Any]] = []
+    for entry in THIRD_PARTY_LICENSES:
+        category = next((c for c in categories if c["name"] == entry["category"]), None)
+        if category is None:
+            category = {"name": entry["category"], "tools": []}
+            categories.append(category)
+        category["tools"].append(entry)
+    return templates.TemplateResponse(
+        request,
+        "license.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "categories": categories,
             "flash": _pop_flash(request),
         },
     )
