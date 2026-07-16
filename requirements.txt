@@ -10,7 +10,7 @@ reolink-aio==0.21.3
 uiprotect==15.12.2
 pyeufysecurity==0.4.4
 ewelink==0.2.1
-boto3>=1.43.46,<2
+boto3>=1.43.49,<2
 paho-mqtt==2.1.0
 numpy>=2.5.1,<3
 Pillow>=12.3.0,<13
