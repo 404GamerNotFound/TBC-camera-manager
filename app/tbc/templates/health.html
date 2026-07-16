@@ -3,16 +3,16 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Monitoring</p>
-    <h1>Performance</h1>
+    <p class="eyebrow" data-i18n="health.monitoring">Monitoring</p>
+    <h1 data-i18n="base.performance">Performance</h1>
   </div>
   <div class="button-row">
-    <span class="status-pill status-warning" data-health-refresh-state>Check running</span>
-    <button class="secondary-button" type="button" data-health-refresh>Refresh</button>
+    <span class="status-pill status-warning" data-health-refresh-state data-i18n="health.check_running">Check running</span>
+    <button class="secondary-button" type="button" data-health-refresh data-i18n="common.refresh">Refresh</button>
   </div>
 </section>
 
-<section class="performance-grid" aria-label="Current system performance">
+<section class="performance-grid" aria-label="Current system performance" data-i18n-aria-label="health.current_system_performance">
   <article class="performance-card">
     <div class="performance-card-head">
       <span>CPU</span>
@@ -37,18 +37,18 @@
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Status</h2>
+    <h2 data-i18n="camera.status">Status</h2>
     <span>{{ items | length }}</span>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Component</th>
+          <th data-i18n="health.component">Component</th>
           <th>ID</th>
-          <th>Status</th>
-          <th>Message</th>
-          <th>Checked</th>
+          <th data-i18n="camera.status">Status</th>
+          <th data-i18n="detection.message">Message</th>
+          <th data-i18n="health.checked">Checked</th>
         </tr>
       </thead>
       <tbody data-health-status-body>
@@ -68,18 +68,18 @@
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Events</h2>
+    <h2 data-i18n="health.events">Events</h2>
     <span>{{ events | length }}</span>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Time</th>
-          <th>Component</th>
-          <th>Previous</th>
-          <th>Status</th>
-          <th>Message</th>
+          <th data-i18n="health.time">Time</th>
+          <th data-i18n="health.component">Component</th>
+          <th data-i18n="health.previous">Previous</th>
+          <th data-i18n="camera.status">Status</th>
+          <th data-i18n="detection.message">Message</th>
         </tr>
       </thead>
       <tbody data-health-events-body>

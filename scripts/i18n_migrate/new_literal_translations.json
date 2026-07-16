@@ -1,0 +1,5 @@
+{
+  "detection.settings_saved": {"en": "Local AI detection settings were saved", "es": "Se guardaron los ajustes de detección de IA local"},
+  "api.settings_saved": {"en": "API settings were saved", "es": "Se guardaron los ajustes de la API"},
+  "api.key_revoked": {"en": "API key was revoked", "es": "Se revocó la clave API"}
+}

@@ -3,23 +3,23 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Extensions</p>
-    <h1>Updates</h1>
+    <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
+    <h1 data-i18n="plugin_updates.updates">Updates</h1>
   </div>
-  <a class="secondary-button" href="/plugin-sources">Manage external sources</a>
+  <a class="secondary-button" href="/plugin-sources" data-i18n="plugin_updates.manage_external_sources">Manage external sources</a>
 </section>
 
 <section class="storage-list">
   <div class="section-title">
-    <h2>TBC application</h2>
-    <span class="status-pill {{ 'status-active' if app_update_available else 'status-idle' }}">
+    <h2 data-i18n="plugin_updates.app_name">TBC application</h2>
+    <span class="status-pill {{ 'status-active' if app_update_available else 'status-idle' }}" data-i18n="{{ 'plugin_updates.update_available' if app_update_available else 'plugin_updates.up_to_date' }}">
       {{ 'Update available' if app_update_available else 'up to date' }}
     </span>
   </div>
   <article class="storage-item">
     <dl class="metric-row">
-      <div><dt>Installed</dt><dd>{{ app_version }}</dd></div>
-      <div><dt>Latest version</dt><dd>{{ app_latest_version or 'not checked yet' }}</dd></div>
+      <div><dt data-i18n="plugin_updates.installed">Installed</dt><dd>{{ app_version }}</dd></div>
+      <div><dt data-i18n="plugin_updates.latest_version">Latest version</dt><dd>{{ app_latest_version or 'not checked yet' }}</dd></div>
     </dl>
     <p class="quiet-box">
       Published GitHub releases are checked hourly. Updating to a new version is a manual operation
@@ -28,20 +28,20 @@
     </p>
     {% if app_update_available and app_update_url %}
     <div class="form-actions">
-      <a class="primary-button" href="{{ app_update_url }}" target="_blank" rel="noopener noreferrer">View release</a>
+      <a class="primary-button" href="{{ app_update_url }}" target="_blank" rel="noopener noreferrer" data-i18n="plugin_updates.view_release">View release</a>
     </div>
     {% endif %}
   </article>
 </section>
 
-<div class="quiet-box">
+<div class="quiet-box" data-i18n="plugin_updates.every_registered_external_source_checked">
   Every registered external source is checked hourly to see whether its branch/tag has advanced since the last installation (by comparing the commit SHA without downloading the entire repository). Only sources with an update that is actually available appear here.
 </div>
 
 {% if sources %}
 <section class="storage-list">
   <div class="section-title">
-    <h2>Available updates</h2>
+    <h2 data-i18n="plugin_updates.available_updates">Available updates</h2>
     <span>{{ sources | length }}</span>
   </div>
   {% for source in sources %}
@@ -51,23 +51,23 @@
         <h3>{{ source.label }}</h3>
         <p>{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
       </div>
-      <span class="status-pill status-active">Update available</span>
+      <span class="status-pill status-active" data-i18n="plugin_updates.update_available">Update available</span>
     </div>
     <dl class="metric-row">
-      <div><dt>Installed</dt><dd>{{ source.installed_ref_sha[:7] if source.installed_ref_sha else 'unknown' }}</dd></div>
-      <div><dt>Available</dt><dd>{{ source.latest_ref_sha[:7] if source.latest_ref_sha else 'unknown' }}</dd></div>
-      <div><dt>Last checked</dt><dd>{{ source.last_checked_at or 'not checked yet' }}</dd></div>
+      <div><dt data-i18n="plugin_updates.installed">Installed</dt><dd>{{ source.installed_ref_sha[:7] if source.installed_ref_sha else 'unknown' }}</dd></div>
+      <div><dt data-i18n="plugin_updates.available">Available</dt><dd>{{ source.latest_ref_sha[:7] if source.latest_ref_sha else 'unknown' }}</dd></div>
+      <div><dt data-i18n="plugin_updates.last_checked">Last checked</dt><dd>{{ source.last_checked_at or 'not checked yet' }}</dd></div>
     </dl>
     <div class="form-actions">
       <form method="post" action="/plugin-sources/{{ source.id }}/sync">
         <input type="hidden" name="return_to" value="/updates">
-        <button class="primary-button" type="submit">Update now</button>
+        <button class="primary-button" type="submit" data-i18n="camera.update_now">Update now</button>
       </form>
     </div>
   </article>
   {% endfor %}
 </section>
 {% else %}
-<p class="quiet-box">All external sources are up to date.</p>
+<p class="quiet-box" data-i18n="plugin_updates.all_external_sources_up_date">All external sources are up to date.</p>
 {% endif %}
 {% endblock %}

@@ -3,35 +3,35 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">System</p>
-    <h1>Settings</h1>
+    <p class="eyebrow" data-i18n="settings.system">System</p>
+    <h1 data-i18n="base.settings">Settings</h1>
   </div>
 </section>
 
 <section class="settings-layout">
   <section class="event-panel">
     <div class="section-title">
-      <h2>API &amp; AI interface</h2>
+      <h2 data-i18n="settings.api_ai_interface">API &amp; AI interface</h2>
     </div>
     <div class="quiet-box">
       API activation, API-key management, and examples of the available data and response
       formats are now collected on a dedicated page:
-      <a href="/api-access">Open API access</a>.
+      <a href="/api-access" data-i18n="settings.open_api_access">Open API access</a>.
     </div>
   </section>
 
   <section class="event-panel">
     <div class="section-title">
-      <h2>Debug Log</h2>
+      <h2 data-i18n="settings.debug_log">Debug Log</h2>
       <span>{{ debug_count }}</span>
     </div>
-    <div class="quiet-box">
+    <div class="quiet-box" data-i18n="settings.debug_log_collects_ongoing_messages">
       The debug log collects ongoing messages from the app and ffmpeg live processes. It is available as a pull-up in the bottom-right corner of every admin page.
     </div>
     <div class="form-actions debug-settings-actions">
-      <button class="primary-button" type="button" data-debug-toggle>Open debug log</button>
+      <button class="primary-button" type="button" data-debug-toggle data-i18n="settings.open_debug_log">Open debug log</button>
       <form method="post" action="/settings/debug-log/clear">
-        <button class="secondary-button" type="submit">Clear</button>
+        <button class="secondary-button" type="submit" data-i18n="settings.clear">Clear</button>
       </form>
     </div>
   </section>

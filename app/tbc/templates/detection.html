@@ -3,29 +3,29 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Extensions</p>
-    <h1>AI detection</h1>
+    <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
+    <h1 data-i18n="base.ai_detection">AI detection</h1>
   </div>
 </section>
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Backend-Status</h2>
+    <h2 data-i18n="camera.backend_status">Backend-Status</h2>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Backend</th>
-          <th>Status</th>
-          <th>Message</th>
+          <th data-i18n="camera.backend">Backend</th>
+          <th data-i18n="camera.status">Status</th>
+          <th data-i18n="detection.message">Message</th>
         </tr>
       </thead>
       <tbody>
         {% for key, available, message in backend_status %}
         <tr>
           <td>{{ detection_backend_labels.get(key, key | upper) }}</td>
-          <td><span class="status-pill {{ 'status-active' if available else 'status-idle' }}">{{ 'available' if available else 'unavailable' }}</span></td>
+          <td><span class="status-pill {{ 'status-active' if available else 'status-idle' }}" data-i18n="{{ 'detection.available' if available else 'detection.unavailable' }}">{{ 'available' if available else 'unavailable' }}</span></td>
           <td>{{ message }}</td>
         </tr>
         {% endfor %}
@@ -42,7 +42,7 @@
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Model</h2>
+    <h2 data-i18n="detection.model">Model</h2>
   </div>
   <div class="quiet-box">
     {% if model_ready %}
@@ -67,18 +67,18 @@
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Cameras with local AI detection</h2>
+    <h2 data-i18n="detection.cameras_with_ai">Cameras with local AI detection</h2>
     <span>{{ cameras | length }}</span>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Camera</th>
-          <th>Backend</th>
-          <th>Images/s</th>
-          <th>Minimum confidence</th>
-          <th>Zones</th>
+          <th data-i18n="camera_new_choice.camera">Camera</th>
+          <th data-i18n="camera.backend">Backend</th>
+          <th data-i18n="detection.images_per_second_short">Images/s</th>
+          <th data-i18n="camera.min_confidence">Minimum confidence</th>
+          <th data-i18n="detection.zones">Zones</th>
           <th></th>
         </tr>
       </thead>
@@ -90,11 +90,11 @@
           <td>{{ camera.sample_fps }}</td>
           <td>{{ camera.confidence_threshold }}</td>
           <td>{{ camera.zone_count }}</td>
-          <td><a class="text-button" href="/cameras/{{ camera.camera_id }}#ai-zones">Open</a></td>
+          <td><a class="text-button" href="/cameras/{{ camera.camera_id }}#ai-zones" data-i18n="dashboard.open">Open</a></td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6">No camera has local AI detection enabled yet</td>
+          <td colspan="6" data-i18n="detection.no_camera_enabled">No camera has local AI detection enabled yet</td>
         </tr>
         {% endfor %}
       </tbody>

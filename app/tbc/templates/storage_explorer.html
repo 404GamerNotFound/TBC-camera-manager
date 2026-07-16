@@ -3,11 +3,11 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Storage analysis</p>
-    <h1>Explorer</h1>
+    <p class="eyebrow" data-i18n="storage.storage_analysis">Storage analysis</p>
+    <h1 data-i18n="base.explorer">Explorer</h1>
   </div>
   <form method="post" action="/storage/cleanup">
-    <button class="danger-button" type="submit">Run cleanup</button>
+    <button class="danger-button" type="submit" data-i18n="storage.run_cleanup">Run cleanup</button>
   </form>
 </section>
 
@@ -17,15 +17,15 @@
     <h2>{{ target.name }}</h2>
     <dl class="metric-row">
       <div>
-        <dt>Clips</dt>
+        <dt data-i18n="common.clips">Clips</dt>
         <dd>{{ (target.used_bytes or 0) // (1024 * 1024) }} MB</dd>
       </div>
       <div>
-        <dt>Free</dt>
+        <dt data-i18n="storage.free">Free</dt>
         <dd>{% if target.free_bytes is not none %}{{ target.free_bytes // (1024 * 1024 * 1024) }} GB{% else %}-{% endif %}</dd>
       </div>
       <div>
-        <dt>Type</dt>
+        <dt data-i18n="notification.type">Type</dt>
         <dd>{{ target.kind }}</dd>
       </div>
     </dl>
@@ -35,11 +35,11 @@
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Usage by camera/event</h2>
+    <h2 data-i18n="storage.usage_by_camera_event">Usage by camera/event</h2>
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Camera</th><th>Event</th><th>Clips</th><th>Size</th></tr></thead>
+      <thead><tr><th data-i18n="camera_new_choice.camera">Camera</th><th data-i18n="recordings.event">Event</th><th data-i18n="common.clips">Clips</th><th data-i18n="sd_card.size">Size</th></tr></thead>
       <tbody>
         {% for row in by_camera_event %}
         <tr><td>{{ row.camera_name }}</td><td>{{ row.detection_key }}</td><td>{{ row.clip_count }}</td><td>{{ row.size_bytes // (1024 * 1024) }} MB</td></tr>
@@ -51,12 +51,12 @@
 
 <section class="table-section">
   <div class="section-title">
-    <h2>Cleanup preview</h2>
+    <h2 data-i18n="storage.cleanup_preview">Cleanup preview</h2>
     <span>{{ cleanup_items | length }}</span>
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Camera</th><th>Event</th><th>Date</th><th>Reason</th><th>Size</th></tr></thead>
+      <thead><tr><th data-i18n="camera_new_choice.camera">Camera</th><th data-i18n="recordings.event">Event</th><th data-i18n="storage.date">Date</th><th data-i18n="storage.reason">Reason</th><th data-i18n="sd_card.size">Size</th></tr></thead>
       <tbody>
         {% for item in cleanup_items %}
         <tr><td>{{ item.camera_name }}</td><td>{{ item.detection_key }}</td><td>{{ item.started_at }}</td><td>{{ item.cleanup_reason }}</td><td>{{ (item.size_bytes or 0) // (1024 * 1024) }} MB</td></tr>

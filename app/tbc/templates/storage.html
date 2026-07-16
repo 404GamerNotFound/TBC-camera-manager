@@ -3,66 +3,66 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Recording destinations</p>
-    <h1>Storage</h1>
+    <p class="eyebrow" data-i18n="storage.recording_destinations">Recording destinations</p>
+    <h1 data-i18n="base.storage">Storage</h1>
   </div>
-  <a class="secondary-button" href="/cameras">Cameras</a>
+  <a class="secondary-button" href="/cameras" data-i18n="nav.cameras">Cameras</a>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/storage">
     <div class="section-title">
-      <h2>New storage destination</h2>
+      <h2 data-i18n="storage.new_storage_destination">New storage destination</h2>
     </div>
     <div class="form-grid">
       <label>
-        <span>Name</span>
+        <span data-i18n="common.name">Name</span>
         <input name="name" required>
       </label>
       <label>
-        <span>Type</span>
+        <span data-i18n="notification.type">Type</span>
         <select name="kind">
-          <option value="local">Local or mounted path</option>
-          <option value="s3">S3-compatible cloud storage</option>
+          <option value="local" data-i18n="storage.local_or_mounted_path">Local or mounted path</option>
+          <option value="s3" data-i18n="storage.s3_compatible_cloud_storage">S3-compatible cloud storage</option>
         </select>
       </label>
       <label class="span-2">
-        <span>Local path in the container</span>
+        <span data-i18n="storage.local_path_container">Local path in the container</span>
         <input name="local_path" value="{{ defaults.local_path }}">
       </label>
       <label>
-        <span>S3 Endpoint URL</span>
+        <span data-i18n="storage.s3_endpoint_url">S3 Endpoint URL</span>
         <input name="s3_endpoint_url" placeholder="https://s3.example.com">
       </label>
       <label>
-        <span>S3 Region</span>
+        <span data-i18n="storage.s3_region">S3 Region</span>
         <input name="s3_region" placeholder="eu-central-1">
       </label>
       <label>
-        <span>S3 Bucket</span>
+        <span data-i18n="storage.s3_bucket">S3 Bucket</span>
         <input name="s3_bucket">
       </label>
       <label>
-        <span>S3 Prefix</span>
+        <span data-i18n="storage.s3_prefix">S3 Prefix</span>
         <input name="s3_prefix" placeholder="tbc/aufnahmen">
       </label>
       <label>
-        <span>Access Key</span>
+        <span data-i18n="storage.access_key">Access Key</span>
         <input name="s3_access_key_id" autocomplete="off">
       </label>
       <label>
-        <span>Secret key</span>
+        <span data-i18n="storage.secret_key">Secret key</span>
         <input name="s3_secret_access_key" type="password" autocomplete="new-password">
       </label>
     </div>
     <div class="form-actions">
-      <button class="primary-button" type="submit">Create</button>
+      <button class="primary-button" type="submit" data-i18n="notifications.create">Create</button>
     </div>
   </form>
 
   <section class="storage-list">
     <div class="section-title">
-      <h2>Existing destinations</h2>
+      <h2 data-i18n="storage.existing_destinations">Existing destinations</h2>
       <span>{{ storage_targets | length }}</span>
     </div>
     {% for target in storage_targets %}
@@ -70,63 +70,63 @@
       <form method="post" action="/storage/{{ target.id }}">
         <div class="form-grid">
           <label>
-            <span>Name</span>
+            <span data-i18n="common.name">Name</span>
             <input name="name" value="{{ target.name }}" required>
           </label>
           <label>
-            <span>Type</span>
+            <span data-i18n="notification.type">Type</span>
             <select name="kind">
               <option value="local" {% if target.kind == 'local' %}selected{% endif %}>Local/mounted path</option>
               <option value="s3" {% if target.kind == 's3' %}selected{% endif %}>S3 Cloud</option>
             </select>
           </label>
           <label class="span-2">
-            <span>Local path</span>
+            <span data-i18n="storage.local_path">Local path</span>
             <input name="local_path" value="{{ target.local_path or '' }}">
           </label>
           <label>
-            <span>S3 Endpoint</span>
+            <span data-i18n="storage.s3_endpoint">S3 Endpoint</span>
             <input name="s3_endpoint_url" value="{{ target.s3_endpoint_url or '' }}">
           </label>
           <label>
-            <span>S3 Region</span>
+            <span data-i18n="storage.s3_region">S3 Region</span>
             <input name="s3_region" value="{{ target.s3_region or '' }}">
           </label>
           <label>
-            <span>S3 Bucket</span>
+            <span data-i18n="storage.s3_bucket">S3 Bucket</span>
             <input name="s3_bucket" value="{{ target.s3_bucket or '' }}">
           </label>
           <label>
-            <span>S3 Prefix</span>
+            <span data-i18n="storage.s3_prefix">S3 Prefix</span>
             <input name="s3_prefix" value="{{ target.s3_prefix or '' }}">
           </label>
           <label>
-            <span>Access Key</span>
+            <span data-i18n="storage.access_key">Access Key</span>
             <input name="s3_access_key_id" value="{{ target.s3_access_key_id or '' }}" autocomplete="off">
           </label>
           <label>
-            <span>Secret key</span>
+            <span data-i18n="storage.secret_key">Secret key</span>
             <input name="s3_secret_access_key" type="password" value="{{ target.s3_secret_access_key or '' }}" autocomplete="new-password">
           </label>
           <label>
-            <span>Retention days</span>
+            <span data-i18n="storage.retention_days">Retention days</span>
             <input name="retention_days" type="number" min="0" value="{{ target.retention_days or '' }}">
           </label>
           <label>
-            <span>Retention GB</span>
+            <span data-i18n="storage.retention_gb">Retention GB</span>
             <input name="retention_max_gb" type="number" min="0" step="0.1" value="{{ target.retention_max_gb or '' }}">
           </label>
         </div>
         <div class="form-actions">
-          <button class="primary-button" type="submit">Refresh</button>
+          <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
         </div>
       </form>
       <form method="post" action="/storage/{{ target.id }}/delete">
-        <button class="danger-button" type="submit">Delete</button>
+        <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
       </form>
     </article>
     {% else %}
-    <div class="quiet-box">No storage destination has been created yet</div>
+    <div class="quiet-box" data-i18n="storage.no_storage_destination_has_been">No storage destination has been created yet</div>
     {% endfor %}
   </section>
 </section>

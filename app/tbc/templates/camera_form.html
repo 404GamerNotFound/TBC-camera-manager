@@ -3,8 +3,8 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Camera module</p>
-    <h1>Add camera</h1>
+    <p class="eyebrow" data-i18n="camera_form.camera_module">Camera module</p>
+    <h1 data-i18n="camera_form.add_camera">Add camera</h1>
   </div>
 </section>
 
@@ -14,7 +14,7 @@
   {% endif %}
   <div class="form-grid">
     <label class="span-2">
-      <span>Module</span>
+      <span data-i18n="camera_form.module">Module</span>
       <select name="module_key" required data-plugin-selector>
         {% for option in camera_module_options %}
         <option value="{{ option.key }}"
@@ -40,42 +40,42 @@
     </label>
     <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
     <label>
-      <span>Name</span>
+      <span data-i18n="common.name">Name</span>
       <input name="name" value="{{ values.name }}" required autofocus>
     </label>
     <label class="host-field">
-      <span>Host / IP</span>
+      <span data-i18n="camera.host_ip">Host / IP</span>
       <input name="host" value="{{ values.host }}">
     </label>
     <label class="onvif-field">
-      <span>ONVIF-Port</span>
+      <span data-i18n="camera.onvif_port">ONVIF-Port</span>
       <input name="onvif_port" type="number" min="1" max="65535" value="{{ values.onvif_port }}" required>
     </label>
     <label class="http-field">
-      <span>HTTP-Port</span>
+      <span data-i18n="camera.http_port">HTTP-Port</span>
       <input name="http_port" type="number" min="1" max="65535" value="{{ values.http_port }}" required>
     </label>
     <label class="rtsp-field">
-      <span>RTSP-Port</span>
+      <span data-i18n="camera.rtsp_port">RTSP-Port</span>
       <input name="rtsp_port" type="number" min="1" max="65535" value="{{ values.rtsp_port }}" required>
     </label>
     <label class="credential-field">
-      <span>Username</span>
+      <span data-i18n="camera.username">Username</span>
       <input name="username" value="{{ values.username }}" autocomplete="username">
     </label>
     <label class="credential-field">
-      <span>Password</span>
+      <span data-i18n="camera_form.password">Password</span>
       <input name="password" type="password" autocomplete="current-password">
     </label>
     <label class="span-2 manual-stream-field" hidden>
-      <span>RTSP-/RTSPS-URL</span>
+      <span data-i18n="camera_form.rtsp_url">RTSP-/RTSPS-URL</span>
       <input name="manual_stream_uri" type="password" autocomplete="off" placeholder="rtsp://benutzer:passwort@kamera:554/pfad">
-      <small>The full URL is stored securely and is always redacted in the interface.</small>
+      <small data-i18n="camera_form.full_url_stored_securely_always">The full URL is stored securely and is always redacted in the interface.</small>
     </label>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras">Cancel</a>
-    <button class="primary-button" type="submit">Save</button>
+    <a class="secondary-button" href="/cameras" data-i18n="camera_form.cancel">Cancel</a>
+    <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
   </div>
 </form>
 <script src="{{ url_for('static', path='/camera-form.js') }}?v={{ asset_version }}" defer></script>

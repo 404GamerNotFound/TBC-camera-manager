@@ -1,0 +1,519 @@
+{
+  "nav.recognition": {"en": "Face & plate recognition", "de": "Gesichts- und Kennzeichenerkennung", "es": "Reconocimiento facial y de matrículas"},
+  "camera.yes": {"en": "yes", "de": "ja", "es": "sí"},
+  "camera.channel_unknown": {"en": "unknown", "de": "unbekannt", "es": "desconocido"},
+  "camera.on": {"en": "on", "de": "an", "es": "activado"},
+  "cloud_account.online": {"en": "online", "de": "online", "es": "en línea"},
+  "cloud_account.offline": {"en": "offline", "de": "offline", "es": "sin conexión"},
+  "design.active_state": {"en": "Active", "de": "Aktiv", "es": "Activo"},
+  "design.inactive_state": {"en": "Inactive", "de": "Inaktiv", "es": "Inactivo"},
+  "plugin.source_builtin": {"en": "Built-in", "de": "Eingebaut", "es": "Integrado"},
+  "plugin.source_zip_import": {"en": "ZIP import", "de": "ZIP-Import", "es": "Importación ZIP"},
+  "detection.available": {"en": "available", "de": "verfügbar", "es": "disponible"},
+  "detection.unavailable": {"en": "unavailable", "de": "nicht verfügbar", "es": "no disponible"},
+  "recognition.face": {"en": "Face", "de": "Gesicht", "es": "Rostro"},
+  "recognition.plate": {"en": "Plate", "de": "Kennzeichen", "es": "Matrícula"},
+  "plugin_source.already_registered": {"en": "already registered", "de": "bereits registriert", "es": "ya registrado"},
+  "plugin_source.ready_to_install": {"en": "ready to install", "de": "bereit zur Installation", "es": "listo para instalar"},
+  "plugin_updates.update_available": {"en": "Update available", "de": "Update verfügbar", "es": "Actualización disponible"},
+  "plugin_updates.up_to_date": {"en": "up to date", "de": "aktuell", "es": "actualizado"},
+  "recordings.count_page": {"en": "{total} clips found · page {page} of {total_pages}", "de": "{total} Clips gefunden · Seite {page} von {total_pages}", "es": "{total} clips encontrados · página {page} de {total_pages}"},
+  "recordings.page_indicator": {"en": "Page {page} / {total_pages}", "de": "Seite {page} / {total_pages}", "es": "Página {page} / {total_pages}"},
+  "activity.hint": {
+    "en": "One block is shown for each event recording, grouped by event type and color. Select a block to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted here; use the timeline for an individual camera instead. Enable \"SD card recordings\" to also include recordings stored on cameras that support an on-camera archive.",
+    "de": "Ein Balken wird für jede Ereignisaufnahme angezeigt, gruppiert nach Ereignistyp und Farbe. Wähle einen Balken, um die Timeline dieser Kamera für den Tag zu öffnen. Durchgehende 24/7-Aufzeichnung wird hier bewusst weggelassen; nutze dafür die Timeline für eine einzelne Kamera. Aktiviere \"SD card recordings\", um auch auf der Kamera gespeicherte Aufnahmen einzubeziehen, sofern sie ein Kamera-Archiv unterstützt.",
+    "es": "Se muestra un bloque por cada grabación de evento, agrupado por tipo de evento y color. Selecciona un bloque para abrir la línea de tiempo de esa cámara para el día. La grabación continua 24/7 se omite aquí a propósito; usa la línea de tiempo de una cámara individual para eso. Activa \"grabaciones de la tarjeta SD\" para incluir también las grabaciones almacenadas en cámaras que admiten un archivo propio de la cámara."
+  },
+  "license.intro": {
+    "en": "TBC Camera Manager is built on top of the open-source projects below. Each is used under its own license, listed with a link to its source. This list covers direct dependencies and the pretrained models TBC downloads automatically (e.g. for AI detection and face/plate recognition) - it does not cover every transitive dependency.",
+    "de": "TBC Camera Manager basiert auf den folgenden Open-Source-Projekten. Jedes wird unter seiner eigenen Lizenz verwendet, mit einem Link zur Quelle. Diese Liste umfasst direkte Abhängigkeiten und die vortrainierten Modelle, die TBC automatisch herunterlädt (z. B. für KI-Erkennung und Gesichts-/Kennzeichenerkennung) - sie deckt nicht jede transitive Abhängigkeit ab.",
+    "es": "TBC Camera Manager está construido sobre los proyectos de código abierto que se muestran a continuación. Cada uno se usa bajo su propia licencia, con un enlace a su fuente. Esta lista cubre las dependencias directas y los modelos preentrenados que TBC descarga automáticamente (por ejemplo, para la detección de IA y el reconocimiento facial/de matrículas) - no cubre todas las dependencias transitivas."
+  },
+  "recognition.intro": {
+    "en": "Both features run entirely locally (no cloud service involved) and are off by default. \"Snapshot\" mode runs once a matching recording's clip has finished saving; \"Live\" mode runs during the camera's own local-AI detection loop, before any recording exists, for lower latency at the cost of extra CPU load per frame.",
+    "de": "Beide Funktionen laufen vollständig lokal (keine Cloud-Anbindung) und sind standardmäßig deaktiviert. Der \"Snapshot\"-Modus läuft, sobald der Clip einer passenden Aufnahme fertig gespeichert wurde; der \"Live\"-Modus läuft während der lokalen KI-Erkennung der Kamera, noch bevor eine Aufnahme existiert - für geringere Latenz auf Kosten von mehr CPU-Last pro Bild.",
+    "es": "Ambas funciones se ejecutan completamente en local (sin ningún servicio en la nube) y están desactivadas de forma predeterminada. El modo \"instantánea\" se ejecuta una vez que se ha guardado el clip de una grabación coincidente; el modo \"en vivo\" se ejecuta durante la detección de IA local de la cámara, antes de que exista ninguna grabación, con menor latencia a costa de más carga de CPU por fotograma."
+  },
+  "recognition.models_hint": {
+    "en": "Models (opencv_zoo's YuNet/SFace for faces, fast-alpr's detector/OCR for plates) download automatically on first use into the detection-models volume - no manual download step needed.",
+    "de": "Modelle (YuNet/SFace von opencv_zoo für Gesichter, Detektor/OCR von fast-alpr für Kennzeichen) werden bei der ersten Verwendung automatisch in das Erkennungsmodell-Volume heruntergeladen - kein manueller Download nötig.",
+    "es": "Los modelos (YuNet/SFace de opencv_zoo para rostros, detector/OCR de fast-alpr para matrículas) se descargan automáticamente en el primer uso al volumen de modelos de detección - no se requiere ninguna descarga manual."
+  },
+  "zones.example_neighbor": {"en": "e.g. own car, neighbor", "de": "z. B. eigenes Auto, Nachbar", "es": "p. ej., coche propio, vecino"},
+  "detection.zones": {"en": "Zones", "de": "Zonen", "es": "Zonas"},
+  "detection.gpu_backend_intro": {
+    "en": "GPU (CUDA) requires a separately built image with",
+    "de": "GPU (CUDA) benötigt ein separat gebautes Image mit",
+    "es": "GPU (CUDA) requiere una imagen creada por separado con"
+  },
+  "detection.gpu_backend_see": {
+    "en": "(see",
+    "de": "(siehe",
+    "es": "(consulta"
+  },
+  "detection.coral_backend_intro": {
+    "en": ") and a compatible NVIDIA runtime. Coral (Edge TPU) requires a separately built image with",
+    "de": ") und eine kompatible NVIDIA-Laufzeitumgebung. Coral (Edge TPU) benötigt ein separat gebautes Image mit",
+    "es": ") y un runtime de NVIDIA compatible. Coral (Edge TPU) requiere una imagen creada por separado con"
+  },
+  "detection.coral_backend_outro": {
+    "en": ") and a connected Edge TPU device. Both backends are implemented independently but could not be tested against real GPU or Coral hardware in this development environment; verify them before production use.",
+    "de": ") und ein angeschlossenes Edge-TPU-Gerät. Beide Backends sind unabhängig implementiert, konnten in dieser Entwicklungsumgebung aber nicht gegen echte GPU- oder Coral-Hardware getestet werden; vor dem Produktiveinsatz überprüfen.",
+    "es": ") y un dispositivo Edge TPU conectado. Ambos backends están implementados de forma independiente, pero no se pudieron probar con hardware GPU o Coral real en este entorno de desarrollo; verifícalos antes de usarlos en producción."
+  },
+  "detection.env_vars_outro": {
+    "en": "to change them globally.",
+    "de": "um sie global zu ändern.",
+    "es": "para cambiarlos globalmente."
+  },
+  "detection.cameras_with_ai": {
+    "en": "Cameras with local AI detection",
+    "de": "Kameras mit lokaler KI-Erkennung",
+    "es": "Cámaras con detección de IA local"
+  },
+  "detection.images_per_second_short": {
+    "en": "Images/s",
+    "de": "Bilder/s",
+    "es": "Imágenes/s"
+  },
+  "detection.no_camera_enabled": {
+    "en": "No camera has local AI detection enabled yet",
+    "de": "Noch keine Kamera hat lokale KI-Erkennung aktiviert",
+    "es": "Aún ninguna cámara tiene activada la detección de IA local"
+  },
+  "camera.stream": {
+    "en": "Stream",
+    "de": "Stream",
+    "es": "Transmisión"
+  },
+  "camera.live": {
+    "en": "Live",
+    "de": "Live",
+    "es": "En directo"
+  },
+  "common.name": {
+    "en": "Name",
+    "de": "Name",
+    "es": "Nombre"
+  },
+  "camera.host_ip": {
+    "en": "Host / IP",
+    "de": "Host / IP",
+    "es": "Host / IP"
+  },
+  "camera.onvif_port": {
+    "en": "ONVIF-Port",
+    "de": "ONVIF-Port",
+    "es": "Puerto ONVIF"
+  },
+  "camera.http_port": {
+    "en": "HTTP-Port",
+    "de": "HTTP-Port",
+    "es": "Puerto HTTP"
+  },
+  "camera.rtsp_port": {
+    "en": "RTSP-Port",
+    "de": "RTSP-Port",
+    "es": "Puerto RTSP"
+  },
+  "camera.events": {
+    "en": "Camera events",
+    "de": "Kamera-Ereignisse",
+    "es": "Eventos de la cámara"
+  },
+  "camera.local_ai_title": {
+    "en": "Local AI detection (TBC)",
+    "de": "Lokale KI-Erkennung (TBC)",
+    "es": "Detección de IA local (TBC)"
+  },
+  "camera.local_ai_hint": {
+    "en": "Detections produced by the TBC server's image model, independently of the events reported by the camera.",
+    "de": "Erkennungen, die vom Bildmodell des TBC-Servers erzeugt werden, unabhängig von den durch die Kamera gemeldeten Ereignissen.",
+    "es": "Detecciones generadas por el modelo de imagen del servidor TBC, independientemente de los eventos que reporta la cámara."
+  },
+  "camera.local_ai_short": {
+    "en": "Local AI detection",
+    "de": "Lokale KI-Erkennung",
+    "es": "Detección de IA local"
+  },
+  "camera.enable_local_ai": {
+    "en": "Enable local AI detection for this camera",
+    "de": "Lokale KI-Erkennung für diese Kamera aktivieren",
+    "es": "Activar la detección de IA local para esta cámara"
+  },
+  "camera.images_per_second": {
+    "en": "Images per second",
+    "de": "Bilder pro Sekunde",
+    "es": "Imágenes por segundo"
+  },
+  "camera.min_confidence": {
+    "en": "Minimum confidence",
+    "de": "Mindest-Konfidenz",
+    "es": "Confianza mínima"
+  },
+  "camera.backend": {
+    "en": "Backend",
+    "de": "Backend",
+    "es": "Backend"
+  },
+  "camera.backend_status": {
+    "en": "Backend-Status",
+    "de": "Backend-Status",
+    "es": "Estado del backend"
+  },
+  "camera.zones_masks": {
+    "en": "Zones &amp; masks",
+    "de": "Zonen &amp; Masken",
+    "es": "Zonas y máscaras"
+  },
+  "camera.zones_hint": {
+    "en": "Draw areas on the latest camera image. Exclusion zones ignore detections inside them (for example, a road in the background), inclusion zones count a class only inside the zone (for example, the driveway), and loitering zones trigger only when a class remains inside continuously for at least the configured duration (for example, a person waiting at the door). Without zones, local AI detection evaluates the entire image.",
+    "de": "Zeichne Bereiche auf dem aktuellen Kamerabild ein. Ausschlusszonen ignorieren Erkennungen innerhalb (zum Beispiel eine Straße im Hintergrund), Einschlusszonen zählen eine Klasse nur innerhalb der Zone (zum Beispiel die Einfahrt), und Verweilzonen lösen nur aus, wenn eine Klasse mindestens für die konfigurierte Dauer durchgehend darin verbleibt (zum Beispiel eine Person, die an der Tür wartet). Ohne Zonen wertet die lokale KI-Erkennung das gesamte Bild aus.",
+    "es": "Dibuja áreas sobre la última imagen de la cámara. Las zonas de exclusión ignoran las detecciones dentro de ellas (por ejemplo, una carretera al fondo), las zonas de inclusión cuentan una clase solo dentro de la zona (por ejemplo, el camino de entrada), y las zonas de permanencia se activan solo cuando una clase permanece dentro de forma continua durante al menos la duración configurada (por ejemplo, una persona esperando en la puerta). Sin zonas, la detección de IA local evalúa la imagen completa."
+  },
+  "camera.draw_new_zone": {
+    "en": "Draw new zone",
+    "de": "Neue Zone zeichnen",
+    "es": "Dibujar nueva zona"
+  },
+  "camera.cancel_drawing": {
+    "en": "Cancel drawing",
+    "de": "Zeichnen abbrechen",
+    "es": "Cancelar dibujo"
+  },
+  "camera.zone_points_hint": {
+    "en": "Select points in the image (at least 3). Double-click to close the zone.",
+    "de": "Wähle Punkte im Bild aus (mindestens 3). Doppelklick schließt die Zone.",
+    "es": "Selecciona puntos en la imagen (al menos 3). Haz doble clic para cerrar la zona."
+  },
+  "common.mode": {
+    "en": "Mode",
+    "de": "Modus",
+    "es": "Modo"
+  },
+  "zones.mode_include_hint": {
+    "en": "Include (count only here)",
+    "de": "Einschluss (nur hier zählen)",
+    "es": "Inclusión (contar solo aquí)"
+  },
+  "zones.mode_exclude_hint": {
+    "en": "Exclude (ignore here)",
+    "de": "Ausschluss (hier ignorieren)",
+    "es": "Exclusión (ignorar aquí)"
+  },
+  "zones.mode_loiter_hint": {
+    "en": "Loitering zone (after X seconds)",
+    "de": "Verweilzone (nach X Sekunden)",
+    "es": "Zona de permanencia (después de X segundos)"
+  },
+  "zones.min_dwell_seconds": {
+    "en": "Minimum dwell time in seconds",
+    "de": "Mindestverweildauer in Sekunden",
+    "es": "Tiempo mínimo de permanencia en segundos"
+  },
+  "zones.classes_empty_all": {
+    "en": "Classes (empty = all)",
+    "de": "Klassen (leer = alle)",
+    "es": "Clases (vacío = todas)"
+  },
+  "common.discard": {
+    "en": "Discard",
+    "de": "Verwerfen",
+    "es": "Descartar"
+  },
+  "zones.save_zone": {
+    "en": "Save zone",
+    "de": "Zone speichern",
+    "es": "Guardar zona"
+  },
+  "camera.zoom_in": {
+    "en": "＋ Zoom",
+    "de": "＋ Zoom",
+    "es": "＋ Zoom"
+  },
+  "camera.zoom_out": {
+    "en": "－ Zoom",
+    "de": "－ Zoom",
+    "es": "－ Zoom"
+  },
+  "camera.zoom_focus": {
+    "en": "Zoom &amp; Fokus",
+    "de": "Zoom &amp; Fokus",
+    "es": "Zoom y enfoque"
+  },
+  "zones.example_driveway": {
+    "en": "e.g. driveway",
+    "de": "z. B. Einfahrt",
+    "es": "p. ej., camino de entrada"
+  },
+  "settings.system": {
+    "en": "System",
+    "de": "System",
+    "es": "Sistema"
+  },
+  "settings.api_ai_interface": {
+    "en": "API &amp; AI interface",
+    "de": "API- &amp; KI-Schnittstelle",
+    "es": "Interfaz de API e IA"
+  },
+  "settings.api_ai_hint": {
+    "en": "API activation, API-key management, and examples of the available data and response formats are now collected on a dedicated page:",
+    "de": "API-Aktivierung, API-Key-Verwaltung und Beispiele der verfügbaren Daten- und Antwortformate sind jetzt auf einer eigenen Seite gesammelt:",
+    "es": "La activación de la API, la gestión de claves API y ejemplos de los formatos de datos y respuesta disponibles ahora están reunidos en una página dedicada:"
+  },
+  "settings.open_api_access": {
+    "en": "Open API access",
+    "de": "API-Zugriff öffnen",
+    "es": "Abrir acceso a la API"
+  },
+  "settings.debug_log": {
+    "en": "Debug Log",
+    "de": "Debug-Log",
+    "es": "Registro de depuración"
+  },
+  "api.key_label": {
+    "en": "API key",
+    "de": "API-Key",
+    "es": "Clave API"
+  },
+  "api.active_label": {
+    "en": "Active:",
+    "de": "Aktiv:",
+    "es": "Activo:"
+  },
+  "common.add": {
+    "en": "Add",
+    "de": "Hinzufügen",
+    "es": "Añadir"
+  },
+  "common.admin": {
+    "en": "Admin",
+    "de": "Admin",
+    "es": "Admin"
+  },
+  "common.viewer": {
+    "en": "Viewer",
+    "de": "Viewer",
+    "es": "Visor"
+  },
+  "common.download": {
+    "en": "Download",
+    "de": "Download",
+    "es": "Descargar"
+  },
+  "common.log": {
+    "en": "Log",
+    "de": "Log",
+    "es": "Registro"
+  },
+  "common.clips": {
+    "en": "Clips",
+    "de": "Clips",
+    "es": "Clips"
+  },
+  "common.design": {
+    "en": "Design",
+    "de": "Design",
+    "es": "Diseño"
+  },
+  "common.retention": {
+    "en": "Retention",
+    "de": "Retention",
+    "es": "Retención"
+  },
+  "retention.cleanup": {
+    "en": "Cleanup",
+    "de": "Bereinigung",
+    "es": "Limpieza"
+  },
+  "nav.app_name": {
+    "en": "TB Camera",
+    "de": "TB Camera",
+    "es": "TB Camera"
+  },
+  "nav.dashboard_title": {
+    "en": "TBC Dashboard",
+    "de": "TBC Dashboard",
+    "es": "Panel de TBC"
+  },
+  "nav.language_en": {
+    "en": "English",
+    "de": "Englisch",
+    "es": "Inglés"
+  },
+  "nav.language_de": {
+    "en": "Deutsch",
+    "de": "Deutsch",
+    "es": "Alemán"
+  },
+  "nav.language_es": {
+    "en": "Español",
+    "de": "Spanisch",
+    "es": "Español"
+  },
+  "mqtt.home_assistant": {
+    "en": "Home Assistant",
+    "de": "Home Assistant",
+    "es": "Home Assistant"
+  },
+  "mqtt.broker_host": {
+    "en": "Broker Host",
+    "de": "Broker-Host",
+    "es": "Host del broker"
+  },
+  "common.port": {
+    "en": "Port",
+    "de": "Port",
+    "es": "Puerto"
+  },
+  "mqtt.topic_prefix": {
+    "en": "Topic Prefix",
+    "de": "Topic-Präfix",
+    "es": "Prefijo de topic"
+  },
+  "mqtt.discovery_prefix": {
+    "en": "Discovery Prefix",
+    "de": "Discovery-Präfix",
+    "es": "Prefijo de descubrimiento"
+  },
+  "notification.webhook": {
+    "en": "Webhook",
+    "de": "Webhook",
+    "es": "Webhook"
+  },
+  "notification.telegram": {
+    "en": "Telegram",
+    "de": "Telegram",
+    "es": "Telegram"
+  },
+  "notification.channel_email": {
+    "en": "E-Mail",
+    "de": "E-Mail",
+    "es": "Correo electrónico"
+  },
+  "notification.pushover": {
+    "en": "Pushover",
+    "de": "Pushover",
+    "es": "Pushover"
+  },
+  "notification.ha_notify": {
+    "en": "Home Assistant Notify",
+    "de": "Home Assistant Notify",
+    "es": "Home Assistant Notify"
+  },
+  "notification.event_filter": {
+    "en": "Event-Filter",
+    "de": "Event-Filter",
+    "es": "Filtro de eventos"
+  },
+  "notification.telegram_chat_id": {
+    "en": "Telegram Chat ID",
+    "de": "Telegram-Chat-ID",
+    "es": "ID de chat de Telegram"
+  },
+  "notification.ha_service": {
+    "en": "HA Service",
+    "de": "HA-Service",
+    "es": "Servicio de HA"
+  },
+  "notification.smtp_host": {
+    "en": "SMTP Host",
+    "de": "SMTP-Host",
+    "es": "Host SMTP"
+  },
+  "notification.smtp_port": {
+    "en": "SMTP Port",
+    "de": "SMTP-Port",
+    "es": "Puerto SMTP"
+  },
+  "storage.access_key": {
+    "en": "Access Key",
+    "de": "Access Key",
+    "es": "Clave de acceso"
+  },
+  "storage.s3_endpoint_url": {
+    "en": "S3 Endpoint URL",
+    "de": "S3-Endpoint-URL",
+    "es": "URL del endpoint S3"
+  },
+  "storage.s3_region": {
+    "en": "S3 Region",
+    "de": "S3-Region",
+    "es": "Región S3"
+  },
+  "storage.s3_bucket": {
+    "en": "S3 Bucket",
+    "de": "S3-Bucket",
+    "es": "Bucket S3"
+  },
+  "storage.s3_prefix": {
+    "en": "S3 Prefix",
+    "de": "S3-Präfix",
+    "es": "Prefijo S3"
+  },
+  "storage.s3_cloud": {
+    "en": "S3 Cloud",
+    "de": "S3 Cloud",
+    "es": "S3 Cloud"
+  },
+  "storage.s3_endpoint": {
+    "en": "S3 Endpoint",
+    "de": "S3-Endpoint",
+    "es": "Endpoint S3"
+  },
+  "storage.retention_gb": {
+    "en": "Retention GB",
+    "de": "Retention GB",
+    "es": "Retención GB"
+  },
+  "camera_form.rtsp_url": {
+    "en": "RTSP-/RTSPS-URL",
+    "de": "RTSP-/RTSPS-URL",
+    "es": "URL RTSP/RTSPS"
+  },
+  "sd_card.main": {
+    "en": "Main",
+    "de": "Main",
+    "es": "Principal"
+  },
+  "sd_card.sub": {
+    "en": "Sub",
+    "de": "Sub",
+    "es": "Secundaria"
+  },
+  "health.monitoring": {
+    "en": "Monitoring",
+    "de": "Monitoring",
+    "es": "Monitorización"
+  },
+  "plugin_updates.app_name": {
+    "en": "TBC application",
+    "de": "TBC-App",
+    "es": "Aplicación TBC"
+  },
+  "plugin_updates.latest_version": {
+    "en": "Latest version",
+    "de": "Neueste Version",
+    "es": "Última versión"
+  },
+  "plugin_updates.manual_update_intro": {
+    "en": "Published GitHub releases are checked hourly. Updating to a new version is a manual operation (rebuild or pull the Docker image, or run",
+    "de": "Veröffentlichte GitHub-Releases werden stündlich geprüft. Das Aktualisieren auf eine neue Version ist ein manueller Vorgang (Docker-Image neu bauen oder pullen, oder",
+    "es": "Las versiones publicadas en GitHub se comprueban cada hora. Actualizar a una nueva versión es una operación manual (reconstruye o descarga la imagen de Docker, o ejecuta"
+  },
+  "plugin_updates.manual_update_outro": {
+    "en": "); there is intentionally no one-click installer for the application itself.",
+    "de": "ausführen); es gibt bewusst keinen Ein-Klick-Installer für die Anwendung selbst.",
+    "es": "ejecutar); intencionalmente no hay un instalador de un clic para la propia aplicación."
+  },
+  "plugin_updates.view_release": {
+    "en": "View release",
+    "de": "Release ansehen",
+    "es": "Ver versión"
+  },
+  "plugin_source.optional": {
+    "en": ", optional",
+    "de": ", optional",
+    "es": ", opcional"
+  }
+}

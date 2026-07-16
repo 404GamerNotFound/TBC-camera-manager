@@ -3,34 +3,34 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Access</p>
-    <h1>Users</h1>
+    <p class="eyebrow" data-i18n="users.access">Access</p>
+    <h1 data-i18n="base.users">Users</h1>
   </div>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/users">
     <div class="section-title">
-      <h2>New user</h2>
+      <h2 data-i18n="users.new_user">New user</h2>
     </div>
     <div class="form-grid">
       <label>
-        <span>Username</span>
+        <span data-i18n="camera.username">Username</span>
         <input name="username" required>
       </label>
       <label>
-        <span>Password</span>
+        <span data-i18n="camera_form.password">Password</span>
         <input name="password" type="password" required autocomplete="new-password">
       </label>
       <label>
-        <span>Role</span>
+        <span data-i18n="users.role">Role</span>
         <select name="role">
-          <option value="viewer">Viewer</option>
-          <option value="admin">Admin</option>
+          <option value="viewer" data-i18n="common.viewer">Viewer</option>
+          <option value="admin" data-i18n="common.admin">Admin</option>
         </select>
       </label>
       <fieldset class="span-2 checkbox-field">
-        <legend>Camera access for viewers</legend>
+        <legend data-i18n="users.camera_access_viewers">Camera access for viewers</legend>
         <div class="checkbox-grid">
           {% for camera in cameras %}
           <label class="check-row">
@@ -42,13 +42,13 @@
       </fieldset>
     </div>
     <div class="form-actions">
-      <button class="primary-button" type="submit">Create</button>
+      <button class="primary-button" type="submit" data-i18n="notifications.create">Create</button>
     </div>
   </form>
 
   <section class="storage-list">
     <div class="section-title">
-      <h2>Existing users</h2>
+      <h2 data-i18n="users.existing_users">Existing users</h2>
       <span>{{ users | length }}</span>
     </div>
     {% for user in users %}
@@ -56,22 +56,22 @@
       <form method="post" action="/users/{{ user.id }}">
         <div class="form-grid">
           <label>
-            <span>Username</span>
+            <span data-i18n="camera.username">Username</span>
             <input name="username" value="{{ user.username }}" required>
           </label>
           <label>
-            <span>New password</span>
+            <span data-i18n="camera.new_password">New password</span>
             <input name="password" type="password" autocomplete="new-password">
           </label>
           <label>
-            <span>Role</span>
+            <span data-i18n="users.role">Role</span>
             <select name="role">
               <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %}>Viewer</option>
               <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
             </select>
           </label>
           <fieldset class="span-2 checkbox-field">
-            <legend>Camera access</legend>
+            <legend data-i18n="users.camera_access">Camera access</legend>
             <div class="checkbox-grid">
               {% for camera in cameras %}
               <label class="check-row">
@@ -83,11 +83,11 @@
           </fieldset>
         </div>
         <div class="form-actions">
-          <button class="primary-button" type="submit">Refresh</button>
+          <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
         </div>
       </form>
       <form method="post" action="/users/{{ user.id }}/delete">
-        <button class="danger-button" type="submit">Delete</button>
+        <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
       </form>
     </article>
     {% endfor %}

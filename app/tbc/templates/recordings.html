@@ -3,47 +3,47 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Archive</p>
-    <h1>Clips</h1>
+    <p class="eyebrow" data-i18n="activity.archive">Archive</p>
+    <h1 data-i18n="common.clips">Clips</h1>
   </div>
 </section>
 
 <form class="filter-bar" method="get" action="/recordings">
   <label>
-    <span>Camera</span>
+    <span data-i18n="camera_new_choice.camera">Camera</span>
     <select name="camera_id">
-      <option value="">All</option>
+      <option value="" data-i18n="recordings.all">All</option>
       {% for camera in cameras %}
       <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
       {% endfor %}
     </select>
   </label>
   <label>
-    <span>Event</span>
+    <span data-i18n="recordings.event">Event</span>
     <select name="detection_key">
-      <option value="">All</option>
+      <option value="" data-i18n="recordings.all">All</option>
       {% for key in event_keys %}
       <option value="{{ key }}" {% if filters.detection_key == key %}selected{% endif %}>{{ key }}</option>
       {% endfor %}
     </select>
   </label>
   <label>
-    <span>From</span>
+    <span data-i18n="recordings.from">From</span>
     <input name="date_from" type="date" value="{{ filters.date_from }}">
   </label>
   <label>
-    <span>To</span>
+    <span data-i18n="recordings.to">To</span>
     <input name="date_to" type="date" value="{{ filters.date_to }}">
   </label>
   <label class="span-2">
-    <span>Search</span>
-    <input name="search" type="search" value="{{ filters.search }}" placeholder="Event label, message, camera name…">
+    <span data-i18n="recordings.search">Search</span>
+    <input name="search" type="search" value="{{ filters.search }}" placeholder="Event label, message, camera name…" data-i18n-placeholder="recordings.event_label_message_camera_name">
   </label>
-  <button class="primary-button" type="submit">Filter</button>
+  <button class="primary-button" type="submit" data-i18n="recordings.filter">Filter</button>
 </form>
 
 {% if recordings %}
-<p class="hint-text">{{ total }} Clips gefunden · Seite {{ page }} von {{ total_pages }}</p>
+<p class="hint-text" data-i18n="recordings.count_page" data-i18n-params='{{ {"total": total, "page": page, "total_pages": total_pages} | tojson }}'>{{ total }} clips found · page {{ page }} of {{ total_pages }}</p>
 <section class="clip-grid">
   {% for clip in recordings %}
   <article class="clip-card">
@@ -73,10 +73,10 @@
       <div class="card-footer">
         <span>{{ clip.duration_seconds or 0 }}s · {{ clip.storage_kind }}</span>
         <div class="button-row">
-          <a class="secondary-button" href="/recordings/{{ clip.id }}/download">Download</a>
+          <a class="secondary-button" href="/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
           {% if role == 'admin' %}
           <form method="post" action="/recordings/{{ clip.id }}/delete">
-            <button class="danger-button" type="submit">Delete</button>
+            <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
           </form>
           {% endif %}
         </div>
@@ -92,13 +92,13 @@
 {% if filters.date_to %}{% set _ = qs_parts.append('date_to=' ~ filters.date_to) %}{% endif %}
 {% if filters.search %}{% set _ = qs_parts.append('search=' ~ (filters.search | urlencode)) %}{% endif %}
 <div class="button-row timeline-day-nav">
-  <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}">‹ Previous page</a>
-  <span>Seite {{ page }} / {{ total_pages }}</span>
-  <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}">Next page ›</a>
+  <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}" data-i18n="recordings.previous_page">‹ Previous page</a>
+  <span data-i18n="recordings.page_indicator" data-i18n-params='{{ {"page": page, "total_pages": total_pages} | tojson }}'>Page {{ page }} / {{ total_pages }}</span>
+  <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}" data-i18n="recordings.next_page">Next page ›</a>
 </div>
 {% else %}
 <section class="empty-state">
-  <h2>No clips found</h2>
+  <h2 data-i18n="recordings.no_clips_found">No clips found</h2>
 </section>
 {% endif %}
 <script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>

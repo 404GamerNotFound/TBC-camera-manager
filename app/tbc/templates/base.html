@@ -14,9 +14,9 @@
   <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else 'compact-app' }}"{% endif %}>
     <header class="topbar navbar navbar-expand-xl">
       <div class="container-fluid app-nav-container">
-        <a class="brand navbar-brand" href="/cameras" aria-label="TBC Dashboard">
+        <a class="brand navbar-brand" href="/cameras" aria-label="TBC Dashboard" data-i18n-aria-label="nav.dashboard_title">
           <span class="brand-mark">TBC</span>
-          <span class="brand-name">TB Camera</span>
+          <span class="brand-name" data-i18n="nav.app_name">TB Camera</span>
         </a>
       {% if username %}
       {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') or path.startswith('/cloud-accounts') %}
@@ -43,13 +43,13 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/live') %} active{% endif %}" href="/live">
                     <span class="nav-shortcut" aria-hidden="true">L</span>
-                    <span>Live</span>
+                    <span data-i18n="camera.live">Live</span>
                   </a>
                 </li>
               </ul>
             </li>
             <li class="nav-item dropdown{% if archive_active %} is-active{% endif %}" data-menu-group>
-              <button class="nav-link dropdown-toggle{% if archive_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+              <button class="nav-link dropdown-toggle{% if archive_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger data-i18n="activity.archive">
                 Archive
               </button>
               <ul class="dropdown-menu" data-menu-panel>
@@ -62,64 +62,64 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="/timeline">
                     <span class="nav-shortcut" aria-hidden="true">T</span>
-                    <span>Timeline</span>
+                    <span data-i18n="base.timeline">Timeline</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="/recordings">
                     <span class="nav-shortcut" aria-hidden="true">C</span>
-                    <span>Clips</span>
+                    <span data-i18n="common.clips">Clips</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="/sd-card">
                     <span class="nav-shortcut" aria-hidden="true">S</span>
-                    <span>SD card</span>
+                    <span data-i18n="base.sd_card">SD card</span>
                   </a>
                 </li>
               </ul>
             </li>
         {% if role == 'admin' %}
             <li class="nav-item dropdown{% if storage_active %} is-active{% endif %}" data-menu-group>
-              <button class="nav-link dropdown-toggle{% if storage_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+              <button class="nav-link dropdown-toggle{% if storage_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger data-i18n="base.storage">
                 Storage
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="/storage">
                     <span class="nav-shortcut" aria-hidden="true">Z</span>
-                    <span>Destinations</span>
+                    <span data-i18n="base.destinations">Destinations</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/storage/explorer') %} active{% endif %}" href="/storage/explorer">
                     <span class="nav-shortcut" aria-hidden="true">E</span>
-                    <span>Explorer</span>
+                    <span data-i18n="base.explorer">Explorer</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/retention') %} active{% endif %}" href="/retention">
                     <span class="nav-shortcut" aria-hidden="true">R</span>
-                    <span>Retention</span>
+                    <span data-i18n="common.retention">Retention</span>
                   </a>
                 </li>
               </ul>
             </li>
             <li class="nav-item dropdown{% if ops_active %} is-active{% endif %}" data-menu-group>
-              <button class="nav-link dropdown-toggle{% if ops_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
+              <button class="nav-link dropdown-toggle{% if ops_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger data-i18n="base.operations">
                 Operations
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="/health">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
-                    <span>Performance</span>
+                    <span data-i18n="base.performance">Performance</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="/notifications">
                     <span class="nav-shortcut" aria-hidden="true">N</span>
-                    <span>Notifications</span>
+                    <span data-i18n="base.notifications">Notifications</span>
                   </a>
                 </li>
                 <li>
@@ -142,43 +142,43 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
                     <span class="nav-shortcut" aria-hidden="true">B</span>
-                    <span>Users</span>
+                    <span data-i18n="base.users">Users</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
-                    <span>Camera plugins</span>
+                    <span data-i18n="base.camera_plugins">Camera plugins</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
                     <span class="nav-shortcut" aria-hidden="true">E</span>
-                    <span>AI detection</span>
+                    <span data-i18n="base.ai_detection">AI detection</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="/recognition">
                     <span class="nav-shortcut" aria-hidden="true">R</span>
-                    <span>Face &amp; plate recognition</span>
+                    <span data-i18n="nav.recognition">Face &amp; plate recognition</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
                     <span class="nav-shortcut" aria-hidden="true">G</span>
-                    <span>Design</span>
+                    <span data-i18n="common.design">Design</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
                     <span class="nav-shortcut" aria-hidden="true">O</span>
-                    <span>Cloud providers</span>
+                    <span data-i18n="base.cloud_providers">Cloud providers</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
                     <span class="nav-shortcut" aria-hidden="true">X</span>
-                    <span>External sources</span>
+                    <span data-i18n="base.external_sources">External sources</span>
                   </a>
                 </li>
                 <li>
@@ -190,26 +190,26 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/license') %} active{% endif %}" href="/license">
                     <span class="nav-shortcut" aria-hidden="true">L</span>
-                    <span>License</span>
+                    <span data-i18n="base.license">License</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/settings') %} active{% endif %}" href="/settings">
                     <span class="nav-shortcut" aria-hidden="true">A</span>
-                    <span>Settings</span>
+                    <span data-i18n="base.settings">Settings</span>
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
                     <span class="nav-shortcut" aria-hidden="true">I</span>
-                    <span>API access</span>
+                    <span data-i18n="api.title">API access</span>
                   </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <button class="dropdown-item" title="Debug Log" aria-label="Debug Log" type="button" data-debug-toggle>
+                  <button class="dropdown-item" title="Debug Log" data-i18n-title="settings.debug_log" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log" type="button" data-debug-toggle>
                     <span class="nav-shortcut" aria-hidden="true">D</span>
-                    <span>Debug Log</span>
+                    <span data-i18n="settings.debug_log">Debug Log</span>
                   </button>
                 </li>
               </ul>
@@ -218,17 +218,17 @@
             <li class="nav-item dropdown" data-menu-group data-language-menu>
               <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger aria-label="Change language" data-i18n-aria-label="nav.language">
                 <span aria-hidden="true">🌐</span>
-                <span data-current-language>English</span>
+                <span data-current-language data-i18n="nav.language_en">English</span>
               </button>
               <ul class="dropdown-menu dropdown-menu-end" data-menu-panel>
-                <li><button class="dropdown-item" type="button" data-language="de" lang="de">Deutsch</button></li>
-                <li><button class="dropdown-item" type="button" data-language="en" lang="en">English</button></li>
-                <li><button class="dropdown-item" type="button" data-language="es" lang="es">Español</button></li>
+                <li><button class="dropdown-item" type="button" data-language="de" lang="de" data-i18n="nav.language_de">Deutsch</button></li>
+                <li><button class="dropdown-item" type="button" data-language="en" lang="en" data-i18n="nav.language_en">English</button></li>
+                <li><button class="dropdown-item" type="button" data-language="es" lang="es" data-i18n="nav.language_es">Español</button></li>
               </ul>
             </li>
             <li class="nav-item nav-logout">
               <form method="post" action="/logout">
-                <button class="icon-button" title="Sign out" aria-label="Sign out" data-i18n-title="nav.sign_out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
+                <button class="icon-button" title="Sign out" data-i18n-title="nav.sign_out" aria-label="Sign out" data-i18n-aria-label="nav.sign_out" data-i18n-title="nav.sign_out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
               </form>
             </li>
           </ul>
@@ -244,22 +244,22 @@
       {% block content %}{% endblock %}
     </main>
     {% if username and role == 'admin' %}
-    <aside class="debug-drawer" data-debug-drawer hidden aria-hidden="true" aria-label="Debug Log">
+    <aside class="debug-drawer" data-debug-drawer hidden aria-hidden="true" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log">
       <div class="debug-drawer-panel">
         <div class="debug-drawer-head">
           <div>
-            <strong>Debug Log</strong>
+            <strong data-i18n="settings.debug_log">Debug Log</strong>
             <span data-debug-meta>0 entries</span>
           </div>
           <div class="button-row">
             <button class="secondary-button" type="button" data-i18n="common.refresh" data-debug-refresh>Refresh</button>
-            <button class="icon-button" type="button" aria-label="Close debug log" data-debug-close>x</button>
+            <button class="icon-button" type="button" aria-label="Close debug log" data-i18n-aria-label="base.close_debug_log" data-debug-close>x</button>
           </div>
         </div>
         <ol class="debug-list" data-debug-list></ol>
       </div>
     </aside>
-    <button class="debug-fab" type="button" data-debug-toggle>Log</button>
+    <button class="debug-fab" type="button" data-debug-toggle data-i18n="common.log">Log</button>
     <script src="{{ url_for('static', path='/debug-log.js') }}?v={{ asset_version }}" defer></script>
     {% endif %}
     {% if username %}

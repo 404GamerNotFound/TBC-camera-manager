@@ -1,0 +1,2810 @@
+{
+  "english": {
+    "Analyse": "Analytics",
+    "Anwesenheit": "Presence",
+    "Basis": "Basic",
+    "Besucher / Klingel": "Visitor / doorbell",
+    "Bewegung": "Motion",
+    "Eindringen Fahrzeug": "Vehicle intrusion",
+    "Eindringen Hund/Katze": "Dog/cat intrusion",
+    "Eindringen Person": "Person intrusion",
+    "Entfernter Gegenstand": "Removed item",
+    "Fahrzeug": "Vehicle",
+    "Geräuscherkennung": "Sound detection",
+    "Gesicht": "Face",
+    "Haustier": "Pet",
+    "I/O Eingang": "I/O input",
+    "KI-Erkennung": "AI detection",
+    "KI-Objekte": "AI objects",
+    "Klingeln / Besucher": "Doorbell / visitor",
+    "Linienübertritt": "Line crossing",
+    "Linienübertritt Fahrzeug": "Vehicle line crossing",
+    "Linienübertritt Hund/Katze": "Dog/cat line crossing",
+    "Linienübertritt Person": "Person line crossing",
+    "Manipulation / Videoverlust": "Tampering / video loss",
+    "Nicht-motorisiertes Fahrzeug": "Non-motor vehicle",
+    "Objekterkennung": "Object detection",
+    "ONVIF-Verbindung erfolgreich": "ONVIF connection successful",
+    "Paket": "Package",
+    "Ruhezustand": "Sleep mode",
+    "Tier": "Animal",
+    "Türklingel": "Doorbell",
+    "Vergessener Gegenstand": "Forgotten item",
+    "Verweilen": "Loitering",
+    "Verweilen Fahrzeug": "Vehicle loitering",
+    "Verweilen Hund/Katze": "Dog/cat loitering",
+    "Verweilen Person": "Person loitering",
+    "Weinen": "Crying",
+    "Reolink-Kameras und NVR via ONVIF und reolink-aio": "Reolink cameras and NVRs via ONVIF and reolink-aio",
+    "Reolink-Status erfolgreich abgefragt": "Reolink status retrieved successfully",
+    "Aqara-Kameras sowie kompatible Video-Türklingeln": "Aqara cameras and compatible video doorbells",
+    "TP-Link-Tapo-Kameras via ONVIF und RTSP": "TP-Link Tapo cameras via ONVIF and RTSP",
+    "Standard ONVIF Verbindung": "Standard ONVIF connection",
+    "Herstellerneutraler ONVIF-Fallback für weitere Kameramodelle": "Vendor-neutral ONVIF fallback for additional camera models",
+    "Manueller Stream": "Manual stream",
+    "RTSP/RTSPS-Link in UniFi Protect erzeugen und hier vollständig eintragen": "Create an RTSP/RTSPS link in UniFi Protect and enter it here in full",
+    "RTSP in eWeLink aktivieren, Link erzeugen und hier vollständig eintragen": "Enable RTSP in eWeLink, create a link, and enter it here in full",
+    "+ Kamera": "+ Camera",
+    "· Aufnahme aktiv": "· Recording active",
+    "Abbrechen": "Cancel",
+    "Abmelden": "Sign out",
+    "Abspielen": "Play",
+    "Aktiv": "Active",
+    "Aktuell:": "Current:",
+    "Aktualisieren": "Refresh",
+    "Alle": "All",
+    "Admin-Rechte werden benötigt": "Administrator permissions are required",
+    "Anlegen": "Create",
+    "Anmelden": "Sign in",
+    "Anmeldung fehlgeschlagen": "Sign-in failed",
+    "Anzeigen": "Show",
+    "Archiv": "Archive",
+    "Aufzeichnungen der SD-Karte": "SD card recordings",
+    "Aufzeichnungen der SD-Karte (nicht verfügbar)": "SD card recordings (not available)",
+    "Aufnahme aktiv": "Recording active",
+    "Aufnahme bei Bewegung": "Motion recording",
+    "Aufnahmen": "Recordings",
+    "Aufnahmen auf SD-Karte": "Recordings on SD card",
+    "Aufnahmeziele": "Recording destinations",
+    "Aufnahmeeinstellungen wurden gespeichert": "Recording settings were saved",
+    "aus": "off",
+    "Benachrichtigungen": "Notifications",
+    "Benachrichtigung wurde gelöscht": "Notification was deleted",
+    "Benutzer": "Users",
+    "Benutzername": "Username",
+    "Benutzer wurde aktualisiert": "User was updated",
+    "Benutzer wurde angelegt": "User was created",
+    "Benutzer wurde gelöscht": "User was deleted",
+    "Belegung pro Kamera/Ereignis": "Usage by camera/event",
+    "Betrieb": "Operations",
+    "Bis": "To",
+    "Cleanup ausführen": "Run cleanup",
+    "Cleanup-Vorschau": "Cleanup preview",
+    "Clips öffnen": "Open clips",
+    "Dafür werden Admin-Rechte benötigt": "Administrator permissions are required",
+    "Das Debug Log sammelt laufende Meldungen der App und ffmpeg-Live-Prozesse. Es ist auf jeder Admin-Seite unten rechts als Pull-up verfuegbar.": "The debug log collects ongoing messages from the app and ffmpeg live processes. It is available as a pull-up in the bottom-right corner of every admin page.",
+    "Das Kameramodul unterstützt keine Live-Ansicht": "The camera module does not support live view",
+    "Datei": "File",
+    "Datum": "Date",
+    "Dauer": "Duration",
+    "Daueraufnahme": "Continuous",
+    "Daueraufzeichnung": "Continuous recording",
+    "Daueraufzeichnung wurde gespeichert": "Continuous recording settings were saved",
+    "Debug Log oeffnen": "Open debug log",
+    "Debug Log schliessen": "Close debug log",
+    "Debug Log wurde geleert": "Debug log was cleared",
+    "Deutsch": "German",
+    "Die vollständige URL wird geschützt gespeichert und in der Oberfläche immer zensiert.": "The full URL is stored securely and is always redacted in the interface.",
+    "Die vollständige URL wird geschützt gespeichert und in der Oberfläche zensiert.": "The full URL is stored securely and redacted in the interface.",
+    "Dieser Kanal ist deaktiviert": "This channel is disabled",
+    "Das Startdatum darf nicht nach dem Enddatum liegen": "The start date must not be after the end date",
+    "Der aktuell angemeldete Benutzer kann nicht gelöscht werden": "The currently signed-in user cannot be deleted",
+    "Einträge": "entries",
+    "Eintraege": "entries",
+    "Einstellungen": "Settings",
+    "Ende": "End",
+    "Entfernen": "Remove",
+    "Erkennungen": "Detections",
+    "Erstes verfügbares Ziel": "First available destination",
+    "Ereignis": "Event",
+    "Ereignisse": "Events",
+    "Ereignisse an diesem Tag": "Events on this day",
+    "Ereignistypen aufnehmen": "Record event types",
+    "Erweiterungen": "Extensions",
+    "Explorer": "Explorer",
+    "Filtern": "Filter",
+    "Firmware": "Firmware",
+    "Frei": "Free",
+    "Für diesen Tag liegen keine Aufnahmen vor.": "No recordings are available for this day.",
+    "Funktion": "Function",
+    "Ganzer Tag": "Full day",
+    "Funktionen": "Features",
+    "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich": "An RTSP/RTSPS URL is required for this profile",
+    "Geprüft": "Checked",
+    "Groesse": "Size",
+    "Größe": "Size",
+    "Grund": "Reason",
+    "Hauptnavigation": "Main navigation",
+    "Hersteller": "Manufacturer",
+    "Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint.": "Note: The host starts with 192.169. On home networks, 192.168 is often intended.",
+    "Home-Assistant-Discovery publizieren": "Publish Home Assistant discovery",
+    "Importieren": "Import",
+    "Kanal wurde aktualisiert": "Channel was updated",
+    "inaktiv": "inactive",
+    "Installierte Plugins": "Installed plugins",
+    "ja": "yes",
+    "Kamera": "Camera",
+    "Kamera einbinden": "Add camera",
+    "Kamera wurde angelegt und geprüft": "Camera was created and checked",
+    "Kamera wurde entfernt": "Camera was removed",
+    "Kamera wurde nicht gefunden": "Camera was not found",
+    "Kamera-Archiv": "Camera archive",
+    "Kameradaten": "Camera details",
+    "Kameraliste": "Camera list",
+    "Kamera-Manager": "Camera Manager",
+    "Kameramodul": "Camera module",
+    "Kamera-Plugins": "Camera plugins",
+    "Kamera-Plugin wurde entfernt": "Camera plugin was removed",
+    "Kamera-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.": "Camera plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.",
+    "Kameras": "Cameras",
+    "Kamerazugriff": "Camera access",
+    "Kamerazugriff für Viewer": "Camera access for viewers",
+    "Kanal": "Channel",
+    "Kanäle": "Channels",
+    "Kategorie": "Category",
+    "Keine Berechtigung für diese Kamera": "No permission for this camera",
+    "Keine Clips gefunden": "No clips found",
+    "Keine Kamera verfügbar": "No camera available",
+    "Keine Kamera mit unterstütztem Kamera-Archiv verfügbar": "No camera with a supported camera archive is available",
+    "Keine SD-Card-Aufnahmen gefunden": "No SD card recordings found",
+    "Keine Streams": "No streams",
+    "Kein Stream bekannt": "No stream is known",
+    "Kein Stream für diesen Kanal bekannt": "No stream is known for this channel",
+    "Kein Stream für Live-Ansicht bekannt": "No stream is known for live view",
+    "Komponente": "Component",
+    "Leeren": "Clear",
+    "Leistung": "Performance",
+    "Letzte Ereignisse": "Recent events",
+    "Live-API konnte nicht geladen werden": "The live API could not be loaded",
+    "Live-Ansicht konnte nicht gestartet werden": "Live view could not be started",
+    "Lokale Aufzeichnungen (von TBC)": "Local recordings (from TBC)",
+    "Lokaler Pfad": "Local path",
+    "Lokaler Pfad im Container": "Local path in the container",
+    "Lokaler oder gemounteter Pfad": "Local or mounted path",
+    "Lokaler/gemounteter Pfad": "Local/mounted path",
+    "Löschen": "Delete",
+    "Manuelle Stream-URL entfernen": "Remove manual stream URL",
+    "Max. Alter Tage": "Maximum age in days",
+    "Max. Größe GB": "Maximum size in GB",
+    "Meldung": "Message",
+    "Mindestdauer in Sekunden": "Minimum duration in seconds",
+    "Modell": "Model",
+    "Modell offen": "Model unknown",
+    "Modul": "Module",
+    "Motion-Aufnahmen speichern": "Save motion recordings",
+    "MQTT aktivieren": "Enable MQTT",
+    "MQTT-Einstellungen wurden gespeichert": "MQTT settings were saved",
+    "Nachlauf in Sekunden": "Post-roll in seconds",
+    "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich": "Name, host, and the credentials required by this module must be provided",
+    "Navigation umschalten": "Toggle navigation",
+    "Neue Regel": "New rule",
+    "Neue RTSP-/RTSPS-URL": "New RTSP/RTSPS URL",
+    "nein": "no",
+    "Neuer Benutzer": "New user",
+    "Neuer Kanal": "New channel",
+    "Neues Passwort": "New password",
+    "Neues Speicherziel": "New storage destination",
+    "Neu starten": "Restart",
+    "Nächster Tag ›": "Next day ›",
+    "NVR-Kanäle": "NVR channels",
+    "Noch kein Speicherziel angelegt": "No storage destination has been created yet",
+    "Noch keine Ereignisse": "No events yet",
+    "Noch keine Kamera": "No camera yet",
+    "Noch kein Stream für ein Vorschaubild verfügbar": "No stream is available for a preview image yet",
+    "Noch keine Debug-Meldungen": "No debug messages yet",
+    "Noch keine Prüfung": "Not checked yet",
+    "Notify": "Notifications",
+    "offen": "unknown",
+    "Öffnen": "Open",
+    "Passwort": "Password",
+    "Pause zwischen Clips": "Pause between clips",
+    "Plugin importieren": "Import plugin",
+    "Plugin-Datei": "Plugin file",
+    "Plugin kann nicht exportiert werden": "Plugin cannot be exported",
+    "Prüfung läuft": "Check running",
+    "Quelle": "Source",
+    "Regeln": "Rules",
+    "Retention Tage": "Retention days",
+    "Rund um die Uhr aufzeichnen": "Record around the clock",
+    "Retention-Regel wurde aktualisiert": "Retention rule was updated",
+    "Retention-Regel wurde angelegt": "Retention rule was created",
+    "Retention-Regel wurde gelöscht": "Retention rule was deleted",
+    "Rolle": "Role",
+    "Schlüssel": "Key",
+    "SD-Karte": "SD card",
+    "SD-Karte öffnen": "Open SD card",
+    "SD-Karteninhalt konnte nicht geladen werden": "SD card content could not be loaded",
+    "SD-Karteninhalt wird geladen...": "Loading SD card content...",
+    "S3-kompatibler Cloud-Speicher": "S3-compatible cloud storage",
+    "Secret Key": "Secret key",
+    "Segmentlänge in Sekunden": "Segment length in seconds",
+    "Snapshot anhängen": "Attach snapshot",
+    "Snapshot/Thumbnail zusätzlich speichern": "Also save a snapshot/thumbnail",
+    "Speicher": "Storage",
+    "Speicher verwalten": "Manage storage",
+    "Speicheranalyse": "Storage analysis",
+    "Speichern": "Save",
+    "Speichern und prüfen": "Save and check",
+    "Speicherziel": "Storage destination",
+    "Speicherziel wurde aktualisiert": "Storage destination was updated",
+    "Speicherziel wurde angelegt": "Storage destination was created",
+    "Speicherziel wurde entfernt": "Storage destination was removed",
+    "Sprache wechseln": "Change language",
+    "Start": "Start",
+    "Status": "Status",
+    "Stream gestoppt": "Stream stopped",
+    "Stream konnte nicht starten": "Stream could not start",
+    "Stream startet": "Stream is starting",
+    "Streams werden gestartet": "Streams are starting",
+    "Suchen": "Search",
+    "Tag": "Day",
+    "Timeline": "Timeline",
+    "Timeline öffnen": "Open timeline",
+    "Typ": "Type",
+    "Unterstützt": "Supported",
+    "Verbindung": "Connection",
+    "Verbindungsstatus": "Connection status",
+    "Vergrößern": "Zoom in",
+    "Verkleinern": "Zoom out",
+    "Von": "From",
+    "Vorhandene Benutzer": "Existing users",
+    "Vorhandene Ziele": "Existing destinations",
+    "Vorlauf in Sekunden": "Pre-roll in seconds",
+    "Vorschau": "Preview",
+    "Vorher": "Previous",
+    "‹ Vorheriger Tag": "‹ Previous day",
+    "Warte auf Stream": "Waiting for stream",
+    "Zeit": "Time",
+    "Ziele": "Destinations",
+    "Zugriff": "Access",
+    "ZIP exportieren": "Export ZIP",
+    "2FA-fähig": "2FA supported",
+    "Akkustand": "Battery level",
+    "aktiv": "active",
+    "aktive Erkennungen": "active detections",
+    "Aktivieren": "Activate",
+    "Aktuelle Systemleistung": "Current system performance",
+    "Alle auswählen": "Select all",
+    "Alle externen Quellen sind aktuell.": "All external sources are up to date.",
+    "Als Kamera hinzufügen": "Add as camera",
+    "Anbieter": "Provider",
+    "Änderungen speichern": "Save changes",
+    "Auf Updates prüfen": "Check for updates",
+    "Aufnahme": "Recording",
+    "Ausschalten": "Turn off",
+    "Automatisch durchschalten": "Rotate automatically",
+    "Bei einem Hersteller-Cloud-Konto (z. B. UniFi Protect, Eufy Security, eWeLink) anmelden und Geräte automatisch suchen.": "Sign in to a vendor cloud account (e.g. UniFi Protect, Eufy Security, eWeLink) and discover devices automatically.",
+    "Bereits als Kamera importiert.": "Already imported as a camera.",
+    "Bestätigen": "Confirm",
+    "Bestätigung erforderlich": "Verification required",
+    "Bestätigungscode": "Verification code",
+    "Bestätigungscode eingeben": "Enter verification code",
+    "Bezeichnung": "Label",
+    "Bitrate laut Kamera": "Bitrate reported by camera",
+    "Branch/Tag": "Branch/tag",
+    "Cloud-Anbieter": "Cloud providers",
+    "Cloud-Anbieter verwalten": "Manage cloud providers",
+    "Cloud-Konten": "Cloud accounts",
+    "Cloud-Konto": "Cloud account",
+    "Cloud-Konto bearbeiten": "Edit cloud account",
+    "Cloud-Konto verbinden": "Connect cloud account",
+    "Cloud-Plugin": "Cloud plugin",
+    "Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.": "Cloud plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.",
+    "Codec-Datenrate": "Codec data rate",
+    "CPU-Last": "CPU load",
+    "Dauer (Sek.)": "Duration (sec.)",
+    "Deaktivieren": "Deactivate",
+    "Design importieren": "Import design",
+    "Design-Datei": "Design file",
+    "Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.": "Design packages contain only stylesheets, metadata, and images, with no executable code. Maximum file size: 5 MB.",
+    "Designs durchsuchen": "Search designs",
+    "Designs durchsuchen…": "Search designs…",
+    "Designs verwalten": "Manage designs",
+    "Diese Kamera meldet über ONVIF keine der hier unterstützten Steuerfunktionen (PTZ, Flutlicht, PIR, Sirene, Akku, Neustart).": "This camera does not report any of the controls supported here via ONVIF (PTZ, floodlight, PIR, siren, battery, restart).",
+    "Durchsatz laut Kamera": "Throughput reported by camera",
+    "E-Mail an": "Email to",
+    "E-Mail von": "Email from",
+    "Einschalten": "Turn on",
+    "Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:": "A repository (or the specified subdirectory within it) must have the same structure as a manual ZIP import:",
+    "Erforderliche Plugin-Struktur": "Required plugin structure",
+    "Es ist noch kein Cloud-Anbieter installiert. Installiere zuerst ein": "No cloud provider is installed yet. Install a",
+    ", bevor du ein Konto hinzufügen kannst.": "before you can add an account.",
+    "Es wurden keine Geräte in diesem Cloud-Konto gefunden.": "No devices were found in this cloud account.",
+    "Beschreibung": "Description",
+    "Direkt installieren": "Install directly",
+    "Externe Quellen": "External sources",
+    "Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe": "External sources install plugins directly from a public GitHub repository instead of requiring a manual ZIP upload. Synchronizing downloads and installs the latest version again; only public repositories are supported. Each registered source is also checked hourly for a newer update; see",
+    "Externe Quellen verwalten": "Manage external sources",
+    "Firmware-Updates werden direkt von reolink.com heruntergeladen und auf die Kamera geschrieben. Die Kamera ist währenddessen nicht erreichbar und startet danach neu. Den Vorgang nicht unterbrechen.": "Firmware updates are downloaded directly from reolink.com and written to the camera. The camera is unavailable during the update and restarts afterward. Do not interrupt the process.",
+    "Flutlicht": "Floodlight",
+    "Fokus (–)": "Focus (–)",
+    "Fokus anwenden": "Apply focus",
+    "Gerät": "Device",
+    "Geräte suchen": "Discover devices",
+    "Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.": "The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.",
+    "GitHub-Repository-URL": "GitHub repository URL",
+    "Größe ändern": "Resize",
+    "Größe und Reihenfolge jeder Kachel werden direkt am Bild eingestellt: Werkzeuge oben rechts erscheinen beim Überfahren mit der Maus (⠿ verschiebt, ⤡ ändert die Größe).": "The size and order of each tile are adjusted directly on the image: tools appear in the top-right corner on hover (⠿ moves, ⤡ resizes).",
+    "Host/IP, ONVIF und Zugangsdaten direkt eintragen - für eine einzelne Kamera oder ein NVR im lokalen Netzwerk.": "Enter the host/IP, ONVIF settings, and credentials directly for a single camera or an NVR on the local network.",
+    "Installiert": "Installed",
+    "Installiert als": "Installed as",
+    "Installierte Designs": "Installed designs",
+    "Installieren / aktualisieren": "Install / update",
+    "Jede registrierte externe Quelle wird stündlich darauf geprüft, ob sich der Branch/Tag seit der letzten Installation weiterbewegt hat (Vergleich der Commit-SHA, ohne das ganze Repository herunterzuladen). Hier erscheinen nur Quellen mit einem tatsächlich verfügbaren Update.": "Every registered external source is checked hourly to see whether its branch/tag has advanced since the last installation (by comparing the commit SHA without downloading the entire repository). Only sources with an update that is actually available appear here.",
+    "Jetzt aktualisieren": "Update now",
+    "Kachel verschieben": "Move tile",
+    "Kachelgröße ändern, ziehen": "Drag to resize tile",
+    "Kamera hinzufügen": "Add camera",
+    "Kamera neu starten": "Restart camera",
+    "Kamera-Plugin": "Camera plugin",
+    "Kamera-Plugins verwalten": "Manage camera plugins",
+    "Kamerabereiche": "Camera sections",
+    "Kameraübersicht": "Camera overview",
+    "Kein 2FA": "No 2FA",
+    "Kein RTSP-Stream verfügbar. Bitte RTSP für dieses Gerät zuerst in der Herstelleroberfläche aktivieren.": "No RTSP stream is available. Enable RTSP for this device in the vendor interface first.",
+    "Keine Designs gefunden.": "No designs found.",
+    "Keine Plugins gefunden.": "No plugins found.",
+    "Konfigurierte Konten": "Configured accounts",
+    "Konten": "Accounts",
+    "Konto bearbeiten": "Edit account",
+    "Konto hinzufügen": "Add account",
+    "Konto-Felder": "Account fields",
+    "Kontodaten oder Bestätigungscode bearbeiten": "Edit account details or verification code",
+    "Layout": "Layout",
+    "leer lassen = unverändert": "leave blank = unchanged",
+    "Letzte Prüfung": "Last check",
+    "Live-Vorschau": "Live preview",
+    "Livestreams": "Live streams",
+    "Lokale Kamera": "Local camera",
+    "Lokale Kamera einrichten": "Set up local camera",
+    "Netzwerkdurchsatz": "Network throughput",
+    "Neustart": "Restart",
+    "Nicht verfügbar": "Not available",
+    "Noch keine Cloud-Konten konfiguriert.": "No cloud accounts have been configured yet.",
+    "Noch keine externen Quellen registriert.": "No external sources have been registered yet.",
+    "PIR-Sensor": "PIR sensor",
+    "Plugin-Art": "Plugin type",
+    "Plugins durchsuchen": "Search plugins",
+    "Plugins durchsuchen…": "Search plugins…",
+    "PTZ-Positionen": "PTZ presets",
+    "Quelle entfernen": "Remove source",
+    "Quelle hinzufügen": "Add source",
+    "Raster-Spalten": "Grid columns",
+    "Registrierte Quellen": "Registered sources",
+    "Rotation standardmäßig aktiv": "Rotation enabled by default",
+    "Rotationsintervall (Sekunden)": "Rotation interval (seconds)",
+    "Schließen": "Close",
+    "Schnellantworten": "Quick replies",
+    "Schwenk-/Neigekopf (PTZ)": "Pan/tilt head (PTZ)",
+    "Sirene": "Siren",
+    "Sirene abspielen": "Play siren",
+    "SMTP Benutzer": "SMTP username",
+    "SMTP Passwort": "SMTP password",
+    "Spalten": "Columns",
+    "Steuerung": "Controls",
+    "Standard-Repositories": "Standard repositories",
+    "Standard-Repository wurde nicht gefunden": "Standard repository was not found",
+    "Stream wird gestartet…": "Stream is starting…",
+    "Synchronisieren": "Synchronize",
+    "Tests ausführen": "Run tests",
+    "Unterordner (optional)": "Subdirectory (optional)",
+    "Unverändert lassen": "Leave unchanged",
+    "Update verfügbar": "Update available",
+    "Updates": "Updates",
+    "Verbindung testen": "Test connection",
+    "Verfügbar": "Available",
+    "Verfügbare Updates": "Available updates",
+    "Verschieben": "Move",
+    "Vollbild": "Full screen",
+    "Vollbild verlassen (Esc)": "Exit full screen (Esc)",
+    "Vorlage: Cloud-Anbieter": "Template: cloud provider",
+    "Vorlage: Design": "Template: design",
+    "Vorlage: Kamera-Plugin": "Template: camera plugin",
+    "Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.": "Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.",
+    "Wandlayout": "Wall layout",
+    "Zoom (–)": "Zoom (–)",
+    "Zoom anwenden": "Apply zoom",
+    "Zoom Fokus": "Zoom focus",
+    "Zuletzt geprüft": "Last checked",
+    "Zurück zu Cloud-Konten": "Back to cloud accounts",
+    "Zurück zu Kameras": "Back to cameras",
+    "bereits registriert": "already registered",
+    "bereit zur Installation": "ready to install",
+    "■ Stopp": "■ Stop",
+    "▲ Hoch": "▲ Up",
+    "► Rechts": "► Right",
+    "▼ Runter": "▼ Down",
+    "◄ Links": "◄ Left",
+    "Dahua-Kameras und NVR (inkl. Amcrest/Annke-OEMs) über ONVIF und RTSP": "Dahua cameras and NVRs (including Amcrest/Annke OEMs) via ONVIF and RTSP",
+    "Axis-Netzwerkkameras über ONVIF Profile S/T": "Axis network cameras via ONVIF Profiles S/T",
+    "Hikvision-Kameras und NVR über ONVIF und RTSP": "Hikvision cameras and NVRs via ONVIF and RTSP",
+    "Foscam-Kameras über ONVIF und RTSP": "Foscam cameras via ONVIF and RTSP",
+    "Herstellerneutraler RTSP-/RTSPS-Stream ohne ONVIF": "Vendor-neutral RTSP/RTSPS stream without ONVIF",
+    "SONOFF-Kameras über den in eWeLink erzeugten RTSP-Link": "SONOFF cameras via the RTSP link generated in eWeLink",
+    "UniFi-Protect-Kameras über einen erzeugten RTSP-/RTSPS-Link": "UniFi Protect cameras via a generated RTSP/RTSPS link",
+    "Dunkles Design mit blauem Akzent": "Dark design with a blue accent",
+    "Das mitgelieferte helle Standard-Design": "The bundled light standard design",
+    "Die manuelle RTSP-/RTSPS-Adresse wird ohne ONVIF verwendet": "The manual RTSP/RTSPS address is used without ONVIF",
+    "Eufy-Security-Cloud-Konto und Kamerasuche via pyeufysecurity": "Eufy Security cloud account and camera discovery via pyeufysecurity",
+    "SONOFF-Geräte über das offizielle eWeLink/CoolKit-Open-Platform-Cloud-Konto": "SONOFF devices via the official eWeLink/CoolKit Open Platform cloud account",
+    "Ubiquiti UniFi Protect Controller (lokal oder über die ui.com-Cloud-Konsole) via uiprotect": "Ubiquiti UniFi Protect controller (local or via the ui.com cloud console) using uiprotect",
+    "Ländercode": "Country code",
+    "Eufy-Bestätigungscode (einmalig)": "Eufy verification code (one-time)",
+    "Code aus der E-Mail": "Code from the email",
+    "Zweistelliger ISO-Ländercode des Eufy-Kontos, z. B. DE, AT oder CH.": "Two-letter ISO country code of the Eufy account, e.g. DE, AT, or CH.",
+    "Leer lassen, um einen Code anzufordern. Nach erfolgreicher Bestätigung wird dieses Feld automatisch geleert.": "Leave blank to request a code. This field is cleared automatically after successful verification.",
+    "Lokaler RTSP-Benutzername (optional)": "Local RTSP username (optional)",
+    "Lokales RTSP-Passwort (optional)": "Local RTSP password (optional)",
+    "Nur nötig, um Kameras mit in der Eufy-App aktiviertem NAS/RTSP als dauerhaften Stream zu übernehmen.": "Only required to import cameras with NAS/RTSP enabled in the Eufy app as a persistent stream.",
+    "Kostenlose Registrierung unter dev.ewelink.cc liefert App-ID und App-Secret; das eigene eWeLink-App-Konto reicht dafür nicht aus.": "Free registration at dev.ewelink.cc provides an App ID and app secret; the regular eWeLink app account is not sufficient.",
+    "SSL-Zertifikat prüfen": "Verify SSL certificate",
+    "192.168.1.1 oder cloud.example.com": "192.168.1.1 or cloud.example.com",
+    "Für dieses Plugin sind keine Tests verfügbar": "No tests are available for this plugin",
+    "Cloud-Konto wurde hinzugefügt": "Cloud account was added",
+    "Cloud-Konto wurde nicht gefunden": "Cloud account was not found",
+    "Cloud-Konto wurde aktualisiert": "Cloud account was updated",
+    "Cloud-Konto wurde entfernt": "Cloud account was removed",
+    "Für dieses Konto ist aktuell keine Bestätigung ausstehend": "No verification is currently pending for this account",
+    "Bitte einen Code eingeben": "Enter a code",
+    "Kamera wurde aus dem Cloud-Konto übernommen": "Camera was imported from the cloud account",
+    "Cloud-Plugin wurde entfernt": "Cloud plugin was removed",
+    "Design wurde aktiviert": "Design was activated",
+    "Das aktive Design kann nicht entfernt werden": "The active design cannot be removed",
+    "Design wurde entfernt": "Design was removed",
+    "Unbekannte Plugin-Art": "Unknown plugin type",
+    "Ungültige Plugin-Art": "Invalid plugin type",
+    "Externe Quelle wurde hinzugefügt": "External source was added",
+    "Externe Quelle wurde nicht gefunden": "External source was not found",
+    "Externe Quelle wurde entfernt": "External source was removed",
+    "Benachrichtigung wurde angelegt": "Notification was created",
+    "Benachrichtigung wurde aktualisiert": "Notification was updated",
+    "Clip wurde gelöscht": "Clip was deleted",
+    "Befehl wurde gesendet": "Command was sent",
+    "Befehl fehlgeschlagen": "Command failed",
+    "Befehl fehlgeschlagen: Netzwerkfehler": "Command failed: network error",
+    "PTZ-Befehl fehlgeschlagen": "PTZ command failed",
+    "PTZ-Befehl fehlgeschlagen: Netzwerkfehler": "PTZ command failed: network error",
+    "Bitte zuerst auf Updates prüfen": "Check for updates first",
+    "Update läuft bereits": "An update is already running",
+    "Firmware wurde aktualisiert": "Firmware was updated",
+    "Firmware wurde aktualisiert. Die Kamera startet neu und ist kurz nicht erreichbar.": "Firmware was updated. The camera is restarting and will be unavailable briefly.",
+    "Firmware ist aktuell.": "Firmware is up to date.",
+    "Prüfe auf Updates…": "Checking for updates…",
+    "Prüfung fehlgeschlagen": "Check failed",
+    "Update konnte nicht gestartet werden": "The update could not be started",
+    "Update läuft…": "Update in progress…",
+    "Zeitüberschreitung bei der Firmware-Prüfung": "Firmware check timed out",
+    "Health-Check konnte nicht geladen werden": "Health check could not be loaded",
+    "Stream nicht verfügbar": "Stream not available",
+    "Keine RAM-Daten verfügbar": "No RAM data available",
+    "Noch nicht geprüft": "Not checked yet",
+    "nicht gemeldet": "not reported",
+    "noch nicht getestet": "not tested yet",
+    "noch nicht synchronisiert": "not synchronized yet",
+    "unbekannt": "unknown",
+    "unbekannter Fehler": "unknown error",
+    "Admin → Updates": "Admin → Updates",
+    "- kein Code, keine Tests": "- no code, no tests",
+    "muss": "must",
+    "und": "and",
+    "und (außer bei Designs)": "and (except for designs)",
+    "enthalten;": "contain;",
+    "stellt": "provides",
+    "bereit, das eine": "which returns a",
+    "- bzw.": "or",
+    "-Instanz zurückgibt. Ein optionaler": "instance. An optional",
+    "-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in": "folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in",
+    "im TBC-Repository sowie": "in the TBC repository, as well as",
+    "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. Der Vorgang kann mehrere Minuten dauern und sollte nicht unterbrochen werden.": "Update the firmware now? The camera will be unavailable during the update and will restart afterward. The process may take several minutes and should not be interrupted.",
+    "Anmeldung fehlgeschlagen: Benutzername oder Passwort falsch. Falls für dieses Konto die Zwei-Faktor-Authentifizierung aktiviert ist: Dieses Plugin unterstützt keine 2FA-Codes (die zugrunde liegende uiprotect-Bibliothek bietet dafür keine Schnittstelle) - bitte ein separates lokales Konto ohne 2FA anlegen.": "Sign-in failed: incorrect username or password. If two-factor authentication is enabled for this account, this plugin does not support 2FA codes (the underlying uiprotect library provides no interface for them); create a separate local account without 2FA.",
+    "Der Eufy-Bestätigungscode ist ungültig oder abgelaufen": "The Eufy verification code is invalid or has expired",
+    "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte eingeben, um die Anmeldung abzuschließen.": "Eufy sent a verification code by email. Enter it to complete sign-in.",
+    "E-Mail-Adresse und Passwort sind erforderlich": "Email address and password are required",
+    "Der Ländercode muss aus zwei Buchstaben bestehen": "The country code must consist of two letters",
+    "App-ID und App-Secret sind erforderlich (kostenlose Registrierung unter dev.ewelink.cc)": "App ID and app secret are required (free registration at dev.ewelink.cc)",
+    "Host ist erforderlich (Controller-IP oder <id>.ui.com)": "Host is required (controller IP or <id>.ui.com)",
+    "ffmpeg ist nicht installiert": "ffmpeg is not installed",
+    "ffmpeg ist im Container nicht installiert": "ffmpeg is not installed in the container",
+    "ffmpeg konnte den MP4-Clip nicht erzeugen": "ffmpeg could not create the MP4 clip",
+    "boto3 ist fuer S3-Speicherziele nicht installiert": "boto3 is not installed for S3 storage destinations",
+    "Eine gültige RTSP-/RTSPS-URL ist erforderlich": "A valid RTSP/RTSPS URL is required",
+    "Die Stream-URL muss mit rtsp:// oder rtsps:// beginnen und einen Host enthalten": "The stream URL must start with rtsp:// or rtsps:// and contain a host",
+    "Die RTSP-/RTSPS-URL enthält einen ungültigen Port": "The RTSP/RTSPS URL contains an invalid port",
+    "ONVIF: Kein Medienprofil für PTZ gefunden": "ONVIF: no media profile found for PTZ",
+    "Firmware-Prüfung wird von diesem Gerät nicht unterstützt": "Firmware checks are not supported by this device",
+    "Firmware-Update wird von diesem Gerät nicht unterstützt": "Firmware updates are not supported by this device",
+    "Keine neue Firmware verfügbar; bitte zuerst prüfen": "No new firmware is available; check first",
+    "reolink-aio ist nicht installiert": "reolink-aio is not installed",
+    "Reolink-AIO ist nicht installiert": "Reolink-AIO is not installed",
+    "uiprotect ist nicht installiert": "uiprotect is not installed",
+    "ewelink ist nicht installiert": "ewelink is not installed",
+    "aiohttp ist nicht installiert": "aiohttp is not installed",
+    "pyeufysecurity ist nicht installiert": "pyeufysecurity is not installed",
+    "Übersicht": "Overview",
+    "HLS-Playlist öffnen": "Open HLS playlist",
+    "z. B. Acme Kamera-Plugin": "e.g. Acme camera plugin",
+    "Firmware nicht gemeldet": "Firmware not reported",
+    "Keine Tests im Plugin enthalten": "The plugin contains no tests",
+    "Prüfung auf Plugin-Updates fehlgeschlagen": "Plugin update check failed",
+    "Dashboard-Snapshots konnten nicht aktualisiert werden": "Dashboard snapshots could not be refreshed",
+    "Kein Speicherziel konfiguriert": "No storage destination is configured",
+    "ffprobe nicht installiert; Stream URI vorhanden": "ffprobe is not installed; a stream URI is available",
+    "ffprobe nicht installiert; RTSP-Adresse wurde konfiguriert": "ffprobe is not installed; an RTSP address was configured",
+    "RTSP-Prüfung hat das Zeitlimit überschritten": "RTSP check timed out",
+    "RTSP-Stream erreichbar": "RTSP stream reachable",
+    "RTSP-Stream nicht erreichbar": "RTSP stream not reachable",
+    "Stream lesbar": "Stream readable",
+    "Stream nicht lesbar": "Stream not readable",
+    "Stream-Pruefung Timeout": "Stream check timed out",
+    "MQTT deaktiviert": "MQTT disabled",
+    "Broker erreichbar": "Broker reachable",
+    "Aqara-RTSP-Fallback /ch1 wurde konfiguriert": "Aqara RTSP fallback /ch1 was configured",
+    "Aqara-RTSP-Stream /ch1 ist erreichbar": "Aqara RTSP stream /ch1 is reachable",
+    "Aqara-Stream wurde über ONVIF ermittelt": "Aqara stream was detected via ONVIF",
+    "Kein lokaler Aqara-Stream gefunden": "No local Aqara stream was found",
+    "RTSP-Stream wurde nach dem Dahua-Standardpfad /cam/realmonitor konfiguriert": "RTSP stream was configured using the Dahua default path /cam/realmonitor",
+    "RTSP-Stream wurde nach dem Foscam-Standardpfad /videoMain konfiguriert": "RTSP stream was configured using the Foscam default path /videoMain",
+    "RTSP-Stream wurde nach dem Hikvision-Standardpfad /Streaming/Channels konfiguriert": "RTSP stream was configured using the Hikvision default path /Streaming/Channels",
+    "RTSP-Stream wurde nach dem TP-Link/Tapo-Standard konfiguriert": "RTSP stream was configured using the TP-Link/Tapo defaults",
+    "ONVIF-Anmeldung abgelehnt: Kamera-Benutzer, Passwort und Kamerazeit prüfen": "ONVIF sign-in rejected: check the camera username, password, and camera time",
+    "Diese Reolink-Kamera bietet keine TCP-Ereignisse an": "This Reolink camera does not provide TCP events",
+    "Reolink TCP-Ereignisse werden nicht unterstützt": "Reolink TCP events are not supported",
+    "Reolink-AIO ist nicht installiert; nur ONVIF wurde geprüft": "Reolink-AIO is not installed; only ONVIF was checked",
+    "manifest.json muss ein JSON-Objekt enthalten": "manifest.json must contain a JSON object",
+    "Plugin-Schemaversion muss eine Zahl sein": "The plugin schema version must be a number",
+    "Ungültiger Plugin-Schlüssel": "Invalid plugin key",
+    "Plugin-Name und Version sind erforderlich": "Plugin name and version are required",
+    "Ungültiger Plugin-Einstiegspunkt": "Invalid plugin entry point",
+    "capabilities muss eine JSON-Liste sein": "capabilities must be a JSON list",
+    "ports muss ein JSON-Objekt sein": "ports must be a JSON object",
+    "Plugin-Einstiegspunkt konnte nicht geladen werden": "The plugin entry point could not be loaded",
+    "plugin.py muss create_module() oder MODULE mit einem CameraModule bereitstellen": "plugin.py must provide create_module() or MODULE with a CameraModule",
+    "plugin.py muss create_module() oder MODULE mit einem CloudAccountModule bereitstellen": "plugin.py must provide create_module() or MODULE with a CloudAccountModule",
+    "Plugin-Datei ist leer oder größer als 10 MB": "The plugin file is empty or larger than 10 MB",
+    "Plugin-Datei ist kein gültiges ZIP-Archiv": "The plugin file is not a valid ZIP archive",
+    "Eingebaute Plugins können nicht überschrieben werden": "Built-in plugins cannot be overwritten",
+    "Eingebaute Cloud-Plugins können nicht überschrieben werden": "Built-in cloud plugins cannot be overwritten",
+    "Eingebaute Plugins können nicht entfernt werden": "Built-in plugins cannot be removed",
+    "Eingebaute Cloud-Plugins können nicht entfernt werden": "Built-in cloud plugins cannot be removed",
+    "Plugin ist nicht installiert": "The plugin is not installed",
+    "Plugin-Archiv enthält zu viele oder keine Dateien": "The plugin archive contains too many files or no files",
+    "Plugin-Archiv enthält einen unsicheren Dateipfad": "The plugin archive contains an unsafe file path",
+    "Symbolische Links sind in Plugins nicht erlaubt": "Symbolic links are not allowed in plugins",
+    "Entpacktes Plugin ist größer als 25 MB": "The extracted plugin is larger than 25 MB",
+    "Plugin muss genau eine manifest.json im Hauptverzeichnis enthalten": "The plugin must contain exactly one manifest.json in its root directory",
+    "Alle Plugin-Dateien müssen im selben Hauptverzeichnis liegen": "All plugin files must be in the same root directory",
+    "Portangaben müssen Zahlen sein": "Port values must be numbers",
+    "Portangaben müssen zwischen 1 und 65535 liegen": "Port values must be between 1 and 65535",
+    "Design-Schemaversion muss eine Zahl sein": "The design schema version must be a number",
+    "Ungültiger Design-Schlüssel": "Invalid design key",
+    "Design-Name und Version sind erforderlich": "Design name and version are required",
+    "Ungültiges Stylesheet im Design-Manifest": "Invalid stylesheet in the design manifest",
+    "Design-Datei ist leer oder größer als 5 MB": "The design file is empty or larger than 5 MB",
+    "Design-Datei ist kein gültiges ZIP-Archiv": "The design file is not a valid ZIP archive",
+    "Design-Archiv enthält das im Manifest angegebene Stylesheet nicht": "The design archive does not contain the stylesheet specified in the manifest",
+    "Eingebaute Designs können nicht überschrieben werden": "Built-in designs cannot be overwritten",
+    "Eingebaute Designs können nicht entfernt werden": "Built-in designs cannot be removed",
+    "Design ist nicht installiert": "The design is not installed",
+    "Design-Archiv enthält zu viele oder keine Dateien": "The design archive contains too many files or no files",
+    "Design-Archiv enthält einen unsicheren Dateipfad": "The design archive contains an unsafe file path",
+    "Symbolische Links sind in Designs nicht erlaubt": "Symbolic links are not allowed in designs",
+    "Entpacktes Design ist größer als 10 MB": "The extracted design is larger than 10 MB",
+    "Design muss genau eine manifest.json im Hauptverzeichnis enthalten": "The design must contain exactly one manifest.json in its root directory",
+    "Alle Design-Dateien müssen im selben Hauptverzeichnis liegen": "All design files must be in the same root directory",
+    "account_fields muss eine Liste mit höchstens 24 Feldern sein": "account_fields must be a list with at most 24 fields",
+    "Jedes Konto-Feld muss ein JSON-Objekt sein": "Each account field must be a JSON object",
+    "default_port muss eine Zahl sein": "default_port must be a number",
+    "default_port muss zwischen 1 und 65535 liegen": "default_port must be between 1 and 65535",
+    "Repository-Archiv ist größer als 25 MB": "The repository archive is larger than 25 MB",
+    "GitHub hat keine gültige Commit-SHA geliefert": "GitHub did not return a valid commit SHA",
+    "Von GitHub geladene Datei ist kein gültiges ZIP-Archiv": "The file downloaded from GitHub is not a valid ZIP archive",
+    "Repository-Archiv ist leer": "The repository archive is empty",
+    "Eufy hat für die Code-Sitzung keinen temporären Token geliefert": "Eufy did not provide a temporary token for the code session",
+    "Eufy verlangt einen Bestätigungscode, konnte ihn aber nicht anfordern": "Eufy requires a verification code but it could not be requested",
+    "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "Eufy sign-in succeeded, but the device could not be saved as trusted",
+    "Gesichts- und Kennzeichenerkennung": "Face & plate recognition",
+    "Beide Funktionen laufen vollständig lokal (keine Cloud-Anbindung) und sind standardmäßig deaktiviert. Der \"Snapshot\"-Modus läuft, sobald der Clip einer passenden Aufnahme fertig gespeichert wurde; der \"Live\"-Modus läuft während der lokalen KI-Erkennung der Kamera, noch bevor eine Aufnahme existiert - für geringere Latenz auf Kosten von mehr CPU-Last pro Bild.": "Both features run entirely locally (no cloud service involved) and are off by default. \"Snapshot\" mode runs once a matching recording's clip has finished saving; \"Live\" mode runs during the camera's own local-AI detection loop, before any recording exists, for lower latency at the cost of extra CPU load per frame.",
+    "Gesichtserkennung aktivieren": "Enable face recognition",
+    "Modus der Gesichtserkennung": "Face recognition mode",
+    "Snapshot (nach der Aufnahme)": "Snapshot (after recording)",
+    "Live (während der Erkennung)": "Live (during detection)",
+    "Übereinstimmungsschwelle (0-1, höher = strenger)": "Match threshold (0-1, higher = stricter)",
+    "Kennzeichenerkennung aktivieren": "Enable license plate recognition",
+    "Modus der Kennzeichenerkennung": "Plate recognition mode",
+    "Modelle (YuNet/SFace von opencv_zoo für Gesichter, Detektor/OCR von fast-alpr für Kennzeichen) werden bei der ersten Verwendung automatisch in das Erkennungsmodell-Volume heruntergeladen - kein manueller Download nötig.": "Models (opencv_zoo's YuNet/SFace for faces, fast-alpr's detector/OCR for plates) download automatically on first use into the detection-models volume - no manual download step needed.",
+    "Bekanntes Gesicht anlernen": "Enroll a known face",
+    "Foto (ein klares, frontales Gesicht)": "Photo (one clear, front-facing face)",
+    "Anlernen": "Enroll",
+    "Bekannte Gesichter": "Known faces",
+    "Noch keine Gesichter angelernt - jedes erkannte Gesicht wird als \"unbekannt\" gemeldet.": "No known faces enrolled yet - every detected face will be reported as \"unknown\".",
+    "Bekanntes Kennzeichen hinzufügen": "Add a known plate",
+    "Kennzeichentext": "Plate text",
+    "Noch keine bekannten Kennzeichen - jedes erkannte Kennzeichen wird als \"unbekannt\" gemeldet.": "No known plates yet - every recognized plate will be reported as \"unknown\".",
+    "Bekannte Kennzeichen": "Known plates",
+    "Letzte Erkennungsereignisse": "Recent recognition events",
+    "Wann": "When",
+    "Ergebnis": "Result",
+    "Konfidenz": "Confidence",
+    "Noch keine Erkennungsereignisse": "No recognition events yet",
+    "Kennzeichen": "Plate",
+    "Lizenz": "License",
+    "TBC Camera Manager basiert auf den folgenden Open-Source-Projekten. Jedes wird unter seiner eigenen Lizenz verwendet, mit einem Link zur Quelle. Diese Liste umfasst direkte Abhängigkeiten und die vortrainierten Modelle, die TBC automatisch herunterlädt (z. B. für KI-Erkennung und Gesichts-/Kennzeichenerkennung) - sie deckt nicht jede transitive Abhängigkeit ab.": "TBC Camera Manager is built on top of the open-source projects below. Each is used under its own license, listed with a link to its source. This list covers direct dependencies and the pretrained models TBC downloads automatically (e.g. for AI detection and face/plate recognition) - it does not cover every transitive dependency.",
+    "Werkzeug": "Tool",
+    "Web-Framework & Kern": "Web framework & core",
+    "Kamera- und Cloud-Integrationen": "Camera & cloud integrations",
+    "KI-Erkennung und -Wiedererkennung": "AI detection & recognition",
+    "Event-Label, Nachricht, Kameraname…": "Event label, message, camera name…",
+    "‹ Vorherige Seite": "‹ Previous page",
+    "Nächste Seite ›": "Next page ›",
+    "SD-Karten-Aufzeichnungen (nicht verfügbar)": "SD card recordings (unavailable)",
+    "Ein Balken wird für jede Ereignisaufnahme angezeigt, gruppiert nach Ereignistyp und Farbe. Wähle einen Balken, um die Timeline dieser Kamera für den Tag zu öffnen. Durchgehende 24/7-Aufzeichnung wird hier bewusst weggelassen; nutze dafür die Timeline für eine einzelne Kamera. Aktiviere \"SD card recordings\", um auch auf der Kamera gespeicherte Aufnahmen einzubeziehen, sofern sie ein Kamera-Archiv unterstützt.": "One block is shown for each event recording, grouped by event type and color. Select a block to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted here; use the timeline for an individual camera instead. Enable \"SD card recordings\" to also include recordings stored on cameras that support an on-camera archive.",
+    "Keine Ereignisaufnahmen für diesen Tag verfügbar.": "No event recordings are available for this day.",
+    "ntfy (selbstgehosteter Push)": "ntfy (self-hosted push)",
+    "Gotify (selbstgehosteter Push)": "Gotify (self-hosted push)",
+    "URL / Nutzer bei Pushover / HA-URL / ntfy-Themen-URL / Gotify-Server-URL": "URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL",
+    "Token (ntfy-Zugriffstoken / Gotify-App-Token)": "Token (ntfy Access Token / Gotify App Token)",
+    "Einstellungen wurden gespeichert": "Settings were saved",
+    "Gesicht wurde entfernt": "Face was removed",
+    "Kennzeichen wurde gespeichert": "Plate was saved",
+    "Kennzeichen wurde aktualisiert": "Plate was updated",
+    "Kennzeichen wurde entfernt": "Plate was removed",
+    "Gesichtserkennungs-Modell konnte nicht geladen werden": "Face recognition model could not be loaded",
+    "Kein Gesicht im Foto gefunden": "No face found in the photo",
+    "Bilddatei konnte nicht gelesen werden": "Image file could not be read"
+  },
+  "spanish": {
+    "+ Kamera": "+ Cámara",
+    "Abbrechen": "Cancelar",
+    "Abmelden": "Cerrar sesión",
+    "Abspielen": "Reproducir",
+    "Admin-Rechte werden benötigt": "Se requieren permisos de administrador",
+    "Aktiv": "Activo",
+    "aktiv": "activo",
+    "Aktivieren": "Activar",
+    "Aktuell:": "Actual:",
+    "Aktualisieren": "Actualizar",
+    "Aktuelle Systemleistung": "Rendimiento actual del sistema",
+    "Alle": "Todos",
+    "Alle auswählen": "Seleccionar todos",
+    "Alle externen Quellen sind aktuell.": "Todas las fuentes externas están actualizadas.",
+    "Als Kamera hinzufügen": "Añadir como cámara",
+    "Analyse": "Análisis",
+    "Anlegen": "Crear",
+    "Anmelden": "Iniciar sesión",
+    "Anmeldung fehlgeschlagen": "Error al iniciar sesión",
+    "Anbieter": "Proveedor",
+    "Anzeigen": "Mostrar",
+    "Archiv": "Archivo",
+    "Auf Updates prüfen": "Buscar actualizaciones",
+    "Aufnahme": "Grabación",
+    "Aufnahme aktiv": "Grabación activa",
+    "Aufnahme bei Bewegung": "Grabación por movimiento",
+    "Aufnahmen": "Grabaciones",
+    "Aufnahmen auf SD-Karte": "Grabaciones en la tarjeta SD",
+    "Aufnahmeziele": "Destinos de grabación",
+    "Aufnahmeeinstellungen wurden gespeichert": "Se guardaron los ajustes de grabación",
+    "Aufzeichnungen der SD-Karte": "Grabaciones de la tarjeta SD",
+    "Aufzeichnungen der SD-Karte (nicht verfügbar)": "Grabaciones de la tarjeta SD (no disponibles)",
+    "aus": "desactivado",
+    "Ausschalten": "Apagar",
+    "Automatisch durchschalten": "Rotar automáticamente",
+    "Benachrichtigungen": "Notificaciones",
+    "Benachrichtigung wurde angelegt": "Se creó la notificación",
+    "Benachrichtigung wurde aktualisiert": "Se actualizó la notificación",
+    "Benachrichtigung wurde gelöscht": "Se eliminó la notificación",
+    "Benutzer": "Usuarios",
+    "Benutzername": "Nombre de usuario",
+    "Benutzer wurde aktualisiert": "Se actualizó el usuario",
+    "Benutzer wurde angelegt": "Se creó el usuario",
+    "Benutzer wurde gelöscht": "Se eliminó el usuario",
+    "Bereits als Kamera importiert.": "Ya se ha importado como cámara.",
+    "Bestätigen": "Confirmar",
+    "Bestätigung erforderlich": "Se requiere verificación",
+    "Bestätigungscode": "Código de verificación",
+    "Bestätigungscode eingeben": "Introducir código de verificación",
+    "Betrieb": "Operación",
+    "Bezeichnung": "Nombre",
+    "Bis": "Hasta",
+    "Befehl wurde gesendet": "Se envió el comando",
+    "Befehl fehlgeschlagen": "Error en el comando",
+    "Befehl fehlgeschlagen: Netzwerkfehler": "Error en el comando: error de red",
+    "Bitrate laut Kamera": "Tasa de bits indicada por la cámara",
+    "Branch/Tag": "Rama/etiqueta",
+    "Cleanup ausführen": "Ejecutar limpieza",
+    "Cleanup-Vorschau": "Vista previa de limpieza",
+    "Clip wurde gelöscht": "Se eliminó el clip",
+    "Clips öffnen": "Abrir clips",
+    "Cloud-Anbieter": "Proveedores en la nube",
+    "Cloud-Anbieter verwalten": "Gestionar proveedores en la nube",
+    "Cloud-Konten": "Cuentas en la nube",
+    "Cloud-Konto": "Cuenta en la nube",
+    "Cloud-Konto bearbeiten": "Editar cuenta en la nube",
+    "Cloud-Konto verbinden": "Conectar cuenta en la nube",
+    "Cloud-Konto wurde hinzugefügt": "Se añadió la cuenta en la nube",
+    "Cloud-Konto wurde nicht gefunden": "No se encontró la cuenta en la nube",
+    "Cloud-Konto wurde aktualisiert": "Se actualizó la cuenta en la nube",
+    "Cloud-Konto wurde entfernt": "Se eliminó la cuenta en la nube",
+    "Cloud-Plugin": "Plugin de nube",
+    "Cloud-Plugin wurde entfernt": "Se eliminó el plugin de nube",
+    "Codec-Datenrate": "Tasa de datos del códec",
+    "CPU-Last": "Carga de CPU",
+    "Dafür werden Admin-Rechte benötigt": "Se requieren permisos de administrador",
+    "Das aktive Design kann nicht entfernt werden": "No se puede eliminar el diseño activo",
+    "Das Kameramodul unterstützt keine Live-Ansicht": "El módulo de cámara no admite la vista en directo",
+    "Das Startdatum darf nicht nach dem Enddatum liegen": "La fecha de inicio no puede ser posterior a la fecha de fin",
+    "Datei": "Archivo",
+    "Datum": "Fecha",
+    "Dauer": "Duración",
+    "Dauer (Sek.)": "Duración (s)",
+    "Daueraufnahme": "Grabación continua",
+    "Daueraufzeichnung": "Grabación continua",
+    "Daueraufzeichnung wurde gespeichert": "Se guardó la grabación continua",
+    "Deaktivieren": "Desactivar",
+    "Der aktuell angemeldete Benutzer kann nicht gelöscht werden": "No se puede eliminar el usuario que ha iniciado sesión",
+    "Design importieren": "Importar diseño",
+    "Design-Datei": "Archivo de diseño",
+    "Designs durchsuchen": "Buscar diseños",
+    "Designs durchsuchen…": "Buscar diseños…",
+    "Designs verwalten": "Gestionar diseños",
+    "Design wurde aktiviert": "Se activó el diseño",
+    "Design wurde entfernt": "Se eliminó el diseño",
+    "Deutsch": "Alemán",
+    "Die vollständige URL wird geschützt gespeichert und in der Oberfläche immer zensiert.": "La URL completa se almacena de forma segura y siempre se oculta en la interfaz.",
+    "Die vollständige URL wird geschützt gespeichert und in der Oberfläche zensiert.": "La URL completa se almacena de forma segura y se oculta en la interfaz.",
+    "Dieser Kanal ist deaktiviert": "Este canal está desactivado",
+    "Durchsatz laut Kamera": "Rendimiento indicado por la cámara",
+    "E-Mail an": "Correo para",
+    "E-Mail von": "Correo de",
+    "Einträge": "entradas",
+    "Eintraege": "entradas",
+    "Einschalten": "Encender",
+    "Einstellungen": "Ajustes",
+    "Ende": "Fin",
+    "Entfernen": "Eliminar",
+    "Erforderliche Plugin-Struktur": "Estructura requerida del plugin",
+    "Erkennungen": "Detecciones",
+    "Erstes verfügbares Ziel": "Primer destino disponible",
+    "Ereignis": "Evento",
+    "Ereignisse": "Eventos",
+    "Ereignisse an diesem Tag": "Eventos de este día",
+    "Ereignistypen aufnehmen": "Grabar tipos de evento",
+    "Erweiterungen": "Extensiones",
+    "Es wurden keine Geräte in diesem Cloud-Konto gefunden.": "No se encontraron dispositivos en esta cuenta en la nube.",
+    "Beschreibung": "Descripción",
+    "Direkt installieren": "Instalar directamente",
+    "Externe Quellen": "Fuentes externas",
+    "Externe Quellen verwalten": "Gestionar fuentes externas",
+    "Explorer": "Explorador",
+    "Filtern": "Filtrar",
+    "Firmware wurde aktualisiert": "Se actualizó el firmware",
+    "Firmware ist aktuell.": "El firmware está actualizado.",
+    "Flutlicht": "Foco",
+    "Fokus anwenden": "Aplicar enfoque",
+    "Frei": "Libre",
+    "Für dieses Konto ist aktuell keine Bestätigung ausstehend": "No hay ninguna verificación pendiente para esta cuenta",
+    "Für dieses Plugin sind keine Tests verfügbar": "No hay pruebas disponibles para este plugin",
+    "Für diesen Tag liegen keine Aufnahmen vor.": "No hay grabaciones disponibles para este día.",
+    "Funktion": "Función",
+    "Funktionen": "Funciones",
+    "Ganzer Tag": "Todo el día",
+    "Geprüft": "Comprobado",
+    "Gerät": "Dispositivo",
+    "Geräte suchen": "Buscar dispositivos",
+    "GitHub-Repository-URL": "URL del repositorio de GitHub",
+    "Größe": "Tamaño",
+    "Groesse": "Tamaño",
+    "Größe ändern": "Cambiar tamaño",
+    "Grund": "Motivo",
+    "Hauptnavigation": "Navegación principal",
+    "Hersteller": "Fabricante",
+    "Home-Assistant-Discovery publizieren": "Publicar el descubrimiento de Home Assistant",
+    "Importieren": "Importar",
+    "inaktiv": "inactivo",
+    "Installiert": "Instalado",
+    "Installiert als": "Instalado como",
+    "Installierte Designs": "Diseños instalados",
+    "Installieren / aktualisieren": "Instalar / actualizar",
+    "Installierte Plugins": "Plugins instalados",
+    "ja": "sí",
+    "Jetzt aktualisieren": "Actualizar ahora",
+    "Kachel verschieben": "Mover mosaico",
+    "Kachelgröße ändern, ziehen": "Arrastrar para cambiar el tamaño",
+    "Kamera": "Cámara",
+    "Kamera einbinden": "Añadir cámara",
+    "Kamera hinzufügen": "Añadir cámara",
+    "Kamera neu starten": "Reiniciar cámara",
+    "Kamera wurde angelegt und geprüft": "Se creó y comprobó la cámara",
+    "Kamera wurde aus dem Cloud-Konto übernommen": "Se importó la cámara desde la cuenta en la nube",
+    "Kamera wurde entfernt": "Se eliminó la cámara",
+    "Kamera wurde nicht gefunden": "No se encontró la cámara",
+    "Kamera-Archiv": "Archivo de cámara",
+    "Kamerabereiche": "Secciones de la cámara",
+    "Kameradaten": "Datos de la cámara",
+    "Kameraliste": "Lista de cámaras",
+    "Kamera-Manager": "Gestor de cámaras",
+    "Kameramodul": "Módulo de cámara",
+    "Kamera-Plugin": "Plugin de cámara",
+    "Kamera-Plugins": "Plugins de cámara",
+    "Kamera-Plugins verwalten": "Gestionar plugins de cámara",
+    "Kamera-Plugin wurde entfernt": "Se eliminó el plugin de cámara",
+    "Kameras": "Cámaras",
+    "Kameraübersicht": "Resumen de la cámara",
+    "Kamerazugriff": "Acceso a cámaras",
+    "Kamerazugriff für Viewer": "Acceso a cámaras para espectadores",
+    "Kanal": "Canal",
+    "Kanäle": "Canales",
+    "Kategorie": "Categoría",
+    "Kein 2FA": "Sin 2FA",
+    "Keine Berechtigung für diese Kamera": "Sin permiso para esta cámara",
+    "Keine Clips gefunden": "No se encontraron clips",
+    "Keine Designs gefunden.": "No se encontraron diseños.",
+    "Keine Kamera verfügbar": "No hay cámaras disponibles",
+    "Keine Kamera mit unterstütztem Kamera-Archiv verfügbar": "No hay cámaras disponibles con archivo compatible",
+    "Keine Plugins gefunden.": "No se encontraron plugins.",
+    "Keine SD-Card-Aufnahmen gefunden": "No se encontraron grabaciones en la tarjeta SD",
+    "Keine Streams": "No hay transmisiones",
+    "Kein RTSP-Stream verfügbar. Bitte RTSP für dieses Gerät zuerst in der Herstelleroberfläche aktivieren.": "No hay ninguna transmisión RTSP disponible. Active primero RTSP para este dispositivo en la interfaz del fabricante.",
+    "Kein Stream bekannt": "No se conoce ninguna transmisión",
+    "Kein Stream für diesen Kanal bekannt": "No se conoce ninguna transmisión para este canal",
+    "Kein Stream für Live-Ansicht bekannt": "No se conoce ninguna transmisión para la vista en directo",
+    "Konfigurierte Konten": "Cuentas configuradas",
+    "Konten": "Cuentas",
+    "Konto bearbeiten": "Editar cuenta",
+    "Konto hinzufügen": "Añadir cuenta",
+    "Konto-Felder": "Campos de cuenta",
+    "Kontodaten oder Bestätigungscode bearbeiten": "Editar datos de la cuenta o código de verificación",
+    "Layout": "Diseño",
+    "Leeren": "Vaciar",
+    "Leistung": "Rendimiento",
+    "Letzte Ereignisse": "Eventos recientes",
+    "Letzte Prüfung": "Última comprobación",
+    "Live-Ansicht konnte nicht gestartet werden": "No se pudo iniciar la vista en directo",
+    "Live-Vorschau": "Vista previa en directo",
+    "Livestreams": "Transmisiones en directo",
+    "Lokale Kamera": "Cámara local",
+    "Lokale Kamera einrichten": "Configurar cámara local",
+    "Lokale Aufzeichnungen (von TBC)": "Grabaciones locales (de TBC)",
+    "Lokaler Pfad": "Ruta local",
+    "Lokaler Pfad im Container": "Ruta local en el contenedor",
+    "Lokaler oder gemounteter Pfad": "Ruta local o montada",
+    "Lokaler/gemounteter Pfad": "Ruta local/montada",
+    "Löschen": "Eliminar",
+    "Manuelle Stream-URL entfernen": "Eliminar URL manual de transmisión",
+    "Max. Alter Tage": "Antigüedad máxima en días",
+    "Max. Größe GB": "Tamaño máximo en GB",
+    "Meldung": "Mensaje",
+    "Mindestdauer in Sekunden": "Duración mínima en segundos",
+    "Modell": "Modelo",
+    "Modell offen": "Modelo desconocido",
+    "Modul": "Módulo",
+    "Motion-Aufnahmen speichern": "Guardar grabaciones de movimiento",
+    "MQTT aktivieren": "Activar MQTT",
+    "MQTT-Einstellungen wurden gespeichert": "Se guardaron los ajustes de MQTT",
+    "Nachlauf in Sekunden": "Tiempo posterior en segundos",
+    "Navigation umschalten": "Alternar navegación",
+    "Netzwerkdurchsatz": "Rendimiento de red",
+    "Neue Regel": "Nueva regla",
+    "Neue RTSP-/RTSPS-URL": "Nueva URL RTSP/RTSPS",
+    "nein": "no",
+    "Neuer Benutzer": "Nuevo usuario",
+    "Neuer Kanal": "Nuevo canal",
+    "Neues Passwort": "Nueva contraseña",
+    "Neues Speicherziel": "Nuevo destino de almacenamiento",
+    "Neu starten": "Reiniciar",
+    "Neustart": "Reinicio",
+    "Nächster Tag ›": "Día siguiente ›",
+    "Nicht verfügbar": "No disponible",
+    "Noch keine Cloud-Konten konfiguriert.": "Aún no hay cuentas en la nube configuradas.",
+    "Noch keine Ereignisse": "Aún no hay eventos",
+    "Noch keine externen Quellen registriert.": "Aún no hay fuentes externas registradas.",
+    "Noch keine Kamera": "Aún no hay cámaras",
+    "Noch kein Speicherziel angelegt": "Aún no se ha creado ningún destino de almacenamiento",
+    "Noch kein Stream für ein Vorschaubild verfügbar": "Aún no hay ninguna transmisión disponible para la vista previa",
+    "Noch keine Prüfung": "Aún no se ha comprobado",
+    "Noch nicht geprüft": "Aún no se ha comprobado",
+    "NVR-Kanäle": "Canales NVR",
+    "Öffnen": "Abrir",
+    "Passwort": "Contraseña",
+    "Pause zwischen Clips": "Pausa entre clips",
+    "PIR-Sensor": "Sensor PIR",
+    "Plugin importieren": "Importar plugin",
+    "Plugin-Art": "Tipo de plugin",
+    "Plugin-Datei": "Archivo de plugin",
+    "Plugins durchsuchen": "Buscar plugins",
+    "Plugins durchsuchen…": "Buscar plugins…",
+    "Prüfe auf Updates…": "Buscando actualizaciones…",
+    "Prüfung läuft": "Comprobación en curso",
+    "PTZ-Positionen": "Posiciones PTZ",
+    "Quelle": "Fuente",
+    "Quelle entfernen": "Eliminar fuente",
+    "Quelle hinzufügen": "Añadir fuente",
+    "Raster-Spalten": "Columnas de cuadrícula",
+    "Regeln": "Reglas",
+    "Registrierte Quellen": "Fuentes registradas",
+    "Rolle": "Rol",
+    "Rotation standardmäßig aktiv": "Rotación activada de forma predeterminada",
+    "Rotationsintervall (Sekunden)": "Intervalo de rotación (segundos)",
+    "Rund um die Uhr aufzeichnen": "Grabar las 24 horas",
+    "Schließen": "Cerrar",
+    "Schlüssel": "Clave",
+    "Schnellantworten": "Respuestas rápidas",
+    "Schwenk-/Neigekopf (PTZ)": "Cabezal de giro/inclinación (PTZ)",
+    "SD-Karte": "Tarjeta SD",
+    "SD-Karte öffnen": "Abrir tarjeta SD",
+    "Segmentlänge in Sekunden": "Duración del segmento en segundos",
+    "Sirene": "Sirena",
+    "Sirene abspielen": "Reproducir sirena",
+    "Snapshot anhängen": "Adjuntar instantánea",
+    "Snapshot/Thumbnail zusätzlich speichern": "Guardar también instantánea/miniatura",
+    "Speicher": "Almacenamiento",
+    "Speicher verwalten": "Gestionar almacenamiento",
+    "Speicheranalyse": "Análisis de almacenamiento",
+    "Speichern": "Guardar",
+    "Speichern und prüfen": "Guardar y comprobar",
+    "Speicherziel": "Destino de almacenamiento",
+    "Speicherziel wurde aktualisiert": "Se actualizó el destino de almacenamiento",
+    "Speicherziel wurde angelegt": "Se creó el destino de almacenamiento",
+    "Speicherziel wurde entfernt": "Se eliminó el destino de almacenamiento",
+    "Sprache wechseln": "Cambiar idioma",
+    "Spalten": "Columnas",
+    "Start": "Inicio",
+    "Status": "Estado",
+    "Steuerung": "Controles",
+    "Stream gestoppt": "Transmisión detenida",
+    "Stream konnte nicht starten": "No se pudo iniciar la transmisión",
+    "Stream nicht verfügbar": "Transmisión no disponible",
+    "Stream startet": "La transmisión se está iniciando",
+    "Stream wird gestartet…": "La transmisión se está iniciando…",
+    "Streams werden gestartet": "Las transmisiones se están iniciando",
+    "Suchen": "Buscar",
+    "Synchronisieren": "Sincronizar",
+    "Tag": "Día",
+    "Tests ausführen": "Ejecutar pruebas",
+    "Timeline öffnen": "Abrir cronología",
+    "Typ": "Tipo",
+    "Übersicht": "Resumen",
+    "Unterordner (optional)": "Subdirectorio (opcional)",
+    "Unterstützt": "Compatible",
+    "Unverändert lassen": "Dejar sin cambios",
+    "Update verfügbar": "Actualización disponible",
+    "Updates": "Actualizaciones",
+    "Verbindung": "Conexión",
+    "Verbindung testen": "Probar conexión",
+    "Verbindungsstatus": "Estado de conexión",
+    "Verfügbar": "Disponible",
+    "Verfügbare Updates": "Actualizaciones disponibles",
+    "Vergrößern": "Ampliar",
+    "Verkleinern": "Reducir",
+    "Verschieben": "Mover",
+    "Von": "Desde",
+    "Vorhandene Benutzer": "Usuarios existentes",
+    "Vorhandene Ziele": "Destinos existentes",
+    "Vorlauf in Sekunden": "Tiempo previo en segundos",
+    "Vorschau": "Vista previa",
+    "Vorher": "Anterior",
+    "Vollbild": "Pantalla completa",
+    "Vollbild verlassen (Esc)": "Salir de pantalla completa (Esc)",
+    "Standard-Repositories": "Repositorios estándar",
+    "Standard-Repository wurde nicht gefunden": "No se encontró el repositorio estándar",
+    "Vorlage: Cloud-Anbieter": "Plantilla: proveedor en la nube",
+    "Vorlage: Design": "Plantilla: diseño",
+    "Vorlage: Kamera-Plugin": "Plantilla: plugin de cámara",
+    "Vorkonfigurierte öffentliche Repositories können mit einem Klick registriert und über den normalen Plugin-Prüfpfad installiert werden.": "Los repositorios públicos preconfigurados pueden registrarse con un clic e instalarse mediante el proceso normal de validación de plugins.",
+    "Wandlayout": "Diseño del mural",
+    "Warte auf Stream": "Esperando la transmisión",
+    "Zeit": "Hora",
+    "Ziele": "Destinos",
+    "Zoom anwenden": "Aplicar zoom",
+    "Zuletzt geprüft": "Última comprobación",
+    "Zugriff": "Acceso",
+    "Zurück zu Cloud-Konten": "Volver a las cuentas en la nube",
+    "Zurück zu Kameras": "Volver a las cámaras",
+    "bereits registriert": "ya registrado",
+    "bereit zur Installation": "listo para instalar",
+    "‹ Vorheriger Tag": "‹ Día anterior",
+    "■ Stopp": "■ Detener",
+    "▲ Hoch": "▲ Arriba",
+    "► Rechts": "► Derecha",
+    "▼ Runter": "▼ Abajo",
+    "◄ Links": "◄ Izquierda",
+    "· Aufnahme aktiv": "· Grabación activa",
+    "2FA-fähig": "Compatible con 2FA",
+    "aktive Erkennungen": "detecciones activas",
+    "Änderungen speichern": "Guardar cambios",
+    "Belegung pro Kamera/Ereignis": "Uso por cámara/evento",
+    "Cloud-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.": "Los plugins de nube contienen código Python ejecutable. Importe únicamente paquetes de fuentes de confianza. Tamaño máximo del archivo: 10 MB.",
+    "Design-Pakete enthalten ausschließlich Stylesheets, Metadaten und Bilder, keinen ausführbaren Code. Maximale Dateigröße: 5 MB.": "Los paquetes de diseño solo contienen hojas de estilo, metadatos e imágenes, sin código ejecutable. Tamaño máximo del archivo: 5 MB.",
+    "Diese Kamera meldet über ONVIF keine der hier unterstützten Steuerfunktionen (PTZ, Flutlicht, PIR, Sirene, Akku, Neustart).": "Esta cámara no comunica mediante ONVIF ninguna de las funciones de control admitidas aquí (PTZ, foco, PIR, sirena, batería y reinicio).",
+    "Es ist noch kein Cloud-Anbieter installiert. Installiere zuerst ein": "Aún no hay ningún proveedor en la nube instalado. Instale primero un",
+    ", bevor du ein Konto hinzufügen kannst.": "antes de poder añadir una cuenta.",
+    "Externe Quellen installieren Plugins direkt aus einem öffentlichen GitHub-Repository, statt eine ZIP-Datei manuell hochzuladen. Ein Sync lädt und installiert den aktuellen Stand erneut; nur öffentliche Repositories werden unterstützt. Jede registrierte Quelle wird zusätzlich stündlich automatisch auf ein neueres Update geprüft - siehe": "Las fuentes externas instalan plugins directamente desde un repositorio público de GitHub en lugar de cargar manualmente un archivo ZIP. La sincronización vuelve a descargar e instalar la versión actual; solo se admiten repositorios públicos. Además, cada fuente registrada se comprueba cada hora para buscar actualizaciones; consulte",
+    "Firmware-Updates werden direkt von reolink.com heruntergeladen und auf die Kamera geschrieben. Die Kamera ist währenddessen nicht erreichbar und startet danach neu. Den Vorgang nicht unterbrechen.": "Las actualizaciones de firmware se descargan directamente de reolink.com y se escriben en la cámara. Durante el proceso la cámara no está disponible y después se reinicia. No interrumpa el proceso.",
+    "Gerätestatus wird im Hintergrund abgerufen oder war zuletzt nicht erreichbar. Befehle können trotzdem gesendet werden, sofern die Kamera sie unterstützt; beim nächsten Aufruf dieser Seite ist der Status aktuell.": "El estado del dispositivo se está consultando en segundo plano o no se pudo obtener recientemente. Los comandos pueden enviarse si la cámara los admite; el estado estará actualizado la próxima vez que se abra esta página.",
+    "Größe und Reihenfolge jeder Kachel werden direkt am Bild eingestellt: Werkzeuge oben rechts erscheinen beim Überfahren mit der Maus (⠿ verschiebt, ⤡ ändert die Größe).": "El tamaño y el orden de cada mosaico se ajustan directamente sobre la imagen. Las herramientas aparecen en la esquina superior derecha al pasar el ratón (⠿ mueve, ⤡ cambia el tamaño).",
+    "HLS-Playlist öffnen": "Abrir lista HLS",
+    "Host/IP, ONVIF und Zugangsdaten direkt eintragen - für eine einzelne Kamera oder ein NVR im lokalen Netzwerk.": "Introduzca directamente el host/IP, ONVIF y las credenciales para una cámara individual o un NVR de la red local.",
+    "Jede registrierte externe Quelle wird stündlich darauf geprüft, ob sich der Branch/Tag seit der letzten Installation weiterbewegt hat (Vergleich der Commit-SHA, ohne das ganze Repository herunterzuladen). Hier erscheinen nur Quellen mit einem tatsächlich verfügbaren Update.": "Cada fuente externa registrada se comprueba cada hora para saber si su rama/etiqueta ha avanzado desde la última instalación, comparando el SHA del commit sin descargar todo el repositorio. Aquí solo aparecen las fuentes con una actualización realmente disponible.",
+    "Kamera-Plugins enthalten ausführbaren Python-Code. Importiere nur Pakete aus vertrauenswürdigen Quellen. Maximale Dateigröße: 10 MB.": "Los plugins de cámara contienen código Python ejecutable. Importe únicamente paquetes de fuentes de confianza. Tamaño máximo del archivo: 10 MB.",
+    "leer lassen = unverändert": "dejar vacío = sin cambios",
+    "S3-kompatibler Cloud-Speicher": "Almacenamiento en la nube compatible con S3",
+    "SMTP Benutzer": "Usuario SMTP",
+    "z. B. Acme Kamera-Plugin": "p. ej., plugin de cámara Acme",
+    "Bei einem Hersteller-Cloud-Konto (z. B. UniFi Protect, Eufy Security, eWeLink) anmelden und Geräte automatisch suchen.": "Inicie sesión en una cuenta en la nube del fabricante (p. ej., UniFi Protect, Eufy Security o eWeLink) y busque dispositivos automáticamente.",
+    "Ein Repository (oder der angegebene Unterordner darin) muss dieselbe Struktur wie ein manueller ZIP-Import haben:": "Un repositorio, o el subdirectorio indicado, debe tener la misma estructura que una importación ZIP manual:",
+    "muss": "debe",
+    "und": "y",
+    "und (außer bei Designs)": "y (excepto en los diseños)",
+    "enthalten;": "contener;",
+    "stellt": "proporciona",
+    "bereit, das eine": "que devuelve una",
+    "- bzw.": "o",
+    "-Instanz zurückgibt. Ein optionaler": "instancia. Una carpeta opcional",
+    "-Ordner mit pytest-Tests kann direkt in TBC über „Tests ausführen“ gestartet werden. Die vollständige Referenz steht in": "con pruebas pytest puede ejecutarse directamente en TBC mediante «Ejecutar pruebas». La referencia completa está en",
+    "im TBC-Repository sowie": "en el repositorio de TBC y en",
+    "Dahua-Kameras und NVR (inkl. Amcrest/Annke-OEMs) über ONVIF und RTSP": "Cámaras y NVR Dahua (incluidos OEM de Amcrest/Annke) mediante ONVIF y RTSP",
+    "Axis-Netzwerkkameras über ONVIF Profile S/T": "Cámaras de red Axis mediante perfiles ONVIF S/T",
+    "Hikvision-Kameras und NVR über ONVIF und RTSP": "Cámaras y NVR Hikvision mediante ONVIF y RTSP",
+    "Foscam-Kameras über ONVIF und RTSP": "Cámaras Foscam mediante ONVIF y RTSP",
+    "Reolink-Kameras und NVR via ONVIF und reolink-aio": "Cámaras y NVR Reolink mediante ONVIF y reolink-aio",
+    "Aqara-Kameras sowie kompatible Video-Türklingeln": "Cámaras Aqara y videoporteros compatibles",
+    "TP-Link-Tapo-Kameras via ONVIF und RTSP": "Cámaras TP-Link Tapo mediante ONVIF y RTSP",
+    "Herstellerneutraler ONVIF-Fallback für weitere Kameramodelle": "Alternativa ONVIF independiente del fabricante para otros modelos de cámara",
+    "Herstellerneutraler RTSP-/RTSPS-Stream ohne ONVIF": "Transmisión RTSP/RTSPS independiente del fabricante sin ONVIF",
+    "SONOFF-Kameras über den in eWeLink erzeugten RTSP-Link": "Cámaras SONOFF mediante el enlace RTSP generado en eWeLink",
+    "UniFi-Protect-Kameras über einen erzeugten RTSP-/RTSPS-Link": "Cámaras UniFi Protect mediante un enlace RTSP/RTSPS generado",
+    "Dunkles Design mit blauem Akzent": "Diseño oscuro con acento azul",
+    "Das mitgelieferte helle Standard-Design": "Diseño estándar claro incluido",
+    "Die manuelle RTSP-/RTSPS-Adresse wird ohne ONVIF verwendet": "La dirección RTSP/RTSPS manual se utiliza sin ONVIF",
+    "Eufy-Security-Cloud-Konto und Kamerasuche via pyeufysecurity": "Cuenta en la nube de Eufy Security y búsqueda de cámaras mediante pyeufysecurity",
+    "SONOFF-Geräte über das offizielle eWeLink/CoolKit-Open-Platform-Cloud-Konto": "Dispositivos SONOFF mediante la cuenta oficial de eWeLink/CoolKit Open Platform",
+    "Ubiquiti UniFi Protect Controller (lokal oder über die ui.com-Cloud-Konsole) via uiprotect": "Controlador Ubiquiti UniFi Protect (local o mediante la consola en la nube de ui.com) con uiprotect",
+    "Ländercode": "Código de país",
+    "Eufy-Bestätigungscode (einmalig)": "Código de verificación de Eufy (un solo uso)",
+    "Code aus der E-Mail": "Código del correo electrónico",
+    "Zweistelliger ISO-Ländercode des Eufy-Kontos, z. B. DE, AT oder CH.": "Código ISO de dos letras del país de la cuenta de Eufy, p. ej., DE, AT o CH.",
+    "Leer lassen, um einen Code anzufordern. Nach erfolgreicher Bestätigung wird dieses Feld automatisch geleert.": "Déjelo vacío para solicitar un código. El campo se vacía automáticamente después de verificarlo correctamente.",
+    "Lokaler RTSP-Benutzername (optional)": "Usuario RTSP local (opcional)",
+    "Lokales RTSP-Passwort (optional)": "Contraseña RTSP local (opcional)",
+    "Nur nötig, um Kameras mit in der Eufy-App aktiviertem NAS/RTSP als dauerhaften Stream zu übernehmen.": "Solo es necesario para importar como transmisión permanente cámaras con NAS/RTSP activado en la aplicación Eufy.",
+    "Kostenlose Registrierung unter dev.ewelink.cc liefert App-ID und App-Secret; das eigene eWeLink-App-Konto reicht dafür nicht aus.": "El registro gratuito en dev.ewelink.cc proporciona el ID y el secreto de la aplicación; la cuenta normal de eWeLink no es suficiente.",
+    "SSL-Zertifikat prüfen": "Verificar certificado SSL",
+    "192.168.1.1 oder cloud.example.com": "192.168.1.1 o cloud.example.com",
+    "Anwesenheit": "Presencia",
+    "Basis": "Básico",
+    "Besucher / Klingel": "Visitante / timbre",
+    "Bewegung": "Movimiento",
+    "Eindringen Fahrzeug": "Intrusión de vehículo",
+    "Eindringen Hund/Katze": "Intrusión de perro/gato",
+    "Eindringen Person": "Intrusión de persona",
+    "Entfernter Gegenstand": "Objeto retirado",
+    "Fahrzeug": "Vehículo",
+    "Geräuscherkennung": "Detección de sonido",
+    "Gesicht": "Rostro",
+    "Haustier": "Mascota",
+    "I/O Eingang": "Entrada de E/S",
+    "KI-Erkennung": "Detección por IA",
+    "KI-Objekte": "Objetos de IA",
+    "Klingeln / Besucher": "Timbre / visitante",
+    "Linienübertritt": "Cruce de línea",
+    "Linienübertritt Fahrzeug": "Cruce de línea por vehículo",
+    "Linienübertritt Hund/Katze": "Cruce de línea por perro/gato",
+    "Linienübertritt Person": "Cruce de línea por persona",
+    "Manipulation / Videoverlust": "Manipulación / pérdida de vídeo",
+    "Nicht-motorisiertes Fahrzeug": "Vehículo no motorizado",
+    "Objekterkennung": "Detección de objetos",
+    "ONVIF-Verbindung erfolgreich": "Conexión ONVIF correcta",
+    "Paket": "Paquete",
+    "Ruhezustand": "Modo de reposo",
+    "Tier": "Animal",
+    "Türklingel": "Timbre",
+    "Vergessener Gegenstand": "Objeto olvidado",
+    "Verweilen": "Merodeo",
+    "Verweilen Fahrzeug": "Merodeo de vehículo",
+    "Verweilen Hund/Katze": "Merodeo de perro/gato",
+    "Verweilen Person": "Merodeo de persona",
+    "Weinen": "Llanto",
+    "Reolink-Status erfolgreich abgefragt": "Estado de Reolink consultado correctamente",
+    "Standard ONVIF Verbindung": "Conexión ONVIF estándar",
+    "Manueller Stream": "Transmisión manual",
+    "RTSP/RTSPS-Link in UniFi Protect erzeugen und hier vollständig eintragen": "Genere un enlace RTSP/RTSPS en UniFi Protect e introdúzcalo completo aquí",
+    "RTSP in eWeLink aktivieren, Link erzeugen und hier vollständig eintragen": "Active RTSP en eWeLink, genere un enlace e introdúzcalo completo aquí",
+    "Das Debug Log sammelt laufende Meldungen der App und ffmpeg-Live-Prozesse. Es ist auf jeder Admin-Seite unten rechts als Pull-up verfuegbar.": "El registro de depuración recopila mensajes de la aplicación y de los procesos de ffmpeg en directo. Está disponible como panel desplegable en la esquina inferior derecha de todas las páginas de administración.",
+    "Debug Log oeffnen": "Abrir registro de depuración",
+    "Debug Log schliessen": "Cerrar registro de depuración",
+    "Debug Log wurde geleert": "Se vació el registro de depuración",
+    "Firmware": "Firmware",
+    "Für dieses Profil ist eine RTSP-/RTSPS-URL erforderlich": "Este perfil requiere una URL RTSP/RTSPS",
+    "Hinweis: Host beginnt mit 192.169. Im Heimnetz ist oft 192.168 gemeint.": "Nota: el host comienza por 192.169. En redes domésticas normalmente se pretende usar 192.168.",
+    "Kanal wurde aktualisiert": "Se actualizó el canal",
+    "Komponente": "Componente",
+    "Live-API konnte nicht geladen werden": "No se pudo cargar la API de vídeo en directo",
+    "Name und Host sowie die für dieses Modul benötigten Zugangsdaten sind erforderlich": "Se requieren el nombre, el host y las credenciales necesarias para este módulo",
+    "Noch keine Debug-Meldungen": "Aún no hay mensajes de depuración",
+    "Notify": "Notificaciones",
+    "offen": "desconocido",
+    "Plugin kann nicht exportiert werden": "No se puede exportar el plugin",
+    "Retention Tage": "Días de retención",
+    "Retention-Regel wurde aktualisiert": "Se actualizó la regla de retención",
+    "Retention-Regel wurde angelegt": "Se creó la regla de retención",
+    "Retention-Regel wurde gelöscht": "Se eliminó la regla de retención",
+    "SD-Karteninhalt konnte nicht geladen werden": "No se pudo cargar el contenido de la tarjeta SD",
+    "SD-Karteninhalt wird geladen...": "Cargando contenido de la tarjeta SD...",
+    "Secret Key": "Clave secreta",
+    "Timeline": "Cronología",
+    "ZIP exportieren": "Exportar ZIP",
+    "Akkustand": "Nivel de batería",
+    "Fokus (–)": "Enfoque (–)",
+    "SMTP Passwort": "Contraseña SMTP",
+    "Zoom (–)": "Zoom (–)",
+    "Zoom Fokus": "Enfoque del zoom",
+    "Bitte einen Code eingeben": "Introduzca un código",
+    "Unbekannte Plugin-Art": "Tipo de plugin desconocido",
+    "Ungültige Plugin-Art": "Tipo de plugin no válido",
+    "Externe Quelle wurde hinzugefügt": "Se añadió la fuente externa",
+    "Externe Quelle wurde nicht gefunden": "No se encontró la fuente externa",
+    "Externe Quelle wurde entfernt": "Se eliminó la fuente externa",
+    "PTZ-Befehl fehlgeschlagen": "Error en el comando PTZ",
+    "PTZ-Befehl fehlgeschlagen: Netzwerkfehler": "Error en el comando PTZ: error de red",
+    "Bitte zuerst auf Updates prüfen": "Busque primero actualizaciones",
+    "Update läuft bereits": "Ya hay una actualización en curso",
+    "Firmware wurde aktualisiert. Die Kamera startet neu und ist kurz nicht erreichbar.": "Se actualizó el firmware. La cámara se está reiniciando y no estará disponible durante unos instantes.",
+    "Prüfung fehlgeschlagen": "Error en la comprobación",
+    "Update konnte nicht gestartet werden": "No se pudo iniciar la actualización",
+    "Update läuft…": "Actualización en curso…",
+    "Zeitüberschreitung bei der Firmware-Prüfung": "Se agotó el tiempo de la comprobación de firmware",
+    "Health-Check konnte nicht geladen werden": "No se pudo cargar la comprobación de estado",
+    "Keine RAM-Daten verfügbar": "No hay datos de RAM disponibles",
+    "nicht gemeldet": "no comunicado",
+    "noch nicht getestet": "aún no probado",
+    "noch nicht synchronisiert": "aún no sincronizado",
+    "unbekannt": "desconocido",
+    "unbekannter Fehler": "error desconocido",
+    "Admin → Updates": "Administración → Actualizaciones",
+    "- kein Code, keine Tests": "- sin código ni pruebas",
+    "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. Der Vorgang kann mehrere Minuten dauern und sollte nicht unterbrochen werden.": "¿Actualizar el firmware ahora? La cámara no estará disponible durante la actualización y después se reiniciará. El proceso puede tardar varios minutos y no debe interrumpirse.",
+    "Anmeldung fehlgeschlagen: Benutzername oder Passwort falsch. Falls für dieses Konto die Zwei-Faktor-Authentifizierung aktiviert ist: Dieses Plugin unterstützt keine 2FA-Codes (die zugrunde liegende uiprotect-Bibliothek bietet dafür keine Schnittstelle) - bitte ein separates lokales Konto ohne 2FA anlegen.": "Error al iniciar sesión: nombre de usuario o contraseña incorrectos. Si la autenticación de dos factores está activada, este plugin no admite códigos 2FA; cree una cuenta local separada sin 2FA.",
+    "Der Eufy-Bestätigungscode ist ungültig oder abgelaufen": "El código de verificación de Eufy no es válido o ha caducado",
+    "Eufy hat einen Bestätigungscode per E-Mail gesendet. Bitte eingeben, um die Anmeldung abzuschließen.": "Eufy ha enviado un código de verificación por correo electrónico. Introdúzcalo para completar el inicio de sesión.",
+    "E-Mail-Adresse und Passwort sind erforderlich": "Se requieren la dirección de correo electrónico y la contraseña",
+    "Der Ländercode muss aus zwei Buchstaben bestehen": "El código de país debe constar de dos letras",
+    "App-ID und App-Secret sind erforderlich (kostenlose Registrierung unter dev.ewelink.cc)": "Se requieren el ID y el secreto de la aplicación (registro gratuito en dev.ewelink.cc)",
+    "Host ist erforderlich (Controller-IP oder <id>.ui.com)": "Se requiere el host (IP del controlador o <id>.ui.com)",
+    "ffmpeg ist nicht installiert": "ffmpeg no está instalado",
+    "ffmpeg ist im Container nicht installiert": "ffmpeg no está instalado en el contenedor",
+    "ffmpeg konnte den MP4-Clip nicht erzeugen": "ffmpeg no pudo crear el clip MP4",
+    "boto3 ist fuer S3-Speicherziele nicht installiert": "boto3 no está instalado para destinos de almacenamiento S3",
+    "Eine gültige RTSP-/RTSPS-URL ist erforderlich": "Se requiere una URL RTSP/RTSPS válida",
+    "Die Stream-URL muss mit rtsp:// oder rtsps:// beginnen und einen Host enthalten": "La URL de transmisión debe comenzar por rtsp:// o rtsps:// e incluir un host",
+    "Die RTSP-/RTSPS-URL enthält einen ungültigen Port": "La URL RTSP/RTSPS contiene un puerto no válido",
+    "ONVIF: Kein Medienprofil für PTZ gefunden": "ONVIF: no se encontró ningún perfil multimedia para PTZ",
+    "Firmware-Prüfung wird von diesem Gerät nicht unterstützt": "Este dispositivo no admite comprobaciones de firmware",
+    "Firmware-Update wird von diesem Gerät nicht unterstützt": "Este dispositivo no admite actualizaciones de firmware",
+    "Keine neue Firmware verfügbar; bitte zuerst prüfen": "No hay firmware nuevo disponible; compruébelo primero",
+    "reolink-aio ist nicht installiert": "reolink-aio no está instalado",
+    "Reolink-AIO ist nicht installiert": "Reolink-AIO no está instalado",
+    "uiprotect ist nicht installiert": "uiprotect no está instalado",
+    "ewelink ist nicht installiert": "ewelink no está instalado",
+    "aiohttp ist nicht installiert": "aiohttp no está instalado",
+    "pyeufysecurity ist nicht installiert": "pyeufysecurity no está instalado",
+    "Firmware nicht gemeldet": "Firmware no comunicado",
+    "Keine Tests im Plugin enthalten": "El plugin no contiene pruebas",
+    "Prüfung auf Plugin-Updates fehlgeschlagen": "Error al buscar actualizaciones de plugins",
+    "Dashboard-Snapshots konnten nicht aktualisiert werden": "No se pudieron actualizar las instantáneas del panel",
+    "Kein Speicherziel konfiguriert": "No hay ningún destino de almacenamiento configurado",
+    "ffprobe nicht installiert; Stream URI vorhanden": "ffprobe no está instalado; hay una URI de transmisión disponible",
+    "ffprobe nicht installiert; RTSP-Adresse wurde konfiguriert": "ffprobe no está instalado; se configuró una dirección RTSP",
+    "RTSP-Prüfung hat das Zeitlimit überschritten": "Se agotó el tiempo de la comprobación RTSP",
+    "RTSP-Stream erreichbar": "Transmisión RTSP accesible",
+    "RTSP-Stream nicht erreichbar": "Transmisión RTSP no accesible",
+    "Stream lesbar": "Transmisión legible",
+    "Stream nicht lesbar": "Transmisión no legible",
+    "Stream-Pruefung Timeout": "Tiempo de comprobación de transmisión agotado",
+    "MQTT deaktiviert": "MQTT desactivado",
+    "Broker erreichbar": "Bróker accesible",
+    "Aqara-RTSP-Fallback /ch1 wurde konfiguriert": "Se configuró la alternativa RTSP de Aqara /ch1",
+    "Aqara-RTSP-Stream /ch1 ist erreichbar": "La transmisión RTSP de Aqara /ch1 está accesible",
+    "Aqara-Stream wurde über ONVIF ermittelt": "La transmisión de Aqara se detectó mediante ONVIF",
+    "Kein lokaler Aqara-Stream gefunden": "No se encontró ninguna transmisión local de Aqara",
+    "RTSP-Stream wurde nach dem Dahua-Standardpfad /cam/realmonitor konfiguriert": "La transmisión RTSP se configuró con la ruta estándar de Dahua /cam/realmonitor",
+    "RTSP-Stream wurde nach dem Foscam-Standardpfad /videoMain konfiguriert": "La transmisión RTSP se configuró con la ruta estándar de Foscam /videoMain",
+    "RTSP-Stream wurde nach dem Hikvision-Standardpfad /Streaming/Channels konfiguriert": "La transmisión RTSP se configuró con la ruta estándar de Hikvision /Streaming/Channels",
+    "RTSP-Stream wurde nach dem TP-Link/Tapo-Standard konfiguriert": "La transmisión RTSP se configuró según el estándar de TP-Link/Tapo",
+    "ONVIF-Anmeldung abgelehnt: Kamera-Benutzer, Passwort und Kamerazeit prüfen": "Inicio de sesión ONVIF rechazado: compruebe el usuario, la contraseña y la hora de la cámara",
+    "Diese Reolink-Kamera bietet keine TCP-Ereignisse an": "Esta cámara Reolink no ofrece eventos TCP",
+    "Reolink TCP-Ereignisse werden nicht unterstützt": "Los eventos TCP de Reolink no son compatibles",
+    "Reolink-AIO ist nicht installiert; nur ONVIF wurde geprüft": "Reolink-AIO no está instalado; solo se comprobó ONVIF",
+    "manifest.json muss ein JSON-Objekt enthalten": "manifest.json debe contener un objeto JSON",
+    "Plugin-Schemaversion muss eine Zahl sein": "La versión del esquema del plugin debe ser un número",
+    "Ungültiger Plugin-Schlüssel": "Clave de plugin no válida",
+    "Plugin-Name und Version sind erforderlich": "Se requieren el nombre y la versión del plugin",
+    "Ungültiger Plugin-Einstiegspunkt": "Punto de entrada del plugin no válido",
+    "capabilities muss eine JSON-Liste sein": "capabilities debe ser una lista JSON",
+    "ports muss ein JSON-Objekt sein": "ports debe ser un objeto JSON",
+    "Plugin-Einstiegspunkt konnte nicht geladen werden": "No se pudo cargar el punto de entrada del plugin",
+    "plugin.py muss create_module() oder MODULE mit einem CameraModule bereitstellen": "plugin.py debe proporcionar create_module() o MODULE con un CameraModule",
+    "plugin.py muss create_module() oder MODULE mit einem CloudAccountModule bereitstellen": "plugin.py debe proporcionar create_module() o MODULE con un CloudAccountModule",
+    "Plugin-Datei ist leer oder größer als 10 MB": "El archivo del plugin está vacío o supera los 10 MB",
+    "Plugin-Datei ist kein gültiges ZIP-Archiv": "El archivo del plugin no es un archivo ZIP válido",
+    "Eingebaute Plugins können nicht überschrieben werden": "Los plugins integrados no se pueden sobrescribir",
+    "Eingebaute Cloud-Plugins können nicht überschrieben werden": "Los plugins de nube integrados no se pueden sobrescribir",
+    "Eingebaute Plugins können nicht entfernt werden": "Los plugins integrados no se pueden eliminar",
+    "Eingebaute Cloud-Plugins können nicht entfernt werden": "Los plugins de nube integrados no se pueden eliminar",
+    "Plugin ist nicht installiert": "El plugin no está instalado",
+    "Plugin-Archiv enthält zu viele oder keine Dateien": "El archivo del plugin contiene demasiados archivos o ninguno",
+    "Plugin-Archiv enthält einen unsicheren Dateipfad": "El archivo del plugin contiene una ruta no segura",
+    "Symbolische Links sind in Plugins nicht erlaubt": "No se permiten enlaces simbólicos en los plugins",
+    "Entpacktes Plugin ist größer als 25 MB": "El plugin extraído supera los 25 MB",
+    "Plugin muss genau eine manifest.json im Hauptverzeichnis enthalten": "El plugin debe contener exactamente un manifest.json en el directorio raíz",
+    "Alle Plugin-Dateien müssen im selben Hauptverzeichnis liegen": "Todos los archivos del plugin deben estar en el mismo directorio raíz",
+    "Portangaben müssen Zahlen sein": "Los valores de puerto deben ser números",
+    "Portangaben müssen zwischen 1 und 65535 liegen": "Los valores de puerto deben estar entre 1 y 65535",
+    "Design-Schemaversion muss eine Zahl sein": "La versión del esquema del diseño debe ser un número",
+    "Ungültiger Design-Schlüssel": "Clave de diseño no válida",
+    "Design-Name und Version sind erforderlich": "Se requieren el nombre y la versión del diseño",
+    "Ungültiges Stylesheet im Design-Manifest": "Hoja de estilo no válida en el manifiesto del diseño",
+    "Design-Datei ist leer oder größer als 5 MB": "El archivo de diseño está vacío o supera los 5 MB",
+    "Design-Datei ist kein gültiges ZIP-Archiv": "El archivo de diseño no es un archivo ZIP válido",
+    "Design-Archiv enthält das im Manifest angegebene Stylesheet nicht": "El archivo de diseño no contiene la hoja de estilo indicada en el manifiesto",
+    "Eingebaute Designs können nicht überschrieben werden": "Los diseños integrados no se pueden sobrescribir",
+    "Eingebaute Designs können nicht entfernt werden": "Los diseños integrados no se pueden eliminar",
+    "Design ist nicht installiert": "El diseño no está instalado",
+    "Design-Archiv enthält zu viele oder keine Dateien": "El archivo de diseño contiene demasiados archivos o ninguno",
+    "Design-Archiv enthält einen unsicheren Dateipfad": "El archivo de diseño contiene una ruta no segura",
+    "Symbolische Links sind in Designs nicht erlaubt": "No se permiten enlaces simbólicos en los diseños",
+    "Entpacktes Design ist größer als 10 MB": "El diseño extraído supera los 10 MB",
+    "Design muss genau eine manifest.json im Hauptverzeichnis enthalten": "El diseño debe contener exactamente un manifest.json en el directorio raíz",
+    "Alle Design-Dateien müssen im selben Hauptverzeichnis liegen": "Todos los archivos del diseño deben estar en el mismo directorio raíz",
+    "account_fields muss eine Liste mit höchstens 24 Feldern sein": "account_fields debe ser una lista de 24 campos como máximo",
+    "Jedes Konto-Feld muss ein JSON-Objekt sein": "Cada campo de cuenta debe ser un objeto JSON",
+    "default_port muss eine Zahl sein": "default_port debe ser un número",
+    "default_port muss zwischen 1 und 65535 liegen": "default_port debe estar entre 1 y 65535",
+    "Repository-Archiv ist größer als 25 MB": "El archivo del repositorio supera los 25 MB",
+    "GitHub hat keine gültige Commit-SHA geliefert": "GitHub no devolvió un SHA de commit válido",
+    "Von GitHub geladene Datei ist kein gültiges ZIP-Archiv": "El archivo descargado de GitHub no es un archivo ZIP válido",
+    "Repository-Archiv ist leer": "El archivo del repositorio está vacío",
+    "Eufy hat für die Code-Sitzung keinen temporären Token geliefert": "Eufy no proporcionó un token temporal para la sesión del código",
+    "Eufy verlangt einen Bestätigungscode, konnte ihn aber nicht anfordern": "Eufy requiere un código de verificación, pero no se pudo solicitar",
+    "Eufy-Anmeldung war erfolgreich, das Gerät konnte aber nicht als vertrauenswürdig gespeichert werden": "El inicio de sesión en Eufy fue correcto, pero el dispositivo no se pudo guardar como de confianza",
+    "Gesichts- und Kennzeichenerkennung": "Reconocimiento facial y de matrículas",
+    "Beide Funktionen laufen vollständig lokal (keine Cloud-Anbindung) und sind standardmäßig deaktiviert. Der \"Snapshot\"-Modus läuft, sobald der Clip einer passenden Aufnahme fertig gespeichert wurde; der \"Live\"-Modus läuft während der lokalen KI-Erkennung der Kamera, noch bevor eine Aufnahme existiert - für geringere Latenz auf Kosten von mehr CPU-Last pro Bild.": "Ambas funciones se ejecutan completamente en local (sin ningún servicio en la nube) y están desactivadas de forma predeterminada. El modo \"instantánea\" se ejecuta una vez que se ha guardado el clip de una grabación coincidente; el modo \"en vivo\" se ejecuta durante la detección de IA local de la cámara, antes de que exista ninguna grabación, con menor latencia a costa de más carga de CPU por fotograma.",
+    "Gesichtserkennung aktivieren": "Activar reconocimiento facial",
+    "Modus der Gesichtserkennung": "Modo de reconocimiento facial",
+    "Snapshot (nach der Aufnahme)": "Instantánea (después de grabar)",
+    "Live (während der Erkennung)": "En vivo (durante la detección)",
+    "Übereinstimmungsschwelle (0-1, höher = strenger)": "Umbral de coincidencia (0-1, más alto = más estricto)",
+    "Kennzeichenerkennung aktivieren": "Activar reconocimiento de matrículas",
+    "Modus der Kennzeichenerkennung": "Modo de reconocimiento de matrículas",
+    "Modelle (YuNet/SFace von opencv_zoo für Gesichter, Detektor/OCR von fast-alpr für Kennzeichen) werden bei der ersten Verwendung automatisch in das Erkennungsmodell-Volume heruntergeladen - kein manueller Download nötig.": "Los modelos (YuNet/SFace de opencv_zoo para rostros, detector/OCR de fast-alpr para matrículas) se descargan automáticamente en el primer uso al volumen de modelos de detección - no se requiere ninguna descarga manual.",
+    "Bekanntes Gesicht anlernen": "Registrar un rostro conocido",
+    "Foto (ein klares, frontales Gesicht)": "Foto (un rostro claro, de frente)",
+    "Anlernen": "Registrar",
+    "Bekannte Gesichter": "Rostros conocidos",
+    "Noch keine Gesichter angelernt - jedes erkannte Gesicht wird als \"unbekannt\" gemeldet.": "Aún no se ha registrado ningún rostro - cada rostro detectado se reportará como \"desconocido\".",
+    "Bekanntes Kennzeichen hinzufügen": "Añadir una matrícula conocida",
+    "Kennzeichentext": "Texto de la matrícula",
+    "Noch keine bekannten Kennzeichen - jedes erkannte Kennzeichen wird als \"unbekannt\" gemeldet.": "Aún no hay matrículas conocidas - cada matrícula reconocida se reportará como \"desconocida\".",
+    "Bekannte Kennzeichen": "Matrículas conocidas",
+    "Letzte Erkennungsereignisse": "Eventos de reconocimiento recientes",
+    "Wann": "Cuándo",
+    "Ergebnis": "Resultado",
+    "Konfidenz": "Confianza",
+    "Noch keine Erkennungsereignisse": "Aún no hay eventos de reconocimiento",
+    "Kennzeichen": "Matrícula",
+    "Lizenz": "Licencia",
+    "TBC Camera Manager basiert auf den folgenden Open-Source-Projekten. Jedes wird unter seiner eigenen Lizenz verwendet, mit einem Link zur Quelle. Diese Liste umfasst direkte Abhängigkeiten und die vortrainierten Modelle, die TBC automatisch herunterlädt (z. B. für KI-Erkennung und Gesichts-/Kennzeichenerkennung) - sie deckt nicht jede transitive Abhängigkeit ab.": "TBC Camera Manager está construido sobre los proyectos de código abierto que se muestran a continuación. Cada uno se usa bajo su propia licencia, con un enlace a su fuente. Esta lista cubre las dependencias directas y los modelos preentrenados que TBC descarga automáticamente (por ejemplo, para la detección de IA y el reconocimiento facial/de matrículas) - no cubre todas las dependencias transitivas.",
+    "Werkzeug": "Herramienta",
+    "Web-Framework & Kern": "Framework web y núcleo",
+    "Kamera- und Cloud-Integrationen": "Integraciones de cámaras y nube",
+    "KI-Erkennung und -Wiedererkennung": "Detección y reconocimiento por IA",
+    "Event-Label, Nachricht, Kameraname…": "Etiqueta del evento, mensaje, nombre de la cámara…",
+    "‹ Vorherige Seite": "‹ Página anterior",
+    "Nächste Seite ›": "Página siguiente ›",
+    "SD-Karten-Aufzeichnungen (nicht verfügbar)": "Grabaciones de la tarjeta SD (no disponible)",
+    "Ein Balken wird für jede Ereignisaufnahme angezeigt, gruppiert nach Ereignistyp und Farbe. Wähle einen Balken, um die Timeline dieser Kamera für den Tag zu öffnen. Durchgehende 24/7-Aufzeichnung wird hier bewusst weggelassen; nutze dafür die Timeline für eine einzelne Kamera. Aktiviere \"SD card recordings\", um auch auf der Kamera gespeicherte Aufnahmen einzubeziehen, sofern sie ein Kamera-Archiv unterstützt.": "Se muestra un bloque por cada grabación de evento, agrupado por tipo de evento y color. Selecciona un bloque para abrir la línea de tiempo de esa cámara para el día. La grabación continua 24/7 se omite aquí a propósito; usa la línea de tiempo de una cámara individual para eso. Activa \"grabaciones de la tarjeta SD\" para incluir también las grabaciones almacenadas en cámaras que admiten un archivo propio de la cámara.",
+    "Keine Ereignisaufnahmen für diesen Tag verfügbar.": "No hay grabaciones de eventos disponibles para este día.",
+    "ntfy (selbstgehosteter Push)": "ntfy (push autoalojado)",
+    "Gotify (selbstgehosteter Push)": "Gotify (push autoalojado)",
+    "URL / Nutzer bei Pushover / HA-URL / ntfy-Themen-URL / Gotify-Server-URL": "URL / usuario de Pushover / URL de HA / URL del tema de ntfy / URL del servidor Gotify",
+    "Token (ntfy-Zugriffstoken / Gotify-App-Token)": "Token (token de acceso de ntfy / token de app de Gotify)",
+    "Einstellungen wurden gespeichert": "Se guardaron los ajustes",
+    "Gesicht wurde entfernt": "Se eliminó el rostro",
+    "Kennzeichen wurde gespeichert": "Se guardó la matrícula",
+    "Kennzeichen wurde aktualisiert": "Se actualizó la matrícula",
+    "Kennzeichen wurde entfernt": "Se eliminó la matrícula",
+    "Gesichtserkennungs-Modell konnte nicht geladen werden": "No se pudo cargar el modelo de reconocimiento facial",
+    "Kein Gesicht im Foto gefunden": "No se encontró ningún rostro en la foto",
+    "Bilddatei konnte nicht gelesen werden": "No se pudo leer el archivo de imagen"
+  },
+  "keyedMessages": {
+    "common.close": {
+      "en": "Close",
+      "de": "Schließen",
+      "es": "Cerrar"
+    },
+    "common.delete": {
+      "en": "Delete",
+      "de": "Löschen",
+      "es": "Eliminar"
+    },
+    "common.refresh": {
+      "en": "Refresh",
+      "de": "Aktualisieren",
+      "es": "Actualizar"
+    },
+    "common.all_classes": {
+      "en": "All classes",
+      "de": "Alle Klassen",
+      "es": "Todas las clases"
+    },
+    "common.unknown_error": {
+      "en": "unknown error",
+      "de": "unbekannter Fehler",
+      "es": "error desconocido"
+    },
+    "plugin.camera_install_prompt": {
+      "en": "Need another camera manufacturer?",
+      "de": "Weiteren Kamera-Hersteller benötigt?",
+      "es": "¿Necesitas otro fabricante de cámaras?"
+    },
+    "plugin.cloud_install_prompt": {
+      "en": "Need another cloud provider?",
+      "de": "Weiteren Cloud-Anbieter benötigt?",
+      "es": "¿Necesitas otro proveedor en la nube?"
+    },
+    "plugin.open_external_sources": {
+      "en": "Open External sources",
+      "de": "Externe Quellen öffnen",
+      "es": "Abrir fuentes externas"
+    },
+    "plugin.option_not_installed": {
+      "en": "{label} · Not installed",
+      "de": "{label} · Nicht installiert",
+      "es": "{label} · No instalado"
+    },
+    "plugin.camera_not_installed": {
+      "en": "{label} is not installed. Install this camera manufacturer from External sources before entering connection details.",
+      "de": "{label} ist nicht installiert. Installiere diesen Kamera-Hersteller zuerst über Externe Quellen, bevor du Verbindungsdaten eingibst.",
+      "es": "{label} no está instalado. Instala este fabricante de cámaras desde Fuentes externas antes de introducir los datos de conexión."
+    },
+    "plugin.cloud_not_installed": {
+      "en": "{label} is not installed. Install this cloud provider from External sources before entering account details.",
+      "de": "{label} ist nicht installiert. Installiere diesen Cloud-Anbieter zuerst über Externe Quellen, bevor du Kontodaten eingibst.",
+      "es": "{label} no está instalado. Instala este proveedor en la nube desde Fuentes externas antes de introducir los datos de la cuenta."
+    },
+    "plugin.cloud_provider": {
+      "en": "Cloud provider",
+      "de": "Cloud-Anbieter",
+      "es": "Proveedor en la nube"
+    },
+    "plugin.no_cloud_before": {
+      "en": "No cloud provider is installed yet. Install a",
+      "de": "Noch ist kein Cloud-Anbieter installiert. Installiere ein",
+      "es": "Todavía no hay ningún proveedor en la nube instalado. Instala un"
+    },
+    "plugin.cloud_plugin_link": {
+      "en": "cloud plugin from External sources",
+      "de": "Cloud-Plugin aus Externen Quellen",
+      "es": "plugin de nube desde Fuentes externas"
+    },
+    "plugin.no_cloud_after": {
+      "en": "before you can add an account.",
+      "de": "bevor du ein Konto hinzufügen kannst.",
+      "es": "antes de poder añadir una cuenta."
+    },
+    "plugin.account_label_placeholder": {
+      "en": "e.g. Home",
+      "de": "z. B. Zuhause",
+      "es": "p. ej., Casa"
+    },
+    "recording.local_ai_disabled_hint": {
+      "en": "Enable local AI detection for this camera before selecting these recording triggers.",
+      "de": "Aktiviere zuerst die lokale KI-Erkennung für diese Kamera, bevor du diese Aufnahmeauslöser auswählen kannst.",
+      "es": "Activa primero la detección de IA local para esta cámara antes de seleccionar estos activadores de grabación."
+    },
+    "recording.open_ai_detection": {
+      "en": "Open AI detection settings",
+      "de": "KI-Erkennung öffnen",
+      "es": "Abrir ajustes de detección de IA"
+    },
+    "dashboard.camera_status": {
+      "en": "Camera status",
+      "de": "Kamerastatus",
+      "es": "Estado de la cámara"
+    },
+    "dashboard.recording_active": {
+      "en": "Recording is active",
+      "de": "Aufnahme ist aktiviert",
+      "es": "La grabación está activa"
+    },
+    "dashboard.recording_inactive": {
+      "en": "Recording is disabled",
+      "de": "Aufnahme ist deaktiviert",
+      "es": "La grabación está desactivada"
+    },
+    "nav.activity": {
+      "en": "Activity",
+      "de": "Aktivität",
+      "es": "Actividad"
+    },
+    "nav.cameras": {
+      "en": "Cameras",
+      "de": "Kameras",
+      "es": "Cámaras"
+    },
+    "nav.language": {
+      "en": "Change language",
+      "de": "Sprache wechseln",
+      "es": "Cambiar idioma"
+    },
+    "nav.main": {
+      "en": "Main navigation",
+      "de": "Hauptnavigation",
+      "es": "Navegación principal"
+    },
+    "nav.sign_out": {
+      "en": "Sign out",
+      "de": "Abmelden",
+      "es": "Cerrar sesión"
+    },
+    "nav.toggle": {
+      "en": "Toggle navigation",
+      "de": "Navigation umschalten",
+      "es": "Alternar navegación"
+    },
+    "debug.empty": {
+      "en": "No debug messages yet",
+      "de": "Noch keine Debug-Meldungen",
+      "es": "Aún no hay mensajes de depuración"
+    },
+    "api.description.status": {
+      "en": "Application name, version, update availability, and camera count.",
+      "de": "App-Name, Version, Update-Verfügbarkeit und Kamera-Anzahl.",
+      "es": "Nombre de la aplicación, versión, disponibilidad de actualizaciones y número de cámaras."
+    },
+    "api.description.cameras": {
+      "en": "All cameras with capabilities, status, and detection counts.",
+      "de": "Alle Kameras mit Fähigkeiten, Status und Erkennungszählern.",
+      "es": "Todas las cámaras con capacidades, estado y contadores de detección."
+    },
+    "api.description.camera": {
+      "en": "A single camera by ID.",
+      "de": "Eine einzelne Kamera nach ID.",
+      "es": "Una cámara individual por ID."
+    },
+    "api.description.camera_snapshot": {
+      "en": "The camera's current preview image as binary data, not JSON.",
+      "de": "Das aktuelle Vorschaubild der Kamera als Binärdaten, nicht als JSON.",
+      "es": "La vista previa actual de la cámara como datos binarios, no JSON."
+    },
+    "api.description.camera_detections": {
+      "en": "The camera's current detection state for every configured detection type.",
+      "de": "Der aktuelle Erkennungszustand der Kamera für jede konfigurierte Erkennungsart.",
+      "es": "El estado de detección actual de la cámara para cada tipo configurado."
+    },
+    "api.description.recordings": {
+      "en": "Recording list. Query parameters: camera_id, detection_key, date_from, date_to, limit (default 200, maximum 1000).",
+      "de": "Aufnahmenliste. Query-Parameter: camera_id, detection_key, date_from, date_to, limit (Standard 200, maximal 1000).",
+      "es": "Lista de grabaciones. Parámetros: camera_id, detection_key, date_from, date_to y limit (200 por defecto, máximo 1000)."
+    },
+    "api.description.recording": {
+      "en": "Metadata for a single recording.",
+      "de": "Metadaten einer einzelnen Aufnahme.",
+      "es": "Metadatos de una grabación individual."
+    },
+    "api.description.recording_media": {
+      "en": "Video clip as binary MP4 data with HTTP Range support for seeking.",
+      "de": "Video-Clip als MP4-Binärdaten mit HTTP-Range-Unterstützung zum Spulen.",
+      "es": "Clip de vídeo como datos MP4 binarios con soporte HTTP Range para búsqueda."
+    },
+    "api.description.recording_snapshot": {
+      "en": "The recording's event preview image as binary data, not JSON.",
+      "de": "Das Ereignis-Vorschaubild der Aufnahme als Binärdaten, nicht als JSON.",
+      "es": "La vista previa del evento de la grabación como datos binarios, no JSON."
+    },
+    "api.description.activity": {
+      "en": "Event recordings across all cameras for one day. Query parameter: day (YYYY-MM-DD, defaults to today).",
+      "de": "Ereignisaufnahmen aller Kameras für einen Tag. Query-Parameter: day (YYYY-MM-DD, Standard ist heute).",
+      "es": "Grabaciones de eventos de todas las cámaras para un día. Parámetro: day (AAAA-MM-DD, hoy por defecto)."
+    },
+    "api.description.storage": {
+      "en": "Configured storage destinations without credentials.",
+      "de": "Konfigurierte Speicherziele ohne Zugangsdaten.",
+      "es": "Destinos de almacenamiento configurados sin credenciales."
+    },
+    "api.description.health": {
+      "en": "System usage and health status/events for cameras, storage, and MQTT.",
+      "de": "Systemauslastung sowie Health-Status und -Ereignisse für Kameras, Speicher und MQTT.",
+      "es": "Uso del sistema y estado/eventos de salud para cámaras, almacenamiento y MQTT."
+    },
+    "api.eyebrow": {
+      "en": "Integrations",
+      "de": "Integrationen",
+      "es": "Integraciones"
+    },
+    "api.title": {
+      "en": "API access",
+      "de": "API-Zugriff",
+      "es": "Acceso a la API"
+    },
+    "api.activate": {
+      "en": "Activate",
+      "de": "Aktivieren",
+      "es": "Activar"
+    },
+    "api.intro_before_rest": {
+      "en": "Provides read-only TBC content (cameras, recordings, activity, and status) under",
+      "de": "Stellt schreibgeschützte TBC-Inhalte (Kameras, Aufnahmen, Aktivität und Status) unter",
+      "es": "Proporciona contenido TBC de solo lectura (cámaras, grabaciones, actividad y estado) en"
+    },
+    "api.intro_between_endpoints": {
+      "en": "for external scripts, dashboards, or Home Assistant, and exposes the same content as MCP tools for an AI agent (Claude Desktop, Claude Code, etc.) under",
+      "de": "für externe Skripte, Dashboards oder Home Assistant bereit und stellt dieselben Inhalte als MCP-Tools für einen KI-Agenten (Claude Desktop, Claude Code usw.) unter",
+      "es": "para scripts externos, paneles o Home Assistant, y ofrece el mismo contenido como herramientas MCP para un agente de IA (Claude Desktop, Claude Code, etc.) en"
+    },
+    "api.intro_disabled": {
+      "en": ". Disabled by default.",
+      "de": ". Standardmäßig deaktiviert.",
+      "es": ". Desactivado de forma predeterminada."
+    },
+    "api.enable": {
+      "en": "Enable API",
+      "de": "API aktivieren",
+      "es": "Activar API"
+    },
+    "api.require_key": {
+      "en": "Require API key",
+      "de": "API-Key erforderlich",
+      "es": "Requerir clave API"
+    },
+    "api.not_generated": {
+      "en": "Not generated yet",
+      "de": "Noch nicht erzeugt",
+      "es": "Aún no generada"
+    },
+    "api.generate_key": {
+      "en": "Generate new key",
+      "de": "Neuen Schlüssel erzeugen",
+      "es": "Generar nueva clave"
+    },
+    "api.revoke_key": {
+      "en": "Revoke key",
+      "de": "Schlüssel widerrufen",
+      "es": "Revocar clave"
+    },
+    "api.rest_examples": {
+      "en": "REST API examples",
+      "de": "REST-API-Beispiele",
+      "es": "Ejemplos de la API REST"
+    },
+    "api.examples_before_key": {
+      "en": "Each example shows the exact request and a realistic example response containing every field TBC actually returns. Replace",
+      "de": "Jedes Beispiel zeigt die genaue Anfrage und eine realistische Beispielantwort mit allen Feldern, die TBC tatsächlich zurückgibt. Ersetze",
+      "es": "Cada ejemplo muestra la solicitud exacta y una respuesta realista con todos los campos que TBC devuelve. Sustituye"
+    },
+    "api.examples_between": {
+      "en": "with the generated API key above. See",
+      "de": "durch den oben erzeugten API-Key. Siehe",
+      "es": "por la clave API generada arriba. Consulta"
+    },
+    "api.examples_after_docs": {
+      "en": "for details and all query parameters.",
+      "de": "für Details und alle Query-Parameter.",
+      "es": "para obtener detalles y todos los parámetros de consulta."
+    },
+    "api.request": {
+      "en": "Request:",
+      "de": "Anfrage:",
+      "es": "Solicitud:"
+    },
+    "api.response": {
+      "en": "Response:",
+      "de": "Antwort:",
+      "es": "Respuesta:"
+    },
+    "api.mcp_title": {
+      "en": "MCP tools (AI interface)",
+      "de": "MCP-Tools (KI-Schnittstelle)",
+      "es": "Herramientas MCP (interfaz de IA)"
+    },
+    "api.mcp_intro_before_docs": {
+      "en": "The same content is available as MCP tools for an AI agent instead of REST endpoints. Every tool invokes the same logic as its corresponding REST endpoint above. See",
+      "de": "Dieselben Inhalte stehen als MCP-Tools für einen KI-Agenten statt als REST-Endpunkte bereit. Jedes Tool verwendet dieselbe Logik wie der entsprechende REST-Endpunkt oben. Siehe",
+      "es": "El mismo contenido está disponible como herramientas MCP para un agente de IA en lugar de endpoints REST. Cada herramienta usa la misma lógica que su endpoint REST correspondiente. Consulta"
+    },
+    "api.mcp_intro_after_docs": {
+      "en": "for client configuration details (Claude Code, Claude.ai, and generic JSON clients).",
+      "de": "für Details zur Client-Konfiguration (Claude Code, Claude.ai und generische JSON-Clients).",
+      "es": "para detalles de configuración del cliente (Claude Code, Claude.ai y clientes JSON genéricos)."
+    },
+    "api.mcp_call_example": {
+      "en": "Example MCP tool call (JSON-RPC via",
+      "de": "Beispiel eines MCP-Tool-Aufrufs (JSON-RPC über",
+      "es": "Ejemplo de llamada a una herramienta MCP (JSON-RPC mediante"
+    },
+    "api.response_excerpt": {
+      "en": "Response (excerpt):",
+      "de": "Antwort (Auszug):",
+      "es": "Respuesta (extracto):"
+    },
+    "api.response.jpeg": {
+      "en": "Response: image data with Content-Type: image/jpeg",
+      "de": "Antwort: Bilddaten mit Content-Type: image/jpeg",
+      "es": "Respuesta: datos de imagen con Content-Type: image/jpeg"
+    },
+    "api.response.mp4": {
+      "en": "Response: video data with Content-Type: video/mp4",
+      "de": "Antwort: Videodaten mit Content-Type: video/mp4",
+      "es": "Respuesta: datos de vídeo con Content-Type: video/mp4"
+    },
+    "mcp.description.cameras": {
+      "en": "All cameras with capabilities and status.",
+      "de": "Alle Kameras mit Fähigkeiten und Status.",
+      "es": "Todas las cámaras con capacidades y estado."
+    },
+    "mcp.description.camera_detections": {
+      "en": "The current detection state of a camera.",
+      "de": "Der aktuelle Erkennungszustand einer Kamera.",
+      "es": "El estado de detección actual de una cámara."
+    },
+    "mcp.description.camera_snapshot": {
+      "en": "A camera's current live preview as an image, not only a URL.",
+      "de": "Das aktuelle Live-Vorschaubild einer Kamera als Bild, nicht nur als URL.",
+      "es": "La vista previa en directo de una cámara como imagen, no solo como URL."
+    },
+    "mcp.description.recordings": {
+      "en": "Recordings filtered by camera, detection type, and date range.",
+      "de": "Aufnahmen, filterbar nach Kamera, Erkennungstyp und Datumsbereich.",
+      "es": "Grabaciones filtradas por cámara, tipo de detección y rango de fechas."
+    },
+    "mcp.description.recording_snapshot": {
+      "en": "A recording's event preview image when a local snapshot exists.",
+      "de": "Das Ereignis-Vorschaubild einer Aufnahme, wenn ein lokaler Snapshot vorhanden ist.",
+      "es": "La vista previa del evento de una grabación cuando existe una captura local."
+    },
+    "mcp.description.activity": {
+      "en": "Event recordings across all cameras for one day.",
+      "de": "Ereignisaufnahmen aller Kameras für einen Tag.",
+      "es": "Grabaciones de eventos de todas las cámaras para un día."
+    },
+    "mcp.description.health": {
+      "en": "System usage and health status/events.",
+      "de": "Systemauslastung sowie Health-Status und -Ereignisse.",
+      "es": "Uso del sistema y estado/eventos de salud."
+    },
+    "health.check_failed": {
+      "en": "The health check could not be loaded",
+      "de": "Health-Check konnte nicht geladen werden",
+      "es": "No se pudo cargar la comprobación de estado"
+    },
+    "health.check_running": {
+      "en": "Check running",
+      "de": "Prüfung läuft",
+      "es": "Comprobación en curso"
+    },
+    "health.updated": {
+      "en": "Updated",
+      "de": "Aktualisiert",
+      "es": "Actualizado"
+    },
+    "health.cores": {
+      "en": "{count} cores · {load}",
+      "de": "{count} Kerne · {load}",
+      "es": "{count} núcleos · {load}"
+    },
+    "live.api_failed": {
+      "en": "The live API could not be loaded",
+      "de": "Live-API konnte nicht geladen werden",
+      "es": "No se pudo cargar la API en directo"
+    },
+    "live.error_count": {
+      "en": " · {count} errors",
+      "de": " · {count} Fehler",
+      "es": " · {count} errores"
+    },
+    "live.missing": {
+      "en": "No stream is known",
+      "de": "Kein Stream bekannt",
+      "es": "No se conoce ninguna transmisión"
+    },
+    "live.no_streams": {
+      "en": "No streams",
+      "de": "Keine Streams",
+      "es": "No hay transmisiones"
+    },
+    "live.starting_count": {
+      "en": " · {count} starting",
+      "de": " · {count} starten",
+      "es": " · {count} iniciándose"
+    },
+    "live.starting": {
+      "en": "Streams are starting",
+      "de": "Streams werden gestartet",
+      "es": "Las transmisiones se están iniciando"
+    },
+    "live.stream_starting": {
+      "en": "Stream is starting",
+      "de": "Stream startet",
+      "es": "La transmisión se está iniciando"
+    },
+    "live.stream_starting_progress": {
+      "en": "Stream is starting…",
+      "de": "Stream wird gestartet…",
+      "es": "La transmisión se está iniciando…"
+    },
+    "live.stream_stopped": {
+      "en": "Stream stopped",
+      "de": "Stream gestoppt",
+      "es": "Transmisión detenida"
+    },
+    "live.stream_failed": {
+      "en": "Stream could not start",
+      "de": "Stream konnte nicht starten",
+      "es": "No se pudo iniciar la transmisión"
+    },
+    "live.waiting": {
+      "en": "Waiting for stream",
+      "de": "Warte auf Stream",
+      "es": "Esperando la transmisión"
+    },
+    "camera.command_failed": {
+      "en": "Command failed",
+      "de": "Befehl fehlgeschlagen",
+      "es": "El comando falló"
+    },
+    "camera.command_network_failed": {
+      "en": "Command failed: network error",
+      "de": "Befehl fehlgeschlagen: Netzwerkfehler",
+      "es": "El comando falló: error de red"
+    },
+    "camera.command_sent": {
+      "en": "Command was sent",
+      "de": "Befehl wurde gesendet",
+      "es": "El comando fue enviado"
+    },
+    "camera.stream_start_failed": {
+      "en": "Stream could not be started",
+      "de": "Stream konnte nicht gestartet werden",
+      "es": "No se pudo iniciar la transmisión"
+    },
+    "camera.stream_unavailable": {
+      "en": "Stream unavailable",
+      "de": "Stream nicht verfügbar",
+      "es": "Transmisión no disponible"
+    },
+    "firmware.check_failed": {
+      "en": "Firmware check failed",
+      "de": "Firmware-Prüfung fehlgeschlagen",
+      "es": "La comprobación del firmware falló"
+    },
+    "firmware.checking": {
+      "en": "Checking for updates…",
+      "de": "Prüfe auf Updates…",
+      "es": "Buscando actualizaciones…"
+    },
+    "firmware.current": {
+      "en": "Firmware is up to date.",
+      "de": "Firmware ist aktuell.",
+      "es": "El firmware está actualizado."
+    },
+    "firmware.failed": {
+      "en": "Update failed: {error}",
+      "de": "Update fehlgeschlagen: {error}",
+      "es": "La actualización falló: {error}"
+    },
+    "firmware.new_available": {
+      "en": "New firmware available: {version}",
+      "de": "Neue Firmware verfügbar: {version}",
+      "es": "Nuevo firmware disponible: {version}"
+    },
+    "firmware.start_failed": {
+      "en": "The update could not be started",
+      "de": "Update konnte nicht gestartet werden",
+      "es": "No se pudo iniciar la actualización"
+    },
+    "firmware.updating": {
+      "en": "Update in progress…",
+      "de": "Update läuft…",
+      "es": "Actualización en curso…"
+    },
+    "firmware.starting": {
+      "en": "Starting update…",
+      "de": "Update wird gestartet…",
+      "es": "Iniciando actualización…"
+    },
+    "firmware.updated": {
+      "en": "Firmware was updated. The camera is restarting and will be unavailable briefly.",
+      "de": "Firmware wurde aktualisiert. Die Kamera startet neu und ist kurz nicht erreichbar.",
+      "es": "El firmware se actualizó. La cámara se está reiniciando y no estará disponible brevemente."
+    },
+    "firmware.confirm": {
+      "en": "Update the firmware now? The camera will be unavailable during the update and restart afterward. This can take several minutes and must not be interrupted.",
+      "de": "Firmware jetzt aktualisieren? Die Kamera ist während des Updates nicht erreichbar und startet danach neu. Der Vorgang kann mehrere Minuten dauern und darf nicht unterbrochen werden.",
+      "es": "¿Actualizar el firmware ahora? La cámara no estará disponible durante la actualización y se reiniciará después. El proceso puede tardar varios minutos y no debe interrumpirse."
+    },
+    "sd_card.load_failed": {
+      "en": "The SD card contents could not be loaded",
+      "de": "SD-Karteninhalt konnte nicht geladen werden",
+      "es": "No se pudo cargar el contenido de la tarjeta SD"
+    },
+    "sd_card.preview": {
+      "en": "Preview",
+      "de": "Vorschau",
+      "es": "Vista previa"
+    },
+    "debug.entry_count": {
+      "en": "{count} entries",
+      "de": "{count} Einträge",
+      "es": "{count} entradas"
+    },
+    "timeline.play": {
+      "en": "Play",
+      "de": "Abspielen",
+      "es": "Reproducir"
+    },
+    "player.play_pause": {
+      "en": "Play/Pause",
+      "de": "Wiedergabe/Pause",
+      "es": "Reproducir/Pausa"
+    },
+    "player.mute": {
+      "en": "Mute",
+      "de": "Stumm",
+      "es": "Silenciar"
+    },
+    "player.fullscreen": {
+      "en": "Fullscreen",
+      "de": "Vollbild",
+      "es": "Pantalla completa"
+    },
+    "player.ptz_up": {
+      "en": "Up",
+      "de": "Hoch",
+      "es": "Arriba"
+    },
+    "player.ptz_left": {
+      "en": "Left",
+      "de": "Links",
+      "es": "Izquierda"
+    },
+    "player.ptz_stop": {
+      "en": "Stop",
+      "de": "Stopp",
+      "es": "Detener"
+    },
+    "player.ptz_right": {
+      "en": "Right",
+      "de": "Rechts",
+      "es": "Derecha"
+    },
+    "player.ptz_down": {
+      "en": "Down",
+      "de": "Runter",
+      "es": "Abajo"
+    },
+    "player.zoom_out": {
+      "en": "Zoom out",
+      "de": "Auszoomen",
+      "es": "Alejar"
+    },
+    "player.zoom_in": {
+      "en": "Zoom in",
+      "de": "Einzoomen",
+      "es": "Acercar"
+    },
+    "timeline.no_events": {
+      "en": "No events yet",
+      "de": "Noch keine Ereignisse",
+      "es": "Aún no hay eventos"
+    },
+    "zones.empty": {
+      "en": "No zones have been defined yet",
+      "de": "Noch keine Zonen definiert",
+      "es": "Aún no se han definido zonas"
+    },
+    "zones.save_failed": {
+      "en": "The zone could not be saved",
+      "de": "Zone konnte nicht gespeichert werden",
+      "es": "No se pudo guardar la zona"
+    },
+    "zones.save_network_failed": {
+      "en": "The zone could not be saved: network error",
+      "de": "Zone konnte nicht gespeichert werden: Netzwerkfehler",
+      "es": "No se pudo guardar la zona: error de red"
+    },
+    "zones.delete_failed": {
+      "en": "The zone could not be deleted",
+      "de": "Zone konnte nicht gelöscht werden",
+      "es": "No se pudo eliminar la zona"
+    },
+    "zones.delete_network_failed": {
+      "en": "The zone could not be deleted: network error",
+      "de": "Zone konnte nicht gelöscht werden: Netzwerkfehler",
+      "es": "No se pudo eliminar la zona: error de red"
+    },
+    "zones.mode_include": {
+      "en": "Include",
+      "de": "Einschluss",
+      "es": "Inclusión"
+    },
+    "zones.mode_exclude": {
+      "en": "Exclude",
+      "de": "Ausschluss",
+      "es": "Exclusión"
+    },
+    "zones.mode_loiter": {
+      "en": "Loitering zone ({seconds}s)",
+      "de": "Verweilzone ({seconds}s)",
+      "es": "Zona de permanencia ({seconds}s)"
+    }
+  },
+  "englishPatterns": [
+    [
+      "^(\\d+) Eintraege$",
+      "$1 entries"
+    ],
+    [
+      "^Aktuelles Vorschaubild von (.+)$",
+      "Current preview image from $1"
+    ],
+    [
+      "^(\\d+) Kerne · (.+)$",
+      "$1 cores · $2"
+    ],
+    [
+      "^Vorschaubild · Aktualisierung alle (\\d+) Minuten$",
+      "Preview image · refreshed every $1 minutes"
+    ],
+    [
+      "^(\\d+) Clips wurden gelöscht$",
+      "$1 clips were deleted"
+    ],
+    [
+      "^(\\d+) Clips wurden per Retention gelöscht$",
+      "$1 clips were deleted by retention"
+    ],
+    [
+      "^(\\d+)\\/(\\d+) live · (\\d+) starten$",
+      "$1/$2 live · $3 starting"
+    ],
+    [
+      "^(\\d+)\\/(\\d+) live · (\\d+) Fehler$",
+      "$1/$2 live · $3 errors"
+    ],
+    [
+      "^(\\d+)\\/(\\d+) live · (\\d+) starten · (\\d+) Fehler$",
+      "$1/$2 live · $3 starting · $4 errors"
+    ],
+    [
+      "^Plugin wird noch von (\\d+) Kamera\\(s\\) verwendet$",
+      "Plugin is still used by $1 camera(s)"
+    ],
+    [
+      "^(\\d+) Spalten$",
+      "$1 columns"
+    ],
+    [
+      "^Updates \\((\\d+)\\)$",
+      "Updates ($1)"
+    ],
+    [
+      "^Geräte von (.+)$",
+      "Devices from $1"
+    ],
+    [
+      "^Firmware (.+)$",
+      "Firmware $1"
+    ],
+    [
+      "^(\\d+) Kanal\\/Kanäle · (\\d+) Erkennungen$",
+      "$1 channel(s) · $2 detections"
+    ],
+    [
+      "^(\\d+) aktive Erkennungen$",
+      "$1 active detections"
+    ],
+    [
+      "^Kanal (\\d+): (.+)$",
+      "Channel $1: $2"
+    ],
+    [
+      "^Mit Eufy Security verbunden \\((\\d+) Kamera\\(s\\), (\\d+) Station\\(en\\)\\)$",
+      "Connected to Eufy Security ($1 camera(s), $2 station(s))"
+    ],
+    [
+      "^Mit eWeLink verbunden \\((\\d+) Gerät\\(e\\)\\)$",
+      "Connected to eWeLink ($1 device(s))"
+    ],
+    [
+      "^Verbunden mit (.+) \\(UniFi Protect (.+), (\\d+) Kamera\\(s\\)\\)$",
+      "Connected to $1 (UniFi Protect $2, $3 camera(s))"
+    ],
+    [
+      "^Kamera-Plugin (.+) wurde installiert$",
+      "Camera plugin $1 was installed"
+    ],
+    [
+      "^Cloud-Plugin (.+) wurde installiert$",
+      "Cloud plugin $1 was installed"
+    ],
+    [
+      "^Design (.+) wurde installiert$",
+      "Design $1 was installed"
+    ],
+    [
+      "^Plugin '(.+)' wurde installiert\\/aktualisiert$",
+      "Plugin '$1' was installed/updated"
+    ],
+    [
+      "^Plugin wird noch von (\\d+) Cloud-Konto\\(s\\) verwendet$",
+      "Plugin is still used by $1 cloud account(s)"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Ereignisaufnahmen$",
+      "The $1 module does not support event recordings"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Daueraufzeichnung$",
+      "The $1 module does not support continuous recording"
+    ],
+    [
+      "^Das Modul (.+) unterstützt kein Kamera-Archiv$",
+      "The $1 module does not support a camera archive"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Kamerasteuerung$",
+      "The $1 module does not support camera controls"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Firmware-Prüfung$",
+      "The $1 module does not support firmware checks"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Firmware-Updates$",
+      "The $1 module does not support firmware updates"
+    ],
+    [
+      "^Dieses Modul unterstützt die Aktion '(.+)' nicht über ONVIF$",
+      "This module does not support the '$1' action via ONVIF"
+    ],
+    [
+      "^Verbindung gespeichert, Probe fehlgeschlagen: (.+)$",
+      "Connection saved, probe failed: $1"
+    ],
+    [
+      "^Verbindung fehlgeschlagen: (.+)$",
+      "Connection failed: $1"
+    ],
+    [
+      "^eWeLink-Verbindung fehlgeschlagen: (.+)$",
+      "eWeLink connection failed: $1"
+    ],
+    [
+      "^eWeLink-Anmeldung fehlgeschlagen: (.+) \\(Fehlercode (.+)\\)$",
+      "eWeLink sign-in failed: $1 (error code $2)"
+    ],
+    [
+      "^Live-Ansicht konnte nicht gestartet werden: (.+)$",
+      "Live view could not be started: $1"
+    ],
+    [
+      "^Speicherziel konnte nicht angelegt werden: (.+)$",
+      "Storage destination could not be created: $1"
+    ],
+    [
+      "^Plugin-Import fehlgeschlagen: (.+)$",
+      "Plugin import failed: $1"
+    ],
+    [
+      "^Plugin konnte nicht entfernt werden: (.+)$",
+      "Plugin could not be removed: $1"
+    ],
+    [
+      "^Design-Import fehlgeschlagen: (.+)$",
+      "Design import failed: $1"
+    ],
+    [
+      "^Design konnte nicht entfernt werden: (.+)$",
+      "Design could not be removed: $1"
+    ],
+    [
+      "^Prüfung fehlgeschlagen: (.+)$",
+      "Check failed: $1"
+    ],
+    [
+      "^Firmware-Prüfung fehlgeschlagen: (.+)$",
+      "Firmware check failed: $1"
+    ],
+    [
+      "^Update fehlgeschlagen: (.+)$",
+      "Update failed: $1"
+    ],
+    [
+      "^Neue Firmware verfügbar: (.+)$",
+      "New firmware available: $1"
+    ],
+    [
+      "^Befehl abgebrochen: Kamera antwortet nicht innerhalb von (\\d+)s$",
+      "Command canceled: camera did not respond within $1s"
+    ],
+    [
+      "^Befehl fehlgeschlagen: (.+)$",
+      "Command failed: $1"
+    ],
+    [
+      "^Geräte-Suche antwortet nicht innerhalb von (\\d+)s$",
+      "Device discovery did not respond within $1s"
+    ],
+    [
+      "^Geräte-Suche fehlgeschlagen: (.+)$",
+      "Device discovery failed: $1"
+    ],
+    [
+      "^Verbindung antwortet nicht innerhalb von (\\d+)s$",
+      "Connection did not respond within $1s"
+    ],
+    [
+      "^GitHub antwortet nicht innerhalb von (\\d+)s$",
+      "GitHub did not respond within $1s"
+    ],
+    [
+      "^GitHub-Anfrage fehlgeschlagen: HTTP (.+)$",
+      "GitHub request failed: HTTP $1"
+    ],
+    [
+      "^GitHub konnte nicht erreicht werden: (.+)$",
+      "GitHub could not be reached: $1"
+    ],
+    [
+      "^Repository oder Branch\\/Tag nicht gefunden \\(ist '(.+)' öffentlich, existiert '(.+)'\\?\\)$",
+      "Repository or branch/tag not found (is '$1' public, does '$2' exist?)"
+    ],
+    [
+      "^Kein Inhalt unter '(.+)' im Repository gefunden$",
+      "No content was found at '$1' in the repository"
+    ],
+    [
+      "^SD-Card-Inhalte konnten nicht gelesen werden: (.+)$",
+      "SD card content could not be read: $1"
+    ],
+    [
+      "^SD-Card-Medium konnte nicht geoeffnet werden: (.+)$",
+      "SD card media could not be opened: $1"
+    ],
+    [
+      "^Das Modul (.+) akzeptiert keine manuelle Stream-URL$",
+      "The $1 module does not accept a manual stream URL"
+    ],
+    [
+      "^(.+) muss aktiviert sein$",
+      "$1 must be enabled"
+    ],
+    [
+      "^(.+) ist erforderlich$",
+      "$1 is required"
+    ],
+    [
+      "^(.+) muss eine ganze Zahl sein$",
+      "$1 must be an integer"
+    ],
+    [
+      "^(.+) muss mindestens (.+) sein$",
+      "$1 must be at least $2"
+    ],
+    [
+      "^(.+) darf höchstens (.+) sein$",
+      "$1 must be at most $2"
+    ],
+    [
+      "^Ungültige Auswahl für (.+)$",
+      "Invalid selection for $1"
+    ],
+    [
+      "^(.+) muss eine Zahl sein$",
+      "$1 must be a number"
+    ],
+    [
+      "^Ungültiger Wert für (.+): (.+)$",
+      "Invalid value for $1: $2"
+    ],
+    [
+      "^Ungültige Preset-ID: (.+)$",
+      "Invalid preset ID: $1"
+    ],
+    [
+      "^Manifest konnte nicht gelesen werden: (.+)$",
+      "Manifest could not be read: $1"
+    ],
+    [
+      "^Nicht unterstützte Plugin-Schemaversion: (.+)$",
+      "Unsupported plugin schema version: $1"
+    ],
+    [
+      "^Nicht unterstützte Design-Schemaversion: (.+)$",
+      "Unsupported design schema version: $1"
+    ],
+    [
+      "^Unbekannte Plugin-Fähigkeit: (.+)$",
+      "Unknown plugin capability: $1"
+    ],
+    [
+      "^Plugin-Einstiegspunkt fehlt: (.+)$",
+      "Plugin entry point is missing: $1"
+    ],
+    [
+      "^Plugin-Code konnte nicht geladen werden: (.+)$",
+      "Plugin code could not be loaded: $1"
+    ],
+    [
+      "^Nicht erlaubter Dateityp: (.+)$",
+      "File type is not allowed: $1"
+    ],
+    [
+      "^Ungültiger oder doppelter Konto-Feldschlüssel: (.+)$",
+      "Invalid or duplicate account field key: $1"
+    ],
+    [
+      "^Konto-Feld (.+) benötigt eine Beschriftung$",
+      "Account field $1 requires a label"
+    ],
+    [
+      "^Unbekannter Konto-Feldtyp für (.+)$",
+      "Unknown account field type for $1"
+    ],
+    [
+      "^min darf bei (.+) nicht größer als max sein$",
+      "min must not be greater than max for $1"
+    ],
+    [
+      "^Ungültiger Standardwert für (.+)$",
+      "Invalid default value for $1"
+    ],
+    [
+      "^Standardwert von (.+) fehlt in options$",
+      "The default value for $1 is missing from options"
+    ],
+    [
+      "^options ist nur bei Auswahlfeldern erlaubt \\((.+)\\)$",
+      "options is only allowed for select fields ($1)"
+    ],
+    [
+      "^Auswahlfeld (.+) benötigt options$",
+      "Select field $1 requires options"
+    ],
+    [
+      "^Ungültige Auswahloption für (.+)$",
+      "Invalid selection option for $1"
+    ],
+    [
+      "^Leere oder doppelte Auswahloption für (.+)$",
+      "Empty or duplicate selection option for $1"
+    ],
+    [
+      "^Unbekannter Wert für verification_support: (.+)$",
+      "Unknown verification_support value: $1"
+    ],
+    [
+      "^Cloud-Modul '(.+)' ist nicht installiert$",
+      "Cloud module '$1' is not installed"
+    ],
+    [
+      "^Kamera-Modul '(.+)' ist nicht installiert$",
+      "Camera module '$1' is not installed"
+    ],
+    [
+      "^Design '(.+)' ist nicht installiert$",
+      "Design '$1' is not installed"
+    ],
+    [
+      "^ONVIF-Bibliothek ist nicht installiert: (.+)$",
+      "ONVIF library is not installed: $1"
+    ],
+    [
+      "^ONVIF-Verbindung fehlgeschlagen: (.+)$",
+      "ONVIF connection failed: $1"
+    ],
+    [
+      "^Reolink-Status konnte nicht abgefragt werden: (.+)$",
+      "Reolink status could not be retrieved: $1"
+    ],
+    [
+      "^Tests abgebrochen: keine Rückmeldung innerhalb von (\\d+)s$",
+      "Tests canceled: no response within $1s"
+    ],
+    [
+      "^Tests konnten nicht gestartet werden: (.+)$",
+      "Tests could not be started: $1"
+    ],
+    [
+      "^(.+): (\\d+) GB frei$",
+      "$1: $2 GB free"
+    ],
+    [
+      "^(.+): Cloud-Ziel konfiguriert$",
+      "$1: cloud destination configured"
+    ],
+    [
+      "^(.+): kein Stream bekannt$",
+      "$1: no stream known"
+    ],
+    [
+      "^älter als (\\d+) Tage$",
+      "older than $1 days"
+    ],
+    [
+      "^über (.+) GB Limit$",
+      "over the $1 GB limit"
+    ],
+    [
+      "^(.+) · (Dahua-Kameras und NVR \\(inkl\\. Amcrest\\/Annke-OEMs\\) über ONVIF und RTSP)$",
+      "$1 · Dahua cameras and NVRs (including Amcrest/Annke OEMs) via ONVIF and RTSP"
+    ],
+    [
+      "^(.+) · (Axis-Netzwerkkameras über ONVIF Profile S\\/T)$",
+      "$1 · Axis network cameras via ONVIF Profiles S/T"
+    ],
+    [
+      "^(.+) · (Hikvision-Kameras und NVR über ONVIF und RTSP)$",
+      "$1 · Hikvision cameras and NVRs via ONVIF and RTSP"
+    ],
+    [
+      "^(.+) · (Foscam-Kameras über ONVIF und RTSP)$",
+      "$1 · Foscam cameras via ONVIF and RTSP"
+    ],
+    [
+      "^(.+) · (Herstellerneutraler RTSP-\\/RTSPS-Stream ohne ONVIF)$",
+      "$1 · Vendor-neutral RTSP/RTSPS stream without ONVIF"
+    ],
+    [
+      "^(.+) · (SONOFF-Kameras über den in eWeLink erzeugten RTSP-Link)$",
+      "$1 · SONOFF cameras via the RTSP link generated in eWeLink"
+    ],
+    [
+      "^(.+) · (UniFi-Protect-Kameras über einen erzeugten RTSP-\\/RTSPS-Link)$",
+      "$1 · UniFi Protect cameras via a generated RTSP/RTSPS link"
+    ],
+    [
+      "^(.+) · (Eufy-Security-Cloud-Konto und Kamerasuche via pyeufysecurity)$",
+      "$1 · Eufy Security cloud account and camera discovery via pyeufysecurity"
+    ],
+    [
+      "^(.+) · (SONOFF-Geräte über das offizielle eWeLink\\/CoolKit-Open-Platform-Cloud-Konto)$",
+      "$1 · SONOFF devices via the official eWeLink/CoolKit Open Platform cloud account"
+    ],
+    [
+      "^(.+) · (Ubiquiti UniFi Protect Controller \\(lokal oder über die ui\\.com-Cloud-Konsole\\) via uiprotect)$",
+      "$1 · Ubiquiti UniFi Protect controller (local or via the ui.com cloud console) using uiprotect"
+    ],
+    [
+      "^(\\d+) Clips gefunden · Seite (\\d+) von (\\d+)$",
+      "$1 clips found · page $2 of $3"
+    ],
+    [
+      "^Gesicht für (.+) wurde gespeichert$",
+      "Face for $1 was saved"
+    ],
+    [
+      "^Gesicht konnte nicht gespeichert werden: (.+)$",
+      "Face could not be saved: $1"
+    ]
+  ],
+  "spanishPatterns": [
+    [
+      "^(\\d+) Eintraege$",
+      "$1 entradas"
+    ],
+    [
+      "^Aktuelles Vorschaubild von (.+)$",
+      "Vista previa actual de $1"
+    ],
+    [
+      "^(\\d+) Kerne · (.+)$",
+      "$1 núcleos · $2"
+    ],
+    [
+      "^Vorschaubild · Aktualisierung alle (\\d+) Minuten$",
+      "Vista previa · actualización cada $1 minutos"
+    ],
+    [
+      "^(\\d+) Clips wurden gelöscht$",
+      "Se eliminaron $1 clips"
+    ],
+    [
+      "^(\\d+) Clips wurden per Retention gelöscht$",
+      "Se eliminaron $1 clips por retención"
+    ],
+    [
+      "^(\\d+)\\/(\\d+) live · (\\d+) starten$",
+      "$1/$2 en directo · $3 iniciándose"
+    ],
+    [
+      "^(\\d+)\\/(\\d+) live · (\\d+) Fehler$",
+      "$1/$2 en directo · $3 errores"
+    ],
+    [
+      "^(\\d+)\\/(\\d+) live · (\\d+) starten · (\\d+) Fehler$",
+      "$1/$2 en directo · $3 iniciándose · $4 errores"
+    ],
+    [
+      "^(\\d+) Spalten$",
+      "$1 columnas"
+    ],
+    [
+      "^Updates \\((\\d+)\\)$",
+      "Actualizaciones ($1)"
+    ],
+    [
+      "^Geräte von (.+)$",
+      "Dispositivos de $1"
+    ],
+    [
+      "^Firmware (.+)$",
+      "Firmware $1"
+    ],
+    [
+      "^(\\d+) Kanal\\/Kanäle · (\\d+) Erkennungen$",
+      "$1 canal(es) · $2 detecciones"
+    ],
+    [
+      "^(\\d+) aktive Erkennungen$",
+      "$1 detecciones activas"
+    ],
+    [
+      "^Kanal (\\d+): (.+)$",
+      "Canal $1: $2"
+    ],
+    [
+      "^Mit Eufy Security verbunden \\((\\d+) Kamera\\(s\\), (\\d+) Station\\(en\\)\\)$",
+      "Conectado con Eufy Security ($1 cámara(s), $2 estación(es))"
+    ],
+    [
+      "^Mit eWeLink verbunden \\((\\d+) Gerät\\(e\\)\\)$",
+      "Conectado con eWeLink ($1 dispositivo(s))"
+    ],
+    [
+      "^Verbunden mit (.+) \\(UniFi Protect (.+), (\\d+) Kamera\\(s\\)\\)$",
+      "Conectado con $1 (UniFi Protect $2, $3 cámara(s))"
+    ],
+    [
+      "^Plugin wird noch von (\\d+) Kamera\\(s\\) verwendet$",
+      "El plugin todavía se usa en $1 cámara(s)"
+    ],
+    [
+      "^Plugin wird noch von (\\d+) Cloud-Konto\\(s\\) verwendet$",
+      "El plugin todavía se usa en $1 cuenta(s) en la nube"
+    ],
+    [
+      "^Kamera-Plugin (.+) wurde installiert$",
+      "Se instaló el plugin de cámara $1"
+    ],
+    [
+      "^Cloud-Plugin (.+) wurde installiert$",
+      "Se instaló el plugin de nube $1"
+    ],
+    [
+      "^Design (.+) wurde installiert$",
+      "Se instaló el diseño $1"
+    ],
+    [
+      "^Plugin '(.+)' wurde installiert\\/aktualisiert$",
+      "Se instaló/actualizó el plugin '$1'"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Ereignisaufnahmen$",
+      "El módulo $1 no admite grabaciones de eventos"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Daueraufzeichnung$",
+      "El módulo $1 no admite grabación continua"
+    ],
+    [
+      "^Das Modul (.+) unterstützt kein Kamera-Archiv$",
+      "El módulo $1 no admite un archivo de cámara"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Kamerasteuerung$",
+      "El módulo $1 no admite controles de cámara"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Firmware-Prüfung$",
+      "El módulo $1 no admite comprobaciones de firmware"
+    ],
+    [
+      "^Das Modul (.+) unterstützt keine Firmware-Updates$",
+      "El módulo $1 no admite actualizaciones de firmware"
+    ],
+    [
+      "^Verbindung gespeichert, Probe fehlgeschlagen: (.+)$",
+      "Conexión guardada, falló la comprobación: $1"
+    ],
+    [
+      "^Verbindung fehlgeschlagen: (.+)$",
+      "Error de conexión: $1"
+    ],
+    [
+      "^Live-Ansicht konnte nicht gestartet werden: (.+)$",
+      "No se pudo iniciar la vista en directo: $1"
+    ],
+    [
+      "^Speicherziel konnte nicht angelegt werden: (.+)$",
+      "No se pudo crear el destino de almacenamiento: $1"
+    ],
+    [
+      "^Plugin-Import fehlgeschlagen: (.+)$",
+      "Error al importar el plugin: $1"
+    ],
+    [
+      "^Plugin konnte nicht entfernt werden: (.+)$",
+      "No se pudo eliminar el plugin: $1"
+    ],
+    [
+      "^Design-Import fehlgeschlagen: (.+)$",
+      "Error al importar el diseño: $1"
+    ],
+    [
+      "^Design konnte nicht entfernt werden: (.+)$",
+      "No se pudo eliminar el diseño: $1"
+    ],
+    [
+      "^Prüfung fehlgeschlagen: (.+)$",
+      "Error en la comprobación: $1"
+    ],
+    [
+      "^Firmware-Prüfung fehlgeschlagen: (.+)$",
+      "Error al comprobar el firmware: $1"
+    ],
+    [
+      "^Update fehlgeschlagen: (.+)$",
+      "Error en la actualización: $1"
+    ],
+    [
+      "^Neue Firmware verfügbar: (.+)$",
+      "Nuevo firmware disponible: $1"
+    ],
+    [
+      "^Befehl abgebrochen: Kamera antwortet nicht innerhalb von (\\d+)s$",
+      "Comando cancelado: la cámara no respondió en $1 s"
+    ],
+    [
+      "^Befehl fehlgeschlagen: (.+)$",
+      "Error en el comando: $1"
+    ],
+    [
+      "^Geräte-Suche antwortet nicht innerhalb von (\\d+)s$",
+      "La búsqueda de dispositivos no respondió en $1 s"
+    ],
+    [
+      "^Geräte-Suche fehlgeschlagen: (.+)$",
+      "Error al buscar dispositivos: $1"
+    ],
+    [
+      "^Verbindung antwortet nicht innerhalb von (\\d+)s$",
+      "La conexión no respondió en $1 s"
+    ],
+    [
+      "^SD-Card-Inhalte konnten nicht gelesen werden: (.+)$",
+      "No se pudo leer el contenido de la tarjeta SD: $1"
+    ],
+    [
+      "^SD-Card-Medium konnte nicht geoeffnet werden: (.+)$",
+      "No se pudo abrir el contenido de la tarjeta SD: $1"
+    ],
+    [
+      "^(.+) muss aktiviert sein$",
+      "$1 debe estar activado"
+    ],
+    [
+      "^(.+) ist erforderlich$",
+      "Se requiere $1"
+    ],
+    [
+      "^(.+) muss eine ganze Zahl sein$",
+      "$1 debe ser un número entero"
+    ],
+    [
+      "^(.+) muss mindestens (.+) sein$",
+      "$1 debe ser al menos $2"
+    ],
+    [
+      "^(.+) darf höchstens (.+) sein$",
+      "$1 debe ser como máximo $2"
+    ],
+    [
+      "^Ungültige Auswahl für (.+)$",
+      "Selección no válida para $1"
+    ],
+    [
+      "^(.+) muss eine Zahl sein$",
+      "$1 debe ser un número"
+    ],
+    [
+      "^Manifest konnte nicht gelesen werden: (.+)$",
+      "No se pudo leer el manifiesto: $1"
+    ],
+    [
+      "^Plugin-Einstiegspunkt fehlt: (.+)$",
+      "Falta el punto de entrada del plugin: $1"
+    ],
+    [
+      "^Plugin-Code konnte nicht geladen werden: (.+)$",
+      "No se pudo cargar el código del plugin: $1"
+    ],
+    [
+      "^Tests abgebrochen: keine Rückmeldung innerhalb von (\\d+)s$",
+      "Pruebas canceladas: no hubo respuesta en $1 s"
+    ],
+    [
+      "^Tests konnten nicht gestartet werden: (.+)$",
+      "No se pudieron iniciar las pruebas: $1"
+    ],
+    [
+      "^(.+): (\\d+) GB frei$",
+      "$1: $2 GB libres"
+    ],
+    [
+      "^(.+): Cloud-Ziel konfiguriert$",
+      "$1: destino en la nube configurado"
+    ],
+    [
+      "^(.+): kein Stream bekannt$",
+      "$1: no se conoce ninguna transmisión"
+    ],
+    [
+      "^älter als (\\d+) Tage$",
+      "más antiguo que $1 días"
+    ],
+    [
+      "^über (.+) GB Limit$",
+      "por encima del límite de $1 GB"
+    ],
+    [
+      "^Dieses Modul unterstützt die Aktion '(.+)' nicht über ONVIF$",
+      "Este módulo no admite la acción '$1' mediante ONVIF"
+    ],
+    [
+      "^eWeLink-Verbindung fehlgeschlagen: (.+)$",
+      "Error de conexión con eWeLink: $1"
+    ],
+    [
+      "^eWeLink-Anmeldung fehlgeschlagen: (.+) \\(Fehlercode (.+)\\)$",
+      "Error al iniciar sesión en eWeLink: $1 (código de error $2)"
+    ],
+    [
+      "^GitHub antwortet nicht innerhalb von (\\d+)s$",
+      "GitHub no respondió en $1 s"
+    ],
+    [
+      "^GitHub-Anfrage fehlgeschlagen: HTTP (.+)$",
+      "Error en la solicitud a GitHub: HTTP $1"
+    ],
+    [
+      "^GitHub konnte nicht erreicht werden: (.+)$",
+      "No se pudo acceder a GitHub: $1"
+    ],
+    [
+      "^Repository oder Branch\\/Tag nicht gefunden \\(ist '(.+)' öffentlich, existiert '(.+)'\\?\\)$",
+      "No se encontró el repositorio o la rama/etiqueta (¿'$1' es público y existe '$2'?)"
+    ],
+    [
+      "^Kein Inhalt unter '(.+)' im Repository gefunden$",
+      "No se encontró contenido en '$1' dentro del repositorio"
+    ],
+    [
+      "^Das Modul (.+) akzeptiert keine manuelle Stream-URL$",
+      "El módulo $1 no acepta una URL de transmisión manual"
+    ],
+    [
+      "^Ungültiger Wert für (.+): (.+)$",
+      "Valor no válido para $1: $2"
+    ],
+    [
+      "^Ungültige Preset-ID: (.+)$",
+      "ID de posición predefinida no válido: $1"
+    ],
+    [
+      "^Nicht unterstützte Plugin-Schemaversion: (.+)$",
+      "Versión del esquema del plugin no compatible: $1"
+    ],
+    [
+      "^Nicht unterstützte Design-Schemaversion: (.+)$",
+      "Versión del esquema del diseño no compatible: $1"
+    ],
+    [
+      "^Unbekannte Plugin-Fähigkeit: (.+)$",
+      "Capacidad de plugin desconocida: $1"
+    ],
+    [
+      "^Nicht erlaubter Dateityp: (.+)$",
+      "Tipo de archivo no permitido: $1"
+    ],
+    [
+      "^Ungültiger oder doppelter Konto-Feldschlüssel: (.+)$",
+      "Clave de campo de cuenta no válida o duplicada: $1"
+    ],
+    [
+      "^Konto-Feld (.+) benötigt eine Beschriftung$",
+      "El campo de cuenta $1 requiere una etiqueta"
+    ],
+    [
+      "^Unbekannter Konto-Feldtyp für (.+)$",
+      "Tipo de campo de cuenta desconocido para $1"
+    ],
+    [
+      "^min darf bei (.+) nicht größer als max sein$",
+      "min no puede ser mayor que max para $1"
+    ],
+    [
+      "^Ungültiger Standardwert für (.+)$",
+      "Valor predeterminado no válido para $1"
+    ],
+    [
+      "^Standardwert von (.+) fehlt in options$",
+      "El valor predeterminado de $1 no aparece en options"
+    ],
+    [
+      "^options ist nur bei Auswahlfeldern erlaubt \\((.+)\\)$",
+      "options solo se permite en campos de selección ($1)"
+    ],
+    [
+      "^Auswahlfeld (.+) benötigt options$",
+      "El campo de selección $1 requiere options"
+    ],
+    [
+      "^Ungültige Auswahloption für (.+)$",
+      "Opción de selección no válida para $1"
+    ],
+    [
+      "^Leere oder doppelte Auswahloption für (.+)$",
+      "Opción de selección vacía o duplicada para $1"
+    ],
+    [
+      "^Unbekannter Wert für verification_support: (.+)$",
+      "Valor de verification_support desconocido: $1"
+    ],
+    [
+      "^Cloud-Modul '(.+)' ist nicht installiert$",
+      "El módulo de nube '$1' no está instalado"
+    ],
+    [
+      "^Kamera-Modul '(.+)' ist nicht installiert$",
+      "El módulo de cámara '$1' no está instalado"
+    ],
+    [
+      "^Design '(.+)' ist nicht installiert$",
+      "El diseño '$1' no está instalado"
+    ],
+    [
+      "^ONVIF-Bibliothek ist nicht installiert: (.+)$",
+      "La biblioteca ONVIF no está instalada: $1"
+    ],
+    [
+      "^ONVIF-Verbindung fehlgeschlagen: (.+)$",
+      "Error de conexión ONVIF: $1"
+    ],
+    [
+      "^Reolink-Status konnte nicht abgefragt werden: (.+)$",
+      "No se pudo consultar el estado de Reolink: $1"
+    ],
+    [
+      "^(\\d+) Clips gefunden · Seite (\\d+) von (\\d+)$",
+      "$1 clips encontrados · página $2 de $3"
+    ],
+    [
+      "^Gesicht für (.+) wurde gespeichert$",
+      "Se guardó el rostro de $1"
+    ],
+    [
+      "^Gesicht konnte nicht gespeichert werden: (.+)$",
+      "No se pudo guardar el rostro: $1"
+    ]
+  ]
+}

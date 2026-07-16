@@ -3,27 +3,27 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Events</p>
-    <h1>Notifications</h1>
+    <p class="eyebrow" data-i18n="health.events">Events</p>
+    <h1 data-i18n="base.notifications">Notifications</h1>
   </div>
 </section>
 
 <section class="storage-grid">
   <form class="editor-form" method="post" action="/notifications">
-    <div class="section-title"><h2>New channel</h2></div>
+    <div class="section-title"><h2 data-i18n="notifications.new_channel">New channel</h2></div>
     {% include "partials/notification_fields.html" %}
-    <div class="form-actions"><button class="primary-button" type="submit">Create</button></div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="notifications.create">Create</button></div>
   </form>
   <section class="storage-list">
-    <div class="section-title"><h2>Channels</h2><span>{{ channels | length }}</span></div>
+    <div class="section-title"><h2 data-i18n="notifications.channels">Channels</h2><span>{{ channels | length }}</span></div>
     {% for channel in channels %}
     <article class="storage-item">
       <form method="post" action="/notifications/{{ channel.id }}">
         {% set values = channel %}
         {% include "partials/notification_fields.html" %}
-        <div class="form-actions"><button class="primary-button" type="submit">Save</button></div>
+        <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
       </form>
-      <form method="post" action="/notifications/{{ channel.id }}/delete"><button class="danger-button" type="submit">Delete</button></form>
+      <form method="post" action="/notifications/{{ channel.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
     </article>
     {% endfor %}
   </section>

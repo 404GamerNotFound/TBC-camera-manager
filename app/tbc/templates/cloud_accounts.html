@@ -3,12 +3,12 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">Add camera</p>
-    <h1>Cloud accounts</h1>
+    <p class="eyebrow" data-i18n="camera_form.add_camera">Add camera</p>
+    <h1 data-i18n="cloud_account.cloud_accounts">Cloud accounts</h1>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras">Back to cameras</a>
-    <a class="secondary-button" href="/cloud-modules">Manage cloud providers</a>
+    <a class="secondary-button" href="/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
+    <a class="secondary-button" href="/cloud-modules" data-i18n="cloud_account.manage_cloud_providers">Manage cloud providers</a>
   </div>
 </section>
 
@@ -21,10 +21,10 @@
 {% endif %}
 
 <form class="editor-form" method="post" action="/cloud-accounts" data-cloud-account-form data-plugin-selector-form>
-  <div class="section-title"><h2>Add account</h2></div>
+  <div class="section-title"><h2 data-i18n="cloud_account.add_account">Add account</h2></div>
   <div class="form-grid">
     <label class="span-2">
-      <span>Provider</span>
+      <span data-i18n="cloud_account.provider">Provider</span>
       <select name="module_key" required data-cloud-account-provider>
         {% for option in cloud_module_options %}
         <option value="{{ option.key }}"
@@ -43,7 +43,7 @@
     </label>
     <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
     <label>
-      <span>Label</span>
+      <span data-i18n="cloud_account.label">Label</span>
       <input name="label" placeholder="e.g. Home" data-i18n-placeholder="plugin.account_label_placeholder">
     </label>
     {% for registration in cloud_modules %}
@@ -84,13 +84,13 @@
     {% endfor %}
   </div>
   <div class="form-actions">
-    <button class="primary-button" type="submit">Add account</button>
+    <button class="primary-button" type="submit" data-i18n="cloud_account.add_account">Add account</button>
   </div>
 </form>
 
 <section class="storage-list">
   <div class="section-title">
-    <h2>Configured accounts</h2>
+    <h2 data-i18n="cloud_account.configured_accounts">Configured accounts</h2>
     <span>{{ accounts | length }}</span>
   </div>
   {% for account in accounts %}
@@ -106,22 +106,22 @@
     <div class="quiet-box">{{ account.pending_verification_message }}</div>
     {% endif %}
     <div class="form-actions">
-      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit">Edit account</a>
+      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit" data-i18n="cloud_account.edit_account">Edit account</a>
       {% if account.pending_verification_field %}
-      <a class="primary-button" href="/cloud-accounts/{{ account.id }}/verify">Enter verification code</a>
+      <a class="primary-button" href="/cloud-accounts/{{ account.id }}/verify" data-i18n="cloud_account.enter_verification_code">Enter verification code</a>
       {% else %}
       <form method="post" action="/cloud-accounts/{{ account.id }}/test">
-        <button class="secondary-button" type="submit">Test connection</button>
+        <button class="secondary-button" type="submit" data-i18n="cloud_account.test_connection">Test connection</button>
       </form>
-      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices">Discover devices</a>
+      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices" data-i18n="cloud_account.discover_devices">Discover devices</a>
       {% endif %}
       <form method="post" action="/cloud-accounts/{{ account.id }}/delete">
-        <button class="danger-button" type="submit">Remove</button>
+        <button class="danger-button" type="submit" data-i18n="plugin.remove">Remove</button>
       </form>
     </div>
   </article>
   {% else %}
-  <p class="quiet-box">No cloud accounts have been configured yet.</p>
+  <p class="quiet-box" data-i18n="cloud_account.no_cloud_accounts_have_been">No cloud accounts have been configured yet.</p>
   {% endfor %}
 </section>
 <script src="{{ url_for('static', path='/cloud-account-form.js') }}?v={{ asset_version }}" defer></script>
