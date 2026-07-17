@@ -22,6 +22,7 @@ THIRD_PARTY_LICENSES: list[dict[str, str]] = [
     {"category": "Camera & cloud integrations", "name": "ewelink", "license": "GPL-3.0", "url": "https://github.com/Olindholm/ewelink"},
     {"category": "Camera & cloud integrations", "name": "paho-mqtt", "license": "EPL-2.0 / EDL-1.0", "url": "https://github.com/eclipse-paho/paho.mqtt.python"},
     {"category": "Camera & cloud integrations", "name": "boto3", "license": "Apache-2.0", "url": "https://github.com/boto/boto3"},
+    {"category": "Camera & cloud integrations", "name": "go2rtc", "license": "MIT", "url": "https://github.com/AlexxIT/go2rtc"},
 
     # AI detection & recognition
     {"category": "AI detection & recognition", "name": "NumPy", "license": "BSD-3-Clause", "url": "https://github.com/numpy/numpy"},
