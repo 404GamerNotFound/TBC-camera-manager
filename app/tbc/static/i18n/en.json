@@ -365,6 +365,7 @@
   "live.webrtc_explanation_hls": "Works everywhere with no extra network setup, and tolerates unstable connections gracefully by buffering and catching up — but has a 5-10 second delay.",
   "live.webrtc_explanation_title": "HLS vs. WebRTC: which should I use?",
   "live.webrtc_explanation_webrtc": "Sub-second delay, best for \"who's at the door right now\" — but needs network port 8555 reachable for remote/off-network viewing, is less forgiving of packet loss (can stutter instead of buffering), and uses a bit more server load per concurrent viewer.",
+  "live.webrtc_start_failed": "WebRTC could not be started: {error}. Check that the bundled go2rtc binary matches this device's CPU architecture (amd64/aarch64) and that the container can write to its live-view storage path, then try again.",
   "login.sign": "Sign in",
   "login.sign_in_failed": "Sign-in failed",
   "mcp.description.activity": "Event recordings across all cameras for one day.",

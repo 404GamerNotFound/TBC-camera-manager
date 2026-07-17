@@ -365,6 +365,7 @@
   "live.webrtc_explanation_hls": "Funciona en todas partes sin configuración de red adicional y tolera bien las conexiones inestables, ya que almacena en búfer y se pone al día — pero tiene un retraso de 5 a 10 segundos.",
   "live.webrtc_explanation_title": "¿HLS o WebRTC? ¿Cuál debería usar?",
   "live.webrtc_explanation_webrtc": "Retraso inferior a un segundo, ideal para «¿quién está llamando a la puerta ahora mismo?» — pero necesita que el puerto de red 8555 sea accesible para ver la transmisión de forma remota o fuera de la red, tolera peor la pérdida de paquetes (puede entrecortarse en lugar de almacenar en búfer) y consume algo más de carga del servidor por cada espectador simultáneo.",
+  "live.webrtc_start_failed": "No se pudo iniciar WebRTC: {error}. Comprueba que el binario de go2rtc incluido coincide con la arquitectura de CPU de este dispositivo (amd64/aarch64) y que el contenedor puede escribir en su ruta de almacenamiento de vista en directo, y vuelve a intentarlo.",
   "login.sign": "Iniciar sesión",
   "login.sign_in_failed": "Error al iniciar sesión",
   "mcp.description.activity": "Grabaciones de eventos de todas las cámaras para un día.",
