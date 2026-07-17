@@ -253,10 +253,106 @@ a {
   display: block;
 }
 
+.mega-menu {
+  min-width: 720px;
+  max-width: min(860px, calc(100vw - 32px));
+  padding: 16px;
+}
+
+.mega-menu .dropdown-item span:not(.nav-shortcut) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.mega-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px 16px;
+}
+
+.mega-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mega-menu-column + .mega-menu-column {
+  border-left: 1px solid var(--line);
+  padding-left: 16px;
+}
+
+.mega-menu-heading {
+  margin: 2px 9px 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .shell {
   width: min(1220px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 36px 0 64px;
+}
+
+.app-footer {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.app-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 0;
+}
+
+.app-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-footer-brand .brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+}
+
+.app-footer-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.app-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.app-footer-links a,
+.app-footer-links button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-footer-links a:hover,
+.app-footer-links a:focus,
+.app-footer-links button:hover,
+.app-footer-links button:focus {
+  color: var(--brand-strong);
 }
 
 .flash,
@@ -2203,7 +2299,8 @@ code {
 body.live-kiosk .topbar,
 body.live-kiosk .page-heading,
 body.live-kiosk .debug-fab,
-body.live-kiosk .debug-drawer {
+body.live-kiosk .debug-drawer,
+body.live-kiosk .app-footer {
   display: none !important;
 }
 
@@ -3134,6 +3231,29 @@ tr:last-child td {
     width: 100%;
     margin: 6px 0 0;
     box-shadow: none;
+  }
+
+  .mega-menu {
+    min-width: 0;
+    max-width: none;
+    padding: 10px;
+  }
+
+  .mega-menu-grid {
+    grid-template-columns: 1fr;
+    gap: 14px 0;
+  }
+
+  .mega-menu-column + .mega-menu-column {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+
+  .app-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .nav-logout {

@@ -138,93 +138,70 @@
                 <span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>
                 {% endif %}
               </button>
-              <ul class="dropdown-menu" data-menu-panel>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
-                    <span class="nav-shortcut" aria-hidden="true">B</span>
-                    <span data-i18n="base.users">Users</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
-                    <span class="nav-shortcut" aria-hidden="true">P</span>
-                    <span data-i18n="base.camera_plugins">Camera plugins</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
-                    <span class="nav-shortcut" aria-hidden="true">E</span>
-                    <span data-i18n="base.ai_detection">AI detection</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="/recognition">
-                    <span class="nav-shortcut" aria-hidden="true">R</span>
-                    <span data-i18n="nav.recognition">Face &amp; plate recognition</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
-                    <span class="nav-shortcut" aria-hidden="true">G</span>
-                    <span data-i18n="common.design">Design</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
-                    <span class="nav-shortcut" aria-hidden="true">O</span>
-                    <span data-i18n="base.cloud_providers">Cloud providers</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
-                    <span class="nav-shortcut" aria-hidden="true">X</span>
-                    <span data-i18n="base.external_sources">External sources</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}">
-                    <span class="nav-shortcut" aria-hidden="true">U</span>
-                    <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>{% endif %}</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/license') %} active{% endif %}" href="/license">
-                    <span class="nav-shortcut" aria-hidden="true">L</span>
-                    <span data-i18n="base.license">License</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/settings') %} active{% endif %}" href="/settings">
-                    <span class="nav-shortcut" aria-hidden="true">A</span>
-                    <span data-i18n="base.settings">Settings</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
-                    <span class="nav-shortcut" aria-hidden="true">I</span>
-                    <span data-i18n="api.title">API access</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/settings/audit-log') %} active{% endif %}" href="/settings/audit-log">
-                    <span class="nav-shortcut" aria-hidden="true">U</span>
-                    <span data-i18n="audit.title">Audit log</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/settings/backup') %} active{% endif %}" href="/settings/backup">
-                    <span class="nav-shortcut" aria-hidden="true">B</span>
-                    <span data-i18n="backup.title">Backup &amp; restore</span>
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                  <button class="dropdown-item" title="Debug Log" data-i18n-title="settings.debug_log" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log" type="button" data-debug-toggle>
-                    <span class="nav-shortcut" aria-hidden="true">D</span>
-                    <span data-i18n="settings.debug_log">Debug Log</span>
-                  </button>
-                </li>
-              </ul>
+              <div class="dropdown-menu dropdown-menu-end mega-menu" data-menu-panel>
+                <div class="mega-menu-grid">
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_cameras_ai">Cameras &amp; AI</p>
+                    <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
+                      <span class="nav-shortcut" aria-hidden="true">P</span>
+                      <span data-i18n="base.camera_plugins">Camera plugins</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
+                      <span class="nav-shortcut" aria-hidden="true">E</span>
+                      <span data-i18n="base.ai_detection">AI detection</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="/recognition">
+                      <span class="nav-shortcut" aria-hidden="true">R</span>
+                      <span data-i18n="nav.recognition">Face &amp; plate recognition</span>
+                    </a>
+                  </div>
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_integrations">Integrations</p>
+                    <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
+                      <span class="nav-shortcut" aria-hidden="true">O</span>
+                      <span data-i18n="base.cloud_providers">Cloud providers</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
+                      <span class="nav-shortcut" aria-hidden="true">X</span>
+                      <span data-i18n="base.external_sources">External sources</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
+                      <span class="nav-shortcut" aria-hidden="true">G</span>
+                      <span data-i18n="common.design">Design</span>
+                    </a>
+                  </div>
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_system">System</p>
+                    <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
+                      <span class="nav-shortcut" aria-hidden="true">B</span>
+                      <span data-i18n="base.users">Users</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/settings') and not path.startswith('/settings/audit-log') and not path.startswith('/settings/backup') %} active{% endif %}" href="/settings">
+                      <span class="nav-shortcut" aria-hidden="true">A</span>
+                      <span data-i18n="base.settings">Settings</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}">
+                      <span class="nav-shortcut" aria-hidden="true">U</span>
+                      <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>{% endif %}</span>
+                    </a>
+                  </div>
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_security">Security &amp; data</p>
+                    <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
+                      <span class="nav-shortcut" aria-hidden="true">I</span>
+                      <span data-i18n="api.title">API access</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/settings/audit-log') %} active{% endif %}" href="/settings/audit-log">
+                      <span class="nav-shortcut" aria-hidden="true">U</span>
+                      <span data-i18n="audit.title">Audit log</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/settings/backup') %} active{% endif %}" href="/settings/backup">
+                      <span class="nav-shortcut" aria-hidden="true">B</span>
+                      <span data-i18n="backup.title">Backup &amp; restore</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
             </li>
         {% endif %}
             <li class="nav-item dropdown" data-menu-group data-language-menu>
@@ -256,6 +233,22 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    {% if username %}
+    <footer class="app-footer">
+      <div class="app-footer-inner shell container-xxl">
+        <div class="app-footer-brand">
+          <span class="brand-mark">TBC</span>
+          <span class="app-footer-meta" data-i18n="nav.footer_version" data-i18n-params='{{ {"app_name": app_name, "version": app_version} | tojson }}'>{{ app_name }} {{ app_version }}</span>
+        </div>
+        {% if role == 'admin' %}
+        <nav class="app-footer-links" aria-label="Footer" data-i18n-aria-label="nav.footer">
+          <a href="/license" data-i18n="base.license">License</a>
+          <button type="button" data-debug-toggle data-i18n="settings.debug_log">Debug Log</button>
+        </nav>
+        {% endif %}
+      </div>
+    </footer>
+    {% endif %}
     {% if username and role == 'admin' %}
     <aside class="debug-drawer" data-debug-drawer hidden aria-hidden="true" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log">
       <div class="debug-drawer-panel">
