@@ -97,8 +97,16 @@ every other setting. Every successful write is recorded in the audit log
 The `.../stream/...` endpoints reuse the same HLS pipeline as TBC's own browser live view, under
 a separate stream key so they don't interfere with a logged-in user watching the same camera.
 The stream starts automatically on the first request to `index.m3u8` (no separate "start" call
-needed) and keeps running until stopped or the camera is reprobed; call the `stop` endpoint when
-your integration is done watching to free the ffmpeg process.
+needed), waiting up to 8 seconds for ffmpeg to produce the first segment before responding, and
+keeps running until stopped or the camera is reprobed; call the `stop` endpoint when your
+integration is done watching to free the ffmpeg process.
+
+The playlist TBC returns rewrites every segment reference into a full, self-authenticating URL
+(carrying the same credential you used for the `index.m3u8` request) - a client only needs to
+supply the key once, on the initial request; it does not need to add it to segment requests
+itself. This matters because a plain relative segment reference (as ffmpeg's HLS muxer writes
+them) does not inherit the playlist URL's own query string when resolved by a player, so an
+unmodified playlist would leave every segment fetch unauthenticated.
 
 ## Examples
 

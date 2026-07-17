@@ -21,6 +21,9 @@ import re
 import shutil
 import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
+from urllib.parse import urlsplit
 
 _TMP_ROOT = tempfile.mkdtemp(prefix="tbc-api-control-test-")
 os.environ.setdefault("TBC_DATABASE_PATH", os.path.join(_TMP_ROOT, "tbc.sqlite3"))
@@ -261,6 +264,86 @@ class ApiStreamAuthTests(unittest.TestCase):
             headers={"Authorization": f"Bearer {self.token}"},
         )
         self.assertEqual(response.status_code, 404)
+
+
+class _FakeRunningProcess:
+    """Stands in for a subprocess.Popen handle LIVE_MANAGER thinks is alive."""
+
+    def poll(self):
+        return None
+
+
+class ApiStreamPlaylistRewriteTests(unittest.TestCase):
+    """Regression coverage for the playlist auth-propagation bug: ffmpeg's HLS
+    muxer writes bare segment filenames, and a client resolving those as
+    relative URLs against the playlist's own URL does NOT carry the
+    playlist's ?api_key=... query string forward (RFC 3986 5.3). Home
+    Assistant's stream integration fetches segments with no custom headers,
+    so every segment request came back 401 and the stream never played
+    until the playlist route started rewriting segment references into
+    full, self-authenticating URLs.
+
+    Pre-seeds the playlist/segment files LIVE_MANAGER would otherwise
+    produce via ffmpeg, so this doesn't depend on a real camera or ffmpeg
+    process being available in CI.
+    """
+
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = _create_camera()
+        self.token = _create_token("reader", can_control=False)
+        self.live_key = f"api-camera-{self.camera_id}"
+        self.out_dir = Path(main.SETTINGS.live_path) / self.live_key
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        (self.out_dir / "segment000.ts").write_bytes(b"fake-ts-bytes-0")
+        (self.out_dir / "segment001.ts").write_bytes(b"fake-ts-bytes-1")
+        (self.out_dir / "index.m3u8").write_text(
+            "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:2\n#EXT-X-MEDIA-SEQUENCE:0\n"
+            "#EXTINF:2.000000,\nsegment000.ts\n#EXTINF:2.000000,\nsegment001.ts\n"
+        )
+        # LIVE_MANAGER.start() would otherwise wipe out_dir and spawn ffmpeg
+        # for real; pretending a process is already running for this key
+        # short-circuits that (see LiveManager.start's early-return check).
+        main.LIVE_MANAGER._processes[self.live_key] = _FakeRunningProcess()
+
+    def tearDown(self):
+        main.LIVE_MANAGER._processes.pop(self.live_key, None)
+        shutil.rmtree(self.out_dir, ignore_errors=True)
+
+    def _get_playlist(self, **headers):
+        with (
+            patch("app.tbc.main.stream_uri_for", return_value="rtsp://fake/stream"),
+            patch("app.tbc.main._camera_supports", return_value=True),
+        ):
+            return CLIENT.get(f"/api/v1/cameras/{self.camera_id}/stream/index.m3u8", headers=headers)
+
+    def test_segment_references_are_absolute_and_carry_the_api_key(self):
+        response = self._get_playlist(Authorization=f"Bearer {self.token}")
+        self.assertEqual(response.status_code, 200)
+        segment_lines = [line for line in response.text.splitlines() if line and not line.startswith("#")]
+        self.assertEqual(len(segment_lines), 2)
+        for line in segment_lines:
+            self.assertTrue(line.startswith("http://"), line)
+            self.assertIn(f"?api_key={self.token}", line)
+
+    def test_rewritten_segment_urls_are_fetchable_exactly_as_returned(self):
+        response = self._get_playlist(Authorization=f"Bearer {self.token}")
+        segment_lines = [line for line in response.text.splitlines() if line and not line.startswith("#")]
+        expected_bytes = {b"fake-ts-bytes-0", b"fake-ts-bytes-1"}
+        for line in segment_lines:
+            parts = urlsplit(line)
+            relative = f"{parts.path}?{parts.query}"
+            segment_response = CLIENT.get(relative)
+            self.assertEqual(segment_response.status_code, 200)
+            self.assertIn(segment_response.content, expected_bytes)
+
+    def test_segment_fetch_without_the_query_param_is_rejected(self):
+        # This is exactly the failure mode that broke playback in Home
+        # Assistant before the playlist rewrite: a bare relative segment
+        # request, with no credentials attached at all.
+        response = CLIENT.get(f"/api/v1/cameras/{self.camera_id}/stream/segment000.ts")
+        self.assertEqual(response.status_code, 401)
 
 
 if __name__ == "__main__":

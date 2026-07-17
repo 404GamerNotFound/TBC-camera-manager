@@ -4018,6 +4018,17 @@ def _api_stream_key(camera_id: int) -> str:
     return f"api-camera-{camera_id}"
 
 
+def _effective_api_key_value(request: Request) -> str | None:
+    # Same bearer > X-API-Key > ?api_key= precedence api_auth_error applies,
+    # but returns the raw credential string itself rather than a pass/fail -
+    # needed to re-embed it into the playlist's segment URLs below.
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        return auth_header[7:].strip()
+    value = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+    return value.strip() if value else None
+
+
 def _require_api_key_stream(request: Request) -> JSONResponse | None:
     # Same checks as _require_api_key, but also accepts ?api_key=... - the
     # HLS segments below are fetched directly by ffmpeg/PyAV inside Home
@@ -4035,6 +4046,7 @@ def _require_api_key_stream(request: Request) -> JSONResponse | None:
     if error:
         code, message = error
         return JSONResponse({"error": message}, status_code=code)
+    request.state.api_key_value = _effective_api_key_value(request)
     return None
 
 
@@ -4048,6 +4060,29 @@ async def _resolve_api_stream_uri(camera_id: int) -> tuple[dict[str, Any] | None
         camera = database.get_camera(SETTINGS.database_path, camera_id)
         uri = stream_uri_for(camera) if camera else None
     return camera, uri
+
+
+def _rewrite_playlist_with_auth(playlist_text: str, *, base_url: str, camera_id: int, api_key_value: str | None) -> str:
+    # ffmpeg's HLS muxer writes bare segment filenames (e.g. "segment000.ts"),
+    # relative to the playlist's own URL. A player resolving that relative
+    # reference does NOT carry the playlist URL's own query string forward
+    # (RFC 3986 5.3), so the ?api_key=... on the /index.m3u8 request is
+    # silently dropped from every subsequent segment fetch, and Home
+    # Assistant's stream integration (which has no way to attach a custom
+    # header per segment) gets 401s and never plays anything. Rewriting each
+    # segment reference into a full, self-authenticating URL fixes that.
+    if not api_key_value:
+        return playlist_text
+    rewritten_lines = []
+    for line in playlist_text.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            rewritten_lines.append(
+                f"{base_url}/api/v1/cameras/{camera_id}/stream/{stripped}?api_key={api_key_value}"
+            )
+        else:
+            rewritten_lines.append(line)
+    return "\n".join(rewritten_lines) + "\n"
 
 
 @app.get("/api/v1/cameras/{camera_id}/stream/index.m3u8")
@@ -4065,10 +4100,24 @@ async def api_v1_camera_stream_playlist(request: Request, camera_id: int):
         LIVE_MANAGER.start(live_key, uri)
     except RuntimeError as exc:
         return JSONResponse({"error": str(exc)}, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
-    path = LIVE_MANAGER.playlist_path(live_key)
-    if not path.exists():
+    # ffmpeg needs a couple of seconds to produce the first segment - wait
+    # for it here instead of 404-ing immediately, since the caller here is a
+    # server-side prober (Home Assistant's stream integration) rather than a
+    # browser HLS player that retries the manifest on its own.
+    ready, _message = await asyncio.to_thread(LIVE_MANAGER.wait_until_ready, live_key, 8)
+    if not ready:
         return JSONResponse({"error": "not ready"}, status_code=status.HTTP_404_NOT_FOUND)
-    return FileResponse(path, media_type="application/vnd.apple.mpegurl", headers={"Cache-Control": "no-cache"})
+    path = LIVE_MANAGER.playlist_path(live_key)
+    playlist_text = await asyncio.to_thread(path.read_text, encoding="utf-8")
+    rewritten = _rewrite_playlist_with_auth(
+        playlist_text,
+        base_url=str(request.base_url).rstrip("/"),
+        camera_id=camera_id,
+        api_key_value=getattr(request.state, "api_key_value", None),
+    )
+    return Response(
+        rewritten, media_type="application/vnd.apple.mpegurl", headers={"Cache-Control": "no-cache"}
+    )
 
 
 @app.get("/api/v1/cameras/{camera_id}/stream/{segment}")
