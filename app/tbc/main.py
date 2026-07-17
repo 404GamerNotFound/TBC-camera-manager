@@ -2119,6 +2119,17 @@ async def update_live_wall_settings(
     if guard:
         return guard
     webrtc_now_enabled = webrtc_enabled == "on"
+    if webrtc_now_enabled:
+        try:
+            await asyncio.to_thread(GO2RTC_MANAGER.start)
+        except RuntimeError as exc:
+            # Don't persist the checkbox as "on" when go2rtc actually failed
+            # to start - otherwise the setting looks enabled on reload even
+            # though WebRTC never came up.
+            webrtc_now_enabled = False
+            _set_flash(request, "live.webrtc_start_failed", {"error": str(exc)}, "error")
+    else:
+        await asyncio.to_thread(GO2RTC_MANAGER.stop)
     database.set_live_wall_settings(
         SETTINGS.database_path,
         columns=columns,
@@ -2126,13 +2137,6 @@ async def update_live_wall_settings(
         rotation_seconds=rotation_seconds,
         webrtc_enabled=webrtc_now_enabled,
     )
-    if webrtc_now_enabled:
-        try:
-            await asyncio.to_thread(GO2RTC_MANAGER.start)
-        except RuntimeError as exc:
-            _set_flash(request, "live.webrtc_start_failed", {"error": str(exc)}, "error")
-    else:
-        await asyncio.to_thread(GO2RTC_MANAGER.stop)
     return _redirect("/live")
 
 
