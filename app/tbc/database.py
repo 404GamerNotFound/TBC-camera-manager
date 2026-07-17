@@ -310,6 +310,7 @@ CREATE TABLE IF NOT EXISTS api_tokens (
     name TEXT NOT NULL,
     token_hash TEXT NOT NULL,
     token_prefix TEXT NOT NULL,
+    can_control INTEGER NOT NULL DEFAULT 0,
     created_by_user_id INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used_at TEXT,
@@ -464,6 +465,7 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE ui_settings ADD COLUMN live_webrtc_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE recordings ADD COLUMN locked INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE recordings ADD COLUMN locked_at TEXT",
+    "ALTER TABLE api_tokens ADD COLUMN can_control INTEGER NOT NULL DEFAULT 0",
 )
 
 
@@ -2251,15 +2253,21 @@ def update_api_config(database_path: str, *, enabled: bool, require_api_key: boo
 
 
 def create_api_token(
-    database_path: str, *, name: str, key_hash: str, key_prefix: str, created_by_user_id: int | None
+    database_path: str,
+    *,
+    name: str,
+    key_hash: str,
+    key_prefix: str,
+    created_by_user_id: int | None,
+    can_control: bool = False,
 ) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
             """
-            INSERT INTO api_tokens (name, token_hash, token_prefix, created_by_user_id)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO api_tokens (name, token_hash, token_prefix, created_by_user_id, can_control)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (name, key_hash, key_prefix, created_by_user_id),
+            (name, key_hash, key_prefix, created_by_user_id, 1 if can_control else 0),
         )
         return int(cursor.lastrowid)
 

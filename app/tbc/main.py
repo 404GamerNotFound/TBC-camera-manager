@@ -2466,20 +2466,22 @@ async def update_api_settings(
 
 
 @app.post("/settings/api-tokens")
-async def create_api_token_route(request: Request, name: str = Form(...)):
+async def create_api_token_route(request: Request, name: str = Form(...), can_control: str | None = Form(None)):
     guard = _require_admin(request)
     if guard:
         return guard
     user = _current_user(request)
     key = generate_api_key()
+    control = can_control == "on"
     token_id = database.create_api_token(
         SETTINGS.database_path,
         name=name.strip() or "API token",
         key_hash=hash_api_key(key),
         key_prefix=key[:12],
         created_by_user_id=int(user["id"]),
+        can_control=control,
     )
-    audit.log_event(request, SETTINGS.database_path, "api_token.created", target_type="api_token", target_id=token_id, detail={"name": name})
+    audit.log_event(request, SETTINGS.database_path, "api_token.created", target_type="api_token", target_id=token_id, detail={"name": name, "can_control": control})
     _set_flash(request, "api.key_generated", {"key": key})
     return _redirect("/api-access")
 
@@ -3810,12 +3812,14 @@ async def api_v1_status(request: Request):
     if guard:
         return guard
     cameras = database.list_cameras(SETTINGS.database_path)
+    token = getattr(request.state, "api_token", None)
     return {
         "app_name": SETTINGS.app_name,
         "app_version": __version__,
         "update_available": APP_UPDATE_STATE["update_available"],
         "latest_version": APP_UPDATE_STATE["latest_version"],
         "camera_count": len(cameras),
+        "api_can_control": bool(token and token["can_control"]),
     }
 
 
@@ -3869,6 +3873,224 @@ async def api_v1_camera_detections(request: Request, camera_id: int):
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     detections = database.list_detections(SETTINGS.database_path, camera_id)
     return {"camera_id": camera_id, "detections": detections}
+
+
+@app.get("/api/v1/cameras/{camera_id}/detection-settings")
+async def api_v1_camera_detection_settings(request: Request, camera_id: int):
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id) or {
+        "camera_id": camera_id,
+        "enabled": False,
+        "backend": "cpu",
+        "confidence_threshold": SETTINGS.detection_default_confidence_threshold,
+        "sample_fps": SETTINGS.detection_default_sample_fps,
+    }
+    return _detection_settings_public_dict(settings, camera_id)
+
+
+@app.post("/api/v1/cameras/{camera_id}/recording")
+async def api_v1_update_camera_recording(request: Request, camera_id: int):
+    guard = _require_api_key_control(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    trigger_keys = database.list_camera_recording_triggers(SETTINGS.database_path, camera_id)
+    database.update_camera_recording_settings(
+        SETTINGS.database_path,
+        camera_id,
+        recording_enabled=bool(payload.get("enabled", camera["recording_enabled"])),
+        recording_duration_seconds=int(payload.get("duration_seconds", camera["recording_duration_seconds"])),
+        recording_pre_seconds=int(payload.get("pre_seconds", camera["recording_pre_seconds"])),
+        recording_post_seconds=int(payload.get("post_seconds", camera["recording_post_seconds"])),
+        recording_cooldown_seconds=int(payload.get("cooldown_seconds", camera["recording_cooldown_seconds"])),
+        snapshot_enabled=bool(payload.get("snapshot_enabled", camera["snapshot_enabled"])),
+        recording_storage_id=payload.get("storage_id", camera["recording_storage_id"]),
+        trigger_keys=payload.get("trigger_keys", trigger_keys or ["motion"]),
+    )
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "camera.recording_toggled_via_api",
+        target_type="camera",
+        target_id=camera_id,
+        detail=payload,
+        username_override=_api_token_username(request),
+    )
+    updated = database.get_camera(SETTINGS.database_path, camera_id)
+    return _camera_public_dict(updated)
+
+
+@app.post("/api/v1/cameras/{camera_id}/continuous-recording")
+async def api_v1_update_camera_continuous_recording(request: Request, camera_id: int):
+    guard = _require_api_key_control(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    database.update_camera_continuous_settings(
+        SETTINGS.database_path,
+        camera_id,
+        continuous_recording_enabled=bool(payload.get("enabled", camera["continuous_recording_enabled"])),
+        continuous_segment_seconds=int(payload.get("segment_seconds", camera["continuous_segment_seconds"])),
+        continuous_storage_id=payload.get("storage_id", camera["continuous_storage_id"]),
+    )
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "camera.continuous_recording_toggled_via_api",
+        target_type="camera",
+        target_id=camera_id,
+        detail=payload,
+        username_override=_api_token_username(request),
+    )
+    updated = database.get_camera(SETTINGS.database_path, camera_id)
+    return _camera_public_dict(updated)
+
+
+@app.post("/api/v1/cameras/{camera_id}/detection")
+async def api_v1_update_camera_detection(request: Request, camera_id: int):
+    guard = _require_api_key_control(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    current = database.get_camera_detection_settings(SETTINGS.database_path, camera_id) or {
+        "enabled": False,
+        "backend": "cpu",
+        "confidence_threshold": SETTINGS.detection_default_confidence_threshold,
+        "sample_fps": SETTINGS.detection_default_sample_fps,
+    }
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    backend = str(payload.get("backend", current["backend"]))
+    if backend not in detection_factory.BACKEND_CHOICES:
+        backend = "cpu"
+    database.update_camera_detection_settings(
+        SETTINGS.database_path,
+        camera_id,
+        enabled=bool(payload.get("enabled", current["enabled"])),
+        backend=backend,
+        confidence_threshold=min(1.0, max(0.05, float(payload.get("confidence_threshold", current["confidence_threshold"])))),
+        sample_fps=min(10.0, max(0.2, float(payload.get("sample_fps", current["sample_fps"])))),
+    )
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "camera.detection_toggled_via_api",
+        target_type="camera",
+        target_id=camera_id,
+        detail=payload,
+        username_override=_api_token_username(request),
+    )
+    updated = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
+    return _detection_settings_public_dict(updated, camera_id)
+
+
+def _api_stream_key(camera_id: int) -> str:
+    # Kept separate from the browser-session live-view keys ("camera-{id}")
+    # so an API/HA-driven stream and a logged-in user's live view of the same
+    # camera don't share (and don't stop) each other's ffmpeg process.
+    return f"api-camera-{camera_id}"
+
+
+def _require_api_key_stream(request: Request) -> JSONResponse | None:
+    # Same checks as _require_api_key, but also accepts ?api_key=... - the
+    # HLS segments below are fetched directly by ffmpeg/PyAV inside Home
+    # Assistant's stream integration, which cannot attach a custom header to
+    # every request, so the URL has to be self-authenticating here.
+    config = database.get_api_config(SETTINGS.database_path)
+    api_key_value = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+    error = api_auth_error(
+        config,
+        request.headers.get("Authorization"),
+        api_key_value,
+        find_token=lambda prefix: database.find_active_api_token_by_prefix(SETTINGS.database_path, prefix),
+        on_success=lambda token: _stash_api_token(request, token),
+    )
+    if error:
+        code, message = error
+        return JSONResponse({"error": message}, status_code=code)
+    return None
+
+
+async def _resolve_api_stream_uri(camera_id: int) -> tuple[dict[str, Any] | None, str | None]:
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera or not _camera_supports(camera, CameraCapability.LIVE):
+        return camera, None
+    uri = stream_uri_for(camera)
+    if not uri:
+        await _refresh_camera(camera_id)
+        camera = database.get_camera(SETTINGS.database_path, camera_id)
+        uri = stream_uri_for(camera) if camera else None
+    return camera, uri
+
+
+@app.get("/api/v1/cameras/{camera_id}/stream/index.m3u8")
+async def api_v1_camera_stream_playlist(request: Request, camera_id: int):
+    guard = _require_api_key_stream(request)
+    if guard:
+        return guard
+    camera, uri = await _resolve_api_stream_uri(camera_id)
+    if not camera:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    if not uri:
+        return JSONResponse({"error": "no live stream available for this camera"}, status_code=status.HTTP_404_NOT_FOUND)
+    live_key = _api_stream_key(camera_id)
+    try:
+        LIVE_MANAGER.start(live_key, uri)
+    except RuntimeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    path = LIVE_MANAGER.playlist_path(live_key)
+    if not path.exists():
+        return JSONResponse({"error": "not ready"}, status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(path, media_type="application/vnd.apple.mpegurl", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/api/v1/cameras/{camera_id}/stream/{segment}")
+async def api_v1_camera_stream_segment(request: Request, camera_id: int, segment: str):
+    guard = _require_api_key_stream(request)
+    if guard:
+        return guard
+    if not segment.endswith(".ts") or segment.startswith("."):
+        return JSONResponse({"error": "invalid segment"}, status_code=status.HTTP_404_NOT_FOUND)
+    path = LIVE_MANAGER.segment_path(_api_stream_key(camera_id), segment)
+    if not path.exists():
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(path, media_type="video/mp2t", headers={"Cache-Control": "no-cache"})
+
+
+@app.post("/api/v1/cameras/{camera_id}/stream/stop")
+async def api_v1_camera_stream_stop(request: Request, camera_id: int):
+    guard = _require_api_key_stream(request)
+    if guard:
+        return guard
+    LIVE_MANAGER.stop(_api_stream_key(camera_id))
+    return {"status": "stopped"}
 
 
 @app.get("/api/v1/recordings")
@@ -4398,6 +4620,11 @@ def _require_admin(request: Request):
     return None
 
 
+def _stash_api_token(request: Request, token: dict[str, Any]) -> None:
+    request.state.api_token = token
+    database.touch_api_token_last_used(SETTINGS.database_path, int(token["id"]))
+
+
 def _require_api_key(request: Request) -> JSONResponse | None:
     config = database.get_api_config(SETTINGS.database_path)
     error = api_auth_error(
@@ -4405,12 +4632,37 @@ def _require_api_key(request: Request) -> JSONResponse | None:
         request.headers.get("Authorization"),
         request.headers.get("X-API-Key"),
         find_token=lambda prefix: database.find_active_api_token_by_prefix(SETTINGS.database_path, prefix),
-        on_success=lambda token: database.touch_api_token_last_used(SETTINGS.database_path, int(token["id"])),
+        on_success=lambda token: _stash_api_token(request, token),
     )
     if error:
         code, message = error
         return JSONResponse({"error": message}, status_code=code)
     return None
+
+
+def _require_api_key_control(request: Request) -> JSONResponse | None:
+    guard = _require_api_key(request)
+    if guard:
+        return guard
+    token = getattr(request.state, "api_token", None)
+    if not token or not token["can_control"]:
+        return JSONResponse({"error": "this API token does not have control (write) access"}, status_code=status.HTTP_403_FORBIDDEN)
+    return None
+
+
+def _api_token_username(request: Request) -> str | None:
+    token = getattr(request.state, "api_token", None)
+    return f"api-token:{token['name']}" if token else None
+
+
+def _detection_settings_public_dict(settings: dict[str, Any], camera_id: int) -> dict[str, Any]:
+    return {
+        "camera_id": camera_id,
+        "enabled": bool(settings.get("enabled")),
+        "backend": settings.get("backend"),
+        "confidence_threshold": settings.get("confidence_threshold"),
+        "sample_fps": settings.get("sample_fps"),
+    }
 
 
 def _require_camera_access(request: Request, camera_id: int):

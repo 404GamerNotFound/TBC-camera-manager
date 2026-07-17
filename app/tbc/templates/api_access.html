@@ -64,6 +64,10 @@
           <input name="name" placeholder="Home Assistant" required>
         </label>
       </div>
+      <label class="check-row">
+        <input name="can_control" type="checkbox">
+        <span data-i18n="api.token_allow_control">Allow control (write access) - lets this token change camera and detection settings, not just read them</span>
+      </label>
       <div class="form-actions">
         <button class="primary-button" type="submit" data-i18n="api.generate_key">Generate new key</button>
       </div>
@@ -74,6 +78,7 @@
           <tr>
             <th data-i18n="api.token_name">Name</th>
             <th data-i18n="api.key_label">API key</th>
+            <th data-i18n="api.token_scope">Scope</th>
             <th data-i18n="api.token_created">Created</th>
             <th data-i18n="api.token_last_used">Last used</th>
             <th data-i18n="api.token_status">Status</th>
@@ -85,6 +90,13 @@
           <tr>
             <td>{{ token.name }}</td>
             <td><code>{{ token.token_prefix }}…</code></td>
+            <td>
+              {% if token.can_control %}
+              <span data-i18n="api.token_scope_control">Read-write</span>
+              {% else %}
+              <span data-i18n="api.token_scope_read">Read-only</span>
+              {% endif %}
+            </td>
             <td>{{ token.created_at }}</td>
             <td>{{ token.last_used_at or '-' }}</td>
             <td>
@@ -104,7 +116,7 @@
           </tr>
           {% endfor %}
           {% if not api_tokens %}
-          <tr><td colspan="6" data-i18n="api.not_generated">Not generated yet</td></tr>
+          <tr><td colspan="7" data-i18n="api.not_generated">Not generated yet</td></tr>
           {% endif %}
         </tbody>
       </table>

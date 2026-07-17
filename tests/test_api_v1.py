@@ -64,10 +64,25 @@ class ApiConfigDatabaseTests(unittest.TestCase):
             self.assertEqual(tokens[0]["token_hash"], "deadbeef")
             self.assertEqual(tokens[0]["token_prefix"], "tbc_AbCd1234")
             self.assertIsNone(tokens[0]["revoked_at"])
+            self.assertFalse(tokens[0]["can_control"])
 
             database.revoke_api_token(handle.name, token_id)
             found = database.find_active_api_token_by_prefix(handle.name, "tbc_AbCd1234")
             self.assertIsNone(found)
+
+    def test_create_api_token_with_control_scope(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            database.create_api_token(
+                handle.name,
+                name="Home Assistant",
+                key_hash="hash",
+                key_prefix="tbc_hassio1234",
+                created_by_user_id=None,
+                can_control=True,
+            )
+            found = database.find_active_api_token_by_prefix(handle.name, "tbc_hassio1234")
+            self.assertTrue(found["can_control"])
 
     def test_multiple_tokens_coexist(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:

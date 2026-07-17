@@ -203,9 +203,11 @@ When a module reports multiple channels, TBC stores them individually. Channels 
 
 ## MQTT and Home Assistant
 
-TBC publishes camera and detection states under the configured MQTT topic prefix and can publish Home Assistant discovery messages. Recording events such as `recording_started`, `recording_finished`, and `recording_failed` are also published.
+TBC publishes camera and detection states under the configured MQTT topic prefix and can publish Home Assistant discovery messages, including instant per-detection motion `binary_sensor`s and PTZ/light/siren controls where the camera module supports them. Recording events such as `recording_started`, `recording_finished`, and `recording_failed` are also published.
 
-The read-only REST API and MCP interface are configured under `Admin → API access`. See [docs/api.md](docs/api.md) and [docs/mcp.md](docs/mcp.md).
+The REST API and MCP interface are configured under `Admin → API access`. See [docs/api.md](docs/api.md) and [docs/mcp.md](docs/mcp.md). A token created there with **Allow control** checked can also change camera/detection settings and start a live stream through the API - the basis for the integration below.
+
+For a richer Home Assistant experience - camera entities with live streaming, last-motion sensors, storage/health sensors, and switches to view and adjust camera settings from HA - install the official **[TBC Home Assistant integration](https://github.com/404GamerNotFound/TBC-ha_integration)** (a HACS-installable custom component, complementary to the MQTT discovery feature above).
 
 ## Technical architecture
 
