@@ -10,8 +10,6 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlencode, urlsplit
 
-from markupsafe import Markup
-
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -104,6 +102,7 @@ from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager, delete_recording_files, presigned_url
 from .security import generate_api_key, hash_api_key
 from .snapshots import DashboardSnapshotManager
+from .template_filters import tojson_html_safe
 from .themes import UnknownThemeError, get_theme_registration, list_theme_registrations, reload_themes
 from .themes.packages import (
     ThemePackageError,
@@ -161,9 +160,7 @@ templates = Jinja2Templates(
     context_processors=[_active_theme_context, _pending_plugin_updates_context, _app_update_context],
 )
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
-templates.env.filters["tojson"] = lambda value: Markup(
-    json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-)
+templates.env.filters["tojson"] = tojson_html_safe
 templates.env.globals["asset_version"] = ASSET_VERSION
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 CONTINUOUS_RECORDING_MANAGER = ContinuousRecordingManager(SETTINGS.database_path)
@@ -2082,7 +2079,7 @@ async def update_live_wall_settings(
         try:
             await asyncio.to_thread(GO2RTC_MANAGER.start)
         except RuntimeError as exc:
-            _set_flash(request, "common.raw_message", {"message": f"WebRTC live view: {exc}"}, "error")
+            _set_flash(request, "live.webrtc_start_failed", {"error": str(exc)}, "error")
     else:
         await asyncio.to_thread(GO2RTC_MANAGER.stop)
     return _redirect("/live")
