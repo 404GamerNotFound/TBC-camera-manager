@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
+    <h1 data-i18n="base.cloud_providers">Cloud providers</h1>
+  </div>
+</section>
+
+<section class="plugin-manager">
+  <details class="plugin-import-panel">
+    <summary>
+      <span>
+        <strong data-i18n="plugin.import_plugin">Import plugin</strong>
+        <small data-i18n="plugin.plugin_file">Plugin file</small>
+      </span>
+      <span class="status-pill status-idle">ZIP</span>
+    </summary>
+    <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
+      <div class="quiet-box" data-i18n="plugin.cloud_plugins_contain_executable_python">
+        Cloud plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.
+      </div>
+      <label>
+        <span data-i18n="plugin.plugin_file">Plugin file</span>
+        <input name="plugin_file" type="file" accept=".zip,application/zip" required>
+      </label>
+      <div class="form-actions">
+        <button class="primary-button" type="submit" data-i18n="plugin.import">Import</button>
+      </div>
+    </form>
+  </details>
+
+  <div class="plugin-search-bar">
+    <label class="visually-hidden" for="cloud-module-search" data-i18n="plugin.search_plugins">Search plugins</label>
+    <input type="search" id="cloud-module-search" placeholder="Search plugins…" data-i18n-placeholder="plugin.search_plugins_2" autocomplete="off" data-plugin-search="#cloud-module-list">
+  </div>
+
+  <section class="storage-list plugin-grid" id="cloud-module-list">
+    <div class="section-title">
+      <h2 data-i18n="plugin.installed_plugins">Installed plugins</h2>
+      <span>{{ registrations | length }}</span>
+    </div>
+    {% for registration in registrations %}
+    {% set cloud_module = registration.module %}
+    <article class="storage-item plugin-card" data-plugin-search-item>
+      <div class="section-title">
+        <div>
+          <h3>{{ cloud_module.label }}</h3>
+          <p>{{ cloud_module.description }}</p>
+        </div>
+        <span>{{ registration.version }}</span>
+      </div>
+      <dl class="metric-row plugin-card-meta">
+        <div><dt data-i18n="plugin.key">Key</dt><dd>{{ cloud_module.key }}</dd></div>
+        <div><dt data-i18n="camera.source">Source</dt><dd data-i18n="{{ 'plugin.source_builtin' if registration.origin == 'builtin' else 'plugin.source_zip_import' }}">{{ 'Built-in' if registration.origin == 'builtin' else 'ZIP import' }}</dd></div>
+        <div><dt data-i18n="plugin.accounts">Accounts</dt><dd>{{ account_counts[cloud_module.key] }}</dd></div>
+      </dl>
+      <p class="plugin-card-capabilities">
+        <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
+        <span class="status-pill status-idle">{{ cloud_module.account_fields | length }} account fields</span>
+        {% if cloud_module.verification_support.value == 'supported' %}
+        <span class="status-pill status-active" data-i18n="plugin.2fa_supported">2FA supported</span>
+        {% else %}
+        <span class="status-pill status-idle" data-i18n="plugin.no_2fa">No 2FA</span>
+        {% endif %}
+      </p>
+      <div class="form-actions plugin-card-actions">
+        <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
+        {% if has_tests[cloud_module.key] %}
+        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/run-tests">
+          <button class="secondary-button" type="submit" data-i18n="plugin.run_tests">Run tests</button>
+        </form>
+        {% endif %}
+        {% if registration.origin == 'uploaded' %}
+        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/delete">
+          <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %}>Remove</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+    <p class="quiet-box" data-plugin-search-empty hidden data-i18n="plugin.no_plugins_found">No plugins found.</p>
+  </section>
+</section>
+<script src="{{ url_for('static', path='/plugin-search.js') }}?v={{ asset_version }}" defer></script>
+{% endblock %}

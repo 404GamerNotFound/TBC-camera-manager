@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
+    <h1 data-i18n="nav.recognition">Face &amp; plate recognition</h1>
+  </div>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="base.settings">Settings</h2>
+  </div>
+  <p class="hint-text" data-i18n="recognition.intro">
+    Both features run entirely locally (no cloud service involved) and are off by default. "Snapshot" mode runs
+    once a matching recording's clip has finished saving; "Live" mode runs during the camera's own local-AI
+    detection loop, before any recording exists, for lower latency at the cost of extra CPU load per frame.
+  </p>
+  <form class="editor-form" method="post" action="/recognition/settings">
+    <div class="form-grid">
+      <label class="check-row"><input name="face_enabled" type="checkbox" {% if settings.face_enabled %}checked{% endif %}><span data-i18n="recognition.enable_face_recognition">Enable face recognition</span></label>
+      <label><span data-i18n="recognition.face_recognition_mode">Face recognition mode</span>
+        <select name="face_mode">
+          <option value="snapshot" {% if settings.face_mode == 'snapshot' %}selected{% endif %}>Snapshot (after recording)</option>
+          <option value="live" {% if settings.face_mode == 'live' %}selected{% endif %}>Live (during detection)</option>
+        </select>
+      </label>
+      <label><span data-i18n="recognition.match_threshold_0_1_higher">Match threshold (0-1, higher = stricter)</span><input name="face_match_threshold" type="number" min="0" max="1" step="0.01" value="{{ settings.face_match_threshold }}"></label>
+      <label class="check-row"><input name="plate_enabled" type="checkbox" {% if settings.plate_enabled %}checked{% endif %}><span data-i18n="recognition.enable_license_plate_recognition">Enable license plate recognition</span></label>
+      <label><span data-i18n="recognition.plate_recognition_mode">Plate recognition mode</span>
+        <select name="plate_mode">
+          <option value="snapshot" {% if settings.plate_mode == 'snapshot' %}selected{% endif %}>Snapshot (after recording)</option>
+          <option value="live" {% if settings.plate_mode == 'live' %}selected{% endif %}>Live (during detection)</option>
+        </select>
+      </label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
+  </form>
+  <p class="hint-text" data-i18n="recognition.models_hint">
+    Models (opencv_zoo's YuNet/SFace for faces, fast-alpr's detector/OCR for plates) download automatically on
+    first use into the detection-models volume - no manual download step needed.
+  </p>
+</section>
+
+<section class="storage-grid">
+  <form class="editor-form" method="post" action="/recognition/faces" enctype="multipart/form-data">
+    <div class="section-title"><h2 data-i18n="recognition.enroll_known_face">Enroll a known face</h2></div>
+    <div class="form-grid">
+      <label><span data-i18n="common.name">Name</span><input name="name" required></label>
+      <label><span data-i18n="recognition.photo_one_clear_front_facing">Photo (one clear, front-facing face)</span><input name="photo" type="file" accept="image/*" required></label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="recognition.enroll">Enroll</button></div>
+  </form>
+  <section class="storage-list">
+    <div class="section-title"><h2 data-i18n="recognition.known_faces">Known faces</h2><span>{{ known_faces | length }}</span></div>
+    {% for face in known_faces %}
+    <article class="storage-item">
+      <div class="card-header"><strong>{{ face.name }}</strong><span>{{ face.created_at }}</span></div>
+      <form method="post" action="/recognition/faces/{{ face.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+    </article>
+    {% else %}
+    <p class="hint-text" data-i18n="recognition.no_known_faces_enrolled_yet">No known faces enrolled yet - every detected face will be reported as "unknown".</p>
+    {% endfor %}
+  </section>
+</section>
+
+<section class="storage-grid">
+  <form class="editor-form" method="post" action="/recognition/plates">
+    <div class="section-title"><h2 data-i18n="recognition.add_known_plate">Add a known plate</h2></div>
+    <div class="form-grid">
+      <label><span data-i18n="recognition.plate_text">Plate text</span><input name="plate_text" required placeholder="B-TB 1234"></label>
+      <label><span data-i18n="cloud_account.label">Label</span><input name="label" placeholder="e.g. own car, neighbor" data-i18n-placeholder="zones.example_neighbor"></label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="common.add">Add</button></div>
+  </form>
+  <section class="storage-list">
+    <div class="section-title"><h2 data-i18n="recognition.known_plates">Known plates</h2><span>{{ known_plates | length }}</span></div>
+    {% for plate in known_plates %}
+    <article class="storage-item">
+      <form method="post" action="/recognition/plates/{{ plate.id }}">
+        <div class="form-grid">
+          <label><span data-i18n="recognition.plate_text">Plate text</span><input name="plate_text" value="{{ plate.plate_text }}" required></label>
+          <label><span data-i18n="cloud_account.label">Label</span><input name="label" value="{{ plate.label or '' }}"></label>
+        </div>
+        <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
+      </form>
+      <form method="post" action="/recognition/plates/{{ plate.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+    </article>
+    {% else %}
+    <p class="hint-text" data-i18n="recognition.no_known_plates_yet_every">No known plates yet - every recognized plate will be reported as "unknown".</p>
+    {% endfor %}
+  </section>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="recognition.recent_recognition_events">Recent recognition events</h2>
+    <span>{{ recent_events | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="recognition.when">When</th>
+          <th data-i18n="camera_new_choice.camera">Camera</th>
+          <th data-i18n="notification.type">Type</th>
+          <th data-i18n="recognition.result">Result</th>
+          <th data-i18n="recognition.confidence">Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in recent_events %}
+        <tr>
+          <td>{{ event.created_at }}</td>
+          <td>{{ event.camera_name }}</td>
+          <td data-i18n="{{ 'recognition.face' if event.kind == 'face' else 'recognition.plate' }}">{{ 'Face' if event.kind == 'face' else 'Plate' }}</td>
+          <td>{{ event.label }}</td>
+          <td>{{ (event.confidence * 100) | round(1) if event.confidence is not none else '' }}{% if event.confidence is not none %}%{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" data-i18n="recognition.no_recognition_events_yet">No recognition events yet</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

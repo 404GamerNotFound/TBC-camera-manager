@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="camera_new_choice.camera">Camera</p>
+    <h1 data-i18n="camera_form.add_camera">Add camera</h1>
+  </div>
+</section>
+
+<section class="storage-list">
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3 data-i18n="camera_new_choice.local_camera">Local camera</h3>
+        <p data-i18n="camera_new_choice.enter_host_ip_onvif_settings">Enter the host/IP, ONVIF settings, and credentials directly for a single camera or an NVR on the local network.</p>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="primary-button" href="/cameras/new/local" data-i18n="camera_new_choice.set_up_local_camera">Set up local camera</a>
+    </div>
+  </article>
+  <article class="storage-item">
+    <div class="section-title">
+      <div>
+        <h3 data-i18n="camera_new_choice.cloud_account">Cloud account</h3>
+        <p data-i18n="camera_new_choice.sign_vendor_cloud_account_e">Sign in to a vendor cloud account (e.g. UniFi Protect, Eufy Security, eWeLink) and discover devices automatically.</p>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="primary-button" href="/cloud-accounts" data-i18n="camera_new_choice.connect_cloud_account">Connect cloud account</a>
+    </div>
+  </article>
+</section>
+{% endblock %}

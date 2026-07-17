@@ -1,0 +1,23 @@
+# Alternative to requirements.txt for the optional CUDA build (see Dockerfile.gpu).
+# Installs onnxruntime-gpu instead of plain onnxruntime; everything else is identical.
+# onnxruntime-gpu also ships the CPU execution provider, so the CPU backend keeps
+# working even on this image - only CUDAExecutionProvider becomes additionally
+# available (and only once a matching CUDA/cuDNN runtime is actually present, which
+# is why Dockerfile.gpu starts from an NVIDIA CUDA base image instead of python:slim).
+fastapi==0.139.0
+uvicorn[standard]==0.35.0
+jinja2==3.1.6
+python-multipart==0.0.32
+itsdangerous==2.2.0
+onvif-zeep==0.2.12
+reolink-aio==0.21.3
+uiprotect==15.12.2
+pyeufysecurity==0.4.4
+ewelink==0.2.1
+boto3>=1.43.49,<2
+paho-mqtt==2.1.0
+numpy>=2.5.1,<3
+Pillow>=10.4,<12
+onnxruntime-gpu>=1.27.0,<2
+opencv-python-headless==5.0.0.93
+fast-alpr[onnx]==0.4.0

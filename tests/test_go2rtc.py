@@ -31,10 +31,22 @@ class Go2rtcManagerStartStopTests(unittest.TestCase):
             config_text = config_path.read_text(encoding="utf-8")
             self.assertIn('listen: "127.0.0.1:1984"', config_text)
             self.assertIn('listen: ":8555"', config_text)
+            self.assertIn("streams: {}", config_text)
 
             args, kwargs = popen.call_args
             self.assertEqual(args[0], ["go2rtc", "-config", str(config_path)])
             self.assertEqual(kwargs["stderr"], -1)
+
+    def test_start_wraps_popen_exec_failures_as_runtime_error(self):
+        with TemporaryDirectory() as temp_dir:
+            manager = Go2rtcManager(temp_dir, binary_path="go2rtc")
+
+            with patch("shutil.which", return_value="/usr/local/bin/go2rtc"):
+                with patch("subprocess.Popen", side_effect=OSError("Exec format error")):
+                    with self.assertRaises(RuntimeError):
+                        manager.start()
+
+            self.assertEqual(manager.status(), "stopped")
 
     def test_start_is_idempotent_while_already_running(self):
         with TemporaryDirectory() as temp_dir:

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
+    <h1 data-i18n="base.ai_detection">AI detection</h1>
+  </div>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="camera.backend_status">Backend-Status</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="camera.backend">Backend</th>
+          <th data-i18n="camera.status">Status</th>
+          <th data-i18n="detection.message">Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, available, message in backend_status %}
+        <tr>
+          <td>{{ detection_backend_labels.get(key, key | upper) }}</td>
+          <td><span class="status-pill {{ 'status-active' if available else 'status-idle' }}" data-i18n="{{ 'detection.available' if available else 'detection.unavailable' }}">{{ 'available' if available else 'unavailable' }}</span></td>
+          <td>{{ message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint-text">
+    GPU (CUDA) requires a separately built image with <code>onnxruntime-gpu</code> (see <code>Dockerfile.gpu</code>) and a compatible NVIDIA runtime.
+    Coral (Edge TPU) requires a separately built image with <code>pycoral</code>/<code>tflite-runtime</code> (see <code>Dockerfile.coral</code>) and a connected
+    Edge TPU device. Both backends are implemented independently but could not be tested against real GPU or Coral hardware in this development environment;
+    verify them before production use.
+  </p>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="detection.model">Model</h2>
+  </div>
+  <div class="quiet-box">
+    {% if model_ready %}
+    The default CPU/GPU model is ready ({{ model_size_mb }} MB) at <code>{{ model_path }}</code>.
+    {% else %}
+    The default CPU/GPU model has not been downloaded yet (<code>{{ model_path }}</code>). The server will retry the download on its next start.
+    {% endif %}
+  </div>
+  <div class="quiet-box">
+    {% if coral_model_ready %}
+    The default Coral model is ready ({{ coral_model_size_mb }} MB) at <code>{{ coral_model_path }}</code>.
+    {% else %}
+    The default Coral model has not been downloaded yet (<code>{{ coral_model_path }}</code>). It is downloaded when a camera is first switched to the Coral backend.
+    {% endif %}
+  </div>
+  <p class="hint-text">
+    Default sample rate: {{ default_sample_fps }} images/s · default confidence: {{ default_confidence_threshold }}. These values are preselected for newly
+    enabled cameras and can be adjusted per camera in its “AI detection” tab. Use <code>TBC_DETECTION_SAMPLE_FPS</code> and
+    <code>TBC_DETECTION_CONFIDENCE_THRESHOLD</code> to change them globally.
+  </p>
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="detection.cameras_with_ai">Cameras with local AI detection</h2>
+    <span>{{ cameras | length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="camera_new_choice.camera">Camera</th>
+          <th data-i18n="camera.backend">Backend</th>
+          <th data-i18n="detection.images_per_second_short">Images/s</th>
+          <th data-i18n="camera.min_confidence">Minimum confidence</th>
+          <th data-i18n="detection.zones">Zones</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for camera in cameras %}
+        <tr>
+          <td>{{ camera.camera_name }}</td>
+          <td>{{ camera.backend | upper }}</td>
+          <td>{{ camera.sample_fps }}</td>
+          <td>{{ camera.confidence_threshold }}</td>
+          <td>{{ camera.zone_count }}</td>
+          <td><a class="text-button" href="/cameras/{{ camera.camera_id }}#ai-zones" data-i18n="dashboard.open">Open</a></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" data-i18n="detection.no_camera_enabled">No camera has local AI detection enabled yet</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

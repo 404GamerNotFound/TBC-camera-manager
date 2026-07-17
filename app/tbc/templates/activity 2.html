@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="activity.archive">Archive</p>
+    <h1 data-i18n="nav.activity">Activity</h1>
+  </div>
+</section>
+
+<form class="filter-bar" method="get" action="/activity">
+  <label>
+    <span data-i18n="activity.day">Day</span>
+    <input name="day" type="date" value="{{ selected_day }}" max="{{ today }}">
+  </label>
+  <button class="primary-button" type="submit" data-i18n="activity.show">Show</button>
+  <div class="button-row timeline-day-nav">
+    <a class="secondary-button" href="/activity?day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/activity?day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
+  </div>
+  <label class="check-row{% if not any_sd_card_available %} is-disabled{% endif %}">
+    <input type="checkbox" data-activity-toggle="sdcard" {% if not any_sd_card_available %}disabled{% endif %}>
+    <span>SD card recordings{% if not any_sd_card_available %} (unavailable){% endif %}</span>
+  </label>
+</form>
+
+{% if not activity_cameras %}
+<section class="empty-state">
+  <h2 data-i18n="activity.no_camera_available">No camera available</h2>
+</section>
+{% else %}
+<section class="timeline-scrubber" data-activity-root>
+  <script type="application/json" data-activity-json>{{ activity_data | tojson }}</script>
+  <div class="section-title">
+    <h2 data-i18n="activity.events_day">Events on this day</h2>
+    <span data-activity-count>{{ total_events }}</span>
+  </div>
+  <p class="hint-text" data-i18n="activity.hint">
+    One block is shown for each event recording, grouped by event type and color. Select a block
+    to open that camera's timeline for the day. Continuous 24/7 recording is intentionally omitted
+    here; use the timeline for an individual camera instead. Enable "SD card recordings" to also
+    include recordings stored on cameras that support an on-camera archive.
+  </p>
+  <div class="timeline-scroll" data-activity-scroll>
+    <div class="timeline-inner" data-activity-inner>
+      <div class="timeline-hours" data-activity-hours aria-hidden="true"></div>
+      <div class="timeline-grid" data-activity-grid aria-hidden="true"></div>
+      <div data-activity-lanes></div>
+    </div>
+  </div>
+  <p class="timeline-hint" data-activity-empty {% if total_events %}hidden{% endif %}>No event recordings are available for this day.</p>
+</section>
+{% endif %}
+
+<script src="{{ url_for('static', path='/activity.js') }}?v={{ asset_version }}" defer></script>
+{% endblock %}
