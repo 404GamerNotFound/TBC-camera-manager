@@ -2123,6 +2123,37 @@ code {
   border-color: var(--brand);
 }
 
+.live-transport-switch {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.live-transport-btn {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.live-transport-btn + .live-transport-btn {
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.live-transport-btn.is-active {
+  color: white;
+  background: var(--brand);
+}
+
 .live-drag-handle {
   cursor: grab;
 }
