@@ -46,11 +46,11 @@ class LiveTests(unittest.TestCase):
         with TemporaryDirectory() as temp_dir:
             manager = LiveManager(temp_dir)
             manager._messages["camera-1"] = [
-                "Starte Live-Stream camera-1",
+                "Starting live stream camera-1",
                 "[hls @ 0x55b196e0d0] Timestamps are unset in a packet for stream 0",
             ]
 
-            self.assertEqual(manager.message("camera-1"), "Starte Live-Stream camera-1")
+            self.assertEqual(manager.message("camera-1"), "Starting live stream camera-1")
 
 
 if __name__ == "__main__":

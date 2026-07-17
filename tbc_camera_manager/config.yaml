@@ -12,8 +12,12 @@ image: "ghcr.io/404gamernotfound/tbc-camera-manager-ha"
 webui: "http://[HOST]:[PORT:8732]"
 ports:
   "8732/tcp": 8732
+  "8555/tcp": 8555
+  "8555/udp": 8555
 ports_description:
   "8732/tcp": TBC web interface
+  "8555/tcp": WebRTC live-view media (go2rtc), only used if enabled in Live settings
+  "8555/udp": WebRTC live-view media (go2rtc), only used if enabled in Live settings
 map:
   - type: media
     read_only: false

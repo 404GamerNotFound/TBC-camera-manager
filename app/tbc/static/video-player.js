@@ -18,6 +18,7 @@
       this.video = video;
       this.options = options;
       this.hls = null;
+      this.pc = null;
       this._seeking = false;
       this._ptzActive = null;
       this._buildShell();
@@ -25,14 +26,25 @@
       if (options.ptz) this._buildPtzOverlay(options.ptz);
       if (options.detection && options.detection.cameraId) this._buildDetectionOverlay(options.detection);
       this._wireVideoEvents();
-      if (options.src) this.load(options.src);
+      if (options.src) this.load(options.src, options);
     }
 
-    load(src) {
+    // `loadOptions.transport === "webrtc"` treats `src` as a WHEP signaling
+    // URL instead of a media URL (see _loadWebrtc). Any other value falls
+    // back to the original HLS/direct-src sniffing so every existing caller
+    // that never passes a transport keeps working unchanged.
+    load(src, loadOptions = {}) {
       this._teardownHls();
+      this._teardownWebrtc();
       const video = this.video;
-      const isHls = /\.m3u8(\?|$)/.test(src);
       video.dataset.tbcSrc = src;
+      if (loadOptions.transport === "webrtc") {
+        video.dataset.tbcTransport = "webrtc";
+        this._loadWebrtc(src);
+        return;
+      }
+      video.dataset.tbcTransport = "hls";
+      const isHls = /\.m3u8(\?|$)/.test(src);
       if (isHls && window.Hls && window.Hls.isSupported()) {
         const hls = new window.Hls({ liveSyncDurationCount: 3, maxLiveSyncPlaybackRate: 1.2 });
         this.hls = hls;
@@ -49,8 +61,72 @@
       }
     }
 
+    async _loadWebrtc(offerUrl) {
+      if (!window.RTCPeerConnection) {
+        if (this.options.onWebrtcError) this.options.onWebrtcError(new Error("WebRTC is not supported by this browser"));
+        return;
+      }
+      const video = this.video;
+      const pc = new RTCPeerConnection();
+      this.pc = pc;
+      pc.addTransceiver("video", { direction: "recvonly" });
+      pc.ontrack = (event) => {
+        if (video.srcObject !== event.streams[0]) {
+          video.srcObject = event.streams[0];
+          if (this.options.autoplay) video.play().catch(() => {});
+        }
+      };
+      pc.addEventListener("connectionstatechange", () => {
+        if (this.pc === pc && this.options.onWebrtcStateChange) {
+          this.options.onWebrtcStateChange(pc.connectionState);
+        }
+      });
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        // go2rtc's WHEP endpoint answers a single POST with the full SDP - it
+        // does not support trickle ICE - so the offer must carry every
+        // candidate up front.
+        await this._waitForIceGathering(pc);
+        if (this.pc !== pc) return;
+        const response = await fetch(offerUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/sdp" },
+          body: pc.localDescription.sdp,
+        });
+        if (!response.ok) throw new Error(`WebRTC offer failed with status ${response.status}`);
+        const answerSdp = await response.text();
+        if (this.pc !== pc) return;
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      } catch (error) {
+        if (this.pc === pc) this._teardownWebrtc();
+        if (this.options.onWebrtcError) this.options.onWebrtcError(error);
+      }
+    }
+
+    _waitForIceGathering(pc) {
+      if (pc.iceGatheringState === "complete") return Promise.resolve();
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          pc.removeEventListener("icegatheringstatechange", onChange);
+          resolve();
+        };
+        const onChange = () => {
+          if (pc.iceGatheringState === "complete") finish();
+        };
+        const timer = window.setTimeout(finish, 2000);
+        pc.addEventListener("icegatheringstatechange", onChange);
+      });
+    }
+
     destroy() {
       this._teardownHls();
+      this._teardownWebrtc();
       this._clearPtzHold();
       this._stopDetectionOverlay();
     }
@@ -59,6 +135,16 @@
       if (this.hls) {
         this.hls.destroy();
         this.hls = null;
+      }
+    }
+
+    _teardownWebrtc() {
+      if (this.pc) {
+        this.pc.close();
+        this.pc = null;
+      }
+      if (this.video.srcObject) {
+        this.video.srcObject = null;
       }
     }
 

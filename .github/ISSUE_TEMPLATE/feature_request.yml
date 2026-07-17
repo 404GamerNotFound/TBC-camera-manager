@@ -1,0 +1,67 @@
+name: Feature request
+description: Suggest an improvement for TBC Camera Manager
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first, then the desired result. Large architectural proposals should explain how they fit TBC's modular camera and cloud plugin model.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and did not find this request.
+          required: true
+        - label: This request does not contain credentials, private stream URLs, or identifying footage.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to accomplish, and who benefits?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the user-visible behavior you would like.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Camera or cloud integration
+        - Live view and streaming
+        - Recording and storage
+        - AI detection and recognition
+        - Notifications and automation
+        - Home Assistant, MQTT, API, or MCP
+        - Security and access control
+        - User interface and accessibility
+        - Deployment and operations
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workarounds or other approaches you evaluated.
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical notes
+      description: Optional implementation ideas, protocols, API references, or compatibility concerns.

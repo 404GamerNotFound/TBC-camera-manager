@@ -35,8 +35,8 @@ class LiveManager:
         segment_pattern = out_dir / "segment%03d.ts"
         command = _live_ffmpeg_command(stream_uri, segment_pattern, playlist)
         safe_stream_uri = redact_rtsp_credentials(stream_uri)
-        self._messages[key] = [f"Starte Live-Stream {key}: {safe_stream_uri}"]
-        LOGGER.info("Starte Live-Stream %s mit %s", key, safe_stream_uri)
+        self._messages[key] = [f"Starting live stream {key}: {safe_stream_uri}"]
+        LOGGER.info("Starting live stream %s with %s", key, safe_stream_uri)
         process = subprocess.Popen(
             command,
             stdout=subprocess.DEVNULL,
@@ -53,7 +53,7 @@ class LiveManager:
         if process and process.poll() is None:
             self._stopping.add(key)
             process.terminate()
-            LOGGER.info("Live-Stream %s wurde gestoppt", key)
+            LOGGER.info("Live stream %s was stopped", key)
 
     def status(self, key: str) -> str:
         process = self._processes.get(key)
@@ -80,12 +80,12 @@ class LiveManager:
         while time.monotonic() < deadline:
             process = self._processes.get(key)
             if process is not None and process.poll() is not None:
-                message = self.message(key) or f"ffmpeg beendet mit Code {process.returncode}"
+                message = self.message(key) or f"ffmpeg exited with code {process.returncode}"
                 return False, message
             if playlist.exists() and playlist.stat().st_size > 0 and ".ts" in playlist.read_text(encoding="utf-8", errors="ignore"):
-                return True, "Live-Playlist ist bereit"
+                return True, "Live playlist is ready"
             time.sleep(0.2)
-        return False, self.message(key) or "Timeout beim Starten des Live-Streams"
+        return False, self.message(key) or "Timeout starting the live stream"
 
     def playlist_path(self, key: str) -> Path:
         return self.live_path / key / "index.m3u8"
@@ -108,7 +108,7 @@ class LiveManager:
             LOGGER.warning("ffmpeg %s: %s", key, message)
         return_code = process.wait()
         if return_code != 0:
-            message = f"ffmpeg beendet fuer {key} mit Code {return_code}"
+            message = f"ffmpeg exited for {key} with code {return_code}"
             self._messages.setdefault(key, []).append(message)
             if key in self._stopping:
                 LOGGER.info(message)

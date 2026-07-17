@@ -1,0 +1,93 @@
+name: Bug report
+description: Report a reproducible problem in TBC Camera Manager
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Search existing issues first and remove credentials, tokens, private addresses, and identifying footage from everything you submit.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and did not find the same problem.
+          required: true
+        - label: I removed passwords, tokens, private stream URLs, and personal footage.
+          required: true
+        - label: This is not a security vulnerability. Security reports must follow SECURITY.md.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: TBC version
+      description: Release number, container tag, or commit SHA.
+      placeholder: "0.3.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation type
+      options:
+        - Docker Compose
+        - Home Assistant app
+        - Portainer
+        - Manual Python installation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Host environment
+      description: Operating system, architecture, and relevant accelerator.
+      placeholder: "Debian 13, amd64, Intel iGPU"
+    validations:
+      required: true
+
+  - type: input
+    id: camera
+    attributes:
+      label: Camera or plugin
+      description: Camera model, camera module, cloud plugin, or "not camera-specific".
+      placeholder: "Reolink RLC-810A using the Reolink module"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem description
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Configure ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste the smallest relevant log excerpt. Redact all secrets and private addresses.
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Sanitized screenshots, configuration details, or anything else that may help.

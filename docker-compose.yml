@@ -6,6 +6,9 @@ services:
     restart: unless-stopped
     ports:
       - "${TBC_PORT:-8732}:${TBC_PORT:-8732}"
+      # WebRTC live-view media (go2rtc) - only used if enabled in Live settings.
+      - "8555:8555/tcp"
+      - "8555:8555/udp"
     environment:
       TBC_ADMIN_USERNAME: ${TBC_ADMIN_USERNAME:-admin}
       TBC_ADMIN_PASSWORD: ${TBC_ADMIN_PASSWORD:-bitte-aendern}

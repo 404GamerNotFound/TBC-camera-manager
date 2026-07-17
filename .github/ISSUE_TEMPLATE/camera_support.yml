@@ -1,0 +1,79 @@
+name: Camera or provider support
+description: Request or improve support for a camera, NVR, or cloud provider
+title: "[Camera support]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never post camera credentials, cloud tokens, private stream URLs, device serial numbers, or private API captures. Confirm that third-party access is supported by the vendor and lawful for your device and account.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched the existing modules, external sources, and issues.
+          required: true
+        - label: I removed credentials, serial numbers, tokens, and private URLs.
+          required: true
+
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      placeholder: "Reolink"
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Exact model and hardware revision
+      placeholder: "RLC-810A hardware IPC_523128M8MP"
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      placeholder: "v3.x.x"
+
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection type
+      multiple: true
+      options:
+        - ONVIF
+        - RTSP or RTSPS
+        - Local vendor API
+        - Vendor cloud
+        - NVR channel
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+      description: What works and what fails with the existing modules?
+    validations:
+      required: true
+
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Requested capabilities
+      description: For example discovery, live video, events, PTZ, audio, archive, firmware, or multiple channels.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Public technical references
+      description: Link to vendor documentation or public protocol information. Do not attach proprietary SDKs or private captures.

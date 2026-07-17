@@ -50,6 +50,17 @@
   <div class="quiet-box" data-i18n="live.size_order_each_tile_adjusted">
     The size and order of each tile are adjusted directly on the image: tools appear in the top-right corner on hover (⠿ moves, ⤡ resizes).
   </div>
+  <div class="form-grid">
+    <label class="check-row">
+      <input type="checkbox" name="webrtc_enabled" {% if wall_settings.webrtc_enabled %}checked{% endif %}>
+      <span data-i18n="live.webrtc_enabled">Enable WebRTC (go2rtc)</span>
+    </label>
+  </div>
+  <details class="quiet-box">
+    <summary data-i18n="live.webrtc_explanation_title">HLS vs. WebRTC: which should I use?</summary>
+    <p><strong data-i18n="live.transport_hls">HLS</strong>: <span data-i18n="live.webrtc_explanation_hls">works everywhere with no extra network setup, and tolerates unstable connections gracefully by buffering and catching up - but has a 5-10 second delay.</span></p>
+    <p><strong data-i18n="live.transport_webrtc">WebRTC</strong>: <span data-i18n="live.webrtc_explanation_webrtc">sub-second delay, best for "who's at the door right now" - but needs network port 8555 reachable for remote/off-network viewing, is less forgiving of packet loss (can stutter instead of buffering), and uses a bit more server load per concurrent viewer.</span></p>
+  </details>
   <div class="form-actions">
     <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
   </div>
@@ -79,6 +90,10 @@
         <span class="live-card-name">{{ item.name }}</span>
         <div class="live-card-tools">
           <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
+          <div class="live-transport-switch" data-live-transport-switch {% if not item.webrtc_available %}hidden{% endif %}>
+            <button type="button" class="live-transport-btn" data-live-transport-btn="hls" data-i18n="live.transport_hls">HLS</button>
+            <button type="button" class="live-transport-btn" data-live-transport-btn="webrtc" data-i18n="live.transport_webrtc">WebRTC</button>
+          </div>
           <a class="live-card-tool-btn" href="{{ item.playlist_url }}" aria-label="Open HLS playlist" data-i18n-aria-label="live.open_hls_playlist" title="HLS-Playlist">HLS</a>
           {% if role == 'admin' %}
           <button class="live-card-tool-btn live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Move tile" data-i18n-aria-label="live.move_tile" title="Move" data-i18n-title="live.move">⠿</button>

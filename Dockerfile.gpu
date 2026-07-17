@@ -25,9 +25,18 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         python3.11 python3.11-venv python3-pip \
-        ffmpeg gcc libxml2-dev libxslt1-dev \
+        ffmpeg gcc libxml2-dev libxslt1-dev curl \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3
+
+# go2rtc powers the optional WebRTC live-view mode - see app/tbc/go2rtc.py.
+# This image is amd64-only (NVIDIA CUDA base), so no arch branching is needed;
+# when bumping GO2RTC_VERSION, recompute the hash from the new release asset.
+ARG GO2RTC_VERSION=1.9.14
+RUN curl -fsSL -o /usr/local/bin/go2rtc \
+        "https://github.com/AlexxIT/go2rtc/releases/download/v${GO2RTC_VERSION}/go2rtc_linux_amd64" \
+    && echo "32d616af226bd731678ffde328b94cfb94e30339bfefc469cfb76323144615a6  /usr/local/bin/go2rtc" | sha256sum -c - \
+    && chmod +x /usr/local/bin/go2rtc
 
 COPY requirements-gpu.txt .
 RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements-gpu.txt
@@ -41,4 +50,6 @@ RUN useradd --create-home --uid 10001 tbc \
 USER tbc
 
 EXPOSE 8732
+EXPOSE 8555/tcp
+EXPOSE 8555/udp
 CMD ["sh", "-c", "python3 -m uvicorn tbc.main:app --host 0.0.0.0 --port ${TBC_PORT:-8732} --app-dir app"]

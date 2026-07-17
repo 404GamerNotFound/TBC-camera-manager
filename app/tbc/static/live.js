@@ -25,6 +25,29 @@
   let soloPlayer = null;
   let soloKey = null;
 
+  // --- WebRTC (go2rtc) transport preference --------------------------------
+  // The admin-side toggle (live.html's layout form) only decides whether
+  // WebRTC exists as an option at all (item.webrtc_available); which
+  // transport an individual tile actually uses is the viewer's own choice,
+  // remembered per tile so it survives reloads. A tile that fails to reach a
+  // connected WebRTC state within WEBRTC_FALLBACK_MS - or drops afterward -
+  // falls back to HLS for the rest of this page session without touching the
+  // saved preference, so a transient hiccup doesn't silently forget the
+  // viewer's choice.
+  const WEBRTC_FALLBACK_MS = 5000;
+  const webrtcFallback = new Set();
+  const transportStorageKey = (key) => `tbc-live-transport-${key}`;
+
+  const getPreferredTransport = (item) => {
+    if (!item.webrtc_available || webrtcFallback.has(item.key)) return "hls";
+    return window.localStorage.getItem(transportStorageKey(item.key)) === "webrtc" ? "webrtc" : "hls";
+  };
+
+  const setPreferredTransport = (key, transport) => {
+    window.localStorage.setItem(transportStorageKey(key), transport);
+    webrtcFallback.delete(key);
+  };
+
   const statusClass = (status) => {
     if (status === "running") return "status-active";
     if (status === "starting") return "status-warning";
@@ -72,9 +95,69 @@
     container.append(placeholder);
   };
 
+  // Builds the TBCPlayer options for a live item, including the WebRTC
+  // connect-timeout/drop fallback wiring when the chosen transport is
+  // "webrtc". Shared by the grid tiles and the solo overlay so both honor the
+  // same per-tile transport preference and fallback behavior.
+  const makeLiveOptions = (item, cameraId, channel, canControl, onFallback) => {
+    const transport = getPreferredTransport(item);
+    const src = transport === "webrtc" ? item.webrtc_offer_url : item.playlist_url;
+    const options = {
+      mode: "live",
+      src,
+      transport,
+      autoplay: true,
+      muted: true,
+      ptz: canControl && cameraId ? { cameraId, channel, onError: () => {} } : null,
+      detection: cameraId ? { cameraId } : null,
+    };
+    if (transport === "webrtc") {
+      let timeoutId = null;
+      const fallback = () => {
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+        if (webrtcFallback.has(item.key)) return;
+        webrtcFallback.add(item.key);
+        onFallback();
+      };
+      timeoutId = window.setTimeout(fallback, WEBRTC_FALLBACK_MS);
+      options.onWebrtcError = fallback;
+      options.onWebrtcStateChange = (state) => {
+        if (state === "connected" || state === "completed") {
+          if (timeoutId) {
+            window.clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+        } else if (state === "failed" || state === "disconnected" || state === "closed") {
+          fallback();
+        }
+      };
+    }
+    return options;
+  };
+
+  const updateTransportSwitch = (card, item) => {
+    const switchEl = card && card.querySelector("[data-live-transport-switch]");
+    if (!switchEl) return;
+    if (!item.webrtc_available) {
+      switchEl.hidden = true;
+      return;
+    }
+    switchEl.hidden = false;
+    const active = getPreferredTransport(item);
+    switchEl.querySelectorAll("[data-live-transport-btn]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.liveTransportBtn === active);
+    });
+  };
+
   const ensureVideo = (container, item) => {
+    const transport = getPreferredTransport(item);
+    const src = transport === "webrtc" ? item.webrtc_offer_url : item.playlist_url;
     const current = container.querySelector("video");
-    if (current && current.dataset.tbcSrc === item.playlist_url) {
+    if (current && current.dataset.tbcSrc === src && current.dataset.tbcTransport === transport) {
+      updateTransportSwitch(container.closest("[data-live-card]"), item);
       return;
     }
     destroyPlayer(container);
@@ -84,20 +167,15 @@
     container.append(video);
     const cameraId = container.dataset.cameraId;
     const canControl = container.dataset.canControl === "1" && !!item.ptz_supported;
-    container._tbcPlayer = new window.TBCPlayer(video, {
-      mode: "live",
-      src: item.playlist_url,
-      autoplay: true,
-      muted: true,
-      ptz: canControl && cameraId
-        ? {
-            cameraId,
-            channel: Number(container.dataset.controlChannel || 0),
-            onError: () => {},
-          }
-        : null,
-      detection: cameraId ? { cameraId } : null,
-    });
+    const options = makeLiveOptions(
+      item,
+      cameraId,
+      Number(container.dataset.controlChannel || 0),
+      canControl,
+      () => ensureVideo(container, item)
+    );
+    container._tbcPlayer = new window.TBCPlayer(video, options);
+    updateTransportSwitch(container.closest("[data-live-card]"), item);
   };
 
   // Without a manual restart button on the wall, a camera that once
@@ -136,6 +214,7 @@
         ensureVideo(player, item);
       } else {
         ensurePlaceholder(player, item.status);
+        updateTransportSwitch(card, item);
       }
     }
     maybeAutoRetry(item);
@@ -229,16 +308,16 @@
     const player = card.querySelector("[data-live-player]");
     const cameraId = player?.dataset.cameraId;
     const canControl = player?.dataset.canControl === "1" && !!item.ptz_supported;
-    soloPlayer = new window.TBCPlayer(video, {
-      mode: "live",
-      src: item.playlist_url,
-      autoplay: true,
-      muted: true,
-      ptz: canControl && cameraId
-        ? { cameraId, channel: Number(player.dataset.controlChannel || 0), onError: () => {} }
-        : null,
-      detection: cameraId ? { cameraId } : null,
-    });
+    const options = makeLiveOptions(
+      item,
+      cameraId,
+      Number(player?.dataset.controlChannel || 0),
+      canControl,
+      () => {
+        if (soloKey === key) openSolo(key);
+      }
+    );
+    soloPlayer = new window.TBCPlayer(video, options);
     soloOverlay.hidden = false;
   };
 
@@ -248,6 +327,18 @@
     shell?.addEventListener("click", (event) => {
       if (event.target.closest(".tbc-player-bar, .tbc-ptz, button, input, a")) return;
       openSolo(key);
+    });
+    card.querySelectorAll("[data-live-transport-btn]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setPreferredTransport(key, button.dataset.liveTransportBtn);
+        const item = latestItems.get(key);
+        const player = card.querySelector("[data-live-player]");
+        if (item && player && item.status === "running") {
+          ensureVideo(player, item);
+        }
+        if (item) updateTransportSwitch(card, item);
+      });
     });
   });
 
