@@ -6,7 +6,48 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterable
 
-from .security import hash_password, verify_password
+from .security import (
+    SecretDecryptionError,
+    decrypt_secret,
+    encrypt_secret,
+    hash_password,
+    is_encrypted_secret,
+    verify_password,
+)
+
+
+_ENCRYPTION_KEY: str | None = None
+
+
+def configure_encryption(secret_key: str) -> None:
+    """Set the process-wide key used to encrypt/decrypt stored secrets.
+
+    Called once at app startup with SETTINGS.secret_key.
+    """
+    global _ENCRYPTION_KEY
+    _ENCRYPTION_KEY = secret_key
+
+
+def _encrypt_field(value: str | None) -> str | None:
+    if _ENCRYPTION_KEY is None or not value:
+        return value
+    return encrypt_secret(_ENCRYPTION_KEY, value)
+
+
+def _decrypt_field(value: str | None) -> str | None:
+    if _ENCRYPTION_KEY is None or not value:
+        return value
+    try:
+        return decrypt_secret(_ENCRYPTION_KEY, value)
+    except SecretDecryptionError:
+        return value
+
+
+def _decrypt_row(row: dict[str, Any], fields: Iterable[str]) -> dict[str, Any]:
+    for field in fields:
+        if field in row:
+            row[field] = _decrypt_field(row[field])
+    return row
 
 
 SCHEMA = """
@@ -264,6 +305,30 @@ CREATE TABLE IF NOT EXISTS api_config (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    token_hash TEXT NOT NULL,
+    token_prefix TEXT NOT NULL,
+    created_by_user_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TEXT,
+    revoked_at TEXT,
+    FOREIGN KEY(created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER,
+    username TEXT,
+    action TEXT NOT NULL,
+    target_type TEXT,
+    target_id TEXT,
+    detail_json TEXT,
+    ip_address TEXT
+);
+
 CREATE TABLE IF NOT EXISTS ui_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_theme_key TEXT NOT NULL DEFAULT 'standard',
@@ -397,6 +462,8 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE plugin_sources ADD COLUMN last_checked_at TEXT",
     "ALTER TABLE camera_detection_zones ADD COLUMN min_dwell_seconds INTEGER NOT NULL DEFAULT 10",
     "ALTER TABLE ui_settings ADD COLUMN live_webrtc_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE recordings ADD COLUMN locked INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE recordings ADD COLUMN locked_at TEXT",
 )
 
 
@@ -440,6 +507,48 @@ def initialize(database_path: str, default_recordings_path: str = "/recordings")
         db.execute(
             "INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')"
         )
+    _encrypt_plaintext_secrets_in_place(database_path)
+
+
+def _encrypt_plaintext_secrets_in_place(database_path: str) -> None:
+    """One-time upgrade pass: encrypt any secrets still stored as plaintext.
+
+    Safe to run on every startup - values already prefixed with the encrypted
+    marker are left untouched by _encrypt_field/_decrypt_field's passthrough.
+    """
+    if _ENCRYPTION_KEY is None:
+        return
+    with connect(database_path) as db:
+        for table, id_column, fields in (
+            ("cameras", "id", ("password",)),
+            ("cloud_accounts", "id", ("secret",)),
+            ("storage_targets", "id", ("s3_secret_access_key",)),
+            ("mqtt_config", "id", ("password",)),
+            ("notification_channels", "id", ("token", "smtp_password")),
+        ):
+            rows = db.execute(f"SELECT {id_column}, {', '.join(fields)} FROM {table}").fetchall()
+            for row in rows:
+                for field in fields:
+                    value = row[field]
+                    if value and not is_encrypted_secret(value):
+                        db.execute(
+                            f"UPDATE {table} SET {field} = ? WHERE {id_column} = ?",
+                            (_encrypt_field(value), row[id_column]),
+                        )
+        for row in db.execute("SELECT id, config_json FROM cloud_accounts"):
+            try:
+                config = json.loads(row["config_json"] or "{}")
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if not isinstance(config, dict):
+                continue
+            secret = config.get("secret")
+            if secret and not is_encrypted_secret(secret):
+                config["secret"] = _encrypt_field(secret)
+                db.execute(
+                    "UPDATE cloud_accounts SET config_json = ? WHERE id = ?",
+                    (json.dumps(config, ensure_ascii=False, separators=(",", ":")), row["id"]),
+                )
 
 
 def ensure_admin_user(database_path: str, username: str, password: str) -> None:
@@ -560,7 +669,7 @@ def list_cameras(database_path: str) -> list[dict[str, Any]]:
             ORDER BY c.name COLLATE NOCASE
             """
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("password",)) for row in rows]
 
 
 def list_cameras_for_user(database_path: str, user_id: int, role: str) -> list[dict[str, Any]]:
@@ -584,7 +693,7 @@ def list_cameras_for_user(database_path: str, user_id: int, role: str) -> list[d
             """,
             (user_id,),
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("password",)) for row in rows]
 
 
 def get_camera(database_path: str, camera_id: int) -> dict[str, Any] | None:
@@ -598,7 +707,7 @@ def get_camera(database_path: str, camera_id: int) -> dict[str, Any] | None:
             """,
             (camera_id,),
         ).fetchone()
-    return dict(row) if row else None
+    return _decrypt_row(dict(row), ("password",)) if row else None
 
 
 def count_cameras_by_module(database_path: str, module_key: str) -> int:
@@ -637,6 +746,9 @@ def create_cloud_account(
     verify_ssl = bool(account_config.get("verify_ssl", verify_ssl))
     identifier = str(account_config.get("identifier") or identifier or "")
     secret = str(account_config.get("secret") or secret or "")
+    stored_config = dict(account_config)
+    if secret:
+        stored_config["secret"] = _encrypt_field(secret)
     with connect(database_path) as db:
         cursor = db.execute(
             """
@@ -652,8 +764,8 @@ def create_cloud_account(
                 port,
                 1 if verify_ssl else 0,
                 identifier,
-                secret,
-                json.dumps(account_config, ensure_ascii=False, separators=(",", ":")),
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
             ),
         )
         return int(cursor.lastrowid)
@@ -684,6 +796,9 @@ def update_cloud_account_configuration(
     verify_ssl = bool(config.get("verify_ssl", False))
     identifier = str(config.get("identifier") or "")
     secret = str(config.get("secret") or "")
+    stored_config = dict(config)
+    if secret:
+        stored_config["secret"] = _encrypt_field(secret)
     with connect(database_path) as db:
         db.execute(
             """
@@ -702,8 +817,8 @@ def update_cloud_account_configuration(
                 port,
                 1 if verify_ssl else 0,
                 identifier,
-                secret,
-                json.dumps(config, ensure_ascii=False, separators=(",", ":")),
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
                 account_id,
             ),
         )
@@ -761,6 +876,7 @@ def clear_cloud_account_configuration_fields(
 
 def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
     account = dict(row)
+    account["secret"] = _decrypt_field(account.get("secret"))
     try:
         config = json.loads(account.get("config_json") or "{}")
     except (TypeError, json.JSONDecodeError):
@@ -773,6 +889,8 @@ def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
             "identifier": account.get("identifier") or "",
             "secret": account.get("secret") or "",
         }
+    else:
+        config["secret"] = _decrypt_field(config.get("secret"))
     account["config"] = config
     account.update(config)
     return account
@@ -904,7 +1022,7 @@ def delete_plugin_source(database_path: str, source_id: int) -> None:
 def get_storage_target(database_path: str, storage_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute("SELECT * FROM storage_targets WHERE id = ?", (storage_id,)).fetchone()
-    return dict(row) if row else None
+    return _decrypt_row(dict(row), ("s3_secret_access_key",)) if row else None
 
 
 def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
@@ -912,7 +1030,7 @@ def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
         rows = db.execute(
             "SELECT * FROM storage_targets ORDER BY name COLLATE NOCASE"
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("s3_secret_access_key",)) for row in rows]
 
 
 def create_storage_target(
@@ -946,7 +1064,7 @@ def create_storage_target(
                 s3_bucket,
                 s3_prefix,
                 s3_access_key_id,
-                s3_secret_access_key,
+                _encrypt_field(s3_secret_access_key),
             ),
         )
         return int(cursor.lastrowid)
@@ -995,7 +1113,7 @@ def update_storage_target(
                 s3_bucket,
                 s3_prefix,
                 s3_access_key_id,
-                s3_secret_access_key,
+                _encrypt_field(s3_secret_access_key),
                 retention_days,
                 retention_max_gb,
                 storage_id,
@@ -1036,7 +1154,7 @@ def create_camera(
             """,
             (
                 module_key, name, host, onvif_port, http_port, rtsp_port,
-                username, password, manual_stream_uri,
+                username, _encrypt_field(password), manual_stream_uri,
             ),
         )
         return int(cursor.lastrowid)
@@ -1088,7 +1206,7 @@ def update_camera_connection(
              WHERE id = ?
             """,
             (
-                name, host, onvif_port, http_port, rtsp_port, username, password,
+                name, host, onvif_port, http_port, rtsp_port, username, _encrypt_field(password),
                 1 if clear_manual_stream_uri else 0,
                 manual_stream_uri,
                 manual_stream_uri,
@@ -1586,7 +1704,7 @@ def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | Non
             """,
             (recording_id,),
         ).fetchone()
-    return dict(row) if row else None
+    return _decrypt_row(dict(row), ("s3_secret_access_key",)) if row else None
 
 
 def _recording_filters(
@@ -1734,7 +1852,7 @@ def list_ready_recordings_for_cleanup(database_path: str) -> list[dict[str, Any]
             SELECT r.*, c.name AS camera_name
               FROM recordings r
               JOIN cameras c ON c.id = r.camera_id
-             WHERE r.status = 'ready'
+             WHERE r.status = 'ready' AND r.locked = 0
              ORDER BY r.started_at ASC, r.id ASC
             """
         ).fetchall()
@@ -1815,7 +1933,7 @@ def list_notification_channels(database_path: str) -> list[dict[str, Any]]:
         rows = db.execute(
             "SELECT * FROM notification_channels ORDER BY enabled DESC, name COLLATE NOCASE"
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("token", "smtp_password")) for row in rows]
 
 
 def create_notification_channel(database_path: str, **values: Any) -> int:
@@ -2060,7 +2178,7 @@ def get_mqtt_config(database_path: str) -> dict[str, Any]:
                 """
             )
             row = db.execute("SELECT * FROM mqtt_config WHERE id = 1").fetchone()
-    return dict(row)
+    return _decrypt_row(dict(row), ("password",))
 
 
 def update_mqtt_config(
@@ -2098,7 +2216,7 @@ def update_mqtt_config(
                 host,
                 port,
                 username,
-                password,
+                _encrypt_field(password),
                 topic_prefix,
                 1 if discovery_enabled else 0,
                 discovery_prefix,
@@ -2132,29 +2250,143 @@ def update_api_config(database_path: str, *, enabled: bool, require_api_key: boo
         )
 
 
-def set_api_key(database_path: str, *, key_hash: str, key_prefix: str) -> None:
+def create_api_token(
+    database_path: str, *, name: str, key_hash: str, key_prefix: str, created_by_user_id: int | None
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO api_tokens (name, token_hash, token_prefix, created_by_user_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            (name, key_hash, key_prefix, created_by_user_id),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_api_tokens(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT * FROM api_tokens ORDER BY revoked_at IS NOT NULL, created_at DESC"
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def find_active_api_token_by_prefix(database_path: str, prefix: str) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM api_tokens WHERE token_prefix = ? AND revoked_at IS NULL",
+            (prefix,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def touch_api_token_last_used(database_path: str, token_id: int) -> None:
     with connect(database_path) as db:
         db.execute(
-            """
-            INSERT INTO api_config (id, api_key_hash, api_key_prefix)
-            VALUES (1, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                api_key_hash = excluded.api_key_hash,
-                api_key_prefix = excluded.api_key_prefix,
-                updated_at = CURRENT_TIMESTAMP
-            """,
-            (key_hash, key_prefix),
+            "UPDATE api_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (token_id,),
         )
 
 
-def clear_api_key(database_path: str) -> None:
+def revoke_api_token(database_path: str, token_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE api_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ? AND revoked_at IS NULL",
+            (token_id,),
+        )
+
+
+def delete_api_token(database_path: str, token_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM api_tokens WHERE id = ?", (token_id,))
+
+
+def record_audit_event(
+    database_path: str,
+    *,
+    user_id: int | None,
+    username: str | None,
+    action: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    detail: dict[str, Any] | None = None,
+    ip_address: str | None = None,
+) -> None:
     with connect(database_path) as db:
         db.execute(
             """
-            UPDATE api_config
-               SET api_key_hash = NULL, api_key_prefix = NULL, updated_at = CURRENT_TIMESTAMP
-             WHERE id = 1
+            INSERT INTO audit_log (user_id, username, action, target_type, target_id, detail_json, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                username,
+                action,
+                target_type,
+                str(target_id) if target_id is not None else None,
+                json.dumps(detail, ensure_ascii=False, separators=(",", ":")) if detail else None,
+                ip_address,
+            ),
+        )
+
+
+def list_audit_events(
+    database_path: str,
+    *,
+    limit: int = 200,
+    offset: int = 0,
+    action: str | None = None,
+    username: str | None = None,
+) -> dict[str, Any]:
+    clauses: list[str] = []
+    params: list[Any] = []
+    if action:
+        clauses.append("action = ?")
+        params.append(action)
+    if username:
+        clauses.append("username = ?")
+        params.append(username)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    with connect(database_path) as db:
+        rows = db.execute(
+            f"""
+            SELECT * FROM audit_log
+            {where}
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?
+            """,
+            (*params, limit, offset),
+        ).fetchall()
+        total = db.execute(f"SELECT COUNT(*) AS total FROM audit_log {where}", params).fetchone()["total"]
+    events = []
+    for row in rows:
+        event = dict(row)
+        try:
+            event["detail"] = json.loads(event.get("detail_json") or "null")
+        except (TypeError, json.JSONDecodeError):
+            event["detail"] = None
+        events.append(event)
+    return {"events": events, "total": int(total)}
+
+
+def list_distinct_audit_actions(database_path: str) -> list[str]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT DISTINCT action FROM audit_log ORDER BY action").fetchall()
+    return [row["action"] for row in rows]
+
+
+def set_recording_locked(database_path: str, recording_id: int, locked: bool) -> None:
+    with connect(database_path) as db:
+        db.execute(
             """
+            UPDATE recordings
+               SET locked = ?,
+                   locked_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (1 if locked else 0, 1 if locked else 0, recording_id),
         )
 
 
@@ -2268,14 +2500,14 @@ def _notification_values(values: dict[str, Any]) -> tuple[Any, ...]:
         1 if values.get("enabled") else 0,
         values.get("event_filter"),
         values.get("url"),
-        values.get("token"),
+        _encrypt_field(values.get("token")),
         values.get("chat_id"),
         values.get("email_to"),
         values.get("email_from"),
         values.get("smtp_host"),
         values.get("smtp_port"),
         values.get("smtp_username"),
-        values.get("smtp_password"),
+        _encrypt_field(values.get("smtp_password")),
         values.get("ha_service"),
         1 if values.get("include_snapshot") else 0,
     )

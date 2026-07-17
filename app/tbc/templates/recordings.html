@@ -66,6 +66,9 @@
           <p>{{ clip.camera_name }} · {{ clip.started_at }}</p>
         </div>
         <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
+        {% if clip.locked %}
+        <span class="status-pill status-warning" data-i18n="recording.locked_badge" title="Locked">🔒</span>
+        {% endif %}
       </div>
       {% if clip.message %}
       <p class="clip-message">{{ clip.message }}</p>
@@ -75,9 +78,18 @@
         <div class="button-row">
           <a class="secondary-button" href="/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
           {% if role == 'admin' %}
+          {% if clip.locked %}
+          <form method="post" action="/recordings/{{ clip.id }}/unlock">
+            <button class="secondary-button" type="submit" data-i18n="recording.unlock">Unlock</button>
+          </form>
+          {% else %}
+          <form method="post" action="/recordings/{{ clip.id }}/lock">
+            <button class="secondary-button" type="submit" data-i18n="recording.lock">Lock</button>
+          </form>
           <form method="post" action="/recordings/{{ clip.id }}/delete">
             <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
           </form>
+          {% endif %}
           {% endif %}
         </div>
       </div>

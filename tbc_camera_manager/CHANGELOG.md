@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 - "Secure & Reliable"
+
+- Added at-rest encryption for stored secrets (camera passwords, cloud account secrets, S3 keys, MQTT and notification credentials), derived from `TBC_SECRET_KEY`. Existing plaintext values are encrypted in place on first startup after upgrading.
+- Added encrypted backup and restore: download a full config/database backup from Settings > Backup & restore, and restore it back (a safety copy of the current database is kept automatically).
+- Added an audit log covering login/logout, user management, API token and camera credential changes, storage/MQTT settings changes, backup/restore, and recording lock/unlock/delete, viewable and filterable at Settings > Audit log.
+- Replaced the single global API key with support for multiple named, independently revocable API tokens.
+- Added lockable/protected recordings: locked clips are exempt from retention cleanup and cannot be deleted until unlocked.
+
 ## 0.3.0
 
 - Added local face recognition (opt-in, snapshot or live mode) with a face enrollment page and match/unknown notifications.

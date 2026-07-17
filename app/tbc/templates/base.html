@@ -205,6 +205,18 @@
                     <span data-i18n="api.title">API access</span>
                   </a>
                 </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/settings/audit-log') %} active{% endif %}" href="/settings/audit-log">
+                    <span class="nav-shortcut" aria-hidden="true">U</span>
+                    <span data-i18n="audit.title">Audit log</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/settings/backup') %} active{% endif %}" href="/settings/backup">
+                    <span class="nav-shortcut" aria-hidden="true">B</span>
+                    <span data-i18n="backup.title">Backup &amp; restore</span>
+                  </a>
+                </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <button class="dropdown-item" title="Debug Log" data-i18n-title="settings.debug_log" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log" type="button" data-debug-toggle>

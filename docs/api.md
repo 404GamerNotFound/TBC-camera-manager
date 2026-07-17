@@ -16,11 +16,11 @@ Open `Admin → Settings` (`/settings`) and find the **API access** section:
   regardless of the API key.
 - **Require API key** controls authentication. When disabled while the main switch is enabled,
   the API is completely open and requires no key. Use this only in trusted, isolated networks.
-- **Generate new key** creates a key and displays it **exactly once** in the confirmation
-  message. TBC stores only its SHA-256 hash (`app/tbc/security.py`, `hash_api_key` and
-  `verify_api_key`) and cannot display the plaintext key again. A new key immediately replaces
-  the previously active key.
-- **Revoke key** immediately deactivates the current key.
+- Under **API tokens**, create a separate named token per integration (e.g. one for Home
+  Assistant, one for a dashboard). Each token is displayed **exactly once**, right after
+  creation - TBC stores only its SHA-256 hash (`app/tbc/security.py`, `hash_api_key` and
+  `verify_api_key`) and cannot display the plaintext token again. Revoke a token individually
+  from the same table without affecting any other token.
 
 The API is disabled by default in a new installation.
 

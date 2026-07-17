@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import __version__, database, mqtt
+from . import __version__, audit, backup, database, mqtt
 from .licenses import THIRD_PARTY_LICENSES
 from .api_common import (
     api_auth_error,
@@ -113,6 +113,7 @@ from .themes.packages import (
 
 LOGGER = logging.getLogger(__name__)
 SETTINGS = load_settings()
+database.configure_encryption(SETTINGS.secret_key)
 BASE_DIR = Path(__file__).resolve().parent
 DEBUG_LOG = install_debug_log()
 # English is the deterministic server-rendered fallback language: the actual
@@ -418,6 +419,7 @@ async def login(
 ):
     user = database.authenticate_user(SETTINGS.database_path, username.strip(), password)
     if user is None:
+        audit.log_event(request, SETTINGS.database_path, "auth.login_failed", username_override=username.strip())
         return templates.TemplateResponse(
             request,
             "login.html",
@@ -433,11 +435,14 @@ async def login(
     request.session["user_id"] = user["id"]
     request.session["username"] = user["username"]
     request.session["role"] = user.get("role", "admin")
+    audit.log_event(request, SETTINGS.database_path, "auth.login_succeeded")
     return _redirect("/cameras")
 
 
 @app.post("/logout")
 async def logout(request: Request):
+    if _is_logged_in(request):
+        audit.log_event(request, SETTINGS.database_path, "auth.logout")
     request.session.clear()
     return _redirect("/login")
 
@@ -610,6 +615,7 @@ async def create_camera(
         manual_stream_uri=normalized_manual_uri,
     )
     await _refresh_camera(camera_id)
+    audit.log_event(request, SETTINGS.database_path, "camera.created", target_type="camera", target_id=camera_id, detail={"name": values["name"], "module_key": values["module_key"]})
     _set_flash(request, "camera.created_and_checked")
     return _redirect(f"/cameras/{camera_id}")
 
@@ -1280,6 +1286,14 @@ async def update_camera_connection(
         manual_stream_uri=normalized_manual_uri,
         clear_manual_stream_uri=clear_manual,
     )
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "camera.credentials_updated",
+        target_type="camera",
+        target_id=camera_id,
+        detail={"name": values["name"], "password_changed": bool(values["password"])},
+    )
     SNAPSHOT_MANAGER.delete(camera_id)
     try:
         snapshot = await _refresh_camera(camera_id)
@@ -1296,6 +1310,7 @@ async def remove_camera(request: Request, camera_id: int):
     if guard:
         return guard
     database.delete_camera(SETTINGS.database_path, camera_id)
+    audit.log_event(request, SETTINGS.database_path, "camera.deleted", target_type="camera", target_id=camera_id)
     SNAPSHOT_MANAGER.delete(camera_id)
     for cache_key in [key for key in CONTROL_STATE_CACHE if key[0] == camera_id]:
         CONTROL_STATE_CACHE.pop(cache_key, None)
@@ -1353,6 +1368,7 @@ async def create_storage_target(
             s3_access_key_id=_none_if_blank(s3_access_key_id),
             s3_secret_access_key=_none_if_blank(s3_secret_access_key),
         )
+        audit.log_event(request, SETTINGS.database_path, "storage.created", target_type="storage", detail={"name": name.strip(), "kind": kind})
         _set_flash(request, "storage.created")
     except Exception as exc:
         _set_flash(request, "storage.create_failed", {"error": exc}, "error")
@@ -1403,6 +1419,7 @@ async def update_storage_target(
         retention_days=int(retention_days) if retention_days else None,
         retention_max_gb=float(retention_max_gb) if retention_max_gb else None,
     )
+    audit.log_event(request, SETTINGS.database_path, "storage.updated", target_type="storage", target_id=storage_id, detail={"name": name.strip(), "kind": kind})
     _set_flash(request, "storage.updated")
     return _redirect("/storage")
 
@@ -1843,9 +1860,39 @@ async def recording_delete(request: Request, recording_id: int):
         return guard
     recording = database.get_recording(SETTINGS.database_path, recording_id)
     if recording:
+        if recording.get("locked"):
+            _set_flash(request, "recording.locked_cannot_delete", None, "error")
+            return _redirect("/recordings")
         delete_recording_files(recording)
         database.delete_recording_metadata(SETTINGS.database_path, recording_id)
+        audit.log_event(request, SETTINGS.database_path, "recording.deleted", target_type="recording", target_id=recording_id)
         _set_flash(request, "recording.clip_deleted")
+    return _redirect("/recordings")
+
+
+@app.post("/recordings/{recording_id}/lock")
+async def recording_lock(request: Request, recording_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    recording = database.get_recording(SETTINGS.database_path, recording_id)
+    if recording:
+        database.set_recording_locked(SETTINGS.database_path, recording_id, True)
+        audit.log_event(request, SETTINGS.database_path, "recording.locked", target_type="recording", target_id=recording_id)
+        _set_flash(request, "recording.locked")
+    return _redirect("/recordings")
+
+
+@app.post("/recordings/{recording_id}/unlock")
+async def recording_unlock(request: Request, recording_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    recording = database.get_recording(SETTINGS.database_path, recording_id)
+    if recording:
+        database.set_recording_locked(SETTINGS.database_path, recording_id, False)
+        audit.log_event(request, SETTINGS.database_path, "recording.unlocked", target_type="recording", target_id=recording_id)
+        _set_flash(request, "recording.unlocked")
     return _redirect("/recordings")
 
 
@@ -1890,6 +1937,7 @@ async def create_user(
         role=role,
     )
     database.set_user_camera_access(SETTINGS.database_path, user_id, camera_ids)
+    audit.log_event(request, SETTINGS.database_path, "user.created", target_type="user", target_id=user_id, detail={"username": username.strip(), "role": role})
     _set_flash(request, "user.created")
     return _redirect("/users")
 
@@ -1917,6 +1965,7 @@ async def update_user(
     if request.session.get("user_id") == user_id:
         request.session["username"] = username.strip()
         request.session["role"] = "viewer" if role == "viewer" else "admin"
+    audit.log_event(request, SETTINGS.database_path, "user.updated", target_type="user", target_id=user_id, detail={"username": username.strip(), "role": role, "password_changed": bool(password.strip())})
     _set_flash(request, "user.updated")
     return _redirect("/users")
 
@@ -1930,6 +1979,7 @@ async def remove_user(request: Request, user_id: int):
         _set_flash(request, "user.cannot_delete_self", None, "error")
         return _redirect("/users")
     database.delete_user(SETTINGS.database_path, user_id)
+    audit.log_event(request, SETTINGS.database_path, "user.deleted", target_type="user", target_id=user_id)
     _set_flash(request, "user.deleted")
     return _redirect("/users")
 
@@ -1978,6 +2028,7 @@ async def update_mqtt_settings(
         discovery_enabled=discovery_enabled == "on",
         discovery_prefix=discovery_prefix.strip() or "homeassistant",
     )
+    audit.log_event(request, SETTINGS.database_path, "mqtt.settings_updated", detail={"enabled": enabled == "on"})
     _set_flash(request, "mqtt.settings_saved")
     return _redirect("/mqtt")
 
@@ -2289,6 +2340,86 @@ async def settings_page(request: Request):
     )
 
 
+@app.get("/settings/audit-log", response_class=HTMLResponse)
+async def audit_log_page(request: Request, page: int = Query(1, ge=1), action: str | None = Query(None)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    page_size = 50
+    result = database.list_audit_events(
+        SETTINGS.database_path,
+        limit=page_size,
+        offset=(page - 1) * page_size,
+        action=_none_if_blank(action) if action else None,
+    )
+    total_pages = max(1, (result["total"] + page_size - 1) // page_size)
+    return templates.TemplateResponse(
+        request,
+        "audit_log.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "events": result["events"],
+            "total": result["total"],
+            "page": page,
+            "total_pages": total_pages,
+            "selected_action": action or "",
+            "actions": database.list_distinct_audit_actions(SETTINGS.database_path),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.get("/settings/backup", response_class=HTMLResponse)
+async def backup_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "backup.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/settings/backup/create")
+async def create_backup_route(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    archive = backup.create_backup(SETTINGS.database_path, SETTINGS.secret_key)
+    audit.log_event(request, SETTINGS.database_path, "backup.created")
+    filename = f"tbc-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.tbcbackup"
+    return Response(
+        archive,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/settings/backup/restore")
+async def restore_backup_route(request: Request, backup_file: UploadFile = File(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        data = await backup_file.read(500 * 1024 * 1024 + 1)
+        backup.restore_backup(data, SETTINGS.database_path, SETTINGS.secret_key)
+        audit.log_event(request, SETTINGS.database_path, "backup.restored")
+        _set_flash(request, "backup.restore_succeeded")
+    except backup.BackupError as exc:
+        _set_flash(request, "backup.restore_failed", {"error": exc}, "error")
+    finally:
+        await backup_file.close()
+    return _redirect("/settings/backup")
+
+
 @app.get("/api-access", response_class=HTMLResponse)
 async def api_access_page(request: Request):
     guard = _require_admin(request)
@@ -2302,6 +2433,7 @@ async def api_access_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "api_config": database.get_api_config(SETTINGS.database_path),
+            "api_tokens": database.list_api_tokens(SETTINGS.database_path),
             "mcp_endpoint_url": f"{str(request.base_url).rstrip('/')}/mcp/mcp",
             "api_examples": _api_examples(),
             "mcp_tools": _mcp_tool_examples(),
@@ -2324,27 +2456,37 @@ async def update_api_settings(
         enabled=enabled == "on",
         require_api_key=require_api_key == "on",
     )
+    audit.log_event(request, SETTINGS.database_path, "api.settings_updated", detail={"enabled": enabled == "on", "require_api_key": require_api_key == "on"})
     _set_flash(request, "api.settings_saved")
     return _redirect("/api-access")
 
 
-@app.post("/settings/api-key/generate")
-async def generate_api_key_route(request: Request):
+@app.post("/settings/api-tokens")
+async def create_api_token_route(request: Request, name: str = Form(...)):
     guard = _require_admin(request)
     if guard:
         return guard
+    user = _current_user(request)
     key = generate_api_key()
-    database.set_api_key(SETTINGS.database_path, key_hash=hash_api_key(key), key_prefix=key[:12])
+    token_id = database.create_api_token(
+        SETTINGS.database_path,
+        name=name.strip() or "API token",
+        key_hash=hash_api_key(key),
+        key_prefix=key[:12],
+        created_by_user_id=int(user["id"]),
+    )
+    audit.log_event(request, SETTINGS.database_path, "api_token.created", target_type="api_token", target_id=token_id, detail={"name": name})
     _set_flash(request, "api.key_generated", {"key": key})
     return _redirect("/api-access")
 
 
-@app.post("/settings/api-key/revoke")
-async def revoke_api_key_route(request: Request):
+@app.post("/settings/api-tokens/{token_id}/revoke")
+async def revoke_api_token_route(request: Request, token_id: int):
     guard = _require_admin(request)
     if guard:
         return guard
-    database.clear_api_key(SETTINGS.database_path)
+    database.revoke_api_token(SETTINGS.database_path, token_id)
+    audit.log_event(request, SETTINGS.database_path, "api_token.revoked", target_type="api_token", target_id=token_id)
     _set_flash(request, "api.key_revoked")
     return _redirect("/api-access")
 
@@ -4254,7 +4396,13 @@ def _require_admin(request: Request):
 
 def _require_api_key(request: Request) -> JSONResponse | None:
     config = database.get_api_config(SETTINGS.database_path)
-    error = api_auth_error(config, request.headers.get("Authorization"), request.headers.get("X-API-Key"))
+    error = api_auth_error(
+        config,
+        request.headers.get("Authorization"),
+        request.headers.get("X-API-Key"),
+        find_token=lambda prefix: database.find_active_api_token_by_prefix(SETTINGS.database_path, prefix),
+        on_success=lambda token: database.touch_api_token_last_used(SETTINGS.database_path, int(token["id"])),
+    )
     if error:
         code, message = error
         return JSONResponse({"error": message}, status_code=code)
@@ -4662,7 +4810,7 @@ def _pop_flash(request: Request) -> dict[str, Any] | None:
     return flash
 
 
-def _t_en(key: str, **params: Any) -> str:
+def _t_en(key: str, /, **params: Any) -> str:
     template = _LOCALE_EN.get(key, key)
     try:
         return template.format(**params)

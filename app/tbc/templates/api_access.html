@@ -37,14 +37,6 @@
       </form>
 
       <div class="api-access-credentials">
-        <div class="api-key-status">
-          <span class="api-access-label" data-i18n="api.key_label">API key</span>
-          {% if api_config.api_key_prefix %}
-          <strong>Active: <code>{{ api_config.api_key_prefix }}…</code></strong>
-          {% else %}
-          <strong data-i18n="api.not_generated">Not generated yet</strong>
-          {% endif %}
-        </div>
         <div class="api-access-endpoints">
           <div class="api-access-endpoint">
             <span>REST</span>
@@ -55,17 +47,67 @@
             <code>{{ mcp_endpoint_url }}</code>
           </div>
         </div>
-        <div class="form-actions">
-          <form method="post" action="/settings/api-key/generate">
-            <button class="primary-button" type="submit" data-i18n="api.generate_key">Generate new key</button>
-          </form>
-          {% if api_config.api_key_prefix %}
-          <form method="post" action="/settings/api-key/revoke">
-            <button class="secondary-button" type="submit" data-i18n="api.revoke_key">Revoke key</button>
-          </form>
-          {% endif %}
-        </div>
       </div>
+    </div>
+  </section>
+
+  <section class="event-panel">
+    <div class="section-title">
+      <h2 data-i18n="api.tokens_title">API tokens</h2>
+      <span>{{ api_tokens | length }}</span>
+    </div>
+    <p class="hint-text" data-i18n="api.tokens_intro">Create a separate token per integration so you can revoke one without affecting the others. The full token is shown once, right after creation - store it somewhere safe.</p>
+    <form class="api-access-settings" method="post" action="/settings/api-tokens">
+      <div class="form-grid">
+        <label>
+          <span data-i18n="api.token_name">Name</span>
+          <input name="name" placeholder="Home Assistant" required>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="primary-button" type="submit" data-i18n="api.generate_key">Generate new key</button>
+      </div>
+    </form>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="api.token_name">Name</th>
+            <th data-i18n="api.key_label">API key</th>
+            <th data-i18n="api.token_created">Created</th>
+            <th data-i18n="api.token_last_used">Last used</th>
+            <th data-i18n="api.token_status">Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for token in api_tokens %}
+          <tr>
+            <td>{{ token.name }}</td>
+            <td><code>{{ token.token_prefix }}…</code></td>
+            <td>{{ token.created_at }}</td>
+            <td>{{ token.last_used_at or '-' }}</td>
+            <td>
+              {% if token.revoked_at %}
+              <span data-i18n="api.token_revoked">Revoked</span>
+              {% else %}
+              <span data-i18n="api.token_active">Active</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not token.revoked_at %}
+              <form method="post" action="/settings/api-tokens/{{ token.id }}/revoke">
+                <button class="secondary-button" type="submit" data-i18n="api.revoke_key">Revoke key</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not api_tokens %}
+          <tr><td colspan="6" data-i18n="api.not_generated">Not generated yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </section>
 

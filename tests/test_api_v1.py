@@ -53,69 +53,111 @@ class ApiConfigDatabaseTests(unittest.TestCase):
         self.assertEqual(config["enabled"], 1)
         self.assertEqual(config["require_api_key"], 0)
 
-    def test_set_api_key_then_clear_api_key(self):
+    def test_create_api_token_then_revoke(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
             database.initialize(handle.name)
-            database.set_api_key(handle.name, key_hash="deadbeef", key_prefix="tbc_AbCd1234")
-            config = database.get_api_config(handle.name)
-            self.assertEqual(config["api_key_hash"], "deadbeef")
-            self.assertEqual(config["api_key_prefix"], "tbc_AbCd1234")
+            token_id = database.create_api_token(
+                handle.name, name="CI", key_hash="deadbeef", key_prefix="tbc_AbCd1234", created_by_user_id=None
+            )
+            tokens = database.list_api_tokens(handle.name)
+            self.assertEqual(len(tokens), 1)
+            self.assertEqual(tokens[0]["token_hash"], "deadbeef")
+            self.assertEqual(tokens[0]["token_prefix"], "tbc_AbCd1234")
+            self.assertIsNone(tokens[0]["revoked_at"])
 
-            database.clear_api_key(handle.name)
-            config = database.get_api_config(handle.name)
-            self.assertIsNone(config["api_key_hash"])
-            self.assertIsNone(config["api_key_prefix"])
+            database.revoke_api_token(handle.name, token_id)
+            found = database.find_active_api_token_by_prefix(handle.name, "tbc_AbCd1234")
+            self.assertIsNone(found)
 
-    def test_generating_new_key_replaces_previous_one(self):
+    def test_multiple_tokens_coexist(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
             database.initialize(handle.name)
-            database.set_api_key(handle.name, key_hash="first-hash", key_prefix="tbc_first")
-            database.set_api_key(handle.name, key_hash="second-hash", key_prefix="tbc_second")
-            config = database.get_api_config(handle.name)
-        self.assertEqual(config["api_key_hash"], "second-hash")
-        self.assertEqual(config["api_key_prefix"], "tbc_second")
+            database.create_api_token(
+                handle.name, name="A", key_hash="first-hash", key_prefix="tbc_first", created_by_user_id=None
+            )
+            database.create_api_token(
+                handle.name, name="B", key_hash="second-hash", key_prefix="tbc_second", created_by_user_id=None
+            )
+            tokens = database.list_api_tokens(handle.name)
+        self.assertEqual(len(tokens), 2)
+        self.assertEqual({t["token_hash"] for t in tokens}, {"first-hash", "second-hash"})
+
+
+def _find_token(token_hash: str, prefix: str):
+    def _finder(candidate_prefix: str):
+        if candidate_prefix == prefix:
+            return {"id": 1, "token_hash": token_hash}
+        return None
+
+    return _finder
 
 
 class ApiAuthGateTests(unittest.TestCase):
     def test_disabled_api_returns_404_regardless_of_key(self):
-        config = {"enabled": False, "require_api_key": True, "api_key_hash": None}
-        self.assertEqual(api_auth_error(config, None, None), (404, "API ist deaktiviert"))
+        config = {"enabled": False, "require_api_key": True}
+        self.assertEqual(
+            api_auth_error(config, None, None, find_token=lambda prefix: None), (404, "API ist deaktiviert")
+        )
 
     def test_enabled_without_key_requirement_allows_no_credentials(self):
-        config = {"enabled": True, "require_api_key": False, "api_key_hash": None}
-        self.assertIsNone(api_auth_error(config, None, None))
+        config = {"enabled": True, "require_api_key": False}
+        self.assertIsNone(api_auth_error(config, None, None, find_token=lambda prefix: None))
 
     def test_enabled_with_key_required_rejects_missing_key(self):
-        key_hash = hash_api_key(generate_api_key())
-        config = {"enabled": True, "require_api_key": True, "api_key_hash": key_hash}
-        self.assertEqual(api_auth_error(config, None, None), (401, "invalid or missing API key"))
+        config = {"enabled": True, "require_api_key": True}
+        self.assertEqual(
+            api_auth_error(config, None, None, find_token=lambda prefix: None),
+            (401, "invalid or missing API key"),
+        )
 
     def test_enabled_with_key_required_rejects_wrong_key(self):
-        key_hash = hash_api_key(generate_api_key())
-        config = {"enabled": True, "require_api_key": True, "api_key_hash": key_hash}
-        error = api_auth_error(config, "Bearer wrong-key", None)
+        key = generate_api_key()
+        config = {"enabled": True, "require_api_key": True}
+        error = api_auth_error(config, "Bearer wrong-key-wrong-key", None, find_token=_find_token(hash_api_key(key), "wrong-key-wr"))
         self.assertEqual(error, (401, "invalid or missing API key"))
 
     def test_enabled_with_key_required_accepts_correct_bearer_token(self):
         key = generate_api_key()
-        config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
-        self.assertIsNone(api_auth_error(config, f"Bearer {key}", None))
+        config = {"enabled": True, "require_api_key": True}
+        self.assertIsNone(
+            api_auth_error(config, f"Bearer {key}", None, find_token=_find_token(hash_api_key(key), key[:12]))
+        )
 
     def test_enabled_with_key_required_accepts_correct_x_api_key_header(self):
         key = generate_api_key()
-        config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
-        self.assertIsNone(api_auth_error(config, None, key))
+        config = {"enabled": True, "require_api_key": True}
+        self.assertIsNone(
+            api_auth_error(config, None, key, find_token=_find_token(hash_api_key(key), key[:12]))
+        )
 
     def test_bearer_token_takes_precedence_over_x_api_key_header(self):
         key = generate_api_key()
-        config = {"enabled": True, "require_api_key": True, "api_key_hash": hash_api_key(key)}
-        error = api_auth_error(config, "Bearer wrong-key", key)
+        other = generate_api_key()
+        config = {"enabled": True, "require_api_key": True}
+        error = api_auth_error(
+            config, "Bearer wrong-key-wrong-key", other, find_token=_find_token(hash_api_key(key), key[:12])
+        )
         self.assertEqual(error, (401, "invalid or missing API key"))
 
-    def test_no_key_ever_generated_always_rejects(self):
-        config = {"enabled": True, "require_api_key": True, "api_key_hash": None}
-        error = api_auth_error(config, "Bearer anything", None)
+    def test_no_matching_token_always_rejects(self):
+        config = {"enabled": True, "require_api_key": True}
+        error = api_auth_error(config, "Bearer anything-anything", None, find_token=lambda prefix: None)
         self.assertEqual(error, (401, "invalid or missing API key"))
+
+    def test_on_success_callback_invoked_with_matched_token(self):
+        key = generate_api_key()
+        config = {"enabled": True, "require_api_key": True}
+        seen = []
+        error = api_auth_error(
+            config,
+            f"Bearer {key}",
+            None,
+            find_token=_find_token(hash_api_key(key), key[:12]),
+            on_success=seen.append,
+        )
+        self.assertIsNone(error)
+        self.assertEqual(len(seen), 1)
+        self.assertEqual(seen[0]["id"], 1)
 
 
 class CameraPublicDictTests(unittest.TestCase):

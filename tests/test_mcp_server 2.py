@@ -41,7 +41,13 @@ class McpServerTests(unittest.TestCase):
         )
         database.update_api_config(self.db_path, enabled=True, require_api_key=True)
         self.api_key = generate_api_key()
-        database.set_api_key(self.db_path, key_hash=hash_api_key(self.api_key), key_prefix=self.api_key[:12])
+        database.create_api_token(
+            self.db_path,
+            name="test",
+            key_hash=hash_api_key(self.api_key),
+            key_prefix=self.api_key[:12],
+            created_by_user_id=None,
+        )
 
         snapshot_manager = DashboardSnapshotManager(f"{tmp_dir}/snapshots", interval_seconds=600)
         mcp_app, session_cm = build_mcp_app(

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="base.settings">Settings</p>
+    <h1 data-i18n="audit.title">Audit log</h1>
+  </div>
+</section>
+
+<section class="event-panel">
+  <div class="section-title">
+    <h2 data-i18n="audit.events">Events</h2>
+    <span>{{ total }}</span>
+  </div>
+  <form class="api-access-settings" method="get" action="/settings/audit-log">
+    <div class="form-grid">
+      <label>
+        <span data-i18n="audit.filter_action">Action</span>
+        <select name="action">
+          <option value="" data-i18n="audit.all_actions">All actions</option>
+          {% for item in actions %}
+          <option value="{{ item }}" {% if item == selected_action %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit" data-i18n="audit.filter_apply">Filter</button>
+    </div>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="audit.column_time">Time</th>
+          <th data-i18n="audit.column_user">User</th>
+          <th data-i18n="audit.column_action">Action</th>
+          <th data-i18n="audit.column_target">Target</th>
+          <th data-i18n="audit.column_ip">IP address</th>
+          <th data-i18n="audit.column_detail">Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event.created_at }}</td>
+          <td>{{ event.username or '-' }}</td>
+          <td><code>{{ event.action }}</code></td>
+          <td>{% if event.target_type %}{{ event.target_type }}#{{ event.target_id }}{% else %}-{% endif %}</td>
+          <td>{{ event.ip_address or '-' }}</td>
+          <td>{% if event.detail %}<code>{{ event.detail | tojson }}</code>{% else %}-{% endif %}</td>
+        </tr>
+        {% endfor %}
+        {% if not events %}
+        <tr><td colspan="6" data-i18n="audit.no_events">No audit events yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="button-row timeline-day-nav">
+    <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/settings/audit-log?page={{ page - 1 }}{% if selected_action %}&action={{ selected_action }}{% endif %}" data-i18n="recordings.previous_page">‹ Previous page</a>
+    <span data-i18n="recordings.page_indicator" data-i18n-params='{{ {"page": page, "total_pages": total_pages} | tojson }}'>Page {{ page }} / {{ total_pages }}</span>
+    <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/settings/audit-log?page={{ page + 1 }}{% if selected_action %}&action={{ selected_action }}{% endif %}" data-i18n="recordings.next_page">Next page ›</a>
+  </div>
+</section>
+{% endblock %}

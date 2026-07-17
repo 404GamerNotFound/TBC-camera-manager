@@ -1,5 +1,5 @@
 name: TBC Camera Manager
-version: "0.3.0"
+version: "0.4.0"
 slug: tbc_camera_manager
 description: Modular camera manager for ONVIF and RTSP cameras
 url: "https://github.com/404GamerNotFound/TBC-camera-manager"

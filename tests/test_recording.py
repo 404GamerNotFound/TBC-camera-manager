@@ -68,6 +68,84 @@ class RecordingTests(unittest.TestCase):
             self.assertEqual(deleted, 1)
             self.assertIsNone(database.get_recording(handle.name, recording_id))
 
+    def test_locked_recording_is_exempt_from_retention_cleanup(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Einfahrt",
+                host="192.0.2.10",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            recording_id = database.create_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=1,
+                detection_key="person",
+                event_label="Person",
+                storage_kind="local",
+                started_at="2000-06-01T12:00:00",
+            )
+            database.update_recording_finished(
+                handle.name,
+                recording_id,
+                status="ready",
+                size_bytes=1024,
+                ended_at="2000-06-01T12:00:30",
+            )
+            database.create_retention_rule(
+                handle.name,
+                name="Personen 7 Tage",
+                enabled=True,
+                camera_id=camera_id,
+                detection_key="person",
+                max_age_days=7,
+                max_size_gb=None,
+            )
+            database.set_recording_locked(handle.name, recording_id, True)
+
+            preview = cleanup_preview(handle.name)
+            deleted = apply_cleanup(handle.name)
+
+            self.assertEqual(preview, [])
+            self.assertEqual(deleted, 0)
+            self.assertIsNotNone(database.get_recording(handle.name, recording_id))
+
+    def test_set_recording_locked_toggles_flag_and_timestamp(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Einfahrt",
+                host="192.0.2.10",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            recording_id = database.create_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=1,
+                detection_key="person",
+                event_label="Person",
+                storage_kind="local",
+                started_at="2000-06-01T12:00:00",
+            )
+
+            database.set_recording_locked(handle.name, recording_id, True)
+            locked = database.get_recording(handle.name, recording_id)
+            self.assertTrue(locked["locked"])
+            self.assertIsNotNone(locked["locked_at"])
+
+            database.set_recording_locked(handle.name, recording_id, False)
+            unlocked = database.get_recording(handle.name, recording_id)
+            self.assertFalse(unlocked["locked"])
+            self.assertIsNone(unlocked["locked_at"])
+
     def test_retention_size_limit_keeps_newest_matching_clip(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
             database.initialize(handle.name)
