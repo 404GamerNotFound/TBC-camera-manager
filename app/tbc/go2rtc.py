@@ -24,7 +24,7 @@ log:
   level: warn
 webrtc:
   listen: ":8555"
-streams: {{}}
+streams: {}
 """
 
 
@@ -49,17 +49,23 @@ class Go2rtcManager:
                 return
             if shutil.which(self.binary_path) is None:
                 raise RuntimeError("go2rtc is not installed")
-            self.config_dir.mkdir(parents=True, exist_ok=True)
-            config_path = self.config_dir / "go2rtc.yaml"
-            config_path.write_text(_CONFIG_TEMPLATE, encoding="utf-8")
-            LOGGER.info("Starting go2rtc")
-            process = subprocess.Popen(
-                [self.binary_path, "-config", str(config_path)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-            )
+            try:
+                self.config_dir.mkdir(parents=True, exist_ok=True)
+                config_path = self.config_dir / "go2rtc.yaml"
+                config_path.write_text(_CONFIG_TEMPLATE, encoding="utf-8")
+                LOGGER.info("Starting go2rtc")
+                process = subprocess.Popen(
+                    [self.binary_path, "-config", str(config_path)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,
+                )
+            except OSError as exc:
+                # Covers exec failures (e.g. a go2rtc binary built for the
+                # wrong CPU architecture) as well as filesystem errors writing
+                # the config - callers only need to handle RuntimeError.
+                raise RuntimeError(f"go2rtc could not be started: {exc}") from exc
             self._process = process
             threading.Thread(target=self._read_stderr, args=(process,), daemon=True).start()
 
