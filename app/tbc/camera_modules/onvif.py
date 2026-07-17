@@ -12,6 +12,27 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
+class OnvifStreamProfile:
+    """One ONVIF media profile's stream, with just enough metadata to rank
+    and group it. `source_token` identifies which physical lens/sensor the
+    profile belongs to - multi-lens cameras (e.g. dual/triple-lens models)
+    expose one ONVIF VideoSource per lens, each with its own set of
+    profiles (typically a "main" and "sub" quality per lens)."""
+
+    uri: str
+    profile_token: str | None = None
+    source_token: str | None = None
+    width: int | None = None
+    height: int | None = None
+    fps: float | None = None
+
+    @property
+    def quality_key(self) -> tuple[int, float]:
+        """Sort key preferring higher resolution, then higher framerate."""
+        return ((self.width or 0) * (self.height or 0), self.fps or 0)
+
+
+@dataclass
 class OnvifProbe:
     success: bool
     message: str
@@ -20,6 +41,7 @@ class OnvifProbe:
     firmware: str | None = None
     serial: str | None = None
     stream_uris: list[str] = field(default_factory=list)
+    stream_profiles: list[OnvifStreamProfile] = field(default_factory=list)
     event_detection_keys: set[str] = field(default_factory=set)
     raw_events: str | None = None
 
@@ -101,7 +123,7 @@ def probe_onvif(
         info = device_service.GetDeviceInformation()
         info_data = _serialize(info)
 
-        stream_uris: list[str] = []
+        stream_profiles: list[OnvifStreamProfile] = []
         try:
             media_service = camera.create_media_service()
             profiles = media_service.GetProfiles()
@@ -117,9 +139,12 @@ def probe_onvif(
                 )
                 uri = getattr(uri_response, "Uri", None)
                 if uri:
-                    stream_uris.append(uri)
+                    stream_profiles.append(_stream_profile_from(profile, uri))
         except Exception as exc:
             LOGGER.info("ONVIF media probe failed for %s:%s: %s", host, port, exc)
+
+        stream_profiles = _best_profile_per_lens(stream_profiles)
+        stream_uris = [profile.uri for profile in stream_profiles]
 
         event_keys: set[str] = set()
         raw_events: str | None = None
@@ -140,11 +165,52 @@ def probe_onvif(
             firmware=_field(info_data, "FirmwareVersion"),
             serial=_field(info_data, "SerialNumber"),
             stream_uris=stream_uris,
+            stream_profiles=stream_profiles,
             event_detection_keys=event_keys,
             raw_events=raw_events,
         )
     except Exception as exc:
         return OnvifProbe(False, _friendly_error(exc))
+
+
+def _stream_profile_from(profile: Any, uri: str) -> OnvifStreamProfile:
+    """Best-effort extraction of quality/lens metadata from a zeep ONVIF
+    Profile object. Every field is optional per the ONVIF spec (and some
+    camera/firmware implementations omit them), so every access is
+    defensive - a profile missing this metadata still yields a usable
+    OnvifStreamProfile, just without a way to rank or group it precisely."""
+    video_encoder = getattr(profile, "VideoEncoderConfiguration", None)
+    resolution = getattr(video_encoder, "Resolution", None)
+    rate_control = getattr(video_encoder, "RateControl", None)
+    video_source = getattr(profile, "VideoSourceConfiguration", None)
+    return OnvifStreamProfile(
+        uri=uri,
+        profile_token=getattr(profile, "token", None),
+        source_token=getattr(video_source, "SourceToken", None),
+        width=getattr(resolution, "Width", None),
+        height=getattr(resolution, "Height", None),
+        fps=getattr(rate_control, "FrameRateLimit", None),
+    )
+
+
+def _best_profile_per_lens(profiles: list[OnvifStreamProfile]) -> list[OnvifStreamProfile]:
+    """Collapse profiles to one per physical lens, keeping only the
+    highest-resolution/-framerate profile for each.
+
+    Profiles without a `source_token` (common on single-lens cameras -
+    VideoSourceConfiguration is optional in ONVIF's GetProfiles response)
+    are all treated as the same, single implicit lens, which is exactly
+    today's single-stream behavior for the overwhelming majority of
+    cameras. Group order follows first-encounter order so lens indexing
+    stays stable across probes of the same camera.
+    """
+    best_by_lens: dict[str | None, OnvifStreamProfile] = {}
+    for candidate in profiles:
+        lens_key = candidate.source_token
+        current_best = best_by_lens.get(lens_key)
+        if current_best is None or candidate.quality_key > current_best.quality_key:
+            best_by_lens[lens_key] = candidate
+    return list(best_by_lens.values())
 
 
 def _field(data: Any, name: str) -> str | None:

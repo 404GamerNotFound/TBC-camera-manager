@@ -43,4 +43,23 @@ async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:
         serial=onvif_probe.serial,
         stream_uri=stream_uri,
         detections=catalog_rows(onvif_probe.event_detection_keys),
+        channels=_channels_for(onvif_probe, camera),
     )
+
+
+def _channels_for(onvif_probe: Any, camera: dict[str, Any]) -> list[dict[str, Any]]:
+    # A camera with a single lens keeps the plain stream_uri above and has
+    # no channels - only cameras where the ONVIF probe found more than one
+    # physical lens (distinct VideoSource) get a channel per lens, so each
+    # lens can be viewed/recorded independently instead of only the first
+    # one ever being reachable.
+    if len(onvif_probe.stream_profiles) <= 1:
+        return []
+    return [
+        {
+            "channel_index": index,
+            "name": f"Lens {index + 1}",
+            "stream_uri": rtsp_uri_with_credentials(profile.uri, camera["username"], camera["password"]),
+        }
+        for index, profile in enumerate(onvif_probe.stream_profiles)
+    ]

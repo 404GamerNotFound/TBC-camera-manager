@@ -110,6 +110,7 @@ class CameraModuleTests(unittest.TestCase):
 
         self.assertEqual(standard.default_onvif_port, 80)
         self.assertTrue(standard.supports(CameraCapability.LIVE))
+        self.assertTrue(standard.supports(CameraCapability.CHANNELS))
 
     def test_manual_rtsp_profile_is_available(self):
         module = registry.get_camera_module("rtsp_only")

@@ -2,9 +2,9 @@
   "schema_version": 1,
   "key": "standard_onvif",
   "label": "Standard ONVIF Verbindung",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Herstellerneutraler ONVIF-Fallback für weitere Kameramodelle",
   "entrypoint": "plugin.py",
-  "capabilities": ["live", "detections", "control"],
+  "capabilities": ["live", "detections", "control", "channels"],
   "ports": {"onvif": 80, "http": 80, "rtsp": 554}
 }
