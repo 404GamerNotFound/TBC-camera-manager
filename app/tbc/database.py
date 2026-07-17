@@ -396,6 +396,7 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE plugin_sources ADD COLUMN update_available INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE plugin_sources ADD COLUMN last_checked_at TEXT",
     "ALTER TABLE camera_detection_zones ADD COLUMN min_dwell_seconds INTEGER NOT NULL DEFAULT 10",
+    "ALTER TABLE ui_settings ADD COLUMN live_webrtc_enabled INTEGER NOT NULL DEFAULT 0",
 )
 
 
@@ -1100,7 +1101,7 @@ def upsert_camera_channels(database_path: str, camera_id: int, channels: Iterabl
     with connect(database_path) as db:
         for channel in channels:
             channel_index = int(channel["channel_index"])
-            name = str(channel.get("name") or f"Kanal {channel_index + 1}")
+            name = str(channel.get("name") or f"Channel {channel_index + 1}")
             stream_uri = channel.get("stream_uri")
             db.execute(
                 """
@@ -2183,35 +2184,43 @@ def set_active_theme_key(database_path: str, theme_key: str) -> None:
 def get_live_wall_settings(database_path: str) -> dict[str, Any]:
     with connect(database_path) as db:
         row = db.execute(
-            "SELECT live_grid_columns, live_rotation_enabled, live_rotation_seconds FROM ui_settings WHERE id = 1"
+            "SELECT live_grid_columns, live_rotation_enabled, live_rotation_seconds, live_webrtc_enabled"
+            " FROM ui_settings WHERE id = 1"
         ).fetchone()
         if row is None:
             db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
-            return {"columns": 3, "rotation_enabled": False, "rotation_seconds": 15}
+            return {"columns": 3, "rotation_enabled": False, "rotation_seconds": 15, "webrtc_enabled": False}
     return {
         "columns": int(row["live_grid_columns"]),
         "rotation_enabled": bool(row["live_rotation_enabled"]),
         "rotation_seconds": int(row["live_rotation_seconds"]),
+        "webrtc_enabled": bool(row["live_webrtc_enabled"]),
     }
 
 
 def set_live_wall_settings(
-    database_path: str, *, columns: int, rotation_enabled: bool, rotation_seconds: int
+    database_path: str,
+    *,
+    columns: int,
+    rotation_enabled: bool,
+    rotation_seconds: int,
+    webrtc_enabled: bool = False,
 ) -> None:
     columns = max(1, min(6, columns))
     rotation_seconds = max(5, min(300, rotation_seconds))
     with connect(database_path) as db:
         db.execute(
             """
-            INSERT INTO ui_settings (id, live_grid_columns, live_rotation_enabled, live_rotation_seconds)
-            VALUES (1, ?, ?, ?)
+            INSERT INTO ui_settings (id, live_grid_columns, live_rotation_enabled, live_rotation_seconds, live_webrtc_enabled)
+            VALUES (1, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 live_grid_columns = excluded.live_grid_columns,
                 live_rotation_enabled = excluded.live_rotation_enabled,
                 live_rotation_seconds = excluded.live_rotation_seconds,
+                live_webrtc_enabled = excluded.live_webrtc_enabled,
                 updated_at = CURRENT_TIMESTAMP
             """,
-            (columns, 1 if rotation_enabled else 0, rotation_seconds),
+            (columns, 1 if rotation_enabled else 0, rotation_seconds, 1 if webrtc_enabled else 0),
         )
 
 

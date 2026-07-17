@@ -79,6 +79,7 @@ from .detection.recognition import (
 from .detection.backend import Detection
 from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
+from .go2rtc import Go2rtcManager
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup, cleanup_preview, storage_overview
 from .mcp_server import build_mcp_app
@@ -167,6 +168,7 @@ templates.env.globals["asset_version"] = ASSET_VERSION
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 CONTINUOUS_RECORDING_MANAGER = ContinuousRecordingManager(SETTINGS.database_path)
 LIVE_MANAGER = LiveManager(SETTINGS.live_path)
+GO2RTC_MANAGER = Go2rtcManager(str(Path(SETTINGS.live_path) / "go2rtc"))
 SNAPSHOT_MANAGER = DashboardSnapshotManager(
     SETTINGS.dashboard_snapshots_path,
     interval_seconds=SETTINGS.dashboard_snapshot_interval_seconds,
@@ -357,6 +359,20 @@ async def startup() -> None:
             )
         )
     asyncio.create_task(_detection_supervisor_loop())
+    if database.get_live_wall_settings(SETTINGS.database_path).get("webrtc_enabled"):
+        asyncio.create_task(asyncio.to_thread(_start_go2rtc))
+
+
+@app.on_event("shutdown")
+async def _stop_go2rtc_on_shutdown() -> None:
+    await asyncio.to_thread(GO2RTC_MANAGER.stop)
+
+
+def _start_go2rtc() -> None:
+    try:
+        GO2RTC_MANAGER.start()
+    except RuntimeError as exc:
+        LOGGER.warning("WebRTC live view is enabled but could not start go2rtc: %s", exc)
 
 
 @app.get("/healthz")
@@ -2049,16 +2065,26 @@ async def update_live_wall_settings(
     columns: int = Form(3),
     rotation_enabled: str | None = Form(None),
     rotation_seconds: int = Form(15),
+    webrtc_enabled: str | None = Form(None),
 ):
     guard = _require_admin(request)
     if guard:
         return guard
+    webrtc_now_enabled = webrtc_enabled == "on"
     database.set_live_wall_settings(
         SETTINGS.database_path,
         columns=columns,
         rotation_enabled=rotation_enabled == "on",
         rotation_seconds=rotation_seconds,
+        webrtc_enabled=webrtc_now_enabled,
     )
+    if webrtc_now_enabled:
+        try:
+            await asyncio.to_thread(GO2RTC_MANAGER.start)
+        except RuntimeError as exc:
+            _set_flash(request, "common.raw_message", {"message": f"WebRTC live view: {exc}"}, "error")
+    else:
+        await asyncio.to_thread(GO2RTC_MANAGER.stop)
     return _redirect("/live")
 
 
@@ -2219,6 +2245,33 @@ async def live_segment(request: Request, live_key: str, segment: str):
     if not path.exists():
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     return FileResponse(path, media_type="video/mp2t", headers={"Cache-Control": "no-cache"})
+
+
+@app.post("/live/{live_key}/webrtc/offer")
+async def live_webrtc_offer(request: Request, live_key: str):
+    """WHEP signaling proxy: the browser never talks to go2rtc directly (its
+    API has no auth of its own for localhost callers - see go2rtc.py) - this
+    route enforces the same per-camera access check as the HLS routes above,
+    then forwards the SDP offer/answer exchange. Once negotiated, the actual
+    media (ICE/RTP on :8555) flows directly between the browser and go2rtc,
+    same as any other WebRTC connection."""
+    guard = _require_live_key_access(request, live_key)
+    if guard:
+        return guard
+    if GO2RTC_MANAGER.status() != "running":
+        return JSONResponse({"error": "WebRTC is not enabled"}, status_code=status.HTTP_404_NOT_FOUND)
+    user = _current_user(request)
+    item = _live_item_for_key(user, live_key)
+    stream_uri = item.get("stream_uri") if item else None
+    if not stream_uri:
+        return JSONResponse({"error": "no stream known"}, status_code=status.HTTP_404_NOT_FOUND)
+    offer_sdp = (await request.body()).decode("utf-8")
+    try:
+        await asyncio.to_thread(GO2RTC_MANAGER.register_stream, live_key, str(stream_uri))
+        answer_sdp = await asyncio.to_thread(GO2RTC_MANAGER.exchange_sdp, live_key, offer_sdp)
+    except RuntimeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=status.HTTP_502_BAD_GATEWAY)
+    return Response(content=answer_sdp, media_type="application/sdp")
 
 
 @app.get("/settings", response_class=HTMLResponse)
@@ -4328,7 +4381,7 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
         # A device with exactly one enabled channel (most non-NVR cameras that
         # still report a "channel 0") only gets a single tile named after the
         # camera itself, not a separate "camera" tile plus a redundant
-        # "Kanal 1" tile showing the identical stream. Multi-channel NVRs still
+        # "Channel 1" tile showing the identical stream. Multi-channel NVRs still
         # get one tile per channel, each addressed by its real channel index
         # instead of a guessed channel=0 for PTZ.
         single_channel = len(enabled_channels) == 1
@@ -4338,8 +4391,8 @@ def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
             items.append(
                 {
                     "key": f"channel-{channel_id}",
-                    "name": str(camera["name"]) if single_channel else str(channel.get("name") or f"Kanal {channel_index + 1}"),
-                    "subtitle": str(camera.get("host") or "") if single_channel else f"{camera['name']} · Kanal {channel_index + 1}",
+                    "name": str(camera["name"]) if single_channel else str(channel.get("name") or f"Channel {channel_index + 1}"),
+                    "subtitle": str(camera.get("host") or "") if single_channel else f"{camera['name']} · Channel {channel_index + 1}",
                     "kind": "Camera" if single_channel else "Channel",
                     "camera_id": camera_id,
                     "control_channel": channel_index,
@@ -4369,13 +4422,13 @@ def _live_item_for_key(user: dict[str, Any], live_key: str) -> dict[str, Any] | 
 def _start_live_item(item: dict[str, Any]) -> None:
     stream_uri = item.get("stream_uri")
     if not stream_uri:
-        LIVE_MANAGER.note(str(item["key"]), "Kein Stream fuer Live-Ansicht bekannt")
+        LIVE_MANAGER.note(str(item["key"]), "No stream is known for live view")
         return
     try:
         LIVE_MANAGER.start(str(item["key"]), str(stream_uri))
     except Exception as exc:
-        LOGGER.exception("Live-Stream %s konnte nicht gestartet werden", item["key"])
-        LIVE_MANAGER.note(str(item["key"]), f"Live-Stream konnte nicht gestartet werden: {exc}")
+        LOGGER.exception("Live stream %s could not be started", item["key"])
+        LIVE_MANAGER.note(str(item["key"]), f"Live stream could not be started: {exc}")
 
 
 def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
@@ -4383,10 +4436,10 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
     has_stream = bool(item.get("stream_uri"))
     live_status = LIVE_MANAGER.status(live_key) if has_stream else "missing"
     message = LIVE_MANAGER.message(live_key)
-    if live_status == "running" and message.startswith("Starte Live-Stream"):
+    if live_status == "running" and message.startswith("Starting live stream"):
         message = ""
     if not has_stream and not message:
-        message = "Kein Stream fuer Live-Ansicht bekannt"
+        message = "No stream is known for live view"
     return {
         "key": live_key,
         "name": item["name"],
@@ -4395,6 +4448,8 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
         "status": live_status,
         "message": message,
         "playlist_url": f"/live/{live_key}/index.m3u8",
+        "webrtc_available": has_stream and GO2RTC_MANAGER.status() == "running",
+        "webrtc_offer_url": f"/live/{live_key}/webrtc/offer",
         "camera_id": item.get("camera_id"),
         "control_channel": item.get("control_channel", 0),
         "ptz_supported": bool(item.get("ptz_supported")),
