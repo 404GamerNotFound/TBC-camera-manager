@@ -5,7 +5,7 @@ mcp==1.28.1
 jinja2==3.1.6
 python-multipart==0.0.32
 itsdangerous==2.2.0
-cryptography>=42,<47
+cryptography>=48,<50
 onvif-zeep==0.2.12
 reolink-aio==0.21.3
 uiprotect==15.12.2
