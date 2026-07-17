@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/404GamerNotFound/TBC-camera-manager#readme
+    about: Review installation, configuration, camera module, API, and integration documentation.
+  - name: Report a security vulnerability
+    url: https://github.com/404GamerNotFound/TBC-camera-manager/security/advisories/new
+    about: Report vulnerabilities privately. Do not create a public issue.
