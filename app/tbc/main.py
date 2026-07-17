@@ -532,7 +532,7 @@ async def create_camera(
     rtsp_port: int = Form(554),
     username: str = Form(""),
     password: str = Form(""),
-    module_key: str = Form("reolink"),
+    module_key: str = Form("standard_onvif"),
     manual_stream_uri: str = Form(""),
 ):
     guard = _require_admin(request)
@@ -639,6 +639,11 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
         camera_module = get_camera_module(camera.get("module_key"))
     except UnknownCameraModuleError:
         camera_module = None
+    camera_module_registration = next(
+        (item for item in list_camera_module_registrations() if item.module.key == camera.get("module_key")),
+        None,
+    )
+    recent_clips = database.list_recordings(SETTINGS.database_path, camera_id=camera_id, limit=4)
     module_capabilities = {capability.value for capability in camera_module.capabilities} if camera_module else set()
     available_triggers = camera_module.detection_definitions() if camera_module else ()
     detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
@@ -686,6 +691,8 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "events": events,
             "channels": channels,
             "camera_module": camera_module,
+            "camera_module_registration": camera_module_registration,
+            "recent_clips": recent_clips,
             "module_capabilities": module_capabilities,
             "available_triggers": available_triggers,
             "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},

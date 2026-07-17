@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS cameras (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    module_key TEXT NOT NULL DEFAULT 'reolink',
+    module_key TEXT NOT NULL DEFAULT 'standard_onvif',
     name TEXT NOT NULL,
     host TEXT NOT NULL,
     onvif_port INTEGER NOT NULL DEFAULT 8000,
@@ -1141,7 +1141,7 @@ def create_camera(
     http_port: int,
     username: str,
     password: str,
-    module_key: str = "reolink",
+    module_key: str = "standard_onvif",
     rtsp_port: int = 554,
     manual_stream_uri: str | None = None,
 ) -> int:

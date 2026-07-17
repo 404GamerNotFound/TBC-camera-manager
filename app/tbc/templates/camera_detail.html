@@ -41,6 +41,7 @@
 
 <nav class="detail-tabs" aria-label="Camera sections" data-i18n-aria-label="camera.camera_sections" role="tablist" data-detail-tabs>
   <button type="button" role="tab" aria-selected="true" aria-controls="camera-overview" data-detail-tab="overview" data-i18n="camera.overview">Overview</button>
+  <button type="button" role="tab" aria-selected="false" aria-controls="camera-plugin" data-detail-tab="plugin" data-i18n="camera.plugin">Plugin</button>
   {% if role == 'admin' %}
   {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Recording <span class="tab-count">{{ events | length }}</span></button>{% endif %}
   {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones">AI detection <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
@@ -146,6 +147,42 @@
   </div>
 </section>
 {% endif %}
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="camera.recent_clips">Recent clips</h2>
+    <a class="text-button" href="/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
+  </div>
+  {% if recent_clips %}
+  <section class="clip-grid">
+    {% for clip in recent_clips %}
+    <article class="clip-card">
+      {% if clip.snapshot_path or clip.snapshot_remote_key %}
+      <img class="clip-media-still" src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
+      {% else %}
+      <div class="clip-placeholder">{{ clip.detection_key }}</div>
+      {% endif %}
+      <div class="clip-body">
+        <div class="card-header">
+          <div>
+            <h2>{{ clip.event_label }}</h2>
+            <p>{{ clip.started_at }}</p>
+          </div>
+          <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
+        </div>
+        <div class="card-footer">
+          <span>{{ clip.duration_seconds or 0 }}s · {{ clip.storage_kind }}</span>
+          <a class="secondary-button" href="/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <div class="quiet-box" data-i18n="recordings.no_clips_found">No clips found</div>
+  {% endif %}
+</section>
+
 {% if role != 'admin' %}
 <section class="stream-line">
   <span data-i18n="camera.recordings">Recordings</span>
@@ -155,6 +192,64 @@
   {% endif %}
 </section>
 {% endif %}
+</div>
+
+<div class="detail-tab-panel" id="camera-plugin" role="tabpanel" data-detail-panel="plugin" hidden>
+  {% if not camera_module %}
+  <div class="diagnostic-note diagnostic-warning" data-i18n="camera.plugin_not_installed" data-i18n-params='{{ {"key": camera.module_key} | tojson }}'>The plugin "{{ camera.module_key }}" is not installed on this server. Some tabs and settings for this camera may be unavailable until it is reinstalled.</div>
+  {% if role == 'admin' %}
+  <div class="form-actions">
+    <a class="secondary-button" href="/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+  </div>
+  {% endif %}
+  {% else %}
+  <section class="table-section">
+    <div class="section-title">
+      <h2>{{ camera_module.label }}</h2>
+      <span>{{ camera_module.key }}</span>
+    </div>
+    {% if camera_module.description %}
+    <p class="hint-text">{{ camera_module.description }}</p>
+    {% endif %}
+    <dl class="metric-row plugin-card-meta">
+      <div>
+        <dt data-i18n="camera.source">Source</dt>
+        <dd>
+          {% if camera_module_registration and camera_module_registration.origin == 'uploaded' %}<span data-i18n="plugin.source_zip_import">ZIP import</span>
+          {% elif camera_module_registration and camera_module_registration.origin == 'entrypoint' %}<span data-i18n="plugin.source_entrypoint">Python package</span>
+          {% else %}<span data-i18n="plugin.source_builtin">Built-in</span>{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.plugin_version">Version</dt>
+        <dd>{{ camera_module_registration.version if camera_module_registration else '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.plugin_requires_credentials">Requires credentials</dt>
+        <dd data-i18n="{{ 'camera.yes' if camera_module.requires_credentials else 'camera.no' }}">{{ 'yes' if camera_module.requires_credentials else 'no' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.plugin_custom_stream_url">Custom stream URL</dt>
+        <dd data-i18n="{{ 'camera.plugin_custom_stream_required' if camera_module.requires_manual_stream_uri else ('camera.plugin_custom_stream_supported' if camera_module.supports_manual_stream_uri else 'camera.plugin_custom_stream_not_applicable') }}">
+          {{ 'required' if camera_module.requires_manual_stream_uri else ('supported' if camera_module.supports_manual_stream_uri else 'not applicable') }}
+        </dd>
+      </div>
+    </dl>
+    {% if camera_module.capabilities %}
+    <p class="section-title" data-i18n="camera.plugin_capabilities">Capabilities</p>
+    <p class="plugin-card-capabilities">
+      {% for capability in camera_module.capabilities %}
+      <span class="status-pill status-active">{{ capability.value }}</span>
+      {% endfor %}
+    </p>
+    {% endif %}
+  </section>
+  {% if role == 'admin' and camera_module_registration %}
+  <div class="form-actions">
+    <a class="secondary-button" href="/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+  </div>
+  {% endif %}
+  {% endif %}
 </div>
 
 {% if role == 'admin' %}
@@ -722,6 +817,7 @@
           <th data-i18n="camera.source">Source</th>
           <th data-i18n="camera.supported">Supported</th>
           <th data-i18n="camera.status">Status</th>
+          <th data-i18n="camera.last_seen">Last seen</th>
         </tr>
       </thead>
       <tbody>
@@ -732,9 +828,9 @@
           <td>{{ detection.source }}</td>
           <td>
             {% if detection.supported %}
-            <span class="state-dot state-on"></span> ja
+            <span class="state-dot state-on"></span> <span data-i18n="camera.yes">yes</span>
             {% else %}
-            <span class="state-dot"></span> nein
+            <span class="state-dot"></span> <span data-i18n="camera.no">no</span>
             {% endif %}
           </td>
           <td>
@@ -744,6 +840,7 @@
             <span class="status-pill status-idle" data-i18n="camera.inactive">inactive</span>
             {% endif %}
           </td>
+          <td>{% if detection.last_seen %}{{ detection.last_seen }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

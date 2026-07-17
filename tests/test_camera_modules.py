@@ -34,20 +34,34 @@ class CameraModuleTests(unittest.TestCase):
     def tearDown(self):
         registry.reload_camera_modules()
 
-    def test_existing_database_is_migrated_to_reolink_module(self):
+    def test_legacy_rows_migrate_to_reolink_but_new_cameras_default_to_standard_onvif(self):
+        # module_key was added to the schema after TBC supported only
+        # Reolink, so the migration path (database.py's MIGRATIONS tuple)
+        # correctly backfills pre-existing rows to "reolink" - that's a
+        # historical fact about those specific rows, not a statement that
+        # Reolink is the app's preferred default going forward. A brand new
+        # camera created after that migration has no such history and must
+        # default to "standard_onvif", the vendor-neutral module that ships
+        # built into the core app (unlike Reolink, which is an optional
+        # external plugin that may not even be installed).
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
             with sqlite3.connect(handle.name) as connection:
                 connection.executescript(
                     database.SCHEMA
-                    .replace("    module_key TEXT NOT NULL DEFAULT 'reolink',\n", "")
+                    .replace("    module_key TEXT NOT NULL DEFAULT 'standard_onvif',\n", "")
                     .replace("    rtsp_port INTEGER NOT NULL DEFAULT 554,\n", "")
                     .replace("    manual_stream_uri TEXT,\n", "")
                     .replace("    performance_cpu REAL,\n", "")
                     .replace("    performance_codec_rate INTEGER,\n", "")
                     .replace("    performance_net_throughput INTEGER,\n", "")
                 )
+                connection.execute(
+                    "INSERT INTO cameras (name, host, username, password) VALUES (?, ?, ?, ?)",
+                    ("Legacy camera", "192.0.2.20", "admin", "secret"),
+                )
             database.initialize(handle.name)
-            camera_id = database.create_camera(
+            legacy_camera_id = 1
+            new_camera_id = database.create_camera(
                 handle.name,
                 name="Einfahrt",
                 host="192.0.2.10",
@@ -57,12 +71,19 @@ class CameraModuleTests(unittest.TestCase):
                 password="secret",
             )
 
-            camera = database.get_camera(handle.name, camera_id)
+            legacy_camera = database.get_camera(handle.name, legacy_camera_id)
+            new_camera = database.get_camera(handle.name, new_camera_id)
 
-        self.assertEqual(camera["module_key"], "reolink")
-        self.assertEqual(camera["rtsp_port"], 554)
-        self.assertIsNone(camera["manual_stream_uri"])
-        self.assertIsNone(camera["performance_cpu"])
+        self.assertEqual(legacy_camera["module_key"], "reolink")
+        self.assertEqual(legacy_camera["rtsp_port"], 554)
+        self.assertIsNone(legacy_camera["manual_stream_uri"])
+        self.assertIsNone(legacy_camera["performance_cpu"])
+
+        self.assertEqual(new_camera["module_key"], "standard_onvif")
+
+    def test_get_camera_module_defaults_to_standard_onvif_when_no_key_given(self):
+        module = registry.get_camera_module(None)
+        self.assertEqual(module.key, "standard_onvif")
 
     def test_registry_loads_installed_entry_point_module(self):
         registry.reload_camera_modules()

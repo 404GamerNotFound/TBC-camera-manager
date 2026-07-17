@@ -83,7 +83,11 @@ def reload_camera_modules() -> None:
 
 
 def get_camera_module(key: str | None) -> CameraModule:
-    normalized = str(key or "reolink").strip().lower()
+    # standard_onvif is the vendor-neutral fallback bundled with the core
+    # app - unlike brand-specific modules (Reolink among them), it is never
+    # an optional external plugin, so it's always safe to assume installed
+    # when no module key is given.
+    normalized = str(key or "standard_onvif").strip().lower()
     for module in list_camera_modules():
         if str(module.key).strip().lower() == normalized:
             return module
