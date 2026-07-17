@@ -302,9 +302,15 @@ class ApiStreamPlaylistRewriteTests(unittest.TestCase):
             "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:2\n#EXT-X-MEDIA-SEQUENCE:0\n"
             "#EXTINF:2.000000,\nsegment000.ts\n#EXTINF:2.000000,\nsegment001.ts\n"
         )
-        # LIVE_MANAGER.start() would otherwise wipe out_dir and spawn ffmpeg
-        # for real; pretending a process is already running for this key
-        # short-circuits that (see LiveManager.start's early-return check).
+        # Pretending a process is already running for this key makes
+        # LiveManager.status()/wait_until_ready() treat the stream as live
+        # without touching out_dir. LiveManager.start() itself is mocked out
+        # below rather than relied on to short-circuit here: it checks
+        # shutil.which("ffmpeg") unconditionally before it ever looks at
+        # self._processes, so it would raise "ffmpeg is not installed" on a
+        # CI runner without ffmpeg even with a fake process already in
+        # place - this test only cares about the playlist route's rewriting
+        # logic, not about actually invoking ffmpeg.
         main.LIVE_MANAGER._processes[self.live_key] = _FakeRunningProcess()
 
     def tearDown(self):
@@ -315,6 +321,7 @@ class ApiStreamPlaylistRewriteTests(unittest.TestCase):
         with (
             patch("app.tbc.main.stream_uri_for", return_value="rtsp://fake/stream"),
             patch("app.tbc.main._camera_supports", return_value=True),
+            patch.object(main.LIVE_MANAGER, "start"),
         ):
             return CLIENT.get(f"/api/v1/cameras/{self.camera_id}/stream/index.m3u8", headers=headers)
 
