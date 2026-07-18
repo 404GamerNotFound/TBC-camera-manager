@@ -211,6 +211,7 @@ class ExtractPluginArchiveTests(unittest.TestCase):
                 ".github/workflows/tests.yml": "name: tests",
                 "__pycache__/plugin.cpython-311.pyc": b"compiled",
                 "module.pyc": b"compiled",
+                "LICENSE": "MIT License...",
                 "manifest.json": "{}",
                 "plugin.py": "x = 1",
             }

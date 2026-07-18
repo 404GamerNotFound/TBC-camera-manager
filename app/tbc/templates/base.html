@@ -142,10 +142,6 @@
                 <div class="mega-menu-grid">
                   <div class="mega-menu-column">
                     <p class="mega-menu-heading" data-i18n="nav.category_cameras_ai">Cameras &amp; AI</p>
-                    <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
-                      <span class="nav-shortcut" aria-hidden="true">P</span>
-                      <span data-i18n="base.camera_plugins">Camera plugins</span>
-                    </a>
                     <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
                       <span class="nav-shortcut" aria-hidden="true">E</span>
                       <span data-i18n="base.ai_detection">AI detection</span>
@@ -156,7 +152,11 @@
                     </a>
                   </div>
                   <div class="mega-menu-column">
-                    <p class="mega-menu-heading" data-i18n="nav.category_integrations">Integrations</p>
+                    <p class="mega-menu-heading" data-i18n="nav.category_integrations">Plugins &amp; integrations</p>
+                    <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
+                      <span class="nav-shortcut" aria-hidden="true">P</span>
+                      <span data-i18n="base.camera_plugins">Camera plugins</span>
+                    </a>
                     <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
                       <span class="nav-shortcut" aria-hidden="true">O</span>
                       <span data-i18n="base.cloud_providers">Cloud providers</span>
@@ -165,13 +165,13 @@
                       <span class="nav-shortcut" aria-hidden="true">N</span>
                       <span data-i18n="base.network_providers">Network providers</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
-                      <span class="nav-shortcut" aria-hidden="true">X</span>
-                      <span data-i18n="base.external_sources">External sources</span>
-                    </a>
                     <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
                       <span class="nav-shortcut" aria-hidden="true">G</span>
                       <span data-i18n="common.design">Design</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
+                      <span class="nav-shortcut" aria-hidden="true">X</span>
+                      <span data-i18n="base.external_sources">External sources</span>
                     </a>
                   </div>
                   <div class="mega-menu-column">

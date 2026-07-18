@@ -18,7 +18,20 @@ SHA_PATTERN = re.compile(r"[0-9a-f]{7,40}")
 MAX_ARCHIVE_BYTES = 25 * 1024 * 1024
 FETCH_TIMEOUT_SECONDS = 30
 IGNORED_REPOSITORY_FILES = frozenset(
-    {".DS_Store", ".dockerignore", ".editorconfig", ".gitattributes", ".gitignore", ".gitmodules"}
+    {
+        ".DS_Store",
+        ".dockerignore",
+        ".editorconfig",
+        ".gitattributes",
+        ".gitignore",
+        ".gitmodules",
+        # Common extensionless repository metadata files (e.g. a GitHub-generated
+        # LICENSE) - files like LICENSE.md/.txt already pass the ALLOWED_SUFFIXES
+        # check on their own and don't need to be listed here.
+        "LICENSE",
+        "COPYING",
+        "NOTICE",
+    }
 )
 IGNORED_REPOSITORY_DIRECTORIES = frozenset(
     {".git", ".github", ".mypy_cache", ".pytest_cache", ".ruff_cache", "__pycache__"}
@@ -269,12 +282,13 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
     folder; this strips that (and, if given, descends into `subdirectory`)
     and re-zips the contents under one synthetic top-level folder - the same
     "one shared top folder" shape every install_*_archive() already
-    validates. Repository-only metadata such as `.gitattributes` and
-    `.github/`, as well as generated caches such as `__pycache__/`, is
-    intentionally omitted because it is not part of the runtime plugin
-    package. A GitHub-sourced install still goes through the exact same
-    security checks (path traversal, allowed file types, size limits) as a
-    manually uploaded ZIP. Nothing here is a substitute for that validation.
+    validates. Repository-only metadata such as `.gitattributes`, `.github/`,
+    and an extensionless `LICENSE`/`COPYING`/`NOTICE` file, as well as
+    generated caches such as `__pycache__/`, is intentionally omitted
+    because it is not part of the runtime plugin package. A GitHub-sourced
+    install still goes through the exact same security checks (path
+    traversal, allowed file types, size limits) as a manually uploaded ZIP.
+    Nothing here is a substitute for that validation.
     """
     try:
         bundle = zipfile.ZipFile(BytesIO(archive))

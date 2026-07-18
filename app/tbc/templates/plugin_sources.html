@@ -27,7 +27,7 @@
     <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a> · {{ entry.source.ref }}</p>
     <p class="standard-source-description">{{ entry.source.description }}</p>
     <div class="standard-source-card-footer">
-      <span class="status-pill status-idle">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
+      <span class="status-pill status-idle">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
       {% if entry.registered_source %}
       <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
         <button class="primary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
@@ -49,12 +49,14 @@
     <dl class="metric-row">
       <div><dt data-i18n="plugin_source.camera_plugin">Camera plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> and <code>tests/test_*.py</code></dd></div>
       <div><dt data-i18n="base.cloud_providers">Cloud providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
+      <div><dt data-i18n="base.network_providers">Network providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
       <div><dt data-i18n="common.design">Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - no code, no tests</dd></div>
     </dl>
     <p><code>manifest.json</code> must <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> and (except for designs) <code>entrypoint</code> contain; <code>plugin.py</code> provides <code>create_module()</code> which returns a <code>CameraModule</code>or <code>CloudAccountModule</code>instance. An optional <code>tests/</code>folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in <code>docs/plugin-sources.md</code> in the TBC repository, as well as <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
     <div class="form-actions">
       <a class="secondary-button" href="/plugin-sources/template/camera" data-i18n="plugin_source.template_camera_plugin">Template: camera plugin</a>
       <a class="secondary-button" href="/plugin-sources/template/cloud" data-i18n="plugin_source.template_cloud_provider">Template: cloud provider</a>
+      <a class="secondary-button" href="/plugin-sources/template/network" data-i18n="plugin_source.template_network_provider">Template: network provider</a>
       <a class="secondary-button" href="/plugin-sources/template/design" data-i18n="plugin_source.template_design">Template: design</a>
     </div>
   </section>
@@ -69,6 +71,7 @@
         <select name="plugin_kind" required>
           <option value="camera" data-i18n="plugin_source.camera_plugin">Camera plugin</option>
           <option value="cloud" data-i18n="base.cloud_providers">Cloud providers</option>
+          <option value="network" data-i18n="base.network_providers">Network providers</option>
           <option value="design" data-i18n="common.design">Design</option>
         </select>
       </label>
@@ -108,7 +111,7 @@
     </div>
     <p class="standard-source-linkline">{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
     <dl class="metric-row source-registration-meta">
-      <div><dt data-i18n="plugin_source.plugin_type">Plugin type</dt><dd>{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
+      <div><dt data-i18n="plugin_source.plugin_type">Plugin type</dt><dd>{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
       {% if source.installed_key %}
       <div><dt data-i18n="plugin_source.installed_as">Installed as</dt><dd>{{ source.installed_key }}</dd></div>
       {% endif %}
@@ -121,6 +124,8 @@
       <a class="secondary-button" href="/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
       {% elif source.plugin_kind == 'cloud' %}
       <a class="secondary-button" href="/cloud-modules" data-i18n="cloud_account.manage_cloud_providers">Manage cloud providers</a>
+      {% elif source.plugin_kind == 'network' %}
+      <a class="secondary-button" href="/network-modules" data-i18n="network_account.manage_network_providers">Manage network providers</a>
       {% else %}
       <a class="secondary-button" href="/design" data-i18n="plugin_source.manage_designs">Manage designs</a>
       {% endif %}
