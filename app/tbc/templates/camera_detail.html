@@ -321,19 +321,35 @@
   {% if network_picker_error %}
   <div class="diagnostic-note diagnostic-warning">{{ network_picker_error }}</div>
   {% elif network_picker_account_id %}
-  <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/network">
+  {% if not network_picker_devices %}
+  <p class="quiet-box" data-i18n="network_account.no_devices_found">No devices were found on this account.</p>
+  {% else %}
+  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/network">
     <input type="hidden" name="network_account_id" value="{{ network_picker_account_id }}">
     <label>
       <span data-i18n="network_account.device">Device</span>
-      <select name="mac" required>
-        <option value="" data-i18n="network_account.select_device">Select a device</option>
-        {% for device in network_picker_devices %}
-        <option value="{{ device.mac_address }}">{{ device.name }} ({{ device.mac_address }})</option>
-        {% endfor %}
-      </select>
+      <input type="search" placeholder="Search devices…" data-i18n-placeholder="network_account.search_devices" autocomplete="off" data-plugin-search="#network-device-list">
     </label>
-    <button class="primary-button" type="submit" data-i18n="network_account.map_camera">Map camera</button>
+    <div class="network-device-list" id="network-device-list">
+      {% for device in network_picker_devices %}
+      <label class="network-device-option" data-plugin-search-item>
+        <input type="radio" name="mac" value="{{ device.mac_address }}" required>
+        <span class="network-device-option-body">
+          <strong>{{ device.name }}</strong>
+          <small>{{ device.mac_address }}{% if device.ip_address %} · {{ device.ip_address }}{% endif %}</small>
+        </span>
+        {% if device.online is not none %}
+        <span class="status-pill {{ 'status-active' if device.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if device.online else 'network_account.offline' }}">{{ 'online' if device.online else 'offline' }}</span>
+        {% endif %}
+      </label>
+      {% endfor %}
+      <p class="quiet-box" data-plugin-search-empty hidden data-i18n="network_account.no_devices_match_search">No devices match your search.</p>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit" data-i18n="network_account.map_camera">Map camera</button>
+    </div>
   </form>
+  {% endif %}
   {% endif %}
   {% endif %}
   {% endif %}
@@ -939,5 +955,6 @@
 <script src="{{ url_for('static', path='/vendor/hls.min.js') }}?v={{ asset_version }}" defer></script>
 <script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
 {% endif %}
+<script src="{{ url_for('static', path='/plugin-search.js') }}?v={{ asset_version }}" defer></script>
 <script src="{{ url_for('static', path='/camera-detail.js') }}?v={{ asset_version }}" defer></script>
 {% endblock %}
