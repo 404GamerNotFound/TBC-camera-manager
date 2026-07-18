@@ -3661,6 +3661,56 @@ def _network_module_selector_options() -> list[dict[str, Any]]:
     return options
 
 
+@app.get("/network-mappings", response_class=HTMLResponse)
+async def network_mappings_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    accounts_by_id = {
+        account["id"]: account for account in database.list_network_accounts(SETTINGS.database_path)
+    }
+    probed_account_ids: set[int] = set()
+    mapped: list[dict[str, Any]] = []
+    unmapped: list[dict[str, Any]] = []
+    for camera in database.list_cameras(SETTINGS.database_path):
+        account_id = camera.get("network_account_id")
+        mac = camera.get("network_device_mac")
+        if not account_id or not mac:
+            unmapped.append(camera)
+            continue
+        cached_devices = NETWORK_STATE_CACHE.get(account_id)
+        if cached_devices is None and account_id not in probed_account_ids:
+            _kick_off_network_probe(account_id)
+            probed_account_ids.add(account_id)
+        state = None
+        if cached_devices:
+            state = next(
+                (device for device in cached_devices if str(device["mac_address"]).strip().lower() == mac),
+                None,
+            )
+        mapped.append(
+            {
+                "camera": camera,
+                "account": accounts_by_id.get(account_id),
+                "mac": mac,
+                "state": state,
+            }
+        )
+    return templates.TemplateResponse(
+        request,
+        "network_mappings.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "mapped": mapped,
+            "unmapped": unmapped,
+            "has_network_accounts": bool(accounts_by_id),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
 @app.get("/design", response_class=HTMLResponse)
 async def design_themes_page(request: Request):
     guard = _require_admin(request)

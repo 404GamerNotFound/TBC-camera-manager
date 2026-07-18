@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="base.network_providers">Network providers</p>
+    <h1 data-i18n="network_account.mappings">Network mappings</h1>
+  </div>
+  <div class="form-actions">
+    <a class="secondary-button" href="/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
+    <a class="secondary-button" href="/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+  </div>
+</section>
+
+{% if not has_network_accounts %}
+<div class="quiet-box">
+  <span data-i18n="camera.network_no_accounts_configured">No network provider account has been configured yet.</span>
+  <a href="/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+</div>
+{% endif %}
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="network_account.mapped_cameras">Mapped cameras</h2>
+    <span>{{ mapped | length }}</span>
+  </div>
+  {% if mapped %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="camera_new_choice.camera">Camera</th>
+          <th data-i18n="network_account.account">Account</th>
+          <th data-i18n="camera.network_connection_type">Connection</th>
+          <th data-i18n="camera.network_uplink">Connected via</th>
+          <th data-i18n="camera.network_signal">Signal</th>
+          <th data-i18n="camera.last_seen">Last seen</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in mapped %}
+        <tr>
+          <td>
+            <a href="/cameras/{{ entry.camera.id }}#network">{{ entry.camera.name }}</a>
+            <br><small>{{ entry.mac }}</small>
+          </td>
+          <td>{{ entry.account.label if entry.account else '–' }}</td>
+          {% if entry.state %}
+          <td>
+            <span class="status-pill {{ 'status-active' if entry.state.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if entry.state.online else 'network_account.offline' }}">{{ 'online' if entry.state.online else 'offline' }}</span>
+            <span data-i18n="{{ 'network_account.wired' if entry.state.connection_type == 'wired' else 'network_account.wifi' }}">{{ entry.state.connection_type or '–' }}</span>
+          </td>
+          <td>{{ entry.state.uplink_name or '–' }}</td>
+          <td>{% if entry.state.signal_dbm is not none %}{{ entry.state.signal_dbm }} dBm{% else %}–{% endif %}</td>
+          <td>{% if entry.state.last_seen %}{{ entry.state.last_seen }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
+          {% else %}
+          <td colspan="3" data-i18n="camera.device_status_being_retrieved_background">The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.</td>
+          <td>–</td>
+          {% endif %}
+          <td>
+            <form method="post" action="/cameras/{{ entry.camera.id }}/network/unlink">
+              <button class="danger-button" type="submit" data-i18n="network_account.unlink">Unlink</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="quiet-box" data-i18n="network_account.no_mapped_cameras">No camera is mapped to a network device yet.</p>
+  {% endif %}
+</section>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="network_account.unmapped_cameras">Not yet mapped</h2>
+    <span>{{ unmapped | length }}</span>
+  </div>
+  {% if unmapped %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="camera_new_choice.camera">Camera</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for camera in unmapped %}
+        <tr>
+          <td>{{ camera.name }}</td>
+          <td><a class="secondary-button" href="/cameras/{{ camera.id }}#network" data-i18n="network_account.configure">Configure</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="quiet-box" data-i18n="network_account.no_unmapped_cameras">Every camera is already mapped.</p>
+  {% endif %}
+</section>
+{% endblock %}
