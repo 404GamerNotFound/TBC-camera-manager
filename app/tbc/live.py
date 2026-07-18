@@ -8,6 +8,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 LOGGER = logging.getLogger(__name__)
 RTSP_URI_PATTERN = re.compile(r"rtsps?://[^\s<>\"']+", re.IGNORECASE)
@@ -143,6 +144,11 @@ def _is_nonfatal_hls_warning(message: str) -> bool:
 
 
 def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path) -> list[str]:
+    # -rtsp_transport is a private option of the RTSP demuxer only; ffmpeg
+    # hard-fails ("Option rtsp_transport not found") if it's passed for any
+    # other input protocol (e.g. a plain http:// bridge stream), so it must
+    # be conditional rather than always-on.
+    rtsp_only_options = ["-rtsp_transport", "tcp"] if urlsplit(stream_uri).scheme.lower() in ("rtsp", "rtsps") else []
     return [
         "ffmpeg",
         "-nostdin",
@@ -151,8 +157,7 @@ def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path)
         "warning",
         "-fflags",
         "+genpts+discardcorrupt",
-        "-rtsp_transport",
-        "tcp",
+        *rtsp_only_options,
         "-use_wallclock_as_timestamps",
         "1",
         "-i",

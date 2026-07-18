@@ -36,6 +36,36 @@ class LiveTests(unittest.TestCase):
         self.assertIn("-use_wallclock_as_timestamps", command)
         self.assertIn("-avoid_negative_ts", command)
 
+    def test_live_ffmpeg_command_includes_rtsp_transport_for_rtsp_uri(self):
+        command = _live_ffmpeg_command(
+            "rtsp://example/stream",
+            Path("/tmp/live/segment%03d.ts"),
+            Path("/tmp/live/index.m3u8"),
+        )
+
+        self.assertIn("-rtsp_transport", command)
+
+    def test_live_ffmpeg_command_includes_rtsp_transport_for_rtsps_uri(self):
+        command = _live_ffmpeg_command(
+            "rtsps://example/stream",
+            Path("/tmp/live/segment%03d.ts"),
+            Path("/tmp/live/index.m3u8"),
+        )
+
+        self.assertIn("-rtsp_transport", command)
+
+    def test_live_ffmpeg_command_omits_rtsp_transport_for_http_uri(self):
+        # ffmpeg hard-fails ("Option rtsp_transport not found") if this
+        # RTSP-demuxer-only option is passed for a non-RTSP input protocol -
+        # verified locally, not assumed.
+        command = _live_ffmpeg_command(
+            "http://127.0.0.1:18734/live/SERIAL123.ts",
+            Path("/tmp/live/segment%03d.ts"),
+            Path("/tmp/live/index.m3u8"),
+        )
+
+        self.assertNotIn("-rtsp_transport", command)
+
     def test_hls_unset_timestamp_warning_is_nonfatal(self):
         message = "[hls @ 0x55b196e0d0] Timestamps are unset in a packet for stream 0"
 

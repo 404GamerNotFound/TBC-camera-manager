@@ -140,7 +140,7 @@ STANDARD_PLUGIN_SOURCES = (
         key="xsense-camera",
         plugin_kind="camera",
         label="X-Sense",
-        description="X-Sense cameras (SSC0A/SSC0B) via the X-Sense cloud live-view API - unofficial, reverse-engineered",
+        description="X-Sense cameras (SSC0A/SSC0B) via a local WebRTC bridge to the X-Sense cloud - unofficial, reverse-engineered",
         repo_url="https://github.com/404GamerNotFound/TBC-X-Sense",
         subdirectory="camera",
     ),
