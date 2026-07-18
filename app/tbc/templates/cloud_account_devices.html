@@ -40,6 +40,16 @@
       <input type="hidden" name="name" value="{{ device.name }}">
       <button class="primary-button" type="submit" data-i18n="cloud_account.add_as_camera">Add as camera</button>
     </form>
+    {% elif device.needs_account_credentials and cloud_module.account_username_field and cloud_module.account_password_field %}
+    {% if (device.suggested_module_key, device.external_id) in existing_hosts %}
+    <p class="quiet-box" data-i18n="cloud_account.already_imported_as_camera">Already imported as a camera.</p>
+    {% endif %}
+    <form method="post" action="/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
+      <input type="hidden" name="external_id" value="{{ device.external_id }}">
+      <input type="hidden" name="module_key" value="{{ device.suggested_module_key }}">
+      <input type="hidden" name="name" value="{{ device.name }}">
+      <button class="primary-button" type="submit" data-i18n="cloud_account.add_as_camera">Add as camera</button>
+    </form>
     {% else %}
     <p class="quiet-box" data-i18n="cloud_account.no_rtsp_stream_available_enable">No RTSP stream is available. Enable RTSP for this device in the vendor interface first.</p>
     {% endif %}

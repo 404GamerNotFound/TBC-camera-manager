@@ -50,6 +50,39 @@ def _decrypt_row(row: dict[str, Any], fields: Iterable[str]) -> dict[str, Any]:
     return row
 
 
+def _encrypt_sensitive_config_values(config: dict[str, Any], sensitive_keys: Iterable[str]) -> dict[str, Any]:
+    """Encrypt every password-type field in a cloud/network account's config_json.
+
+    `"secret"` is always treated as sensitive (the generic identifier/secret
+    pair's own field name); `sensitive_keys` adds whichever other config keys
+    the module declared as password-type fields (e.g. a module using "email"/
+    "password" instead of "identifier"/"secret") - without this, only a field
+    literally named "secret" ever got encrypted, leaving custom-named
+    password fields stored in plaintext in config_json.
+    """
+    stored_config = dict(config)
+    for key in {"secret", *sensitive_keys}:
+        value = stored_config.get(key)
+        if isinstance(value, str) and value:
+            stored_config[key] = _encrypt_field(value)
+    return stored_config
+
+
+def _decrypt_config_values(config: dict[str, Any]) -> dict[str, Any]:
+    """Decrypt every string value in a hydrated account config.
+
+    Mirrors _encrypt_sensitive_config_values() without needing to know which
+    keys were sensitive at read time: _decrypt_field() already safely passes
+    plaintext values through unchanged (see its SecretDecryptionError
+    fallback), so attempting to decrypt every string is harmless and correct
+    for both old plaintext rows and newly-encrypted ones.
+    """
+    for key, value in config.items():
+        if isinstance(value, str) and value:
+            config[key] = _decrypt_field(value)
+    return config
+
+
 SCHEMA = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
@@ -753,6 +786,7 @@ def create_cloud_account(
     identifier: str = "",
     secret: str = "",
     config: dict[str, Any] | None = None,
+    sensitive_keys: Iterable[str] = (),
 ) -> int:
     account_config = dict(config or {})
     if not account_config:
@@ -769,9 +803,7 @@ def create_cloud_account(
     verify_ssl = bool(account_config.get("verify_ssl", verify_ssl))
     identifier = str(account_config.get("identifier") or identifier or "")
     secret = str(account_config.get("secret") or secret or "")
-    stored_config = dict(account_config)
-    if secret:
-        stored_config["secret"] = _encrypt_field(secret)
+    stored_config = _encrypt_sensitive_config_values(account_config, sensitive_keys)
     with connect(database_path) as db:
         cursor = db.execute(
             """
@@ -812,6 +844,7 @@ def update_cloud_account_configuration(
     *,
     label: str,
     config: dict[str, Any],
+    sensitive_keys: Iterable[str] = (),
 ) -> None:
     host = str(config.get("host") or "").strip() or None
     raw_port = config.get("port")
@@ -819,9 +852,7 @@ def update_cloud_account_configuration(
     verify_ssl = bool(config.get("verify_ssl", False))
     identifier = str(config.get("identifier") or "")
     secret = str(config.get("secret") or "")
-    stored_config = dict(config)
-    if secret:
-        stored_config["secret"] = _encrypt_field(secret)
+    stored_config = _encrypt_sensitive_config_values(config, sensitive_keys)
     with connect(database_path) as db:
         db.execute(
             """
@@ -913,7 +944,7 @@ def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
             "secret": account.get("secret") or "",
         }
     else:
-        config["secret"] = _decrypt_field(config.get("secret"))
+        config = _decrypt_config_values(config)
     account["config"] = config
     account.update(config)
     return account
@@ -956,6 +987,7 @@ def create_network_account(
     module_key: str,
     label: str,
     config: dict[str, Any],
+    sensitive_keys: Iterable[str] = (),
 ) -> int:
     host = str(config.get("host") or "").strip() or None
     raw_port = config.get("port")
@@ -963,9 +995,7 @@ def create_network_account(
     verify_ssl = bool(config.get("verify_ssl", False))
     identifier = str(config.get("identifier") or "")
     secret = str(config.get("secret") or "")
-    stored_config = dict(config)
-    if secret:
-        stored_config["secret"] = _encrypt_field(secret)
+    stored_config = _encrypt_sensitive_config_values(config, sensitive_keys)
     with connect(database_path) as db:
         cursor = db.execute(
             """
@@ -1006,6 +1036,7 @@ def update_network_account_configuration(
     *,
     label: str,
     config: dict[str, Any],
+    sensitive_keys: Iterable[str] = (),
 ) -> None:
     host = str(config.get("host") or "").strip() or None
     raw_port = config.get("port")
@@ -1013,9 +1044,7 @@ def update_network_account_configuration(
     verify_ssl = bool(config.get("verify_ssl", False))
     identifier = str(config.get("identifier") or "")
     secret = str(config.get("secret") or "")
-    stored_config = dict(config)
-    if secret:
-        stored_config["secret"] = _encrypt_field(secret)
+    stored_config = _encrypt_sensitive_config_values(config, sensitive_keys)
     with connect(database_path) as db:
         db.execute(
             """
@@ -1054,7 +1083,7 @@ def _hydrate_network_account(row: sqlite3.Row) -> dict[str, Any]:
             "secret": account.get("secret") or "",
         }
     else:
-        config["secret"] = _decrypt_field(config.get("secret"))
+        config = _decrypt_config_values(config)
     account["config"] = config
     account.update(config)
     return account

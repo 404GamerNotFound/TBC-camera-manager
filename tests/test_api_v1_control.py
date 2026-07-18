@@ -40,6 +40,7 @@ os.environ.setdefault("TBC_ADMIN_PASSWORD", "adminpass123")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.tbc import database, main  # noqa: E402
+from app.tbc.cloud_modules import CloudAccountField, CloudAccountFieldType  # noqa: E402
 
 TOKEN_PATTERN = re.compile(r"tbc_[A-Za-z0-9_-]{20,}")
 
@@ -351,6 +352,101 @@ class ApiStreamPlaylistRewriteTests(unittest.TestCase):
         # request, with no credentials attached at all.
         response = CLIENT.get(f"/api/v1/cameras/{self.camera_id}/stream/segment000.ts")
         self.assertEqual(response.status_code, 401)
+
+
+class _FakeXSenseCloudModule:
+    key = "xsense-cloud"
+    label = "X-Sense"
+    account_username_field = "email"
+    account_password_field = "password"
+    account_fields = (
+        CloudAccountField(key="email", label="Email", field_type=CloudAccountFieldType.EMAIL),
+        CloudAccountField(key="password", label="Password", field_type=CloudAccountFieldType.PASSWORD),
+    )
+
+
+class CloudDeviceCredentialCarryoverImportTests(unittest.TestCase):
+    """POST /cloud-accounts/{id}/devices/import for CloudDevice(needs_account_credentials=True)
+    devices - see app.tbc.cloud_modules.base.CloudDevice for why this exists
+    (X-Sense-style cloud providers with no manual_stream_uri, but whose
+    suggested CameraModule can reuse the cloud account's own credentials).
+
+    Lives in this file (rather than its own) because only one test module in
+    the suite may own app.tbc.main's TestClient - see this file's docstring.
+    """
+
+    def setUp(self):
+        db_path = main.SETTINGS.database_path
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        database.initialize(db_path, main.SETTINGS.recordings_path)
+        database.ensure_admin_user(db_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+    def test_add_as_camera_reuses_the_cloud_account_s_own_credentials(self):
+        with patch("app.tbc.main.get_cloud_module", return_value=_FakeXSenseCloudModule()):
+            account_id = database.create_cloud_account(
+                main.SETTINGS.database_path,
+                module_key="xsense-cloud",
+                label="Home",
+                config={"email": "user@example.com", "password": "SuperSecretPW123"},
+                sensitive_keys=("password",),
+            )
+            response = CLIENT.post(
+                f"/cloud-accounts/{account_id}/devices/import",
+                data={"name": "Smart-Kamera", "external_id": "AICFJ3SUJHS4306", "module_key": "rtsp_only"},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        cameras = database.list_cameras(main.SETTINGS.database_path)
+        self.assertEqual(len(cameras), 1)
+        camera = cameras[0]
+        self.assertEqual(camera["name"], "Smart-Kamera")
+        self.assertEqual(camera["host"], "AICFJ3SUJHS4306")
+        self.assertEqual(camera["username"], "user@example.com")
+        self.assertEqual(camera["password"], "SuperSecretPW123")
+        self.assertEqual(camera.get("manual_stream_uri") or "", "")
+
+    def test_import_without_manual_stream_uri_or_external_id_is_rejected(self):
+        with patch("app.tbc.main.get_cloud_module", return_value=_FakeXSenseCloudModule()):
+            account_id = database.create_cloud_account(
+                main.SETTINGS.database_path,
+                module_key="xsense-cloud",
+                label="Home",
+                config={"email": "user@example.com", "password": "secret"},
+                sensitive_keys=("password",),
+            )
+            response = CLIENT.post(
+                f"/cloud-accounts/{account_id}/devices/import",
+                data={"name": "Smart-Kamera", "module_key": "rtsp_only"},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(database.list_cameras(main.SETTINGS.database_path), [])
+
+    def test_import_is_rejected_when_module_has_not_declared_credential_fields(self):
+        class _ModuleWithoutCredentialFields(_FakeXSenseCloudModule):
+            account_username_field = None
+            account_password_field = None
+
+        with patch("app.tbc.main.get_cloud_module", return_value=_ModuleWithoutCredentialFields()):
+            account_id = database.create_cloud_account(
+                main.SETTINGS.database_path,
+                module_key="xsense-cloud",
+                label="Home",
+                config={"email": "user@example.com", "password": "secret"},
+                sensitive_keys=("password",),
+            )
+            response = CLIENT.post(
+                f"/cloud-accounts/{account_id}/devices/import",
+                data={"name": "Smart-Kamera", "external_id": "AICFJ3SUJHS4306", "module_key": "rtsp_only"},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(database.list_cameras(main.SETTINGS.database_path), [])
 
 
 if __name__ == "__main__":

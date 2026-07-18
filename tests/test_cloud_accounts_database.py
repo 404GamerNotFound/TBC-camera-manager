@@ -135,6 +135,30 @@ class CloudAccountDatabaseTests(unittest.TestCase):
             cleared = database.get_cloud_account(handle.name, account_id)
             self.assertEqual(cleared["verification_code"], "")
 
+    def test_custom_named_password_field_is_encrypted_at_rest(self):
+        # A module using account_fields like "email"/"password" (instead of
+        # the generic "identifier"/"secret" pair) used to store its password
+        # in config_json as plain text, since only a field literally named
+        # "secret" was ever encrypted - sensitive_keys fixes that.
+        import sqlite3
+
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.configure_encryption("test-secret-key")
+            database.initialize(handle.name)
+            account_id = database.create_cloud_account(
+                handle.name,
+                module_key="xsense-cloud",
+                label="X-Sense",
+                config={"email": "user@example.com", "password": "plaintext-password"},
+                sensitive_keys=("password",),
+            )
+            with sqlite3.connect(handle.name) as connection:
+                row = connection.execute("SELECT config_json FROM cloud_accounts").fetchone()
+            self.assertNotIn("plaintext-password", row[0])
+
+            account = database.get_cloud_account(handle.name, account_id)
+            self.assertEqual(account["password"], "plaintext-password")
+
 
 if __name__ == "__main__":
     unittest.main()

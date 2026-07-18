@@ -90,6 +90,28 @@ class NetworkAccountDatabaseTests(unittest.TestCase):
                 row = connection.execute("SELECT secret FROM network_accounts").fetchone()
             self.assertNotEqual(row[0], "plaintext-password")
 
+    def test_custom_named_password_field_is_encrypted_at_rest(self):
+        # Mirrors the cloud_accounts fix: a module using a custom field name
+        # (not literally "secret") needs sensitive_keys to get encrypted.
+        import sqlite3
+
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.configure_encryption("test-secret-key")
+            database.initialize(handle.name)
+            account_id = database.create_network_account(
+                handle.name,
+                module_key="example-network",
+                label="Example",
+                config={"host": "10.0.0.1", "api_key": "plaintext-api-key"},
+                sensitive_keys=("api_key",),
+            )
+            with sqlite3.connect(handle.name) as connection:
+                row = connection.execute("SELECT config_json FROM network_accounts").fetchone()
+            self.assertNotIn("plaintext-api-key", row[0])
+
+            account = database.get_network_account(handle.name, account_id)
+            self.assertEqual(account["api_key"], "plaintext-api-key")
+
 
 class CameraNetworkMappingTests(unittest.TestCase):
     def test_set_and_clear_camera_network_mapping(self):

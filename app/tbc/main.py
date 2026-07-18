@@ -5,6 +5,7 @@ import importlib
 import json
 import logging
 import math
+from collections.abc import Iterable
 from datetime import date, datetime, time, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -3059,6 +3060,17 @@ async def cloud_accounts_page(request: Request):
     )
 
 
+def _password_field_keys(fields: Iterable[Any]) -> tuple[str, ...]:
+    """Return the config_json keys of a module's password-type account fields.
+
+    Tells database.py's account create/update functions which custom-named
+    fields (e.g. an "email"/"password" pair instead of the generic
+    "identifier"/"secret") need encrypting - without this, only a field
+    literally named "secret" ever got encrypted.
+    """
+    return tuple(field.key for field in fields if field.field_type.value == "password")
+
+
 @app.post("/cloud-accounts", response_class=HTMLResponse)
 async def create_cloud_account_route(request: Request):
     guard = _require_admin(request)
@@ -3088,6 +3100,7 @@ async def create_cloud_account_route(request: Request):
         module_key=cloud_module.key,
         label=label.strip() or cloud_module.label,
         config=config,
+        sensitive_keys=_password_field_keys(cloud_module.account_fields),
     )
     _set_flash(request, "cloud_account.added")
     return _redirect("/cloud-accounts")
@@ -3153,6 +3166,7 @@ async def update_cloud_account_route(request: Request, account_id: int):
         account_id,
         label=label,
         config=config,
+        sensitive_keys=_password_field_keys(cloud_module.account_fields),
     )
     _set_flash(request, "cloud_account.updated")
     return _redirect(f"/cloud-accounts#account-{account_id}")
@@ -3300,6 +3314,11 @@ async def cloud_account_devices_page(request: Request, account_id: int):
         for camera in database.list_cameras(SETTINGS.database_path)
         if camera.get("manual_stream_uri")
     }
+    existing_hosts = {
+        (camera.get("module_key"), camera.get("host"))
+        for camera in database.list_cameras(SETTINGS.database_path)
+        if camera.get("host")
+    }
     return templates.TemplateResponse(
         request,
         "cloud_account_devices.html",
@@ -3311,6 +3330,7 @@ async def cloud_account_devices_page(request: Request, account_id: int):
             "cloud_module": cloud_module,
             "devices": devices,
             "existing_uris": existing_uris,
+            "existing_hosts": existing_hosts,
             "error": _t_en(error_key, **error_params) if error_key else None,
             "error_key": error_key,
             "error_params": error_params,
@@ -3324,29 +3344,56 @@ async def import_cloud_device_route(
     request: Request,
     account_id: int,
     name: str = Form(...),
-    manual_stream_uri: str = Form(...),
+    manual_stream_uri: str | None = Form(None),
+    external_id: str | None = Form(None),
     module_key: str = Form("rtsp_only"),
 ):
     guard = _require_admin(request)
     if guard:
         return guard
     try:
-        normalized_uri = validate_manual_stream_uri(manual_stream_uri)
-    except ValueError as exc:
-        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
-        return _redirect(f"/cloud-accounts/{account_id}/devices")
-    try:
         camera_module = get_camera_module(module_key)
     except UnknownCameraModuleError:
         camera_module = get_camera_module("rtsp_only")
+
+    host = ""
+    username = ""
+    password = ""
+    normalized_uri = ""
+    if manual_stream_uri:
+        try:
+            normalized_uri = validate_manual_stream_uri(manual_stream_uri)
+        except ValueError as exc:
+            _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+            return _redirect(f"/cloud-accounts/{account_id}/devices")
+    elif external_id:
+        account = database.get_cloud_account(SETTINGS.database_path, account_id)
+        if not account:
+            _set_flash(request, "cloud_account.not_found", None, "error")
+            return _redirect("/cloud-accounts")
+        try:
+            cloud_module = get_cloud_module(account["module_key"])
+        except UnknownCloudModuleError as exc:
+            _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+            return _redirect(f"/cloud-accounts/{account_id}/devices")
+        if not cloud_module.account_username_field or not cloud_module.account_password_field:
+            _set_flash(request, "cloud_account.credentials_not_reusable", None, "error")
+            return _redirect(f"/cloud-accounts/{account_id}/devices")
+        host = external_id.strip()
+        username = str(account.get(cloud_module.account_username_field) or "")
+        password = str(account.get(cloud_module.account_password_field) or "")
+    else:
+        _set_flash(request, "cloud_account.nothing_to_import", None, "error")
+        return _redirect(f"/cloud-accounts/{account_id}/devices")
+
     camera_id = database.create_camera(
         SETTINGS.database_path,
         name=name.strip() or "Cloud camera",
-        host="",
+        host=host,
         onvif_port=camera_module.default_onvif_port,
         http_port=camera_module.default_http_port,
-        username="",
-        password="",
+        username=username,
+        password=password,
         module_key=camera_module.key,
         rtsp_port=camera_module.default_rtsp_port,
         manual_stream_uri=normalized_uri,
@@ -3509,6 +3556,7 @@ async def create_network_account_route(request: Request):
         module_key=network_module.key,
         label=label.strip() or network_module.label,
         config=config,
+        sensitive_keys=_password_field_keys(network_module.account_fields),
     )
     _set_flash(request, "network_account.added")
     return _redirect("/network-accounts")
@@ -3574,6 +3622,7 @@ async def update_network_account_route(request: Request, account_id: int):
         account_id,
         label=label,
         config=config,
+        sensitive_keys=_password_field_keys(network_module.account_fields),
     )
     _set_flash(request, "network_account.updated")
     return _redirect(f"/network-accounts#account-{account_id}")
