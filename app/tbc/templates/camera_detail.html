@@ -368,7 +368,11 @@
         <input name="name" value="{{ camera.name }}" required>
       </label>
       <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
+        {% if camera_module and camera_module.identifier_label %}
+        <span>{{ camera_module.identifier_label }}</span>
+        {% else %}
         <span data-i18n="camera.host_ip">Host / IP</span>
+        {% endif %}
         <input name="host" value="{{ camera.host }}" required>
       </label>
       <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>

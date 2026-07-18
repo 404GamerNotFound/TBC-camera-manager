@@ -225,6 +225,21 @@ open the camera, enable RTSP, and copy the link. Enter that link manually in the
 camera import. Unlike UniFi Protect and, in part, Eufy, TBC does not display **Add as camera**
 for eWeLink devices.
 
+## Reference implementation: X-Sense
+
+[`TBC-X-Sense`](https://github.com/404GamerNotFound/TBC-X-Sense) is a *cloud* plugin (its
+`cloud/` subdirectory - the repo also ships a matching `camera/` plugin, see
+[camera-modules.md](camera-modules.md)) for X-Sense's account API. Unlike every other cloud
+plugin here, X-Sense has no official developer API at all - the entire integration is
+reverse-engineered, including a fixed device-identity block that mimics X-Sense's own Android
+app. `discover_devices()` lists cameras (model, serial, name) for inventory only and, like
+eWeLink, never returns a stream URL: X-Sense's live-view endpoint issues a short-lived session
+ticket rather than a persistent address, so there is nothing stable to hand back from a
+one-time discovery call. Instead, admins add the camera manually with the matching `camera/`
+plugin, whose `probe()` re-fetches a fresh live-view URL on every background poll cycle - see
+that plugin's README for why. `verification_support` is `not_applicable`; the reverse-engineered
+API this depends on has no documented two-factor flow to hook into.
+
 ## Import, export, and admin interface
 
 Administrators manage cloud plugins under `Admin → Cloud providers`, including import,

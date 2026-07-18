@@ -78,7 +78,11 @@ class StandardPluginSourceTests(unittest.TestCase):
             "ubiquiti": "TBC-ubiquiti",
         }
 
-        camera_sources = {source.key for source in STANDARD_PLUGIN_SOURCES if source.plugin_kind == "camera"}
+        camera_sources = {
+            source.key
+            for source in STANDARD_PLUGIN_SOURCES
+            if source.plugin_kind == "camera" and not source.subdirectory
+        }
         self.assertEqual(camera_sources, set(expected_repositories))
         for key, repository in expected_repositories.items():
             with self.subTest(key=key):
@@ -98,6 +102,19 @@ class StandardPluginSourceTests(unittest.TestCase):
         self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-network-ubiquiti")
         self.assertEqual(source.ref, "main")
         self.assertEqual(source.subdirectory, "")
+
+    def test_xsense_standard_repositories_share_one_repo_via_subdirectory(self):
+        cloud_source = get_standard_plugin_source("xsense-cloud")
+        camera_source = get_standard_plugin_source("xsense-camera")
+
+        self.assertIsNotNone(cloud_source)
+        self.assertIsNotNone(camera_source)
+        self.assertEqual(cloud_source.plugin_kind, "cloud")
+        self.assertEqual(camera_source.plugin_kind, "camera")
+        self.assertEqual(cloud_source.repo_url, "https://github.com/404GamerNotFound/TBC-X-Sense")
+        self.assertEqual(camera_source.repo_url, "https://github.com/404GamerNotFound/TBC-X-Sense")
+        self.assertEqual(cloud_source.subdirectory, "cloud")
+        self.assertEqual(camera_source.subdirectory, "camera")
 
     def test_unknown_standard_repository_returns_none(self):
         self.assertIsNone(get_standard_plugin_source("unknown"))
@@ -151,8 +168,10 @@ class StandardPluginSourceTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual([candidate.key for candidate in candidates], ["example-cloud"])
-        self.assertEqual(candidates[0].install_url, "/plugin-sources#source-21")
+        by_key = {candidate.key: candidate for candidate in candidates}
+        self.assertEqual(set(by_key), {"example-cloud", "xsense-cloud"})
+        self.assertEqual(by_key["example-cloud"].install_url, "/plugin-sources#source-21")
+        self.assertEqual(by_key["xsense-cloud"].install_url, "/plugin-sources#standard-source-xsense-cloud")
 
 class ExtractPluginArchiveTests(unittest.TestCase):
     def test_extracts_repo_root_when_no_subdirectory(self):

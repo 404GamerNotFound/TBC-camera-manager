@@ -97,6 +97,13 @@ The unified `CameraSnapshot` contains device status, manufacturer data, RTSP URI
 states, and channels. Detection rows use `key`, `label`, `category`, `channel`, `supported`,
 `active`, `source`, and optionally `raw_value`.
 
+A module whose `host` field holds something other than a local IP address (for example, an
+account-linked device serial number for a cloud-only camera) may set `identifier_label` to a
+plain-text string, overriding the connection form's default translated "Host / IP" label with
+that text. Leave it unset (the default, `None`) to keep the normal label - this is what every
+ONVIF-based module does. See the external `xsense-camera` plugin for an example of a module
+whose cameras have no local IP at all.
+
 ## Import and export
 
 Administrators open `Admin → Camera plugins` and import a ZIP. TBC validates the manifest,

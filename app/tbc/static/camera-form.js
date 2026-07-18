@@ -9,6 +9,7 @@
   const connectionFields = form.querySelectorAll(
     ".host-field, .onvif-field, .http-field, .rtsp-field, .credential-field",
   );
+  const hostFieldLabel = form.querySelector("[data-host-field-label]");
   const translate = (key, parameters = {}) => window.tbcI18n?.t(key, parameters) || key;
   const inputs = {
     onvifPort: form.querySelector('input[name="onvif_port"]'),
@@ -52,6 +53,16 @@
     }
 
     if (unavailableNote) unavailableNote.hidden = true;
+    if (hostFieldLabel) {
+      const customLabel = option.dataset.identifierLabel || "";
+      if (customLabel) {
+        hostFieldLabel.removeAttribute("data-i18n");
+        hostFieldLabel.textContent = customLabel;
+      } else {
+        hostFieldLabel.setAttribute("data-i18n", "camera.host_ip");
+        hostFieldLabel.textContent = translate("camera.host_ip");
+      }
+    }
     if (setPorts) {
       if (inputs.onvifPort) inputs.onvifPort.value = option.dataset.onvifPort || "8000";
       if (inputs.httpPort) inputs.httpPort.value = option.dataset.httpPort || "80";

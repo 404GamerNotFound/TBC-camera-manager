@@ -127,6 +127,22 @@ STANDARD_PLUGIN_SOURCES = (
         description="Maps cameras to UniFi Network clients for live connectivity status (AP/switch, signal, online state)",
         repo_url="https://github.com/404GamerNotFound/TBC-network-ubiquiti",
     ),
+    StandardPluginSource(
+        key="xsense-cloud",
+        plugin_kind="cloud",
+        label="X-Sense",
+        description="Lists X-Sense account cameras (serial, name, model) for manual import - unofficial, reverse-engineered API",
+        repo_url="https://github.com/404GamerNotFound/TBC-X-Sense",
+        subdirectory="cloud",
+    ),
+    StandardPluginSource(
+        key="xsense-camera",
+        plugin_kind="camera",
+        label="X-Sense",
+        description="X-Sense cameras (SSC0A/SSC0B) via the X-Sense cloud live-view API - unofficial, reverse-engineered",
+        repo_url="https://github.com/404GamerNotFound/TBC-X-Sense",
+        subdirectory="camera",
+    ),
 )
 
 

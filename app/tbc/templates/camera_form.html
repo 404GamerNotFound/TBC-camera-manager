@@ -28,6 +28,7 @@
                 data-supports-manual-stream="{{ 'true' if option.supports_manual_stream_uri else 'false' }}"
                 data-requires-manual-stream="{{ 'true' if option.requires_manual_stream_uri else 'false' }}"
                 data-requires-credentials="{{ 'true' if option.requires_credentials else 'false' }}"
+                data-identifier-label="{{ option.identifier_label or '' }}"
                 {% if values.module_key == option.key %}selected{% endif %}>
           {{ option.label }}{% if option.description %} · {{ option.description }}{% endif %}{% if not option.installed %} · Not installed{% endif %}
         </option>
@@ -44,7 +45,7 @@
       <input name="name" value="{{ values.name }}" required autofocus>
     </label>
     <label class="host-field">
-      <span data-i18n="camera.host_ip">Host / IP</span>
+      <span data-i18n="camera.host_ip" data-host-field-label>Host / IP</span>
       <input name="host" value="{{ values.host }}">
     </label>
     <label class="onvif-field">

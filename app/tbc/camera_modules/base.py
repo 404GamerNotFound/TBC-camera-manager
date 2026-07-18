@@ -55,6 +55,11 @@ class CameraModule(ABC):
     requires_manual_stream_uri: bool = False
     requires_credentials: bool = True
     capabilities: frozenset[CameraCapability] = frozenset()
+    # Overrides the "Host / IP" field label/i18n on the connection form for
+    # modules whose Host field holds something else (e.g. a cloud account's
+    # device serial number instead of a local network address). None keeps
+    # the normal translated "Host / IP" label - see docs/camera-modules.md.
+    identifier_label: str | None = None
 
     def supports(self, capability: CameraCapability) -> bool:
         return capability in self.capabilities

@@ -5489,6 +5489,7 @@ def _camera_module_selector_options() -> list[dict[str, Any]]:
             "supports_manual_stream_uri": module.supports_manual_stream_uri,
             "requires_manual_stream_uri": module.requires_manual_stream_uri,
             "requires_credentials": module.requires_credentials,
+            "identifier_label": module.identifier_label,
         }
         for module in modules
     ]
@@ -5510,6 +5511,7 @@ def _camera_module_selector_options() -> list[dict[str, Any]]:
             "supports_manual_stream_uri": False,
             "requires_manual_stream_uri": False,
             "requires_credentials": False,
+            "identifier_label": None,
         }
         for candidate in candidates
     )
