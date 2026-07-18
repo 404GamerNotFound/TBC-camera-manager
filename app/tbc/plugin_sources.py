@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import re
 import urllib.error
 import urllib.parse
@@ -274,8 +275,34 @@ def _translate_urllib_error(exc: urllib.error.URLError, owner: str, repo: str, r
             return PluginSourceError(
                 f"Repository or branch/tag not found (is '{owner}/{repo}' public, does '{ref}' exist?)"
             )
+        if exc.code in (403, 429):
+            rate_limit_error = _translate_rate_limit_error(exc)
+            if rate_limit_error is not None:
+                return rate_limit_error
         return PluginSourceError(f"GitHub-Anfrage fehlgeschlagen: HTTP {exc.code}")
     return PluginSourceError(f"GitHub konnte nicht erreicht werden: {exc.reason}")
+
+
+def _translate_rate_limit_error(exc: urllib.error.HTTPError) -> PluginSourceError | None:
+    """Recognize GitHub's unauthenticated rate limit (60 requests/hour/IP) and say so plainly.
+
+    Without this, a used-up rate limit surfaces as a bare "HTTP 403" that
+    looks like a broken repository or a permissions problem - it is neither,
+    and retrying immediately (or re-installing) just wastes the next
+    request too. GitHub reports this via headers, not the response body.
+    """
+    headers = exc.headers
+    if headers is None or headers.get("X-RateLimit-Remaining") != "0":
+        return None
+    reset_header = headers.get("X-RateLimit-Reset")
+    when = ""
+    if reset_header and reset_header.isdigit():
+        reset_time = datetime.datetime.fromtimestamp(int(reset_header), tz=datetime.timezone.utc)
+        when = f" It resets at {reset_time.strftime('%H:%M UTC')}."
+    return PluginSourceError(
+        "GitHub's unauthenticated rate limit (60 requests/hour/IP) has been reached."
+        f"{when} Please wait a bit and synchronize again."
+    )
 
 
 def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:

@@ -270,6 +270,19 @@ class FetchGithubRepoArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(PluginSourceError, "nicht erreicht"):
                 fetch_github_repo_archive("owner", "repo", "main")
 
+    def test_exhausted_rate_limit_is_reported_with_reset_time(self):
+        headers = {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "1784378301"}
+        with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
+            urlopen.side_effect = urllib.error.HTTPError("url", 403, "Forbidden", headers, None)
+            with self.assertRaisesRegex(PluginSourceError, "rate limit.*12:38 UTC"):
+                fetch_github_repo_archive("owner", "repo", "main")
+
+    def test_403_without_rate_limit_headers_is_reported_generically(self):
+        with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
+            urlopen.side_effect = urllib.error.HTTPError("url", 403, "Forbidden", {}, None)
+            with self.assertRaisesRegex(PluginSourceError, "HTTP 403"):
+                fetch_github_repo_archive("owner", "repo", "main")
+
     def test_successful_fetch_returns_bytes(self):
         with patch("app.tbc.plugin_sources.urllib.request.urlopen", return_value=_mock_response(b"zipbytes")):
             data = fetch_github_repo_archive("owner", "repo", "main")
