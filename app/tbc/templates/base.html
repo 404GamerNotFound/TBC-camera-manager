@@ -23,7 +23,7 @@
       {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') or path.startswith('/activity') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
       {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
-      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/api-access') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/recognition') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/plugin-sources') or path.startswith('/updates') or path.startswith('/license') %}
+      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/api-access') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/recognition') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/network-modules') or path.startswith('/network-accounts') or path.startswith('/plugin-sources') or path.startswith('/updates') or path.startswith('/license') %}
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Toggle navigation" data-i18n-aria-label="nav.toggle" data-menu-toggle>
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -160,6 +160,10 @@
                     <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
                       <span class="nav-shortcut" aria-hidden="true">O</span>
                       <span data-i18n="base.cloud_providers">Cloud providers</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/network-modules') or path.startswith('/network-accounts') %} active{% endif %}" href="/network-modules">
+                      <span class="nav-shortcut" aria-hidden="true">N</span>
+                      <span data-i18n="base.network_providers">Network providers</span>
                     </a>
                     <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
                       <span class="nav-shortcut" aria-hidden="true">X</span>

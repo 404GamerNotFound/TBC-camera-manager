@@ -368,6 +368,24 @@ CREATE TABLE IF NOT EXISTS cloud_accounts (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS network_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    module_key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    host TEXT,
+    port INTEGER,
+    verify_ssl INTEGER NOT NULL DEFAULT 0,
+    identifier TEXT NOT NULL,
+    secret TEXT NOT NULL,
+    config_json TEXT NOT NULL DEFAULT '{}',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    last_test_status TEXT,
+    last_test_message TEXT,
+    last_test_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS plugin_sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     plugin_kind TEXT NOT NULL,
@@ -466,6 +484,8 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE recordings ADD COLUMN locked INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE recordings ADD COLUMN locked_at TEXT",
     "ALTER TABLE api_tokens ADD COLUMN can_control INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE cameras ADD COLUMN network_account_id INTEGER",
+    "ALTER TABLE cameras ADD COLUMN network_device_mac TEXT",
 )
 
 
@@ -524,6 +544,7 @@ def _encrypt_plaintext_secrets_in_place(database_path: str) -> None:
         for table, id_column, fields in (
             ("cameras", "id", ("password",)),
             ("cloud_accounts", "id", ("secret",)),
+            ("network_accounts", "id", ("secret",)),
             ("storage_targets", "id", ("s3_secret_access_key",)),
             ("mqtt_config", "id", ("password",)),
             ("notification_channels", "id", ("token", "smtp_password")),
@@ -927,6 +948,177 @@ def count_cloud_accounts_by_module(database_path: str, module_key: str) -> int:
             (module_key,),
         ).fetchone()
     return int(row["total"] if row else 0)
+
+
+def create_network_account(
+    database_path: str,
+    *,
+    module_key: str,
+    label: str,
+    config: dict[str, Any],
+) -> int:
+    host = str(config.get("host") or "").strip() or None
+    raw_port = config.get("port")
+    port = int(raw_port) if raw_port not in (None, "") else None
+    verify_ssl = bool(config.get("verify_ssl", False))
+    identifier = str(config.get("identifier") or "")
+    secret = str(config.get("secret") or "")
+    stored_config = dict(config)
+    if secret:
+        stored_config["secret"] = _encrypt_field(secret)
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO network_accounts (
+                module_key, label, host, port, verify_ssl, identifier, secret, config_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                module_key,
+                label,
+                host,
+                port,
+                1 if verify_ssl else 0,
+                identifier,
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_network_accounts(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT * FROM network_accounts ORDER BY label COLLATE NOCASE").fetchall()
+    return [_hydrate_network_account(row) for row in rows]
+
+
+def get_network_account(database_path: str, account_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM network_accounts WHERE id = ?", (account_id,)).fetchone()
+    return _hydrate_network_account(row) if row else None
+
+
+def update_network_account_configuration(
+    database_path: str,
+    account_id: int,
+    *,
+    label: str,
+    config: dict[str, Any],
+) -> None:
+    host = str(config.get("host") or "").strip() or None
+    raw_port = config.get("port")
+    port = int(raw_port) if raw_port not in (None, "") else None
+    verify_ssl = bool(config.get("verify_ssl", False))
+    identifier = str(config.get("identifier") or "")
+    secret = str(config.get("secret") or "")
+    stored_config = dict(config)
+    if secret:
+        stored_config["secret"] = _encrypt_field(secret)
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE network_accounts
+               SET label = ?, host = ?, port = ?, verify_ssl = ?,
+                   identifier = ?, secret = ?, config_json = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (
+                label,
+                host,
+                port,
+                1 if verify_ssl else 0,
+                identifier,
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
+                account_id,
+            ),
+        )
+
+
+def _hydrate_network_account(row: sqlite3.Row) -> dict[str, Any]:
+    account = dict(row)
+    account["secret"] = _decrypt_field(account.get("secret"))
+    try:
+        config = json.loads(account.get("config_json") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        config = {}
+    if not isinstance(config, dict) or not config:
+        config = {
+            "host": account.get("host") or "",
+            "port": account.get("port") or 443,
+            "verify_ssl": bool(account.get("verify_ssl")),
+            "identifier": account.get("identifier") or "",
+            "secret": account.get("secret") or "",
+        }
+    else:
+        config["secret"] = _decrypt_field(config.get("secret"))
+    account["config"] = config
+    account.update(config)
+    return account
+
+
+def update_network_account_test_result(
+    database_path: str, account_id: int, *, status: str, message: str
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE network_accounts
+               SET last_test_status = ?,
+                   last_test_message = ?,
+                   last_test_at = CURRENT_TIMESTAMP,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (status, message, account_id),
+        )
+
+
+def delete_network_account(database_path: str, account_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE cameras SET network_account_id = NULL, network_device_mac = NULL WHERE network_account_id = ?",
+            (account_id,),
+        )
+        db.execute("DELETE FROM network_accounts WHERE id = ?", (account_id,))
+
+
+def count_network_accounts_by_module(database_path: str, module_key: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM network_accounts WHERE module_key = ?",
+            (module_key,),
+        ).fetchone()
+    return int(row["total"] if row else 0)
+
+
+def set_camera_network_mapping(
+    database_path: str, camera_id: int, *, network_account_id: int, mac: str
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cameras
+               SET network_account_id = ?, network_device_mac = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (network_account_id, mac.strip().lower(), camera_id),
+        )
+
+
+def clear_camera_network_mapping(database_path: str, camera_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cameras
+               SET network_account_id = NULL, network_device_mac = NULL, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (camera_id,),
+        )
 
 
 def create_plugin_source(

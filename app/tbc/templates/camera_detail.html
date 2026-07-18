@@ -42,6 +42,7 @@
 <nav class="detail-tabs" aria-label="Camera sections" data-i18n-aria-label="camera.camera_sections" role="tablist" data-detail-tabs>
   <button type="button" role="tab" aria-selected="true" aria-controls="camera-overview" data-detail-tab="overview" data-i18n="camera.overview">Overview</button>
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-plugin" data-detail-tab="plugin" data-i18n="camera.plugin">Plugin</button>
+  <button type="button" role="tab" aria-selected="false" aria-controls="camera-network" data-detail-tab="network" data-i18n="camera.network_tab">Network</button>
   {% if role == 'admin' %}
   {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Recording <span class="tab-count">{{ events | length }}</span></button>{% endif %}
   {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones">AI detection <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
@@ -248,6 +249,92 @@
   <div class="form-actions">
     <a class="secondary-button" href="/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
   </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+<div class="detail-tab-panel" id="camera-network" role="tabpanel" data-detail-panel="network" hidden>
+  {% if not network_accounts %}
+  <div class="diagnostic-note" data-i18n="camera.network_no_accounts_configured">No network provider account has been configured yet.</div>
+  {% if role == 'admin' %}
+  <div class="form-actions">
+    <a class="secondary-button" href="/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+  </div>
+  {% endif %}
+  {% elif camera.network_account_id and camera.network_device_mac %}
+  <section class="table-section">
+    <div class="section-title">
+      <h2 data-i18n="camera.network_tab">Network</h2>
+      {% if network_state %}
+      <span class="status-pill {{ 'status-active' if network_state.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if network_state.online else 'network_account.offline' }}">{{ 'online' if network_state.online else 'offline' }}</span>
+      {% endif %}
+    </div>
+    {% if not network_state %}
+    <div class="diagnostic-note diagnostic-warning" data-i18n="camera.device_status_being_retrieved_background">The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.</div>
+    {% else %}
+    <dl class="metric-row plugin-card-meta">
+      <div>
+        <dt data-i18n="camera.network_connection_type">Connection</dt>
+        <dd data-i18n="{{ 'network_account.wired' if network_state.connection_type == 'wired' else 'network_account.wifi' }}">{{ network_state.connection_type or '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.network_uplink">Connected via</dt>
+        <dd>{{ network_state.uplink_name or '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.network_signal">Signal</dt>
+        <dd>{% if network_state.signal_dbm is not none %}{{ network_state.signal_dbm }} dBm{% else %}–{% endif %}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.network_ip_address">IP address</dt>
+        <dd>{{ network_state.ip_address or '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.last_seen">Last seen</dt>
+        <dd>{% if network_state.last_seen %}{{ network_state.last_seen }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</dd>
+      </div>
+    </dl>
+    {% endif %}
+    <p class="hint-text">{{ camera.network_device_mac }}</p>
+  </section>
+  {% if role == 'admin' %}
+  <div class="form-actions">
+    <form method="post" action="/cameras/{{ camera.id }}/network/unlink">
+      <button class="danger-button" type="submit" data-i18n="network_account.unlink">Unlink</button>
+    </form>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="diagnostic-note" data-i18n="camera.network_not_mapped">This camera is not mapped to a network device yet.</div>
+  {% if role == 'admin' %}
+  <form class="inline-form" method="get" action="/cameras/{{ camera.id }}#network" data-network-picker-form>
+    <label>
+      <span data-i18n="network_account.account">Account</span>
+      <select name="network_account_id" data-network-picker-select>
+        <option value="" data-i18n="network_account.select_account">Select an account</option>
+        {% for account in network_accounts %}
+        <option value="{{ account.id }}" {% if account.id == network_picker_account_id %}selected{% endif %}>{{ account.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+  {% if network_picker_error %}
+  <div class="diagnostic-note diagnostic-warning">{{ network_picker_error }}</div>
+  {% elif network_picker_account_id %}
+  <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/network">
+    <input type="hidden" name="network_account_id" value="{{ network_picker_account_id }}">
+    <label>
+      <span data-i18n="network_account.device">Device</span>
+      <select name="mac" required>
+        <option value="" data-i18n="network_account.select_device">Select a device</option>
+        {% for device in network_picker_devices %}
+        <option value="{{ device.mac_address }}">{{ device.name }} ({{ device.mac_address }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="primary-button" type="submit" data-i18n="network_account.map_camera">Map camera</button>
+  </form>
+  {% endif %}
   {% endif %}
   {% endif %}
 </div>

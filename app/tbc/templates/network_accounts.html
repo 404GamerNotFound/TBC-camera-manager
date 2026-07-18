@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="camera_form.add_camera">Add camera</p>
+    <h1 data-i18n="network_account.network_accounts">Network accounts</h1>
+  </div>
+  <div class="form-actions">
+    <a class="secondary-button" href="/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
+    <a class="secondary-button" href="/network-modules" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+  </div>
+</section>
+
+{% if not network_modules %}
+<div class="quiet-box">
+  <span data-i18n="plugin.no_network_before">No network provider is installed yet. Install a</span>
+  <a href="/plugin-sources" data-i18n="plugin.network_plugin_link">network plugin from External sources</a>
+  <span data-i18n="plugin.no_network_after">before you can add an account.</span>
+</div>
+{% endif %}
+
+<form class="editor-form" method="post" action="/network-accounts" data-network-account-form data-plugin-selector-form>
+  <div class="section-title"><h2 data-i18n="network_account.add_account">Add account</h2></div>
+  <div class="form-grid">
+    <label class="span-2">
+      <span data-i18n="network_account.provider">Provider</span>
+      <select name="module_key" required data-network-account-provider>
+        {% for option in network_module_options %}
+        <option value="{{ option.key }}"
+                data-label="{{ option.label }}"
+                data-description="{{ option.description }}"
+                data-installed="{{ 'true' if option.installed else 'false' }}"
+                data-install-url="{{ option.install_url }}">
+          {{ option.label }}{% if option.description %} · {{ option.description }}{% endif %}{% if not option.installed %} · Not installed{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <small class="plugin-install-prompt">
+        <span data-i18n="plugin.network_install_prompt">Need another network provider?</span>
+        <a href="/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
+      </small>
+    </label>
+    <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
+    <label>
+      <span data-i18n="network_account.label">Label</span>
+      <input name="label" placeholder="e.g. Home" data-i18n-placeholder="plugin.account_label_placeholder">
+    </label>
+    {% for registration in network_modules %}
+      {% set provider_loop = loop %}
+      {% for field in registration.module.account_fields %}
+        {% if field.field_type.value == 'checkbox' %}
+        <label class="check-row{% if field.full_width %} span-2{% endif %}"
+               data-network-account-fields="{{ registration.module.key }}"{% if not provider_loop.first %} hidden{% endif %}>
+          <input name="account_{{ field.key }}" type="checkbox"{% if field.default %} checked{% endif %}{% if field.required %} required{% endif %}{% if not provider_loop.first %} disabled{% endif %}>
+          <span>{{ field.label }}</span>
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        </label>
+        {% else %}
+        <label class="{% if field.full_width %}span-2{% endif %}"
+               data-network-account-fields="{{ registration.module.key }}"{% if not provider_loop.first %} hidden{% endif %}>
+          <span>{{ field.label }}</span>
+          {% if field.field_type.value == 'select' %}
+          <select name="account_{{ field.key }}"{% if field.required %} required{% endif %}{% if not provider_loop.first %} disabled{% endif %}>
+            {% for option in field.options %}
+            <option value="{{ option.value }}"{% if option.value == field.default %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <input name="account_{{ field.key }}"
+                 type="{{ field.field_type.value }}"
+                 {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                 {% if field.default is not none %}value="{{ field.default }}"{% endif %}
+                 {% if field.minimum is not none %}min="{{ field.minimum }}"{% endif %}
+                 {% if field.maximum is not none %}max="{{ field.maximum }}"{% endif %}
+                 {% if field.autocomplete %}autocomplete="{{ field.autocomplete }}"{% endif %}
+                 {% if field.required %}required{% endif %}
+                 {% if not provider_loop.first %}disabled{% endif %}>
+          {% endif %}
+          {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+        </label>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit" data-i18n="network_account.add_account">Add account</button>
+  </div>
+</form>
+
+<section class="storage-list">
+  <div class="section-title">
+    <h2 data-i18n="network_account.configured_accounts">Configured accounts</h2>
+    <span>{{ accounts | length }}</span>
+  </div>
+  {% for account in accounts %}
+  <article class="storage-item" id="account-{{ account.id }}">
+    <div class="section-title">
+      <div>
+        <h3>{{ account.label }}</h3>
+        <p>{{ account.module_key }}{% if account.host %} · {{ account.host }}{% endif %}</p>
+      </div>
+      <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'not tested yet' }}</span>
+    </div>
+    <div class="form-actions">
+      <a class="secondary-button" href="/network-accounts/{{ account.id }}/edit" data-i18n="network_account.edit_account">Edit account</a>
+      <form method="post" action="/network-accounts/{{ account.id }}/test">
+        <button class="secondary-button" type="submit" data-i18n="network_account.test_connection">Test connection</button>
+      </form>
+      <form method="post" action="/network-accounts/{{ account.id }}/delete">
+        <button class="danger-button" type="submit" data-i18n="plugin.remove">Remove</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <p class="quiet-box" data-i18n="network_account.no_network_accounts_have_been">No network accounts have been configured yet.</p>
+  {% endfor %}
+</section>
+<script src="{{ url_for('static', path='/network-account-form.js') }}?v={{ asset_version }}" defer></script>
+{% endblock %}

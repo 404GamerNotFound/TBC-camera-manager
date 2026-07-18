@@ -120,6 +120,13 @@ STANDARD_PLUGIN_SOURCES = (
         description="UniFi Protect cameras via a generated RTSP/RTSPS link",
         repo_url="https://github.com/404GamerNotFound/TBC-ubiquiti",
     ),
+    StandardPluginSource(
+        key="unifi-network",
+        plugin_kind="network",
+        label="Ubiquiti UniFi Network",
+        description="Maps cameras to UniFi Network clients for live connectivity status (AP/switch, signal, online state)",
+        repo_url="https://github.com/404GamerNotFound/TBC-network-ubiquiti",
+    ),
 )
 
 

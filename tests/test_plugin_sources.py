@@ -78,7 +78,8 @@ class StandardPluginSourceTests(unittest.TestCase):
             "ubiquiti": "TBC-ubiquiti",
         }
 
-        self.assertEqual({source.key for source in STANDARD_PLUGIN_SOURCES}, set(expected_repositories))
+        camera_sources = {source.key for source in STANDARD_PLUGIN_SOURCES if source.plugin_kind == "camera"}
+        self.assertEqual(camera_sources, set(expected_repositories))
         for key, repository in expected_repositories.items():
             with self.subTest(key=key):
                 source = get_standard_plugin_source(key.upper())
@@ -88,6 +89,15 @@ class StandardPluginSourceTests(unittest.TestCase):
                 self.assertEqual(source.ref, "main")
                 self.assertEqual(source.subdirectory, "")
                 self.assertIn(source, STANDARD_PLUGIN_SOURCES)
+
+    def test_network_standard_repository_is_available(self):
+        source = get_standard_plugin_source("unifi-network")
+
+        self.assertIsNotNone(source)
+        self.assertEqual(source.plugin_kind, "network")
+        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-network-ubiquiti")
+        self.assertEqual(source.ref, "main")
+        self.assertEqual(source.subdirectory, "")
 
     def test_unknown_standard_repository_returns_none(self):
         self.assertIsNone(get_standard_plugin_source("unknown"))

@@ -40,6 +40,11 @@
     });
   });
 
+  const networkPickerSelect = document.querySelector("[data-network-picker-select]");
+  if (networkPickerSelect) {
+    networkPickerSelect.addEventListener("change", () => networkPickerSelect.form.submit());
+  }
+
   document.querySelectorAll("[data-trigger-fieldset]").forEach((triggerFieldset) => {
     triggerFieldset.querySelectorAll("[data-trigger-selection]").forEach((button) => {
       button.addEventListener("click", () => {

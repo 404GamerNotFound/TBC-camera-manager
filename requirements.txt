@@ -11,6 +11,7 @@ reolink-aio==0.21.3
 uiprotect==15.12.2
 pyeufysecurity==0.4.4
 ewelink==0.2.1
+aiounifi==55
 boto3>=1.43.49,<2
 paho-mqtt==2.1.0
 numpy>=2.5.1,<3

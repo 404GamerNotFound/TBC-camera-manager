@@ -22,6 +22,7 @@ class Settings:
     camera_modules_path: str = "/data/camera-modules"
     theme_modules_path: str = "/data/design-themes"
     cloud_modules_path: str = "/data/cloud-modules"
+    network_modules_path: str = "/data/network-modules"
     detection_models_path: str = "/data/detection-models"
     detection_default_sample_fps: float = 2.0
     detection_default_confidence_threshold: float = 0.5
@@ -47,6 +48,7 @@ def load_settings() -> Settings:
         camera_modules_path=os.getenv("TBC_CAMERA_MODULES_PATH", "/data/camera-modules"),
         theme_modules_path=os.getenv("TBC_THEME_MODULES_PATH", "/data/design-themes"),
         cloud_modules_path=os.getenv("TBC_CLOUD_MODULES_PATH", "/data/cloud-modules"),
+        network_modules_path=os.getenv("TBC_NETWORK_MODULES_PATH", "/data/network-modules"),
         detection_models_path=os.getenv("TBC_DETECTION_MODELS_PATH", "/data/detection-models"),
         detection_default_sample_fps=max(0.1, float(os.getenv("TBC_DETECTION_SAMPLE_FPS", "2.0"))),
         detection_default_confidence_threshold=min(

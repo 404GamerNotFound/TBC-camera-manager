@@ -59,6 +59,22 @@ from .cloud_modules.packages import (
     remove_external_plugin as remove_external_cloud_plugin,
 )
 from .cloud_modules.registry import UnknownCloudModuleError
+from .network_modules import (
+    NetworkAccountFieldType,
+    NetworkAccountValidationError,
+    NetworkConnectionError,
+    get_network_module,
+    list_network_module_registrations,
+    normalize_account_configuration as normalize_network_account_configuration,
+    reload_network_modules,
+)
+from .network_modules.packages import (
+    NetworkPluginError,
+    export_plugin_archive as export_network_plugin_archive,
+    install_plugin_archive as install_network_plugin_archive,
+    remove_external_plugin as remove_external_network_plugin,
+)
+from .network_modules.registry import UnknownNetworkModuleError
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
@@ -96,6 +112,7 @@ from .plugin_templates import (
     build_camera_plugin_template,
     build_cloud_plugin_template,
     build_design_theme_template,
+    build_network_plugin_template,
 )
 from .plugin_testing import run_plugin_tests
 from .notifications import notify_event
@@ -189,6 +206,16 @@ CONTROL_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 # (or the background cache refresh) far longer than any UI should keep a user
 # waiting on a single click.
 CONTROL_TIMEOUT_SECONDS = 20
+# One controller call (discover_devices) returns every client the account
+# knows about, so this is cached per network_account_id rather than per
+# camera - every camera mapped to that account is served from the same
+# refresh, mirroring CONTROL_STATE_CACHE's lazy-probe/background-refresh
+# pattern above so a camera-detail page view never blocks on a live
+# network-controller round-trip.
+NETWORK_STATE_CACHE: dict[int, list[dict[str, Any]]] = {}
+NETWORK_STATE_PROBES_IN_FLIGHT: set[int] = set()
+NETWORK_STATE_PROBE_RETRY_AFTER: dict[int, float] = {}
+NETWORK_STATE_PROBE_RETRY_COOLDOWN_SECONDS = 30
 PLUGIN_SOURCE_FETCH_TIMEOUT_SECONDS = 30
 PLUGIN_SOURCE_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
 APP_UPDATE_CHECK_INTERVAL_SECONDS = 60 * 60
@@ -621,7 +648,12 @@ async def create_camera(
 
 
 @app.get("/cameras/{camera_id}", response_class=HTMLResponse)
-async def camera_detail(request: Request, camera_id: int, control_channel: int | None = Query(None)):
+async def camera_detail(
+    request: Request,
+    camera_id: int,
+    control_channel: int | None = Query(None),
+    network_account_id: int | None = Query(None),
+):
     guard = _require_camera_access(request, camera_id)
     if guard:
         return guard
@@ -678,6 +710,52 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             # unreachable/slow camera. The page renders immediately with a
             # "status unknown" fallback and picks up fresh data on next visit.
             _kick_off_control_probe(camera_id, camera, camera_module, channel=selected_control_channel)
+    network_accounts = database.list_network_accounts(SETTINGS.database_path)
+    network_state = None
+    if camera.get("network_account_id") and camera.get("network_device_mac"):
+        cached_devices = NETWORK_STATE_CACHE.get(int(camera["network_account_id"]))
+        if cached_devices is None:
+            _kick_off_network_probe(int(camera["network_account_id"]))
+        else:
+            network_state = next(
+                (
+                    device
+                    for device in cached_devices
+                    if str(device["mac_address"]).strip().lower() == camera["network_device_mac"]
+                ),
+                None,
+            )
+    # Populated only when the admin explicitly opens the device picker
+    # (?network_account_id=...) - unlike network_state above, this is a
+    # deliberate on-demand action, not something every page view should pay
+    # the cost of, so it calls the controller synchronously with a timeout
+    # instead of going through the background cache.
+    network_picker_devices: list[dict[str, Any]] = []
+    network_picker_error: str | None = None
+    if network_account_id is not None:
+        picker_account = database.get_network_account(SETTINGS.database_path, network_account_id)
+        if picker_account is None:
+            network_picker_error = _t_en("network_account.not_found")
+        else:
+            try:
+                network_module = get_network_module(picker_account["module_key"])
+            except UnknownNetworkModuleError as exc:
+                network_picker_error = str(exc)
+            else:
+                try:
+                    devices = await asyncio.wait_for(
+                        network_module.discover_devices(picker_account), timeout=CONTROL_TIMEOUT_SECONDS
+                    )
+                except asyncio.TimeoutError:
+                    network_picker_error = _t_en("network_account.discovery_timeout", seconds=CONTROL_TIMEOUT_SECONDS)
+                except NetworkConnectionError as exc:
+                    network_picker_error = str(exc)
+                except Exception as exc:
+                    LOGGER.info("Network device picker failed for account %s: %s", network_account_id, exc)
+                    network_picker_error = str(exc)
+                else:
+                    network_picker_devices = [_network_device_to_dict(device) for device in devices]
+                    NETWORK_STATE_CACHE[network_account_id] = network_picker_devices
     return templates.TemplateResponse(
         request,
         "camera_detail.html",
@@ -709,9 +787,49 @@ async def camera_detail(request: Request, camera_id: int, control_channel: int |
             "control_channel_options": control_channel_options,
             "selected_control_channel": selected_control_channel,
             "control_live_key": control_live_key,
+            "network_accounts": network_accounts,
+            "network_state": network_state,
+            "network_picker_account_id": network_account_id,
+            "network_picker_devices": network_picker_devices,
+            "network_picker_error": network_picker_error,
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.post("/cameras/{camera_id}/network")
+async def set_camera_network_mapping_route(
+    request: Request,
+    camera_id: int,
+    network_account_id: int = Form(...),
+    mac: str = Form(...),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "camera.not_found", None, "error")
+        return _redirect("/cameras")
+    if not mac.strip():
+        _set_flash(request, "network_account.select_device_required", None, "error")
+        return _redirect(f"/cameras/{camera_id}?network_account_id={network_account_id}#network")
+    database.set_camera_network_mapping(
+        SETTINGS.database_path, camera_id, network_account_id=network_account_id, mac=mac
+    )
+    _kick_off_network_probe(network_account_id)
+    _set_flash(request, "network_account.camera_mapped")
+    return _redirect(f"/cameras/{camera_id}#network")
+
+
+@app.post("/cameras/{camera_id}/network/unlink")
+async def clear_camera_network_mapping_route(request: Request, camera_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.clear_camera_network_mapping(SETTINGS.database_path, camera_id)
+    _set_flash(request, "network_account.camera_unmapped")
+    return _redirect(f"/cameras/{camera_id}#network")
 
 
 @app.get("/cameras/{camera_id}/snapshot.jpg")
@@ -1020,6 +1138,60 @@ async def _publish_control_state(camera_id: int, camera: dict[str, Any], camera_
         await asyncio.to_thread(mqtt.publish_control_state, SETTINGS.database_path, camera, control_state)
     finally:
         CONTROL_STATE_PROBES_IN_FLIGHT.discard(key)
+
+
+def _kick_off_network_probe(network_account_id: int) -> None:
+    if network_account_id in NETWORK_STATE_PROBES_IN_FLIGHT:
+        return
+    retry_after = NETWORK_STATE_PROBE_RETRY_AFTER.get(network_account_id)
+    if retry_after is not None and asyncio.get_running_loop().time() < retry_after:
+        return
+    NETWORK_STATE_PROBES_IN_FLIGHT.add(network_account_id)
+    asyncio.create_task(_publish_network_state(network_account_id))
+
+
+async def _publish_network_state(network_account_id: int) -> None:
+    try:
+        account = database.get_network_account(SETTINGS.database_path, network_account_id)
+        if not account:
+            return
+        try:
+            network_module = get_network_module(account["module_key"])
+        except UnknownNetworkModuleError:
+            return
+        try:
+            devices = await asyncio.wait_for(
+                network_module.discover_devices(account), timeout=CONTROL_TIMEOUT_SECONDS
+            )
+        except (asyncio.TimeoutError, NetworkConnectionError):
+            LOGGER.debug("Network device fetch failed for account %s", network_account_id, exc_info=True)
+            NETWORK_STATE_PROBE_RETRY_AFTER[network_account_id] = (
+                asyncio.get_running_loop().time() + NETWORK_STATE_PROBE_RETRY_COOLDOWN_SECONDS
+            )
+            return
+        except Exception:
+            LOGGER.debug("Network device fetch failed for account %s", network_account_id, exc_info=True)
+            NETWORK_STATE_PROBE_RETRY_AFTER[network_account_id] = (
+                asyncio.get_running_loop().time() + NETWORK_STATE_PROBE_RETRY_COOLDOWN_SECONDS
+            )
+            return
+        NETWORK_STATE_CACHE[network_account_id] = [_network_device_to_dict(device) for device in devices]
+        NETWORK_STATE_PROBE_RETRY_AFTER.pop(network_account_id, None)
+    finally:
+        NETWORK_STATE_PROBES_IN_FLIGHT.discard(network_account_id)
+
+
+def _network_device_to_dict(device: Any) -> dict[str, Any]:
+    return {
+        "mac_address": device.mac_address,
+        "name": device.name,
+        "ip_address": device.ip_address,
+        "online": device.online,
+        "connection_type": device.connection_type,
+        "uplink_name": device.uplink_name,
+        "signal_dbm": device.signal_dbm,
+        "last_seen": device.last_seen,
+    }
 
 
 @app.post("/cameras/{camera_id}/recording")
@@ -3183,6 +3355,312 @@ async def import_cloud_device_route(
     return _redirect(f"/cameras/{camera_id}")
 
 
+@app.get("/network-modules", response_class=HTMLResponse)
+async def network_modules_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registrations = list_network_module_registrations()
+    return templates.TemplateResponse(
+        request,
+        "network_modules.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "registrations": registrations,
+            "account_counts": {
+                registration.module.key: database.count_network_accounts_by_module(
+                    SETTINGS.database_path, registration.module.key
+                )
+                for registration in registrations
+            },
+            "has_tests": {
+                registration.module.key: _plugin_has_tests(registration.package)
+                for registration in registrations
+            },
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/network-modules/import")
+async def import_network_module(request: Request, plugin_file: UploadFile = File(...)):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        archive = await plugin_file.read(10 * 1024 * 1024 + 1)
+        package = install_network_plugin_archive(archive, SETTINGS.network_modules_path)
+        reload_network_modules()
+        _set_flash(request, "plugin.network_installed", {"label": package.manifest.label})
+    except (NetworkPluginError, OSError) as exc:
+        _set_flash(request, "plugin.network_import_failed", {"error": exc}, "error")
+    finally:
+        await plugin_file.close()
+    return _redirect("/network-modules")
+
+
+@app.get("/network-modules/{module_key}/export")
+async def export_network_module(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registration = next(
+        (item for item in list_network_module_registrations() if item.module.key == module_key),
+        None,
+    )
+    if registration is None:
+        return JSONResponse({"error": "Plugin cannot be exported"}, status_code=status.HTTP_404_NOT_FOUND)
+    archive = export_network_plugin_archive(registration.package)
+    filename = f"tbc-network-plugin-{registration.module.key}-{registration.version}.zip"
+    return Response(
+        archive,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/network-modules/{module_key}/delete")
+async def delete_network_module(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account_count = database.count_network_accounts_by_module(SETTINGS.database_path, module_key)
+    if account_count:
+        _set_flash(request, "plugin.network_still_in_use", {"count": account_count}, "error")
+        return _redirect("/network-modules")
+    try:
+        remove_external_network_plugin(module_key, SETTINGS.network_modules_path)
+        reload_network_modules()
+        _set_flash(request, "plugin.network_removed")
+    except (NetworkPluginError, OSError) as exc:
+        _set_flash(request, "plugin.network_remove_failed", {"error": exc}, "error")
+    return _redirect("/network-modules")
+
+
+@app.post("/network-modules/{module_key}/run-tests")
+async def run_network_module_tests(request: Request, module_key: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    registration = next(
+        (item for item in list_network_module_registrations() if item.module.key == module_key),
+        None,
+    )
+    if registration is None:
+        _set_flash(request, "plugin.no_tests_available", None, "error")
+        return _redirect("/network-modules")
+    result = await run_plugin_tests(registration.package.path, "network")
+    if not result.ran:
+        _set_flash(request, "common.raw_message", {"message": result.summary}, "error")
+    else:
+        LOGGER.info("Plugin-Tests für %s: %s\n%s", module_key, result.summary, result.output)
+        _set_flash(request, "plugin.test_result", {"module_key": module_key, "summary": result.summary})
+    return _redirect("/network-modules")
+
+
+@app.get("/network-accounts", response_class=HTMLResponse)
+async def network_accounts_page(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "network_accounts.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "network_modules": list_network_module_registrations(),
+            "network_module_options": _network_module_selector_options(),
+            "accounts": database.list_network_accounts(SETTINGS.database_path),
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/network-accounts", response_class=HTMLResponse)
+async def create_network_account_route(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    form = await request.form()
+    module_key = str(form.get("module_key") or "")
+    label = str(form.get("label") or "")
+    try:
+        network_module = get_network_module(module_key)
+    except UnknownNetworkModuleError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect("/network-accounts")
+    try:
+        config = normalize_network_account_configuration(
+            network_module.account_fields,
+            {
+                field.key: form.get(f"account_{field.key}")
+                for field in network_module.account_fields
+            },
+        )
+    except NetworkAccountValidationError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect("/network-accounts")
+    database.create_network_account(
+        SETTINGS.database_path,
+        module_key=network_module.key,
+        label=label.strip() or network_module.label,
+        config=config,
+    )
+    _set_flash(request, "network_account.added")
+    return _redirect("/network-accounts")
+
+
+@app.get("/network-accounts/{account_id}/edit", response_class=HTMLResponse)
+async def edit_network_account_page(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_network_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "network_account.not_found", None, "error")
+        return _redirect("/network-accounts")
+    try:
+        network_module = get_network_module(account["module_key"])
+    except UnknownNetworkModuleError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect("/network-accounts")
+    return templates.TemplateResponse(
+        request,
+        "network_account_edit.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "account": account,
+            "network_module": network_module,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/network-accounts/{account_id}/edit")
+async def update_network_account_route(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account = database.get_network_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "network_account.not_found", None, "error")
+        return _redirect("/network-accounts")
+    try:
+        network_module = get_network_module(account["module_key"])
+    except UnknownNetworkModuleError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect("/network-accounts")
+    form = await request.form()
+    submitted: dict[str, Any] = {}
+    for field in network_module.account_fields:
+        value = form.get(f"account_{field.key}")
+        if field.field_type == NetworkAccountFieldType.PASSWORD and not value:
+            value = account["config"].get(field.key, "")
+        submitted[field.key] = value
+    try:
+        config = normalize_network_account_configuration(network_module.account_fields, submitted)
+    except NetworkAccountValidationError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect(f"/network-accounts/{account_id}/edit")
+    label = str(form.get("label") or "").strip() or network_module.label
+    database.update_network_account_configuration(
+        SETTINGS.database_path,
+        account_id,
+        label=label,
+        config=config,
+    )
+    _set_flash(request, "network_account.updated")
+    return _redirect(f"/network-accounts#account-{account_id}")
+
+
+@app.post("/network-accounts/{account_id}/delete")
+async def delete_network_account_route(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.delete_network_account(SETTINGS.database_path, account_id)
+    NETWORK_STATE_CACHE.pop(account_id, None)
+    _set_flash(request, "network_account.removed")
+    return _redirect("/network-accounts")
+
+
+@app.post("/network-accounts/{account_id}/test")
+async def test_network_account_route(request: Request, account_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    account_url = f"/network-accounts#account-{account_id}"
+    account = database.get_network_account(SETTINGS.database_path, account_id)
+    if not account:
+        _set_flash(request, "network_account.not_found", None, "error")
+        return _redirect(account_url)
+    try:
+        network_module = get_network_module(account["module_key"])
+    except UnknownNetworkModuleError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect(account_url)
+    try:
+        devices = await asyncio.wait_for(
+            network_module.discover_devices(account), timeout=CONTROL_TIMEOUT_SECONDS
+        )
+    except asyncio.TimeoutError:
+        message = _t_en("network_account.discovery_timeout", seconds=CONTROL_TIMEOUT_SECONDS)
+        database.update_network_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
+        _set_flash(request, "common.raw_message", {"message": message}, "error")
+        return _redirect(account_url)
+    except NetworkConnectionError as exc:
+        database.update_network_account_test_result(SETTINGS.database_path, account_id, status="error", message=str(exc))
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect(account_url)
+    except Exception as exc:
+        LOGGER.info("Network account test failed for %s: %s", account_id, exc)
+        message = str(exc)
+        database.update_network_account_test_result(SETTINGS.database_path, account_id, status="error", message=message)
+        _set_flash(request, "common.raw_message", {"message": message}, "error")
+        return _redirect(account_url)
+    NETWORK_STATE_CACHE[account_id] = [_network_device_to_dict(device) for device in devices]
+    message = _t_en("network_account.connected_devices_found", count=len(devices))
+    database.update_network_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
+    _set_flash(request, "common.raw_message", {"message": message})
+    return _redirect(account_url)
+
+
+def _network_module_selector_options() -> list[dict[str, Any]]:
+    registrations = list_network_module_registrations()
+    options = [
+        {
+            "key": registration.module.key,
+            "label": registration.module.label,
+            "description": registration.module.description,
+            "installed": True,
+            "install_url": "/plugin-sources",
+        }
+        for registration in registrations
+    ]
+    candidates = list_uninstalled_plugin_candidates(
+        "network",
+        (registration.module.key for registration in registrations),
+        database.list_plugin_sources(SETTINGS.database_path),
+    )
+    options.extend(
+        {
+            "key": candidate.key,
+            "label": candidate.label,
+            "description": candidate.description,
+            "installed": False,
+            "install_url": candidate.install_url,
+        }
+        for candidate in candidates
+    )
+    return options
+
+
 @app.get("/design", response_class=HTMLResponse)
 async def design_themes_page(request: Request):
     guard = _require_admin(request)
@@ -3274,6 +3752,7 @@ async def delete_design_theme(request: Request, theme_key: str):
 _PLUGIN_TEMPLATE_BUILDERS = {
     "camera": (build_camera_plugin_template, "acme_camera"),
     "cloud": (build_cloud_plugin_template, "acme_cloud"),
+    "network": (build_network_plugin_template, "acme_network"),
     "design": (build_design_theme_template, "acme_design"),
 }
 
@@ -3332,7 +3811,7 @@ async def create_plugin_source_route(
     guard = _require_admin(request)
     if guard:
         return guard
-    if plugin_kind not in ("camera", "cloud", "design"):
+    if plugin_kind not in ("camera", "cloud", "network", "design"):
         _set_flash(request, "plugin.invalid_kind", None, "error")
         return _redirect("/plugin-sources")
     try:
@@ -4425,6 +4904,13 @@ async def _poll_loop() -> None:
                     await _refresh_camera(int(camera["id"]))
                 except Exception:
                     LOGGER.exception("Background refresh failed for camera %s", camera.get("id"))
+            for account in database.list_network_accounts(SETTINGS.database_path):
+                if int(account.get("enabled") or 0) != 1:
+                    continue
+                try:
+                    await _publish_network_state(int(account["id"]))
+                except Exception:
+                    LOGGER.exception("Background refresh failed for network account %s", account.get("id"))
         except Exception:
             LOGGER.exception("Background camera refresh failed")
         await asyncio.sleep(SETTINGS.poll_interval_seconds)
@@ -5029,6 +5515,10 @@ def _install_plugin_for_kind(plugin_kind: str, archive: bytes) -> str:
     if plugin_kind == "cloud":
         package = install_cloud_plugin_archive(archive, SETTINGS.cloud_modules_path)
         reload_cloud_modules()
+        return package.manifest.key
+    if plugin_kind == "network":
+        package = install_network_plugin_archive(archive, SETTINGS.network_modules_path)
+        reload_network_modules()
         return package.manifest.key
     if plugin_kind == "design":
         package = install_theme_archive(archive, SETTINGS.theme_modules_path)
