@@ -50,6 +50,7 @@ RESERVED_FIELD_KEYS = {
     "updated_at",
 }
 ALLOWED_SUFFIXES = {".py", ".json", ".yaml", ".yml", ".md", ".txt"}
+ALLOWED_BARE_FILENAMES = {"LICENSE", "COPYING", "NOTICE"}
 
 
 class CloudPluginError(ValueError):
@@ -447,7 +448,11 @@ def _validated_members(bundle: zipfile.ZipFile) -> tuple[list[zipfile.ZipInfo], 
         mode = member.external_attr >> 16
         if mode and stat.S_ISLNK(mode):
             raise CloudPluginError("Symbolic links are not allowed in plugins")
-        if not member.is_dir() and path.suffix.lower() not in ALLOWED_SUFFIXES:
+        if (
+            not member.is_dir()
+            and path.suffix.lower() not in ALLOWED_SUFFIXES
+            and path.name not in ALLOWED_BARE_FILENAMES
+        ):
             raise CloudPluginError(f"Nicht erlaubter Dateityp: {path.suffix or member.filename}")
         total_size += member.file_size
         if total_size > MAX_EXTRACTED_BYTES:

@@ -43,4 +43,45 @@
   </div>
 </section>
 {% endfor %}
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="license.installed_plugins">Installed plugins</h2>
+    <span>{{ plugin_licenses | length }}</span>
+  </div>
+  <p class="hint-text" data-i18n="license.installed_plugins_intro">
+    Camera, cloud, network, and design plugins are separate projects an administrator chose to install. Each one
+    listed here bundles its own LICENSE, COPYING, or NOTICE file, shown as installed - a plugin without one of
+    those files simply doesn't appear.
+  </p>
+  {% if plugin_licenses %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-i18n="api_access.tool">Tool</th>
+          <th data-i18n="plugin_source.plugin_type">Plugin type</th>
+          <th data-i18n="base.license">License</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in plugin_licenses %}
+        <tr>
+          <td>{{ entry.label }} <small>({{ entry.key }})</small></td>
+          <td>{{ entry.kind_label }}</td>
+          <td>
+            <details>
+              <summary data-i18n="license.view_license_text">View license text</summary>
+              <pre class="license-text">{{ entry.license_text }}</pre>
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="quiet-box" data-i18n="license.no_plugin_licenses_found">No installed plugin includes a license file yet.</p>
+  {% endif %}
+</section>
 {% endblock %}

@@ -211,7 +211,6 @@ class ExtractPluginArchiveTests(unittest.TestCase):
                 ".github/workflows/tests.yml": "name: tests",
                 "__pycache__/plugin.cpython-311.pyc": b"compiled",
                 "module.pyc": b"compiled",
-                "LICENSE": "MIT License...",
                 "manifest.json": "{}",
                 "plugin.py": "x = 1",
             }
@@ -221,6 +220,22 @@ class ExtractPluginArchiveTests(unittest.TestCase):
 
         with zipfile.ZipFile(io.BytesIO(result)) as bundle:
             self.assertEqual(sorted(bundle.namelist()), ["plugin/manifest.json", "plugin/plugin.py"])
+
+    def test_license_file_is_kept_in_the_plugin_package(self):
+        archive = _fake_github_zip(
+            entries={
+                "LICENSE": "MIT License...",
+                "manifest.json": "{}",
+                "plugin.py": "x = 1",
+            }
+        )
+
+        result = extract_plugin_archive(archive, "")
+
+        with zipfile.ZipFile(io.BytesIO(result)) as bundle:
+            self.assertEqual(
+                sorted(bundle.namelist()), ["plugin/LICENSE", "plugin/manifest.json", "plugin/plugin.py"]
+            )
 
 
 class FetchGithubRepoArchiveTests(unittest.TestCase):

@@ -1325,6 +1325,20 @@ code {
   white-space: pre;
 }
 
+.license-text {
+  margin: 6px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
 .code-block code {
   color: var(--text);
   font-size: inherit;

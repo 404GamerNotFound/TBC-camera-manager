@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import __version__, audit, backup, database, mqtt
-from .licenses import THIRD_PARTY_LICENSES
+from .licenses import THIRD_PARTY_LICENSES, list_plugin_licenses
 from .api_common import (
     api_auth_error,
     camera_public_dict as _camera_public_dict,
@@ -3968,6 +3968,7 @@ async def license_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "categories": categories,
+            "plugin_licenses": list_plugin_licenses(),
             "flash": _pop_flash(request),
         },
     )

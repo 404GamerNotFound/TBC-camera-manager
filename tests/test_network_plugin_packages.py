@@ -115,6 +115,15 @@ class NetworkPluginPackageTests(unittest.TestCase):
             with self.assertRaisesRegex(NetworkPluginError, "not a valid ZIP"):
                 install_plugin_archive(b"not a zip", external_path)
 
+    def test_bundled_license_file_is_kept_after_install(self):
+        archive = plugin_archive(wrapped=True, extra_files=[("acme-network-plugin/LICENSE", "MIT License...")])
+
+        with tempfile.TemporaryDirectory() as external_path:
+            package = install_plugin_archive(archive, external_path)
+
+            self.assertTrue((package.path / "LICENSE").is_file())
+            self.assertEqual((package.path / "LICENSE").read_text(), "MIT License...")
+
     def test_normalize_account_configuration_validates_required_fields(self):
         with tempfile.TemporaryDirectory() as external_path:
             package = install_plugin_archive(plugin_archive(), external_path)

@@ -155,6 +155,15 @@ class CloudPluginPackageTests(unittest.TestCase):
             with self.assertRaisesRegex(CloudPluginError, "not a valid ZIP"):
                 install_plugin_archive(b"not a zip", external_path)
 
+    def test_bundled_license_file_is_kept_after_install(self):
+        archive = plugin_archive(wrapped=True, extra_files=[("acme-cloud-plugin/LICENSE", "MIT License...")])
+
+        with tempfile.TemporaryDirectory() as external_path:
+            package = install_plugin_archive(archive, external_path)
+
+            self.assertTrue((package.path / "LICENSE").is_file())
+            self.assertEqual((package.path / "LICENSE").read_text(), "MIT License...")
+
 
 if __name__ == "__main__":
     unittest.main()
