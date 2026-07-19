@@ -89,7 +89,7 @@
           <td>{{ camera.sample_fps }}</td>
           <td>{{ camera.confidence_threshold }}</td>
           <td>{{ camera.zone_count }}</td>
-          <td><a class="text-button" href="/cameras/{{ camera.camera_id }}#ai-zones" data-i18n="dashboard.open">Open</a></td>
+          <td><a class="text-button" href="{{ ingress_prefix }}/cameras/{{ camera.camera_id }}#ai-zones" data-i18n="dashboard.open">Open</a></td>
         </tr>
         {% else %}
         <tr>

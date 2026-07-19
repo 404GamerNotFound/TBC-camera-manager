@@ -43,7 +43,7 @@
 
   async function refresh() {
     try {
-      const response = await fetch("/api/debug-log?limit=250", { cache: "no-store" });
+      const response = await fetch(tbcUrl("/api/debug-log?limit=250"), { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
       render(payload.entries || []);

@@ -7,7 +7,7 @@
     <h1 data-i18n="nav.cameras">Cameras</h1>
   </div>
   {% if role == 'admin' %}
-  <a class="primary-button" href="/cameras/new" data-i18n="dashboard.camera">+ Camera</a>
+  <a class="primary-button" href="{{ ingress_prefix }}/cameras/new" data-i18n="dashboard.camera">+ Camera</a>
   {% endif %}
 </section>
 
@@ -17,7 +17,7 @@
   <article class="camera-card">
     <div class="card-header">
       <div>
-        <h2><a href="/cameras/{{ camera.id }}">{{ camera.name }}</a></h2>
+        <h2><a href="{{ ingress_prefix }}/cameras/{{ camera.id }}">{{ camera.name }}</a></h2>
         <p>{{ camera.host }}:{{ camera.onvif_port }}</p>
       </div>
       <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'new' }}</span>
@@ -58,7 +58,7 @@
     </div>
     {% if camera.stream_uri %}
     <figure class="camera-snapshot">
-      <img src="/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
+      <img src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
            alt="Current preview image from {{ camera.name }}"
            data-i18n-alt="dashboard.current_preview_from"
            data-i18n-params='{{ {"camera": camera.name} | tojson }}'
@@ -85,7 +85,7 @@
     </dl>
     <div class="card-footer">
       <span>{{ camera.model or 'Model unknown' }}</span>
-      <a class="text-button" href="/cameras/{{ camera.id }}" data-i18n="dashboard.open">Open</a>
+      <a class="text-button" href="{{ ingress_prefix }}/cameras/{{ camera.id }}" data-i18n="dashboard.open">Open</a>
     </div>
   </article>
   {% endfor %}
@@ -94,7 +94,7 @@
 <section class="empty-state">
   <h2 data-i18n="dashboard.no_camera_yet">No camera yet</h2>
   {% if role == 'admin' %}
-  <a class="primary-button" href="/cameras/new" data-i18n="dashboard.camera">+ Camera</a>
+  <a class="primary-button" href="{{ ingress_prefix }}/cameras/new" data-i18n="dashboard.camera">+ Camera</a>
   {% endif %}
 </section>
 {% endif %}

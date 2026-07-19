@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import __version__, audit, backup, database, mqtt
+from .ingress import IngressPathMiddleware
 from .licenses import THIRD_PARTY_LICENSES, list_plugin_licenses
 from .api_common import (
     api_auth_error,
@@ -159,6 +160,12 @@ app.add_middleware(
     same_site="lax",
     https_only=SETTINGS.cookie_secure,
 )
+# Starlette's add_middleware() makes the most-recently-added middleware the
+# outermost one (see build_middleware_stack()), so registering this *after*
+# SessionMiddleware is what makes it wrap it - required so it can rewrite
+# the Set-Cookie header SessionMiddleware just emitted, and so it sets
+# scope["root_path"]/state before SessionMiddleware or any route runs.
+app.add_middleware(IngressPathMiddleware)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 
@@ -184,9 +191,14 @@ def _app_update_context(request: Request) -> dict[str, Any]:
     }
 
 
+def _ingress_context(request: Request) -> dict[str, Any]:
+    # Empty string outside Home Assistant Ingress - see app/tbc/ingress.py.
+    return {"ingress_prefix": request.state.ingress_prefix}
+
+
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates",
-    context_processors=[_active_theme_context, _pending_plugin_updates_context, _app_update_context],
+    context_processors=[_active_theme_context, _pending_plugin_updates_context, _app_update_context, _ingress_context],
 )
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 templates.env.filters["tojson"] = tojson_html_safe
@@ -1759,8 +1771,8 @@ async def timeline_view(
             start_at=start_at,
             end_at=end_at,
         )
-        timeline_segments = _timeline_payload(row for row in rows if row["detection_key"] == "continuous")
-        timeline_events = _timeline_payload(row for row in rows if row["detection_key"] != "continuous")
+        timeline_segments = _timeline_payload(request, (row for row in rows if row["detection_key"] == "continuous"))
+        timeline_events = _timeline_payload(request, (row for row in rows if row["detection_key"] != "continuous"))
 
     return templates.TemplateResponse(
         request,
@@ -1817,7 +1829,7 @@ async def activity_view(request: Request, day: str | None = Query(None)):
         {
             "id": int(camera["id"]),
             "name": camera["name"],
-            "events": _timeline_payload(events_by_camera.get(int(camera["id"]), [])),
+            "events": _timeline_payload(request, events_by_camera.get(int(camera["id"]), [])),
             "sd_card_available": _camera_supports(camera, CameraCapability.ARCHIVE),
         }
         for camera in cameras
@@ -1980,7 +1992,7 @@ async def sd_card_recordings_api(
             status_code=status.HTTP_502_BAD_GATEWAY,
         )
     return {
-        "recordings": [_sd_card_recording_payload(camera_id, row) for row in recordings],
+        "recordings": [_sd_card_recording_payload(request, camera_id, row) for row in recordings],
         "filters": {
             "camera_id": camera_id,
             "channel": selected_channel,
@@ -2329,7 +2341,7 @@ async def live_view(request: Request):
             "app_name": SETTINGS.app_name,
             "username": request.session.get("username"),
             "role": user["role"],
-            "live_items": [_live_item_payload(item) for item in live_items],
+            "live_items": [_live_item_payload(request, item) for item in live_items],
             "wall_settings": database.get_live_wall_settings(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
@@ -2396,7 +2408,7 @@ async def live_status_api(request: Request):
     if not _is_logged_in(request):
         return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
     user = _current_user(request)
-    return {"items": [_live_item_payload(item) for item in _live_items_for_user(user)]}
+    return {"items": [_live_item_payload(request, item) for item in _live_items_for_user(user)]}
 
 
 @app.post("/api/live/start-all")
@@ -2407,7 +2419,7 @@ async def start_all_live_api(request: Request):
     items = _live_items_for_user(user)
     for item in items:
         _start_live_item(item)
-    return {"items": [_live_item_payload(item) for item in items]}
+    return {"items": [_live_item_payload(request, item) for item in items]}
 
 
 @app.post("/api/live/{live_key}/start")
@@ -2420,7 +2432,7 @@ async def start_live_key_api(request: Request, live_key: str):
     if item is None:
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     _start_live_item(item)
-    return {"item": _live_item_payload(item)}
+    return {"item": _live_item_payload(request, item)}
 
 
 @app.post("/api/live/{live_key}/stop")
@@ -2431,7 +2443,7 @@ async def stop_live_key_api(request: Request, live_key: str):
     LIVE_MANAGER.stop(live_key)
     user = _current_user(request)
     item = _live_item_for_key(user, live_key)
-    return {"item": _live_item_payload(item) if item else {"key": live_key, "status": "stopped"}}
+    return {"item": _live_item_payload(request, item) if item else {"key": live_key, "status": "stopped"}}
 
 
 @app.post("/live/camera/{camera_id}/start")
@@ -5541,7 +5553,12 @@ def _authorized_recording(request: Request, recording_id: int) -> dict[str, Any]
     return recording
 
 
-def _timeline_payload(rows: Any) -> list[dict[str, Any]]:
+def _timeline_payload(request: Request, rows: Any) -> list[dict[str, Any]]:
+    # Returned in a JSON API response too, not only rendered into a
+    # template - the ingress middleware only rewrites response headers
+    # (Location/Set-Cookie), so a JSON body value needs the prefix baked in
+    # here instead (see _live_item_payload for the same pattern).
+    prefix = request.state.ingress_prefix
     payload = []
     for row in rows:
         has_snapshot = bool(row.get("snapshot_path") or row.get("snapshot_remote_key"))
@@ -5553,8 +5570,8 @@ def _timeline_payload(rows: Any) -> list[dict[str, Any]]:
                 "duration": int(row.get("duration_seconds") or 0),
                 "detection_key": row["detection_key"],
                 "label": row["event_label"],
-                "media_url": f"/recordings/{row['id']}/media",
-                "snapshot_url": f"/recordings/{row['id']}/snapshot" if has_snapshot else None,
+                "media_url": f"{prefix}/recordings/{row['id']}/media",
+                "snapshot_url": f"{prefix}/recordings/{row['id']}/snapshot" if has_snapshot else None,
             }
         )
     return payload
@@ -5679,7 +5696,7 @@ def _start_live_item(item: dict[str, Any]) -> None:
         LIVE_MANAGER.note(str(item["key"]), f"Live stream could not be started: {exc}")
 
 
-def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
+def _live_item_payload(request: Request, item: dict[str, Any]) -> dict[str, Any]:
     live_key = str(item["key"])
     has_stream = bool(item.get("stream_uri"))
     live_status = LIVE_MANAGER.status(live_key) if has_stream else "missing"
@@ -5688,6 +5705,11 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
         message = ""
     if not has_stream and not message:
         message = "No stream is known for live view"
+    # These two URLs are returned in JSON API responses too, not only
+    # rendered into a template - the ingress middleware only rewrites
+    # response headers (Location/Set-Cookie), so a JSON body value needs the
+    # prefix baked in here instead.
+    prefix = request.state.ingress_prefix
     return {
         "key": live_key,
         "name": item["name"],
@@ -5695,9 +5717,9 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
         "kind": item["kind"],
         "status": live_status,
         "message": message,
-        "playlist_url": f"/live/{live_key}/index.m3u8",
+        "playlist_url": f"{prefix}/live/{live_key}/index.m3u8",
         "webrtc_available": has_stream and GO2RTC_MANAGER.status() == "running",
-        "webrtc_offer_url": f"/live/{live_key}/webrtc/offer",
+        "webrtc_offer_url": f"{prefix}/live/{live_key}/webrtc/offer",
         "camera_id": item.get("camera_id"),
         "control_channel": item.get("control_channel", 0),
         "ptz_supported": bool(item.get("ptz_supported")),
@@ -5707,7 +5729,8 @@ def _live_item_payload(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _sd_card_recording_payload(camera_id: int, row: dict[str, Any]) -> dict[str, Any]:
+def _sd_card_recording_payload(request: Request, camera_id: int, row: dict[str, Any]) -> dict[str, Any]:
+    prefix = request.state.ingress_prefix
     payload = dict(row)
     query = {
         "channel": row.get("channel", 0),
@@ -5716,8 +5739,8 @@ def _sd_card_recording_payload(camera_id: int, row: dict[str, Any]) -> dict[str,
         "start": row.get("start_id") or "",
         "end": row.get("end_id") or "",
     }
-    payload["media_url"] = f"/sd-card/{camera_id}/media?{urlencode({**query, 'embed': 1})}"
-    payload["download_url"] = f"/sd-card/{camera_id}/media?{urlencode({**query, 'download': 1})}"
+    payload["media_url"] = f"{prefix}/sd-card/{camera_id}/media?{urlencode({**query, 'embed': 1})}"
+    payload["download_url"] = f"{prefix}/sd-card/{camera_id}/media?{urlencode({**query, 'download': 1})}"
     return payload
 
 

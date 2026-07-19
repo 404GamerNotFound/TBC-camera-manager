@@ -820,5 +820,96 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         self.assertEqual(source["last_sync_status"], "ok")
 
 
+class HomeAssistantIngressTests(unittest.TestCase):
+    """Home Assistant Ingress sends the dynamic per-installation path prefix
+    as an X-Ingress-Path request header (not stripped before forwarding) -
+    see app/tbc/ingress.py. Every redirect, the session cookie, rendered
+    page links, and JSON API URLs must carry that prefix when it's present,
+    and must be byte-for-byte unaffected when it's absent (plain Docker, or
+    Home Assistant without Ingress - today's only supported access path).
+    """
+
+    INGRESS_PATH = "/api/hassio_ingress/abc123"
+
+    def setUp(self):
+        db_path = main.SETTINGS.database_path
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        database.initialize(db_path, main.SETTINGS.recordings_path)
+        database.ensure_admin_user(db_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+
+    def test_redirect_location_is_prefixed_under_ingress(self):
+        response = CLIENT.post(
+            "/login",
+            data={"username": "admin", "password": "adminpass123"},
+            headers={"X-Ingress-Path": self.INGRESS_PATH},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], f"{self.INGRESS_PATH}/cameras")
+
+    def test_redirect_location_is_unprefixed_without_ingress_header(self):
+        response = CLIENT.post(
+            "/login",
+            data={"username": "admin", "password": "adminpass123"},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/cameras")
+
+    def test_session_cookie_path_is_prefixed_under_ingress(self):
+        response = CLIENT.post(
+            "/login",
+            data={"username": "admin", "password": "adminpass123"},
+            headers={"X-Ingress-Path": self.INGRESS_PATH},
+            follow_redirects=False,
+        )
+
+        set_cookie_headers = response.headers.get_list("set-cookie")
+        session_cookie = next(header for header in set_cookie_headers if header.startswith("session="))
+        self.assertIn(f"Path={self.INGRESS_PATH}/", session_cookie)
+
+    def test_session_cookie_path_is_unprefixed_without_ingress_header(self):
+        response = CLIENT.post(
+            "/login",
+            data={"username": "admin", "password": "adminpass123"},
+            follow_redirects=False,
+        )
+
+        set_cookie_headers = response.headers.get_list("set-cookie")
+        session_cookie = next(header for header in set_cookie_headers if header.startswith("session="))
+        # Untouched Starlette SessionMiddleware output uses lowercase "path=".
+        self.assertIn("path=/;", session_cookie)
+
+    def test_rendered_page_links_and_js_global_are_prefixed_under_ingress(self):
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+        response = CLIENT.get("/cameras", headers={"X-Ingress-Path": self.INGRESS_PATH})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(f'href="{self.INGRESS_PATH}/cameras"', response.text)
+        self.assertIn(f'window.TBC_INGRESS_PREFIX = "{self.INGRESS_PATH}";', response.text)
+
+    def test_rendered_page_links_are_unprefixed_without_ingress_header(self):
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+        response = CLIENT.get("/cameras")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('href="/cameras"', response.text)
+        self.assertIn('window.TBC_INGRESS_PREFIX = "";', response.text)
+
+    def test_live_status_api_json_urls_are_prefixed_under_ingress(self):
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+        response = CLIENT.get("/api/live/status", headers={"X-Ingress-Path": self.INGRESS_PATH})
+
+        self.assertEqual(response.status_code, 200)
+        for item in response.json()["items"]:
+            self.assertTrue(item["playlist_url"].startswith(self.INGRESS_PATH + "/"))
+            self.assertTrue(item["webrtc_offer_url"].startswith(self.INGRESS_PATH + "/"))
+
 if __name__ == "__main__":
     unittest.main()

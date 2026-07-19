@@ -6,10 +6,10 @@
     <p class="eyebrow">{{ network_module.label }}</p>
     <h1 data-i18n="network_account.edit_network_account">Edit network account</h1>
   </div>
-  <a class="secondary-button" href="/network-accounts" data-i18n="network_account.back_network_accounts">Back to network accounts</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/network-accounts" data-i18n="network_account.back_network_accounts">Back to network accounts</a>
 </section>
 
-<form class="editor-form" method="post" action="/network-accounts/{{ account.id }}/edit">
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/network-accounts/{{ account.id }}/edit">
   <div class="form-grid">
     <label class="span-2">
       <span data-i18n="network_account.provider">Provider</span>

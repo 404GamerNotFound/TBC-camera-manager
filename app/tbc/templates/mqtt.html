@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<form class="editor-form" method="post" action="/mqtt">
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/mqtt">
   <label class="check-row">
     <input name="enabled" type="checkbox" {% if config.enabled %}checked{% endif %}>
     <span data-i18n="mqtt.enable_mqtt">Enable MQTT</span>

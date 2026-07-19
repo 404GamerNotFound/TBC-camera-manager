@@ -15,7 +15,7 @@
     </div>
     <div class="quiet-box">
       <span data-i18n="settings.api_ai_hint">API activation, API-key management, and examples of the available data and response formats are now collected on a dedicated page:</span>
-      <a href="/api-access" data-i18n="settings.open_api_access">Open API access</a>.
+      <a href="{{ ingress_prefix }}/api-access" data-i18n="settings.open_api_access">Open API access</a>.
     </div>
   </section>
 
@@ -29,7 +29,7 @@
     </div>
     <div class="form-actions debug-settings-actions">
       <button class="primary-button" type="button" data-debug-toggle data-i18n="settings.open_debug_log">Open debug log</button>
-      <form method="post" action="/settings/debug-log/clear">
+      <form method="post" action="{{ ingress_prefix }}/settings/debug-log/clear">
         <button class="secondary-button" type="submit" data-i18n="settings.clear">Clear</button>
       </form>
     </div>

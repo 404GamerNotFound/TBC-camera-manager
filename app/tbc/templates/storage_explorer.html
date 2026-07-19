@@ -6,7 +6,7 @@
     <p class="eyebrow" data-i18n="storage.storage_analysis">Storage analysis</p>
     <h1 data-i18n="base.explorer">Explorer</h1>
   </div>
-  <form method="post" action="/storage/cleanup">
+  <form method="post" action="{{ ingress_prefix }}/storage/cleanup">
     <button class="danger-button" type="submit" data-i18n="storage.run_cleanup">Run cleanup</button>
   </form>
 </section>

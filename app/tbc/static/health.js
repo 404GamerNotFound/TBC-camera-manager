@@ -73,7 +73,7 @@
   const refresh = async () => {
     state.className = "status-pill status-warning";
     state.textContent = t("health.check_running");
-    const response = await fetch("/api/health/refresh", {
+    const response = await fetch(tbcUrl("/api/health/refresh"), {
       method: "POST",
       credentials: "same-origin",
       headers: {"Accept": "application/json"},

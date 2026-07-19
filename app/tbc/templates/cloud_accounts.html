@@ -7,20 +7,20 @@
     <h1 data-i18n="cloud_account.cloud_accounts">Cloud accounts</h1>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
-    <a class="secondary-button" href="/cloud-modules" data-i18n="cloud_account.manage_cloud_providers">Manage cloud providers</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/cloud-modules" data-i18n="cloud_account.manage_cloud_providers">Manage cloud providers</a>
   </div>
 </section>
 
 {% if not cloud_modules %}
 <div class="quiet-box">
   <span data-i18n="plugin.no_cloud_before">No cloud provider is installed yet. Install a</span>
-  <a href="/plugin-sources" data-i18n="plugin.cloud_plugin_link">cloud plugin from External sources</a>
+  <a href="{{ ingress_prefix }}/plugin-sources" data-i18n="plugin.cloud_plugin_link">cloud plugin from External sources</a>
   <span data-i18n="plugin.no_cloud_after">before you can add an account.</span>
 </div>
 {% endif %}
 
-<form class="editor-form" method="post" action="/cloud-accounts" data-cloud-account-form data-plugin-selector-form>
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/cloud-accounts" data-cloud-account-form data-plugin-selector-form>
   <div class="section-title"><h2 data-i18n="cloud_account.add_account">Add account</h2></div>
   <div class="form-grid">
     <label class="span-2">
@@ -38,7 +38,7 @@
       </select>
       <small class="plugin-install-prompt">
         <span data-i18n="plugin.cloud_install_prompt">Need another cloud provider?</span>
-        <a href="/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
+        <a href="{{ ingress_prefix }}/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
       </small>
     </label>
     <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
@@ -106,16 +106,16 @@
     <div class="quiet-box">{{ account.pending_verification_message }}</div>
     {% endif %}
     <div class="form-actions">
-      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit" data-i18n="cloud_account.edit_account">Edit account</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/edit" data-i18n="cloud_account.edit_account">Edit account</a>
       {% if account.pending_verification_field %}
-      <a class="primary-button" href="/cloud-accounts/{{ account.id }}/verify" data-i18n="cloud_account.enter_verification_code">Enter verification code</a>
+      <a class="primary-button" href="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/verify" data-i18n="cloud_account.enter_verification_code">Enter verification code</a>
       {% else %}
-      <form method="post" action="/cloud-accounts/{{ account.id }}/test">
+      <form method="post" action="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/test">
         <button class="secondary-button" type="submit" data-i18n="cloud_account.test_connection">Test connection</button>
       </form>
-      <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/devices" data-i18n="cloud_account.discover_devices">Discover devices</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/devices" data-i18n="cloud_account.discover_devices">Discover devices</a>
       {% endif %}
-      <form method="post" action="/cloud-accounts/{{ account.id }}/delete">
+      <form method="post" action="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/delete">
         <button class="danger-button" type="submit" data-i18n="plugin.remove">Remove</button>
       </form>
     </div>

@@ -111,7 +111,7 @@
 
   async function pollLivePreview(liveKey, attempt = 0) {
     try {
-      const response = await fetch("/api/live/status", { credentials: "same-origin" });
+      const response = await fetch(tbcUrl("/api/live/status"), { credentials: "same-origin" });
       const data = await response.json().catch(() => ({ items: [] }));
       const item = (data.items || []).find((entry) => entry.key === liveKey);
       if (item && item.status === "running") {
@@ -138,7 +138,7 @@
     const liveKey = livePlayerContainer.dataset.liveKey;
     setLivePlaceholder(t("live.stream_starting_progress"));
     try {
-      const response = await fetch(`/api/live/${encodeURIComponent(liveKey)}/start`, {
+      const response = await fetch(tbcUrl(`/api/live/${encodeURIComponent(liveKey)}/start`), {
         method: "POST",
         credentials: "same-origin",
       });
@@ -511,7 +511,7 @@
     const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     try {
-      const response = await fetch(`/cameras/${cameraId}/detection/zones`, {
+      const response = await fetch(tbcUrl(`/cameras/${cameraId}/detection/zones`), {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -545,7 +545,7 @@
     const zoneId = button.dataset.zoneDelete;
     button.disabled = true;
     try {
-      const response = await fetch(`/cameras/${cameraId}/detection/zones/${zoneId}`, {
+      const response = await fetch(tbcUrl(`/cameras/${cameraId}/detection/zones/${zoneId}`), {
         method: "DELETE",
         credentials: "same-origin",
       });

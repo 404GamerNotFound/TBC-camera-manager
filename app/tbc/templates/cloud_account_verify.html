@@ -6,12 +6,12 @@
     <p class="eyebrow">{{ cloud_module.label }} · {{ account.label }}</p>
     <h1 data-i18n="cloud_account.verification_required">Verification required</h1>
   </div>
-  <a class="secondary-button" href="/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
 </section>
 
 <div class="quiet-box">{{ account.pending_verification_message }}</div>
 
-<form class="editor-form" method="post" action="/cloud-accounts/{{ account.id }}/verify">
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/verify">
   <div class="form-grid">
     <label class="span-2">
       <span>{{ field.label if field else 'Verification code' }}</span>

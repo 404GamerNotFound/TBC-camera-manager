@@ -17,7 +17,7 @@
       </span>
       <span class="status-pill status-idle" data-i18n="plugin.zip">ZIP</span>
     </summary>
-    <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
+    <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cloud-modules/import" enctype="multipart/form-data">
       <div class="quiet-box" data-i18n="plugin.cloud_plugins_contain_executable_python">
         Cloud plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.
       </div>
@@ -33,7 +33,7 @@
 
   <div class="quiet-box plugin-external-source-hint">
     <span data-i18n="plugin.external_source_hint">Prefer not to upload a ZIP? Install plugins straight from a public GitHub repository instead.</span>
-    <a class="secondary-button" href="/plugin-sources" data-i18n="base.external_sources">External sources</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/plugin-sources" data-i18n="base.external_sources">External sources</a>
   </div>
 
   <div class="plugin-search-bar">
@@ -71,14 +71,14 @@
         {% endif %}
       </p>
       <div class="form-actions plugin-card-actions">
-        <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
+        <a class="secondary-button" href="{{ ingress_prefix }}/cloud-modules/{{ cloud_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
         {% if has_tests[cloud_module.key] %}
-        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/run-tests">
+        <form method="post" action="{{ ingress_prefix }}/cloud-modules/{{ cloud_module.key }}/run-tests">
           <button class="secondary-button" type="submit" data-i18n="plugin.run_tests">Run tests</button>
         </form>
         {% endif %}
         {% if registration.origin == 'uploaded' %}
-        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/delete">
+        <form method="post" action="{{ ingress_prefix }}/cloud-modules/{{ cloud_module.key }}/delete">
           <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %} data-i18n="plugin.remove">Remove</button>
         </form>
         {% endif %}

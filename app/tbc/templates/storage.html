@@ -6,11 +6,11 @@
     <p class="eyebrow" data-i18n="storage.recording_destinations">Recording destinations</p>
     <h1 data-i18n="base.storage">Storage</h1>
   </div>
-  <a class="secondary-button" href="/cameras" data-i18n="nav.cameras">Cameras</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/cameras" data-i18n="nav.cameras">Cameras</a>
 </section>
 
 <section class="storage-grid">
-  <form class="editor-form" method="post" action="/storage">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/storage">
     <div class="section-title">
       <h2 data-i18n="storage.new_storage_destination">New storage destination</h2>
     </div>
@@ -67,7 +67,7 @@
     </div>
     {% for target in storage_targets %}
     <article class="storage-item">
-      <form method="post" action="/storage/{{ target.id }}">
+      <form method="post" action="{{ ingress_prefix }}/storage/{{ target.id }}">
         <div class="form-grid">
           <label>
             <span data-i18n="common.name">Name</span>
@@ -121,7 +121,7 @@
           <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
         </div>
       </form>
-      <form method="post" action="/storage/{{ target.id }}/delete">
+      <form method="post" action="{{ ingress_prefix }}/storage/{{ target.id }}/delete">
         <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
       </form>
     </article>

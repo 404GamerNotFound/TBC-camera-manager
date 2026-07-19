@@ -1,5 +1,5 @@
 name: TBC Camera Manager
-version: "0.5.1"
+version: "0.6.0"
 slug: tbc_camera_manager
 description: Modular camera manager for ONVIF and RTSP cameras
 url: "https://github.com/404GamerNotFound/TBC-camera-manager"
@@ -9,7 +9,10 @@ arch:
 init: false
 stage: experimental
 image: "ghcr.io/404gamernotfound/tbc-camera-manager-ha"
-webui: "http://[HOST]:[PORT:8732]"
+ingress: true
+ingress_port: 8732
+panel_icon: mdi:cctv
+panel_title: TBC Camera Manager
 ports:
   "8732/tcp": 8732
   "8555/tcp": 8555

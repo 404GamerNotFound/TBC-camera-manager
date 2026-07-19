@@ -10,8 +10,10 @@ https://github.com/404GamerNotFound/TBC-camera-manager
 ```
 
 Select **TBC Camera Manager**, install the app, and set at least
-`admin_password` before the first start. Select **Open web UI** to access TBC on
-port `8732`.
+`admin_password` before the first start. TBC appears in the Home Assistant
+sidebar once running (Ingress is enabled - see **Network and web interface**
+below); **Open web UI** works the same way and routes through Supervisor's
+own proxy rather than a direct connection to port `8732`.
 
 ## Options
 
@@ -47,10 +49,26 @@ create supported detection and control entities.
 ## Network and web interface
 
 TBC runs in the protected app container without host networking. It connects to
-cameras, RTSP, ONVIF, and MQTT through the configured IP addresses. The web
-interface is exposed directly on TCP port `8732`. Ingress is not enabled yet,
-because login redirects, static resources, and HLS streams first need complete
-testing under the dynamic ingress subpath.
+cameras, RTSP, ONVIF, and MQTT through the configured IP addresses.
+
+The web interface uses Home Assistant **Ingress**: TBC reads the dynamic,
+per-installation path Supervisor assigns (`X-Ingress-Path`, sent on every
+request) and prefixes every redirect, cookie, link, and API URL it emits with
+it - see `app/tbc/ingress.py` for the mechanism. This is what gives TBC its
+sidebar entry and lets **Open web UI** work without a direct connection to
+port `8732`. Port `8732` still stays published too, for a reverse proxy or
+bookmark pointed at it directly - TBC's own login still gates access either
+way, so this isn't a security trade-off.
+
+**One feature does not fully work through Ingress: WebRTC live view.** The
+SDP offer/answer signaling is a same-origin request and works fine through
+Ingress, but the actual video (ICE/RTP media on port `8555`) is a direct
+connection between the browser and the bundled `go2rtc` process that no
+HTTP-only reverse proxy - including Ingress - can tunnel. WebRTC mode
+therefore still needs direct network reachability to port `8555`, exactly as
+it does outside Home Assistant. **HLS live view has no such limitation** and
+works fully through Ingress, including from outside the local network (e.g.
+via Nabu Casa Cloud).
 
 ## Technical architecture
 

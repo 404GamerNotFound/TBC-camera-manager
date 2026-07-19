@@ -7,15 +7,15 @@
     <h1 data-i18n="network_account.mappings">Network mappings</h1>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
-    <a class="secondary-button" href="/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
   </div>
 </section>
 
 {% if not has_network_accounts %}
 <div class="quiet-box">
   <span data-i18n="camera.network_no_accounts_configured">No network provider account has been configured yet.</span>
-  <a href="/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+  <a href="{{ ingress_prefix }}/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
 </div>
 {% endif %}
 
@@ -43,7 +43,7 @@
             {% for entry in group.cameras %}
             <li>
               <div class="topology-camera-row">
-                <a href="/cameras/{{ entry.camera.id }}#network">{{ entry.camera.name }}</a>
+                <a href="{{ ingress_prefix }}/cameras/{{ entry.camera.id }}#network">{{ entry.camera.name }}</a>
                 <span class="status-pill {{ 'status-active' if entry.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if entry.online else 'network_account.offline' }}">{{ 'online' if entry.online else 'offline' }}</span>
                 {% if not entry.online and entry.last_seen %}
                 <small data-i18n="network_account.last_connected_at" data-i18n-params='{{ {"time": entry.last_seen} | tojson }}'>Last connected: {{ entry.last_seen }}</small>
@@ -100,7 +100,7 @@
         {% for entry in mapped %}
         <tr>
           <td>
-            <a href="/cameras/{{ entry.camera.id }}#network">{{ entry.camera.name }}</a>
+            <a href="{{ ingress_prefix }}/cameras/{{ entry.camera.id }}#network">{{ entry.camera.name }}</a>
             <br><small>{{ entry.mac }}</small>
           </td>
           <td>{{ entry.account.label if entry.account else '–' }}</td>
@@ -117,7 +117,7 @@
           <td>–</td>
           {% endif %}
           <td>
-            <form method="post" action="/cameras/{{ entry.camera.id }}/network/unlink">
+            <form method="post" action="{{ ingress_prefix }}/cameras/{{ entry.camera.id }}/network/unlink">
               <button class="danger-button" type="submit" data-i18n="network_account.unlink">Unlink</button>
             </form>
           </td>
@@ -149,7 +149,7 @@
         {% for camera in unmapped %}
         <tr>
           <td>{{ camera.name }}</td>
-          <td><a class="secondary-button" href="/cameras/{{ camera.id }}#network" data-i18n="network_account.configure">Configure</a></td>
+          <td><a class="secondary-button" href="{{ ingress_prefix }}/cameras/{{ camera.id }}#network" data-i18n="network_account.configure">Configure</a></td>
         </tr>
         {% endfor %}
       </tbody>

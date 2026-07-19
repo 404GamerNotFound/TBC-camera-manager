@@ -17,7 +17,7 @@
     once a matching recording's clip has finished saving; "Live" mode runs during the camera's own local-AI
     detection loop, before any recording exists, for lower latency at the cost of extra CPU load per frame.
   </p>
-  <form class="editor-form" method="post" action="/recognition/settings">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/recognition/settings">
     <div class="form-grid">
       <label class="check-row"><input name="face_enabled" type="checkbox" {% if settings.face_enabled %}checked{% endif %}><span data-i18n="recognition.enable_face_recognition">Enable face recognition</span></label>
       <label><span data-i18n="recognition.face_recognition_mode">Face recognition mode</span>
@@ -44,7 +44,7 @@
 </section>
 
 <section class="storage-grid">
-  <form class="editor-form" method="post" action="/recognition/faces" enctype="multipart/form-data">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/recognition/faces" enctype="multipart/form-data">
     <div class="section-title"><h2 data-i18n="recognition.enroll_known_face">Enroll a known face</h2></div>
     <div class="form-grid">
       <label><span data-i18n="common.name">Name</span><input name="name" required></label>
@@ -57,7 +57,7 @@
     {% for face in known_faces %}
     <article class="storage-item">
       <div class="card-header"><strong>{{ face.name }}</strong><span>{{ face.created_at }}</span></div>
-      <form method="post" action="/recognition/faces/{{ face.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+      <form method="post" action="{{ ingress_prefix }}/recognition/faces/{{ face.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
     </article>
     {% else %}
     <p class="hint-text" data-i18n="recognition.no_known_faces_enrolled_yet">No known faces enrolled yet - every detected face will be reported as "unknown".</p>
@@ -66,7 +66,7 @@
 </section>
 
 <section class="storage-grid">
-  <form class="editor-form" method="post" action="/recognition/plates">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/recognition/plates">
     <div class="section-title"><h2 data-i18n="recognition.add_known_plate">Add a known plate</h2></div>
     <div class="form-grid">
       <label><span data-i18n="recognition.plate_text">Plate text</span><input name="plate_text" required placeholder="B-TB 1234"></label>
@@ -78,14 +78,14 @@
     <div class="section-title"><h2 data-i18n="recognition.known_plates">Known plates</h2><span>{{ known_plates | length }}</span></div>
     {% for plate in known_plates %}
     <article class="storage-item">
-      <form method="post" action="/recognition/plates/{{ plate.id }}">
+      <form method="post" action="{{ ingress_prefix }}/recognition/plates/{{ plate.id }}">
         <div class="form-grid">
           <label><span data-i18n="recognition.plate_text">Plate text</span><input name="plate_text" value="{{ plate.plate_text }}" required></label>
           <label><span data-i18n="cloud_account.label">Label</span><input name="label" value="{{ plate.label or '' }}"></label>
         </div>
         <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
       </form>
-      <form method="post" action="/recognition/plates/{{ plate.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+      <form method="post" action="{{ ingress_prefix }}/recognition/plates/{{ plate.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
     </article>
     {% else %}
     <p class="hint-text" data-i18n="recognition.no_known_plates_yet_every">No known plates yet - every recognized plate will be reported as "unknown".</p>

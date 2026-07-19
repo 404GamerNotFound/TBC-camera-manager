@@ -1,3 +1,10 @@
+// Prefixes a root-relative path ("/api/...") with the Home Assistant Ingress
+// path, if any - see app/tbc/ingress.py and base.html's inline script that
+// sets window.TBC_INGRESS_PREFIX. A no-op outside Ingress. Exposed on
+// `window` (not inside the IIFE below) so every other page script can call
+// it for its own fetch()/src assignments instead of hardcoding a path.
+window.tbcUrl = (path) => (window.TBC_INGRESS_PREFIX || "") + path;
+
 (() => {
   "use strict";
 
@@ -33,7 +40,7 @@
   })();
 
   const loadLocale = (lang) =>
-    fetch(`/static/i18n/${lang}.json${cacheBust}`)
+    fetch(tbcUrl(`/static/i18n/${lang}.json${cacheBust}`))
       .then((response) => (response.ok ? response.json() : {}))
       .catch(() => ({}));
 

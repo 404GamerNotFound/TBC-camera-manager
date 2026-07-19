@@ -325,7 +325,7 @@
     async _pollDetections() {
       if (!this.detection || !this.detection.cameraId) return;
       try {
-        const response = await fetch(`/api/cameras/${this.detection.cameraId}/detections/live`, {
+        const response = await fetch(tbcUrl(`/api/cameras/${this.detection.cameraId}/detections/live`), {
           credentials: "same-origin",
         });
         if (!response.ok) return;
@@ -423,7 +423,7 @@
     async _sendPtz(command) {
       if (!this.ptz || !this.ptz.cameraId) return;
       try {
-        const response = await fetch(`/cameras/${this.ptz.cameraId}/control/ptz`, {
+        const response = await fetch(tbcUrl(`/cameras/${this.ptz.cameraId}/control/ptz`), {
           method: "POST",
           credentials: "same-origin",
           headers: {

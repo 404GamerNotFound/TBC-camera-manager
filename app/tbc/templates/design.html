@@ -17,7 +17,7 @@
       </span>
       <span class="status-pill status-idle" data-i18n="plugin.zip">ZIP</span>
     </summary>
-    <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
+    <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/design/import" enctype="multipart/form-data">
       <div class="quiet-box" data-i18n="design.design_packages_contain_only_stylesheets">
         Design packages contain only stylesheets, metadata, and images, with no executable code. Maximum file size: 5 MB.
       </div>
@@ -58,16 +58,16 @@
       </dl>
       <div class="form-actions plugin-card-actions">
         {% if manifest.key != active_theme_key %}
-        <form method="post" action="/design/activate">
+        <form method="post" action="{{ ingress_prefix }}/design/activate">
           <input type="hidden" name="theme_key" value="{{ manifest.key }}">
           <button class="primary-button" type="submit" data-i18n="api.activate">Activate</button>
         </form>
         {% else %}
         <span class="status-pill status-active" data-i18n="design.active_state">Active</span>
         {% endif %}
-        <a class="secondary-button" href="/design/{{ manifest.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
+        <a class="secondary-button" href="{{ ingress_prefix }}/design/{{ manifest.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
         {% if registration.origin == 'uploaded' %}
-        <form method="post" action="/design/{{ manifest.key }}/delete">
+        <form method="post" action="{{ ingress_prefix }}/design/{{ manifest.key }}/delete">
           <button class="danger-button" type="submit" {% if manifest.key == active_theme_key %}disabled{% endif %} data-i18n="plugin.remove">Remove</button>
         </form>
         {% endif %}

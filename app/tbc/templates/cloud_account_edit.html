@@ -6,10 +6,10 @@
     <p class="eyebrow">{{ cloud_module.label }}</p>
     <h1 data-i18n="cloud_account.edit_cloud_account">Edit cloud account</h1>
   </div>
-  <a class="secondary-button" href="/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
 </section>
 
-<form class="editor-form" method="post" action="/cloud-accounts/{{ account.id }}/edit">
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/edit">
   <div class="form-grid">
     <label class="span-2">
       <span data-i18n="cloud_account.provider">Provider</span>

@@ -24,7 +24,7 @@
 </div>
 
 {% if role == 'admin' %}
-<form class="editor-form compact-form" method="post" action="/live/layout" data-live-layout-form hidden>
+<form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/live/layout" data-live-layout-form hidden>
   <div class="section-title">
     <h2 data-i18n="live.wall_layout">Wall layout</h2>
     <span data-i18n="common.admin">Admin</span>

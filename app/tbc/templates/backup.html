@@ -14,7 +14,7 @@
       <h2 data-i18n="backup.create_title">Create backup</h2>
     </div>
     <p class="hint-text" data-i18n="backup.create_hint">Downloads an encrypted archive of the database (cameras, users, settings, cloud accounts, API tokens). Stored credentials stay encrypted with this instance's TBC_SECRET_KEY - keep that key safe, it's required to restore.</p>
-    <form method="post" action="/settings/backup/create">
+    <form method="post" action="{{ ingress_prefix }}/settings/backup/create">
       <div class="form-actions">
         <button class="primary-button" type="submit" data-i18n="backup.create_button">Create backup</button>
       </div>
@@ -26,7 +26,7 @@
       <h2 data-i18n="backup.restore_title">Restore from backup</h2>
     </div>
     <p class="hint-text" data-i18n="backup.restore_hint">Restoring replaces the current database with the one in the uploaded archive. The current database is copied to a .bak file first. The archive must have been created with the same TBC_SECRET_KEY this instance is running with now. Restart the app after restoring.</p>
-    <form method="post" action="/settings/backup/restore" enctype="multipart/form-data">
+    <form method="post" action="{{ ingress_prefix }}/settings/backup/restore" enctype="multipart/form-data">
       <div class="form-grid">
         <label class="span-2">
           <span data-i18n="backup.file_label">Backup file</span>

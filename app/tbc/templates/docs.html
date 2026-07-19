@@ -6,7 +6,7 @@
     <p class="eyebrow" data-i18n="docs.eyebrow">Help &amp; reference</p>
     <h1 data-i18n="docs.title">Documentation</h1>
   </div>
-  <a class="secondary-button" href="/docs" data-i18n="docs.overview">Documentation overview</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/docs" data-i18n="docs.overview">Documentation overview</a>
 </section>
 
 <section class="docs-layout">
@@ -14,7 +14,7 @@
     <strong data-i18n="docs.contents">Contents</strong>
     <nav class="docs-navigation" aria-label="Documentation" data-i18n-aria-label="docs.title">
       {% for document in documents %}
-      <a href="/docs/{{ document.name | urlencode }}"{% if document.name == current_document %} class="active" aria-current="page"{% endif %}>{{ document.title }}</a>
+      <a href="{{ ingress_prefix }}/docs/{{ document.name | urlencode }}"{% if document.name == current_document %} class="active" aria-current="page"{% endif %}>{{ document.title }}</a>
       {% endfor %}
     </nav>
   </aside>
@@ -25,7 +25,7 @@
     {% else %}
     <h2 data-i18n="docs.not_found">Document not found</h2>
     <p data-i18n="docs.not_found_hint">The requested Markdown document does not exist.</p>
-    <a href="/docs" data-i18n="docs.back_to_overview">Back to documentation overview</a>
+    <a href="{{ ingress_prefix }}/docs" data-i18n="docs.back_to_overview">Back to documentation overview</a>
     {% endif %}
   </article>
 </section>

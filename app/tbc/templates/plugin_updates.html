@@ -6,7 +6,7 @@
     <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
     <h1 data-i18n="plugin_updates.updates">Updates</h1>
   </div>
-  <a class="secondary-button" href="/plugin-sources" data-i18n="plugin_updates.manage_external_sources">Manage external sources</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/plugin-sources" data-i18n="plugin_updates.manage_external_sources">Manage external sources</a>
 </section>
 
 <section class="storage-list">
@@ -58,7 +58,7 @@
       <div><dt data-i18n="plugin_updates.last_checked">Last checked</dt><dd>{{ source.last_checked_at or 'not checked yet' }}</dd></div>
     </dl>
     <div class="form-actions">
-      <form method="post" action="/plugin-sources/{{ source.id }}/sync">
+      <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ source.id }}/sync">
         <input type="hidden" name="return_to" value="/updates">
         <button class="primary-button" type="submit" data-i18n="camera.update_now">Update now</button>
       </form>

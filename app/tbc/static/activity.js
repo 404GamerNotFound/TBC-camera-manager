@@ -145,7 +145,7 @@
     entry.promise = (async () => {
       try {
         const params = new URLSearchParams({ camera_id: String(camera.id), date_from: day, date_to: day });
-        const response = await fetch(`/api/sd-card/recordings?${params.toString()}`, {
+        const response = await fetch(tbcUrl(`/api/sd-card/recordings?${params.toString()}`), {
           credentials: "same-origin",
           headers: { Accept: "application/json" },
         });

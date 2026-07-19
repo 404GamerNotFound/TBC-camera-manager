@@ -13,7 +13,7 @@
     <h2 data-i18n="audit.events">Events</h2>
     <span>{{ total }}</span>
   </div>
-  <form class="api-access-settings" method="get" action="/settings/audit-log">
+  <form class="api-access-settings" method="get" action="{{ ingress_prefix }}/settings/audit-log">
     <div class="form-grid">
       <label>
         <span data-i18n="audit.filter_action">Action</span>
@@ -61,9 +61,9 @@
   </div>
 
   <div class="button-row timeline-day-nav">
-    <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/settings/audit-log?page={{ page - 1 }}{% if selected_action %}&action={{ selected_action }}{% endif %}" data-i18n="recordings.previous_page">‹ Previous page</a>
+    <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="{{ ingress_prefix }}/settings/audit-log?page={{ page - 1 }}{% if selected_action %}&action={{ selected_action }}{% endif %}" data-i18n="recordings.previous_page">‹ Previous page</a>
     <span data-i18n="recordings.page_indicator" data-i18n-params='{{ {"page": page, "total_pages": total_pages} | tojson }}'>Page {{ page }} / {{ total_pages }}</span>
-    <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/settings/audit-log?page={{ page + 1 }}{% if selected_action %}&action={{ selected_action }}{% endif %}" data-i18n="recordings.next_page">Next page ›</a>
+    <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="{{ ingress_prefix }}/settings/audit-log?page={{ page + 1 }}{% if selected_action %}&action={{ selected_action }}{% endif %}" data-i18n="recordings.next_page">Next page ›</a>
   </div>
 </section>
 {% endblock %}

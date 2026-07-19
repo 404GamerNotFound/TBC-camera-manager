@@ -26,7 +26,7 @@
   </ul>
 </section>
 
-<form method="post" action="/plugin-requirements/install" class="form-actions">
+<form method="post" action="{{ ingress_prefix }}/plugin-requirements/install" class="form-actions">
   {% for requirement in requirements %}
   <input type="hidden" name="requirements" value="{{ requirement }}">
   {% endfor %}

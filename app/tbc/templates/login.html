@@ -12,7 +12,7 @@
     <p class="eyebrow" data-i18n="nav.app_name">TB Camera</p>
     <h1>TBC</h1>
   </div>
-  <form class="login-form" method="post" action="/login">
+  <form class="login-form" method="post" action="{{ ingress_prefix }}/login">
     {% if error %}
     <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
     {% endif %}

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.0 - "Integrated"
+
+- Added Home Assistant Ingress support: TBC now appears in the Home Assistant sidebar, and
+  **Open Web UI** works through Supervisor's own proxy instead of a direct connection to the
+  container's port. HLS live view works fully through Ingress; WebRTC live view still needs
+  direct network access to port `8555`, since its media stream can't be tunneled by any
+  HTTP-only reverse proxy.
+- Camera, cloud, and network plugins can now declare their own pip requirements in their
+  manifest (`"requirements": [...]`) instead of needing them added to TBC's own
+  `requirements.txt`. A missing requirement blocks installation with an explicit admin
+  confirmation step before anything is installed - never silently.
+- Moved the `eufy`, `unifi_protect`, and `ewelink` cloud plugins out of the main repository into
+  their own installable plugin repositories (`TBC-eufy`, `TBC-unifi-protect`, `TBC-ewelink`),
+  matching how every other vendor integration is already packaged.
+- Added a FRITZ!Box network plugin (`TBC-fritz.box`) for camera-to-device mapping and live
+  connectivity status.
+- Fixed a regression where `onvif-zeep` was missing from `requirements.txt`, breaking ONVIF
+  connectivity for cameras that rely on it (including Reolink's ONVIF fallback).
+- Fixed plugin dependency installation on a fresh deployment: the first `pip install` of a
+  plugin's requirement wasn't picked up by the running process because its target directory
+  didn't exist yet at startup.
+
 ## 0.5.1 - "Installable"
 
 - Fixed Home Assistant installation and updates by automatically publishing the matching public

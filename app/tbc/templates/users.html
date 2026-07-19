@@ -9,7 +9,7 @@
 </section>
 
 <section class="storage-grid">
-  <form class="editor-form" method="post" action="/users">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/users">
     <div class="section-title">
       <h2 data-i18n="users.new_user">New user</h2>
     </div>
@@ -53,7 +53,7 @@
     </div>
     {% for user in users %}
     <article class="storage-item">
-      <form method="post" action="/users/{{ user.id }}">
+      <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}">
         <div class="form-grid">
           <label>
             <span data-i18n="camera.username">Username</span>
@@ -86,7 +86,7 @@
           <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
         </div>
       </form>
-      <form method="post" action="/users/{{ user.id }}/delete">
+      <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}/delete">
         <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
       </form>
     </article>

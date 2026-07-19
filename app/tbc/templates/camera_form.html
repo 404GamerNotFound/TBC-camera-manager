@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<form class="editor-form" method="post" action="/cameras" data-plugin-selector-form>
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/cameras" data-plugin-selector-form>
   {% if error %}
   <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
   {% endif %}
@@ -36,7 +36,7 @@
       </select>
       <small class="plugin-install-prompt">
         <span data-i18n="plugin.camera_install_prompt">Need another camera manufacturer?</span>
-        <a href="/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
+        <a href="{{ ingress_prefix }}/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
       </small>
     </label>
     <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
@@ -75,7 +75,7 @@
     </label>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras" data-i18n="camera_form.cancel">Cancel</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/cameras" data-i18n="camera_form.cancel">Cancel</a>
     <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
   </div>
 </form>

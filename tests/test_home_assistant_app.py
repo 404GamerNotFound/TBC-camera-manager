@@ -23,6 +23,13 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
         self.assertEqual(config["image"], "ghcr.io/404gamernotfound/tbc-camera-manager-ha")
         self.assertEqual(config["ports"]["8732/tcp"], 8732)
         self.assertIsNone(config["options"]["admin_password"])
+        # Ingress gives TBC a Home Assistant sidebar entry and lets "Open Web
+        # UI" work through Supervisor's own proxy instead of a direct
+        # container-port connection - see app/tbc/ingress.py.
+        self.assertTrue(config["ingress"])
+        self.assertEqual(config["ingress_port"], 8732)
+        self.assertIn("panel_icon", config)
+        self.assertNotIn("webui", config)
         self.assertNotIn("boot", config)
         self.assertNotIn("startup", config)
         dockerfile = (ROOT / "tbc_camera_manager" / "Dockerfile").read_text(

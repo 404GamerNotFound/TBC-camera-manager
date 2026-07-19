@@ -7,21 +7,21 @@
     <h1 data-i18n="network_account.network_accounts">Network accounts</h1>
   </div>
   <div class="form-actions">
-    <a class="secondary-button" href="/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
-    <a class="secondary-button" href="/network-mappings" data-i18n="network_account.mappings">Network mappings</a>
-    <a class="secondary-button" href="/network-modules" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/cameras" data-i18n="cloud_account.back_cameras">Back to cameras</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/network-mappings" data-i18n="network_account.mappings">Network mappings</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/network-modules" data-i18n="network_account.manage_network_providers">Manage network providers</a>
   </div>
 </section>
 
 {% if not network_modules %}
 <div class="quiet-box">
   <span data-i18n="plugin.no_network_before">No network provider is installed yet. Install a</span>
-  <a href="/plugin-sources" data-i18n="plugin.network_plugin_link">network plugin from External sources</a>
+  <a href="{{ ingress_prefix }}/plugin-sources" data-i18n="plugin.network_plugin_link">network plugin from External sources</a>
   <span data-i18n="plugin.no_network_after">before you can add an account.</span>
 </div>
 {% endif %}
 
-<form class="editor-form" method="post" action="/network-accounts" data-network-account-form data-plugin-selector-form>
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/network-accounts" data-network-account-form data-plugin-selector-form>
   <div class="section-title"><h2 data-i18n="network_account.add_account">Add account</h2></div>
   <div class="form-grid">
     <label class="span-2">
@@ -39,7 +39,7 @@
       </select>
       <small class="plugin-install-prompt">
         <span data-i18n="plugin.network_install_prompt">Need another network provider?</span>
-        <a href="/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
+        <a href="{{ ingress_prefix }}/plugin-sources" data-plugin-install-link data-i18n="plugin.open_external_sources">Open External sources</a>
       </small>
     </label>
     <div class="quiet-box plugin-unavailable-note span-2" data-plugin-unavailable hidden></div>
@@ -104,11 +104,11 @@
       <span class="status-pill status-{{ account.last_test_status or 'unknown' }}">{{ account.last_test_message if account.last_test_status else 'not tested yet' }}</span>
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/network-accounts/{{ account.id }}/edit" data-i18n="network_account.edit_account">Edit account</a>
-      <form method="post" action="/network-accounts/{{ account.id }}/test">
+      <a class="secondary-button" href="{{ ingress_prefix }}/network-accounts/{{ account.id }}/edit" data-i18n="network_account.edit_account">Edit account</a>
+      <form method="post" action="{{ ingress_prefix }}/network-accounts/{{ account.id }}/test">
         <button class="secondary-button" type="submit" data-i18n="network_account.test_connection">Test connection</button>
       </form>
-      <form method="post" action="/network-accounts/{{ account.id }}/delete">
+      <form method="post" action="{{ ingress_prefix }}/network-accounts/{{ account.id }}/delete">
         <button class="danger-button" type="submit" data-i18n="plugin.remove">Remove</button>
       </form>
     </div>

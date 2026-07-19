@@ -363,7 +363,7 @@
         date_from: data.day,
         date_to: data.day,
       });
-      const response = await fetch(`/api/sd-card/recordings?${params.toString()}`, {
+      const response = await fetch(tbcUrl(`/api/sd-card/recordings?${params.toString()}`), {
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });

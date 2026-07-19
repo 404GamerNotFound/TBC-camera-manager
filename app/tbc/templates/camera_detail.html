@@ -25,10 +25,10 @@
   </div>
   {% if role == 'admin' %}
   <div class="button-row">
-    <form method="post" action="/cameras/{{ camera.id }}/refresh">
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/refresh">
       <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
     </form>
-    <form method="post" action="/cameras/{{ camera.id }}/delete">
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/delete">
       <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
     </form>
   </div>
@@ -93,12 +93,12 @@
   <span data-i18n="camera.stream">Stream</span>
   <code>{{ camera.stream_uri | redact_rtsp_credentials }}</code>
   {% if 'live' in module_capabilities %}
-  <form method="post" action="/live/camera/{{ camera.id }}/start">
+  <form method="post" action="{{ ingress_prefix }}/live/camera/{{ camera.id }}/start">
     <button class="secondary-button" type="submit" data-i18n="camera.live">Live</button>
   </form>
   {% endif %}
   {% if 'archive' in module_capabilities %}
-  <a class="secondary-button" href="/sd-card?camera_id={{ camera.id }}" data-i18n="base.sd_card">SD card</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/sd-card?camera_id={{ camera.id }}" data-i18n="base.sd_card">SD card</a>
   {% endif %}
 </section>
 {% endif %}
@@ -126,7 +126,7 @@
           <td>{{ channel.channel_index + 1 }}</td>
           <td>
             {% if role == 'admin' %}
-            <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/channels/{{ channel.id }}">
+            <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/channels/{{ channel.id }}">
               <input name="name" value="{{ channel.name }}" required>
               <label class="check-row">
                 <input name="enabled" type="checkbox" {% if channel.enabled %}checked{% endif %}>
@@ -142,7 +142,7 @@
           <td data-i18n="{{ 'camera.yes' if channel.stream_uri else 'camera.channel_unknown' }}">{{ 'yes' if channel.stream_uri else 'unknown' }}</td>
           <td>
             {% if channel.stream_uri %}
-            <form method="post" action="/live/channel/{{ channel.id }}/start">
+            <form method="post" action="{{ ingress_prefix }}/live/channel/{{ channel.id }}/start">
               <button class="secondary-button" type="submit" data-i18n="camera.live">Live</button>
             </form>
             {% endif %}
@@ -158,14 +158,14 @@
 <section class="table-section">
   <div class="section-title">
     <h2 data-i18n="camera.recent_clips">Recent clips</h2>
-    <a class="text-button" href="/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
+    <a class="text-button" href="{{ ingress_prefix }}/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
   </div>
   {% if recent_clips %}
   <section class="clip-grid">
     {% for clip in recent_clips %}
     <article class="clip-card">
       {% if clip.snapshot_path or clip.snapshot_remote_key %}
-      <img class="clip-media-still" src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
+      <img class="clip-media-still" src="{{ ingress_prefix }}/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
       {% else %}
       <div class="clip-placeholder">{{ clip.detection_key }}</div>
       {% endif %}
@@ -179,7 +179,7 @@
         </div>
         <div class="card-footer">
           <span>{{ clip.duration_seconds or 0 }}s · {{ clip.storage_kind }}</span>
-          <a class="secondary-button" href="/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
+          <a class="secondary-button" href="{{ ingress_prefix }}/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
         </div>
       </div>
     </article>
@@ -193,9 +193,9 @@
 {% if role != 'admin' %}
 <section class="stream-line">
   <span data-i18n="camera.recordings">Recordings</span>
-  <a class="text-button" href="/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
+  <a class="text-button" href="{{ ingress_prefix }}/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
   {% if 'archive' in module_capabilities %}
-  <a class="text-button" href="/sd-card?camera_id={{ camera.id }}" data-i18n="camera.open_sd_card">Open SD card</a>
+  <a class="text-button" href="{{ ingress_prefix }}/sd-card?camera_id={{ camera.id }}" data-i18n="camera.open_sd_card">Open SD card</a>
   {% endif %}
 </section>
 {% endif %}
@@ -206,7 +206,7 @@
   <div class="diagnostic-note diagnostic-warning" data-i18n="camera.plugin_not_installed" data-i18n-params='{{ {"key": camera.module_key} | tojson }}'>The plugin "{{ camera.module_key }}" is not installed on this server. Some tabs and settings for this camera may be unavailable until it is reinstalled.</div>
   {% if role == 'admin' %}
   <div class="form-actions">
-    <a class="secondary-button" href="/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
   </div>
   {% endif %}
   {% else %}
@@ -253,7 +253,7 @@
   </section>
   {% if role == 'admin' and camera_module_registration %}
   <div class="form-actions">
-    <a class="secondary-button" href="/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
   </div>
   {% endif %}
   {% endif %}
@@ -264,7 +264,7 @@
   <div class="diagnostic-note" data-i18n="camera.network_no_accounts_configured">No network provider account has been configured yet.</div>
   {% if role == 'admin' %}
   <div class="form-actions">
-    <a class="secondary-button" href="/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
   </div>
   {% endif %}
   {% elif camera.network_account_id and camera.network_device_mac %}
@@ -305,7 +305,7 @@
   </section>
   {% if role == 'admin' %}
   <div class="form-actions">
-    <form method="post" action="/cameras/{{ camera.id }}/network/unlink">
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/network/unlink">
       <button class="danger-button" type="submit" data-i18n="network_account.unlink">Unlink</button>
     </form>
   </div>
@@ -313,7 +313,7 @@
   {% else %}
   <div class="diagnostic-note" data-i18n="camera.network_not_mapped">This camera is not mapped to a network device yet.</div>
   {% if role == 'admin' %}
-  <form class="inline-form" method="get" action="/cameras/{{ camera.id }}#network" data-network-picker-form>
+  <form class="inline-form" method="get" action="{{ ingress_prefix }}/cameras/{{ camera.id }}#network" data-network-picker-form>
     <label>
       <span data-i18n="network_account.account">Account</span>
       <select name="network_account_id" data-network-picker-select>
@@ -330,7 +330,7 @@
   {% if not network_picker_devices %}
   <p class="quiet-box" data-i18n="network_account.no_devices_found">No devices were found on this account.</p>
   {% else %}
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/network">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/network">
     <input type="hidden" name="network_account_id" value="{{ network_picker_account_id }}">
     <label>
       <span data-i18n="network_account.device">Device</span>
@@ -363,7 +363,7 @@
 
 {% if role == 'admin' %}
 <div class="detail-tab-panel" id="camera-connection" role="tabpanel" data-detail-panel="connection" hidden>
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/connection">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/connection">
     <div class="section-title">
       <h2 data-i18n="camera.connection">Connection</h2>
       <span>{{ camera.host }}:{{ camera.onvif_port }}</span>
@@ -429,7 +429,7 @@
 <div class="detail-tab-panel recording-tab-layout" id="camera-recording" role="tabpanel" data-detail-panel="recording" hidden>
   <div class="recording-stack">
   {% if 'recording' in module_capabilities %}
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/continuous-recording">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/continuous-recording">
     <div class="section-title">
       <h2 data-i18n="camera.continuous_recording">Continuous recording</h2>
       {% if camera.continuous_recording_enabled %}
@@ -460,13 +460,13 @@
       </label>
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/timeline?camera_id={{ camera.id }}" data-i18n="camera.open_timeline">Open timeline</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/timeline?camera_id={{ camera.id }}" data-i18n="camera.open_timeline">Open timeline</a>
       <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
     </div>
   </form>
   {% endif %}
 
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/recording">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/recording">
     <div class="section-title">
       <h2 data-i18n="camera.motion_recording">Motion recording</h2>
       {% if camera.recording_enabled %}
@@ -559,7 +559,7 @@
       {% endif %}
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/storage" data-i18n="camera.manage_storage">Manage storage</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/storage" data-i18n="camera.manage_storage">Manage storage</a>
       <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
     </div>
   </form>
@@ -598,7 +598,7 @@
 
   {% if camera.stream_uri %}
 <div class="detail-tab-panel" id="camera-ai-zones" role="tabpanel" data-detail-panel="ai-zones" hidden>
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/detection">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/detection">
     <div class="section-title">
       <h2 data-i18n="camera.local_ai_short">Local AI detection</h2>
       {% if detection_settings and detection_settings.enabled %}
@@ -636,7 +636,7 @@
       </label>
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/detection" data-i18n="camera.backend_status">Backend-Status</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/detection" data-i18n="camera.backend_status">Backend-Status</a>
       <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
     </div>
   </form>
@@ -653,7 +653,7 @@
       local AI detection evaluates the entire image.
     </p>
     <div class="zone-editor-canvas-wrap">
-      <img class="zone-editor-image" data-zone-image src="/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
+      <img class="zone-editor-image" data-zone-image src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
       <canvas class="zone-editor-canvas" data-zone-canvas></canvas>
     </div>
     <div class="zone-editor-toolbar">
@@ -724,7 +724,7 @@
   <div class="tbc-toast-stack" data-toast-stack aria-live="polite"></div>
 
   {% if control_channel_options|length > 1 %}
-  <form class="inline-form control-channel-form" method="get" action="/cameras/{{ camera.id }}#control" data-control-channel-form>
+  <form class="inline-form control-channel-form" method="get" action="{{ ingress_prefix }}/cameras/{{ camera.id }}#control" data-control-channel-form>
     <label>
       <span data-i18n="camera.channel">Channel</span>
       <select name="control_channel" data-control-channel-select>
@@ -760,13 +760,13 @@
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.pan_tilt_head_ptz">Pan/tilt head (PTZ)</h2></div>
     <div class="button-row ptz-controls">
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Up"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.up">▲ Up</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Down"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.down">▼ Down</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Left"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.left">◄ Left</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Right"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.right">► Right</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomInc"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_in">＋ Zoom</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomDec"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_out">－ Zoom</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Stop"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="text-button" type="submit" data-i18n="camera.stop">■ Stop</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Up"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.up">▲ Up</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Down"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.down">▼ Down</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Left"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.left">◄ Left</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Right"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.right">► Right</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomInc"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_in">＋ Zoom</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomDec"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_out">－ Zoom</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Stop"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="text-button" type="submit" data-i18n="camera.stop">■ Stop</button></form>
     </div>
   </section>
   {% if control_state and control_state.ptz_presets %}
@@ -774,7 +774,7 @@
     <div class="section-title"><h2 data-i18n="camera.ptz_presets">PTZ presets</h2></div>
     <div class="button-row ptz-controls">
       {% for preset_name, preset_id in control_state.ptz_presets.items() %}
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form>
         <input type="hidden" name="preset" value="{{ preset_id }}">
         <input type="hidden" name="channel" value="{{ selected_control_channel }}">
         <button class="secondary-button" type="submit">{{ preset_name }}</button>
@@ -789,7 +789,7 @@
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.zoom_focus">Zoom &amp; Focus</h2></div>
     {% if control_state.zoom_supported %}
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/zoom" data-control-form>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/zoom" data-control-form>
       <label>
         <span data-i18n="camera.zoom_range" data-i18n-params='{{ {"min": control_state.zoom_range.min, "max": control_state.zoom_range.max} | tojson }}'>Zoom ({{ control_state.zoom_range.min }}–{{ control_state.zoom_range.max }})</span>
         <input name="position" type="range" min="{{ control_state.zoom_range.min or 0 }}" max="{{ control_state.zoom_range.max or 100 }}" value="{{ control_state.zoom_position or control_state.zoom_range.min or 0 }}">
@@ -799,7 +799,7 @@
     </form>
     {% endif %}
     {% if control_state.focus_supported %}
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/focus" data-control-form>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/focus" data-control-form>
       <label>
         <span data-i18n="camera.focus_range" data-i18n-params='{{ {"min": control_state.focus_range.min, "max": control_state.focus_range.max} | tojson }}'>Focus ({{ control_state.focus_range.min }}–{{ control_state.focus_range.max }})</span>
         <input name="position" type="range" min="{{ control_state.focus_range.min or 0 }}" max="{{ control_state.focus_range.max or 100 }}" value="{{ control_state.focus_position or control_state.focus_range.min or 0 }}">
@@ -818,8 +818,8 @@
       <span class="status-pill {{ 'status-active' if control_state and control_state.floodlight_state else 'status-idle' }}" data-control-pill="floodlight" data-i18n="{{ 'camera.on' if control_state and control_state.floodlight_state else 'camera.off' }}">{{ 'on' if control_state and control_state.floodlight_state else 'off' }}</span>
     </div>
     <div class="button-row">
-      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="on"><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="camera.turn">Turn on</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="off"><input type="hidden" name="state" value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.turn_off">Turn off</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="on"><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="camera.turn">Turn on</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="off"><input type="hidden" name="state" value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.turn_off">Turn off</button></form>
     </div>
   </section>
   {% endif %}
@@ -831,8 +831,8 @@
       <span class="status-pill {{ 'status-active' if control_state and control_state.pir_enabled else 'status-idle' }}" data-control-pill="pir" data-i18n="{{ 'camera.active' if control_state and control_state.pir_enabled else 'camera.off' }}">{{ 'active' if control_state and control_state.pir_enabled else 'off' }}</span>
     </div>
     <div class="button-row">
-      <form method="post" action="/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="active"><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="api.activate">Activate</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.deactivate">Deactivate</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="active"><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="api.activate">Activate</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.deactivate">Deactivate</button></form>
     </div>
   </section>
   {% endif %}
@@ -840,7 +840,7 @@
   {% if not control_state or control_state.siren_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.siren">Siren</h2></div>
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/siren" data-control-form>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/siren" data-control-form>
       <label><span data-i18n="camera.duration_sec">Duration (sec.)</span><input name="duration" type="number" min="1" max="30" value="5"></label>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="primary-button" type="submit" data-i18n="camera.play_siren">Play siren</button>
@@ -853,7 +853,7 @@
     <div class="section-title"><h2 data-i18n="camera.quick_replies">Quick replies</h2></div>
     <div class="button-row">
       {% for file_id, name in control_state.quick_reply_options.items() %}
-      <form method="post" action="/cameras/{{ camera.id }}/control/quick-reply" data-control-form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/quick-reply" data-control-form>
         <input type="hidden" name="file_id" value="{{ file_id }}">
         <input type="hidden" name="channel" value="{{ selected_control_channel }}">
         <button class="secondary-button" type="submit">{{ name }}</button>
@@ -880,7 +880,7 @@
   {% if not control_state or control_state.reboot_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.restart">Restart</h2></div>
-    <form method="post" action="/cameras/{{ camera.id }}/control/reboot" data-control-form>
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/reboot" data-control-form>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="danger-button" type="submit" data-i18n="camera.restart_camera">Restart camera</button>
     </form>

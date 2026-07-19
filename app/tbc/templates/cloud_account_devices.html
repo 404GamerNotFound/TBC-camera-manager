@@ -6,13 +6,13 @@
     <p class="eyebrow">{{ cloud_module.label }}</p>
     <h1 data-i18n="cloud_account.devices_from" data-i18n-params='{{ {"account": account.label} | tojson }}'>Devices from {{ account.label }}</h1>
   </div>
-  <a class="secondary-button" href="/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
 </section>
 
 {% if error %}
 <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
 <div class="form-actions">
-  <a class="secondary-button" href="/cloud-accounts/{{ account.id }}/edit" data-i18n="cloud_account.edit_account_details_or_verification">Edit account details or verification code</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/edit" data-i18n="cloud_account.edit_account_details_or_verification">Edit account details or verification code</a>
 </div>
 {% elif not devices %}
 <div class="quiet-box" data-i18n="cloud_account.no_devices_were_found_cloud">No devices were found in this cloud account.</div>
@@ -34,7 +34,7 @@
     {% if device.manual_stream_uri in existing_uris %}
     <p class="quiet-box" data-i18n="cloud_account.already_imported_as_camera">Already imported as a camera.</p>
     {% endif %}
-    <form method="post" action="/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
+    <form method="post" action="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
       <input type="hidden" name="manual_stream_uri" value="{{ device.manual_stream_uri }}">
       <input type="hidden" name="module_key" value="{{ device.suggested_module_key }}">
       <input type="hidden" name="name" value="{{ device.name }}">
@@ -44,7 +44,7 @@
     {% if (device.suggested_module_key, device.external_id) in existing_hosts %}
     <p class="quiet-box" data-i18n="cloud_account.already_imported_as_camera">Already imported as a camera.</p>
     {% endif %}
-    <form method="post" action="/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
+    <form method="post" action="{{ ingress_prefix }}/cloud-accounts/{{ account.id }}/devices/import" class="inline-form">
       <input type="hidden" name="external_id" value="{{ device.external_id }}">
       <input type="hidden" name="module_key" value="{{ device.suggested_module_key }}">
       <input type="hidden" name="name" value="{{ device.name }}">

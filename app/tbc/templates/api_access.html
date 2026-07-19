@@ -20,7 +20,7 @@
       <code>/mcp/mcp</code><span data-i18n="api.intro_disabled">. Disabled by default.</span>
     </p>
     <div class="api-access-control-grid">
-      <form class="api-access-settings" method="post" action="/settings/api">
+      <form class="api-access-settings" method="post" action="{{ ingress_prefix }}/settings/api">
         <div class="api-toggle-list">
           <label class="check-row">
             <input name="enabled" type="checkbox" {% if api_config.enabled %}checked{% endif %}>
@@ -57,7 +57,7 @@
       <span>{{ api_tokens | length }}</span>
     </div>
     <p class="hint-text" data-i18n="api.tokens_intro">Create a separate token per integration so you can revoke one without affecting the others. The full token is shown once, right after creation - store it somewhere safe.</p>
-    <form class="api-access-settings" method="post" action="/settings/api-tokens">
+    <form class="api-access-settings" method="post" action="{{ ingress_prefix }}/settings/api-tokens">
       <div class="form-grid">
         <label>
           <span data-i18n="api.token_name">Name</span>
@@ -108,7 +108,7 @@
             </td>
             <td>
               {% if not token.revoked_at %}
-              <form method="post" action="/settings/api-tokens/{{ token.id }}/revoke">
+              <form method="post" action="{{ ingress_prefix }}/settings/api-tokens/{{ token.id }}/revoke">
                 <button class="secondary-button" type="submit" data-i18n="api.revoke_key">Revoke key</button>
               </form>
               {% endif %}

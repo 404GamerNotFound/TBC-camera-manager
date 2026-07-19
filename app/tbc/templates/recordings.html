@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<form class="filter-bar" method="get" action="/recordings">
+<form class="filter-bar" method="get" action="{{ ingress_prefix }}/recordings">
   <label>
     <span data-i18n="camera_new_choice.camera">Camera</span>
     <select name="camera_id">
@@ -51,11 +51,11 @@
     <video
       class="clip-media-video"
       preload="none"
-      data-clip-video="/recordings/{{ clip.id }}/media"
-      {% if clip.snapshot_path or clip.snapshot_remote_key %}poster="/recordings/{{ clip.id }}/snapshot"{% endif %}
+      data-clip-video="{{ ingress_prefix }}/recordings/{{ clip.id }}/media"
+      {% if clip.snapshot_path or clip.snapshot_remote_key %}poster="{{ ingress_prefix }}/recordings/{{ clip.id }}/snapshot"{% endif %}
     ></video>
     {% elif clip.snapshot_path or clip.snapshot_remote_key %}
-    <img class="clip-media-still" src="/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
+    <img class="clip-media-still" src="{{ ingress_prefix }}/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
     {% else %}
     <div class="clip-placeholder">{{ clip.detection_key }}</div>
     {% endif %}
@@ -76,17 +76,17 @@
       <div class="card-footer">
         <span>{{ clip.duration_seconds or 0 }}s · {{ clip.storage_kind }}</span>
         <div class="button-row">
-          <a class="secondary-button" href="/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
+          <a class="secondary-button" href="{{ ingress_prefix }}/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
           {% if role == 'admin' %}
           {% if clip.locked %}
-          <form method="post" action="/recordings/{{ clip.id }}/unlock">
+          <form method="post" action="{{ ingress_prefix }}/recordings/{{ clip.id }}/unlock">
             <button class="secondary-button" type="submit" data-i18n="recording.unlock">Unlock</button>
           </form>
           {% else %}
-          <form method="post" action="/recordings/{{ clip.id }}/lock">
+          <form method="post" action="{{ ingress_prefix }}/recordings/{{ clip.id }}/lock">
             <button class="secondary-button" type="submit" data-i18n="recording.lock">Lock</button>
           </form>
-          <form method="post" action="/recordings/{{ clip.id }}/delete">
+          <form method="post" action="{{ ingress_prefix }}/recordings/{{ clip.id }}/delete">
             <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
           </form>
           {% endif %}
@@ -104,9 +104,9 @@
 {% if filters.date_to %}{% set _ = qs_parts.append('date_to=' ~ filters.date_to) %}{% endif %}
 {% if filters.search %}{% set _ = qs_parts.append('search=' ~ (filters.search | urlencode)) %}{% endif %}
 <div class="button-row timeline-day-nav">
-  <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}" data-i18n="recordings.previous_page">‹ Previous page</a>
+  <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="{{ ingress_prefix }}/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}" data-i18n="recordings.previous_page">‹ Previous page</a>
   <span data-i18n="recordings.page_indicator" data-i18n-params='{{ {"page": page, "total_pages": total_pages} | tojson }}'>Page {{ page }} / {{ total_pages }}</span>
-  <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="/recordings?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}" data-i18n="recordings.next_page">Next page ›</a>
+  <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="{{ ingress_prefix }}/recordings?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}" data-i18n="recordings.next_page">Next page ›</a>
 </div>
 {% else %}
 <section class="empty-state">

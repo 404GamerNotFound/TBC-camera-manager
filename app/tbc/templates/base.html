@@ -8,13 +8,19 @@
     {% if active_theme %}
     <link rel="stylesheet" href="{{ url_for('theme_asset', theme_key=active_theme.key, asset_path=active_theme.stylesheet) }}?v={{ asset_version }}">
     {% endif %}
+    <script>
+      // Empty outside Home Assistant Ingress - see app/tbc/ingress.py. Read
+      // by static/i18n.js's tbcUrl() helper, used by every page's JS for
+      // fetch() calls that would otherwise hardcode a root-relative path.
+      window.TBC_INGRESS_PREFIX = "{{ ingress_prefix }}";
+    </script>
     <script src="{{ url_for('static', path='/i18n.js') }}?v={{ asset_version }}"></script>
   </head>
   {% set path = request.url.path %}
   <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else 'compact-app' }}"{% endif %}>
     <header class="topbar navbar navbar-expand-xl">
       <div class="container-fluid app-nav-container">
-        <a class="brand navbar-brand" href="/cameras" aria-label="TBC Dashboard" data-i18n-aria-label="nav.dashboard_title">
+        <a class="brand navbar-brand" href="{{ ingress_prefix }}/cameras" aria-label="TBC Dashboard" data-i18n-aria-label="nav.dashboard_title">
           <span class="brand-mark">TBC</span>
           <span class="brand-name" data-i18n="nav.app_name">TB Camera</span>
         </a>
@@ -35,13 +41,13 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/cameras') %} active{% endif %}" href="/cameras">
+                  <a class="dropdown-item{% if path.startswith('/cameras') %} active{% endif %}" href="{{ ingress_prefix }}/cameras">
                     <span class="nav-shortcut" aria-hidden="true">K</span>
                     <span data-i18n="nav.cameras">Cameras</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/live') %} active{% endif %}" href="/live">
+                  <a class="dropdown-item{% if path.startswith('/live') %} active{% endif %}" href="{{ ingress_prefix }}/live">
                     <span class="nav-shortcut" aria-hidden="true">L</span>
                     <span data-i18n="camera.live">Live</span>
                   </a>
@@ -54,25 +60,25 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/activity') %} active{% endif %}" href="/activity">
+                  <a class="dropdown-item{% if path.startswith('/activity') %} active{% endif %}" href="{{ ingress_prefix }}/activity">
                     <span class="nav-shortcut" aria-hidden="true">V</span>
                     <span data-i18n="nav.activity">Activity</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="/timeline">
+                  <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="{{ ingress_prefix }}/timeline">
                     <span class="nav-shortcut" aria-hidden="true">T</span>
                     <span data-i18n="base.timeline">Timeline</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="/recordings">
+                  <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="{{ ingress_prefix }}/recordings">
                     <span class="nav-shortcut" aria-hidden="true">C</span>
                     <span data-i18n="common.clips">Clips</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="/sd-card">
+                  <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="{{ ingress_prefix }}/sd-card">
                     <span class="nav-shortcut" aria-hidden="true">S</span>
                     <span data-i18n="base.sd_card">SD card</span>
                   </a>
@@ -86,19 +92,19 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="/storage">
+                  <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="{{ ingress_prefix }}/storage">
                     <span class="nav-shortcut" aria-hidden="true">Z</span>
                     <span data-i18n="base.destinations">Destinations</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/storage/explorer') %} active{% endif %}" href="/storage/explorer">
+                  <a class="dropdown-item{% if path.startswith('/storage/explorer') %} active{% endif %}" href="{{ ingress_prefix }}/storage/explorer">
                     <span class="nav-shortcut" aria-hidden="true">E</span>
                     <span data-i18n="base.explorer">Explorer</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/retention') %} active{% endif %}" href="/retention">
+                  <a class="dropdown-item{% if path.startswith('/retention') %} active{% endif %}" href="{{ ingress_prefix }}/retention">
                     <span class="nav-shortcut" aria-hidden="true">R</span>
                     <span data-i18n="common.retention">Retention</span>
                   </a>
@@ -111,19 +117,19 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="/health">
+                  <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="{{ ingress_prefix }}/health">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
                     <span data-i18n="base.performance">Performance</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="/notifications">
+                  <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="{{ ingress_prefix }}/notifications">
                     <span class="nav-shortcut" aria-hidden="true">N</span>
                     <span data-i18n="base.notifications">Notifications</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/mqtt') %} active{% endif %}" href="/mqtt">
+                  <a class="dropdown-item{% if path.startswith('/mqtt') %} active{% endif %}" href="{{ ingress_prefix }}/mqtt">
                     <span class="nav-shortcut" aria-hidden="true">M</span>
                     <span data-i18n="mqtt.title">MQTT</span>
                   </a>
@@ -142,68 +148,68 @@
                 <div class="mega-menu-grid">
                   <div class="mega-menu-column">
                     <p class="mega-menu-heading" data-i18n="nav.category_cameras_ai">Cameras &amp; AI</p>
-                    <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
+                    <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="{{ ingress_prefix }}/detection">
                       <span class="nav-shortcut" aria-hidden="true">E</span>
                       <span data-i18n="base.ai_detection">AI detection</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="/recognition">
+                    <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="{{ ingress_prefix }}/recognition">
                       <span class="nav-shortcut" aria-hidden="true">R</span>
                       <span data-i18n="nav.recognition">Face &amp; plate recognition</span>
                     </a>
                   </div>
                   <div class="mega-menu-column">
                     <p class="mega-menu-heading" data-i18n="nav.category_integrations">Plugins &amp; integrations</p>
-                    <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
+                    <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="{{ ingress_prefix }}/camera-modules">
                       <span class="nav-shortcut" aria-hidden="true">P</span>
                       <span data-i18n="base.camera_plugins">Camera plugins</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
+                    <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="{{ ingress_prefix }}/cloud-modules">
                       <span class="nav-shortcut" aria-hidden="true">O</span>
                       <span data-i18n="base.cloud_providers">Cloud providers</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/network-modules') or path.startswith('/network-accounts') %} active{% endif %}" href="/network-modules">
+                    <a class="dropdown-item{% if path.startswith('/network-modules') or path.startswith('/network-accounts') %} active{% endif %}" href="{{ ingress_prefix }}/network-modules">
                       <span class="nav-shortcut" aria-hidden="true">N</span>
                       <span data-i18n="base.network_providers">Network providers</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
+                    <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="{{ ingress_prefix }}/design">
                       <span class="nav-shortcut" aria-hidden="true">G</span>
                       <span data-i18n="common.design">Design</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
+                    <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="{{ ingress_prefix }}/plugin-sources">
                       <span class="nav-shortcut" aria-hidden="true">X</span>
                       <span data-i18n="base.external_sources">External sources</span>
                     </a>
                   </div>
                   <div class="mega-menu-column">
                     <p class="mega-menu-heading" data-i18n="nav.category_system">System</p>
-                    <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
+                    <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="{{ ingress_prefix }}/users">
                       <span class="nav-shortcut" aria-hidden="true">B</span>
                       <span data-i18n="base.users">Users</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/settings') and not path.startswith('/settings/audit-log') and not path.startswith('/settings/backup') %} active{% endif %}" href="/settings">
+                    <a class="dropdown-item{% if path.startswith('/settings') and not path.startswith('/settings/audit-log') and not path.startswith('/settings/backup') %} active{% endif %}" href="{{ ingress_prefix }}/settings">
                       <span class="nav-shortcut" aria-hidden="true">A</span>
                       <span data-i18n="base.settings">Settings</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}" data-i18n-title="{{ 'plugin_updates.app_version_update_available' if app_update_available else 'plugin_updates.app_version' }}" data-i18n-params='{{ {"version": app_version, "latest_version": app_latest_version} | tojson }}'>
+                    <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="{{ ingress_prefix }}/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}" data-i18n-title="{{ 'plugin_updates.app_version_update_available' if app_update_available else 'plugin_updates.app_version' }}" data-i18n-params='{{ {"version": app_version, "latest_version": app_latest_version} | tojson }}'>
                       <span class="nav-shortcut" aria-hidden="true">U</span>
                       <span><span data-i18n="plugin_updates.updates">Updates</span>{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available" data-i18n-title="plugin_updates.count_available" data-i18n-params='{{ {"count": total_update_count} | tojson }}'>{{ total_update_count }}</span>{% endif %}</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/network-mappings') %} active{% endif %}" href="/network-mappings">
+                    <a class="dropdown-item{% if path.startswith('/network-mappings') %} active{% endif %}" href="{{ ingress_prefix }}/network-mappings">
                       <span class="nav-shortcut" aria-hidden="true">M</span>
                       <span data-i18n="network_account.mappings">Network mappings</span>
                     </a>
                   </div>
                   <div class="mega-menu-column">
                     <p class="mega-menu-heading" data-i18n="nav.category_security">Security &amp; data</p>
-                    <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
+                    <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="{{ ingress_prefix }}/api-access">
                       <span class="nav-shortcut" aria-hidden="true">I</span>
                       <span data-i18n="api.title">API access</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/settings/audit-log') %} active{% endif %}" href="/settings/audit-log">
+                    <a class="dropdown-item{% if path.startswith('/settings/audit-log') %} active{% endif %}" href="{{ ingress_prefix }}/settings/audit-log">
                       <span class="nav-shortcut" aria-hidden="true">U</span>
                       <span data-i18n="audit.title">Audit log</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/settings/backup') %} active{% endif %}" href="/settings/backup">
+                    <a class="dropdown-item{% if path.startswith('/settings/backup') %} active{% endif %}" href="{{ ingress_prefix }}/settings/backup">
                       <span class="nav-shortcut" aria-hidden="true">B</span>
                       <span data-i18n="backup.title">Backup &amp; restore</span>
                     </a>
@@ -225,7 +231,7 @@
               </ul>
             </li>
             <li class="nav-item nav-logout">
-              <form method="post" action="/logout">
+              <form method="post" action="{{ ingress_prefix }}/logout">
                 <button class="icon-button" title="Sign out" data-i18n-title="nav.sign_out" aria-label="Sign out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
               </form>
             </li>
@@ -249,9 +255,9 @@
           <span class="app-footer-meta" data-i18n="nav.footer_version" data-i18n-params='{{ {"app_name": app_name, "version": app_version} | tojson }}'>{{ app_name }} {{ app_version }}</span>
         </div>
         <nav class="app-footer-links" aria-label="Footer" data-i18n-aria-label="nav.footer">
-          <a href="/docs" data-i18n="docs.footer_link">Docs</a>
+          <a href="{{ ingress_prefix }}/docs" data-i18n="docs.footer_link">Docs</a>
           {% if role == 'admin' %}
-          <a href="/license" data-i18n="base.license">License</a>
+          <a href="{{ ingress_prefix }}/license" data-i18n="base.license">License</a>
           <button type="button" data-debug-toggle data-i18n="settings.debug_log">Debug Log</button>
           {% endif %}
         </nav>

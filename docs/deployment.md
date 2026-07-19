@@ -20,8 +20,11 @@ network.
 
 Add the repository to `Settings → Apps → App store`, install **TBC Camera Manager**, configure at
 least `admin_password`, and open the web UI. The app stores private state under `/data` and maps
-recordings to Home Assistant media storage. The full Home Assistant packaging notes remain in
-`tbc_camera_manager/DOCS.md` in the repository.
+recordings to Home Assistant media storage. The web UI runs behind Home Assistant Ingress (a
+sidebar entry, and **Open web UI**, work without a direct connection to the container's port) -
+WebRTC live view still needs direct network access to port `8555`, since Ingress cannot tunnel its
+media stream; HLS live view has no such limitation. The full Home Assistant packaging notes remain
+in `tbc_camera_manager/DOCS.md` in the repository.
 
 ## Persistent paths
 

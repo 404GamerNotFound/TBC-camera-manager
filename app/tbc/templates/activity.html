@@ -8,15 +8,15 @@
   </div>
 </section>
 
-<form class="filter-bar" method="get" action="/activity">
+<form class="filter-bar" method="get" action="{{ ingress_prefix }}/activity">
   <label>
     <span data-i18n="activity.day">Day</span>
     <input name="day" type="date" value="{{ selected_day }}" max="{{ today }}">
   </label>
   <button class="primary-button" type="submit" data-i18n="activity.show">Show</button>
   <div class="button-row timeline-day-nav">
-    <a class="secondary-button" href="/activity?day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
-    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/activity?day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/activity?day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="{{ ingress_prefix }}/activity?day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
   </div>
   <label class="check-row{% if not any_sd_card_available %} is-disabled{% endif %}">
     <input type="checkbox" data-activity-toggle="sdcard" {% if not any_sd_card_available %}disabled{% endif %}>
