@@ -52,5 +52,5 @@
 </section>
 {% endif %}
 
-<script src="{{ url_for('static', path='/activity.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/activity.js?v={{ asset_version }}" defer></script>
 {% endblock %}

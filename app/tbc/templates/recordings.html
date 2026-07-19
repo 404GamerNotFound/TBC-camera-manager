@@ -113,6 +113,6 @@
   <h2 data-i18n="recordings.no_clips_found">No clips found</h2>
 </section>
 {% endif %}
-<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
-<script src="{{ url_for('static', path='/recordings.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/recordings.js?v={{ asset_version }}" defer></script>
 {% endblock %}

@@ -77,5 +77,5 @@
     <p class="quiet-box" data-plugin-search-empty hidden data-i18n="design.no_designs_found">No designs found.</p>
   </section>
 </section>
-<script src="{{ url_for('static', path='/plugin-search.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/plugin-search.js?v={{ asset_version }}" defer></script>
 {% endblock %}

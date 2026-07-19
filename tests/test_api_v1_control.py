@@ -891,6 +891,25 @@ class HomeAssistantIngressTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(f'href="{self.INGRESS_PATH}/cameras"', response.text)
         self.assertIn(f'window.TBC_INGRESS_PREFIX = "{self.INGRESS_PATH}";', response.text)
+        # Regression guard: static asset URLs (built from a plain manual path,
+        # not Starlette's url_for()/root_path) must come out as a single clean
+        # prefixed relative path, e.g. "/api/.../static/i18n.js" - not a
+        # mangled "{prefix}{absolute_url}" concatenation - see app/tbc/ingress.py
+        # for why url_for()+root_path was abandoned for this.
+        self.assertIn(f'src="{self.INGRESS_PATH}/static/i18n.js', response.text)
+        self.assertNotIn("http://testserver/static", response.text)
+
+    def test_static_files_are_reachable_under_ingress(self):
+        # Regression test for the actual bug this was shipped with: setting
+        # ASGI scope["root_path"] made Starlette's Mount routing (used by the
+        # /static StaticFiles mount) look for a doubled "static/static/..."
+        # path and 404 - see app/tbc/ingress.py's module docstring. Home
+        # Assistant Supervisor strips the ingress prefix from the path before
+        # forwarding to the container, so the request TBC actually receives
+        # is the bare path below, with only the X-Ingress-Path header set.
+        response = CLIENT.get("/static/i18n.js", headers={"X-Ingress-Path": self.INGRESS_PATH})
+
+        self.assertEqual(response.status_code, 200)
 
     def test_rendered_page_links_are_unprefixed_without_ingress_header(self):
         CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})

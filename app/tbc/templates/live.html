@@ -143,7 +143,7 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', path='/vendor/hls.min.js') }}?v={{ asset_version }}" defer></script>
-<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
-<script src="{{ url_for('static', path='/live.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/vendor/hls.min.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/live.js?v={{ asset_version }}" defer></script>
 {% endblock %}

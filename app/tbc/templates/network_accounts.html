@@ -117,5 +117,5 @@
   <p class="quiet-box" data-i18n="network_account.no_network_accounts_have_been">No network accounts have been configured yet.</p>
   {% endfor %}
 </section>
-<script src="{{ url_for('static', path='/network-account-form.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/network-account-form.js?v={{ asset_version }}" defer></script>
 {% endblock %}

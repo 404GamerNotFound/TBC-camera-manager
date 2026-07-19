@@ -1,10 +1,36 @@
 """Home Assistant Ingress support.
 
 Ingress proxies every request through a per-installation, dynamically
-assigned path prefix (e.g. `/api/hassio_ingress/<token>/...`) that Home
-Assistant sends on each request via the `X-Ingress-Path` header rather than
-stripping it before forwarding - the prefix isn't known until request time,
-so it can't be expressed as a static `uvicorn --root-path` flag.
+assigned path prefix (e.g. `/api/hassio_ingress/<token>/...`). Home
+Assistant Supervisor's own proxy (`supervisor/api/ingress.py`,
+`_create_url`) strips that prefix from the path *before* forwarding to the
+add-on's container - the container only ever sees the plain path
+(`/cameras`, `/static/i18n.js`, ...) - and separately sends the prefix via
+the `X-Ingress-Path` request header, purely so the app can reconstruct
+correct absolute URLs when it needs to.
+
+This deliberately does NOT set ASGI `scope["root_path"]`. That looks like
+the "correct" mechanism at first (it's what makes Starlette's own
+`url_for()`/`Request.url` prefix-aware), but it assumes `scope["path"]`
+*already contains* the root_path prefix as a literal substring - true for a
+`uvicorn --root-path` deployment behind a proxy that forwards the full
+original path, false here, since Supervisor already stripped it. Setting a
+root_path that doesn't actually prefix `path` breaks `Mount` routes
+specifically (`StaticFiles`, the `/mcp` sub-app): `Mount.matches()`
+unconditionally appends its own matched segment to `root_path` for the
+child scope, and the mounted app then computes its own path via
+`get_route_path()`, which (correctly, given root_path lies about being a
+real prefix) returns the *entire unstripped* path again - so `StaticFiles`
+ends up looking for `static/static/i18n.js` instead of `static/i18n.js`
+and 404s. Confirmed via Starlette's own `starlette/routing.py:get_route_path`
+and `Mount.matches`.
+
+Given that, every outgoing URL this app emits is prefixed manually instead
+(plain string concatenation, not `url_for()`): this middleware only
+rewrites response headers (`Location`, `Set-Cookie`) and exposes
+`request.state.ingress_prefix` for templates/JSON payloads/JS to prepend
+themselves - see the `ingress_prefix` context processor in main.py and
+`{{ ingress_prefix }}/static/...` in templates.
 
 This is a raw ASGI middleware (not `BaseHTTPMiddleware`) so it can rewrite
 response headers uniformly no matter which route or helper produced them,
@@ -47,7 +73,6 @@ class IngressPathMiddleware:
                 ingress_prefix = value.decode("latin-1").rstrip("/")
                 break
 
-        scope["root_path"] = ingress_prefix
         scope.setdefault("state", {})["ingress_prefix"] = ingress_prefix
 
         if not ingress_prefix:
