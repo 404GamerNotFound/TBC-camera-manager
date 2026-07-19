@@ -197,6 +197,11 @@ has no archive left to retry automatically; re-upload the same file once the pac
 installed. Installation happens into the already-running process - no container restart is
 needed before the plugin loads successfully.
 
+For a camera plugin, any already-configured camera on that module is automatically refreshed
+right after a successful install, so its detail page immediately reflects the newly available
+functionality instead of showing a stale probe result (e.g. an ONVIF-only fallback message)
+until the next background poll cycle or a manual **Refresh** click.
+
 ## Security
 
 A plugin installed from an external source contains the same executable code as a manually

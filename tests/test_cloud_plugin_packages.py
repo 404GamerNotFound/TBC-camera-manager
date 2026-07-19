@@ -85,6 +85,8 @@ class CloudPluginPackageTests(unittest.TestCase):
             with self.assertRaises(MissingPluginRequirements) as ctx:
                 install_plugin_archive(archive, external_path)
             self.assertEqual(ctx.exception.missing, ("definitely-not-a-real-package-xyz==1.0",))
+            self.assertEqual(ctx.exception.plugin_kind, "cloud")
+            self.assertEqual(ctx.exception.module_key, "acme_cloud")
             self.assertEqual(ctx.exception.plugin_label, "Acme Cloud")
             self.assertEqual(list(Path(external_path).iterdir()), [])
 

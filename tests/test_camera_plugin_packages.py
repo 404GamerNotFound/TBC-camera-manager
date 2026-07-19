@@ -99,6 +99,8 @@ class CameraPluginPackageTests(unittest.TestCase):
                 install_plugin_archive(archive, external_path)
             self.assertEqual(ctx.exception.missing, ("definitely-not-a-real-package-xyz==1.0",))
             self.assertEqual(ctx.exception.plugin_label, "Acme Camera")
+            self.assertEqual(ctx.exception.plugin_kind, "camera")
+            self.assertEqual(ctx.exception.module_key, "acme")
             self.assertEqual(list(Path(external_path).iterdir()), [])
 
     def test_zip_plugin_can_be_installed_loaded_exported_and_removed(self):

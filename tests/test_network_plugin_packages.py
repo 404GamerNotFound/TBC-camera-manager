@@ -147,6 +147,8 @@ class NetworkPluginPackageTests(unittest.TestCase):
                 install_plugin_archive(archive, external_path)
             self.assertEqual(ctx.exception.missing, ("definitely-not-a-real-package-xyz==1.0",))
             self.assertEqual(ctx.exception.plugin_label, "Acme Network")
+            self.assertEqual(ctx.exception.plugin_kind, "network")
+            self.assertEqual(ctx.exception.module_key, "acme_network")
             self.assertEqual(list(Path(external_path).iterdir()), [])
 
     def test_normalize_account_configuration_validates_required_fields(self):

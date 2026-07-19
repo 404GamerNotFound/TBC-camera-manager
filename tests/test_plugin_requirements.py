@@ -76,6 +76,23 @@ class MissingPluginRequirementsExceptionTests(unittest.TestCase):
         self.assertEqual(exc.plugin_label, "AVM FRITZ!Box")
         self.assertIn("fritzconnection==1.15.1", str(exc))
 
+    def test_carries_plugin_kind_and_module_key(self):
+        # Lets the install route know which already-configured cameras (etc.)
+        # to auto-refresh once the packages are actually installed - see
+        # install_plugin_requirements_route in main.py.
+        exc = MissingPluginRequirements(
+            ("reolink-aio==0.21.3",), plugin_label="Reolink", plugin_kind="camera", module_key="reolink"
+        )
+
+        self.assertEqual(exc.plugin_kind, "camera")
+        self.assertEqual(exc.module_key, "reolink")
+
+    def test_plugin_kind_and_module_key_default_to_empty_string(self):
+        exc = MissingPluginRequirements(("pkg==1.0",))
+
+        self.assertEqual(exc.plugin_kind, "")
+        self.assertEqual(exc.module_key, "")
+
 
 class InstallRequirementsTests(unittest.IsolatedAsyncioTestCase):
     async def test_empty_specs_is_a_no_op(self):

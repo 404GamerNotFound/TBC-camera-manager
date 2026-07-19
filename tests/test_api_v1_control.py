@@ -744,6 +744,77 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303)
         self.assertEqual(response.headers["location"], "/camera-modules")
 
+    def test_install_now_refreshes_cameras_already_on_that_module(self):
+        # Regression test: a camera already configured on a plugin that was
+        # missing a requirement (e.g. Reolink without reolink-aio) used to
+        # keep showing a stale "library not installed" probe result on its
+        # detail page until the next background poll cycle or a manual
+        # "Refresh" click - now it's re-probed immediately once the missing
+        # package is actually installed.
+        camera_id = database.create_camera(
+            main.SETTINGS.database_path,
+            name="Front",
+            host="203.0.113.5",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+            module_key="acme_requirements_camera",
+        )
+        other_camera_id = database.create_camera(
+            main.SETTINGS.database_path,
+            name="Back",
+            host="203.0.113.6",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+            module_key="standard_onvif",
+        )
+
+        with (
+            patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")),
+            patch("app.tbc.main._refresh_camera", new=AsyncMock()) as refresh_mock,
+        ):
+            response = CLIENT.post(
+                "/plugin-requirements/install",
+                data={
+                    "requirements": ["definitely-not-a-real-package-xyz==1.0"],
+                    "retry_url": "/camera-modules",
+                    "plugin_kind": "camera",
+                    "module_key": "acme_requirements_camera",
+                },
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        refresh_mock.assert_called_once_with(camera_id)
+        self.assertNotIn(unittest.mock.call(other_camera_id), refresh_mock.call_args_list)
+
+    def test_install_now_without_module_key_does_not_refresh_any_camera(self):
+        database.create_camera(
+            main.SETTINGS.database_path,
+            name="Front",
+            host="203.0.113.5",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+            module_key="acme_requirements_camera",
+        )
+
+        with (
+            patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")),
+            patch("app.tbc.main._refresh_camera", new=AsyncMock()) as refresh_mock,
+        ):
+            CLIENT.post(
+                "/plugin-requirements/install",
+                data={"requirements": ["definitely-not-a-real-package-xyz==1.0"], "retry_url": "/camera-modules"},
+                follow_redirects=False,
+            )
+
+        refresh_mock.assert_not_called()
+
     def test_install_now_failure_flashes_and_redirects_back(self):
         with patch(
             "app.tbc.main.install_requirements",

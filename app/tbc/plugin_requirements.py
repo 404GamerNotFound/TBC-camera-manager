@@ -19,12 +19,26 @@ class MissingPluginRequirements(Exception):
     Carries the exact unsatisfied specifier strings (and the plugin's label,
     for a clear message) so the caller can show an admin a confirmation step
     before anything gets installed - see plugin_requirements_confirm.html.
+    `plugin_kind`/`module_key` identify which installed module this install
+    would have become, so that once the packages are actually installed,
+    already-configured cameras/accounts using that same module can be
+    refreshed automatically instead of showing stale probe results until the
+    next background poll or a manual refresh.
     """
 
-    def __init__(self, missing: tuple[str, ...], *, plugin_label: str = "") -> None:
+    def __init__(
+        self,
+        missing: tuple[str, ...],
+        *,
+        plugin_label: str = "",
+        plugin_kind: str = "",
+        module_key: str = "",
+    ) -> None:
         super().__init__(f"Missing Python packages: {', '.join(missing)}")
         self.missing = missing
         self.plugin_label = plugin_label
+        self.plugin_kind = plugin_kind
+        self.module_key = module_key
 
 
 class PluginRequirementsInstallError(RuntimeError):

@@ -403,7 +403,9 @@ def install_plugin_archive(archive: bytes, external_path: str) -> CloudPluginPac
                 raise CloudPluginError("Built-in cloud plugins cannot be overwritten")
             missing = missing_requirements(manifest.requirements)
             if missing:
-                raise MissingPluginRequirements(missing, plugin_label=manifest.label)
+                raise MissingPluginRequirements(
+                    missing, plugin_label=manifest.label, plugin_kind="cloud", module_key=manifest.key
+                )
             package = CloudPluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key

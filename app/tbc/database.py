@@ -799,6 +799,15 @@ def count_cameras_by_module(database_path: str, module_key: str) -> int:
     return int(row["total"] if row else 0)
 
 
+def list_camera_ids_by_module(database_path: str, module_key: str) -> list[int]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT id FROM cameras WHERE module_key = ?",
+            (module_key,),
+        ).fetchall()
+    return [int(row["id"]) for row in rows]
+
+
 def create_cloud_account(
     database_path: str,
     *,

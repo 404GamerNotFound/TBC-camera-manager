@@ -6,7 +6,7 @@
     <p class="eyebrow" data-i18n="plugin.requirements_needed_eyebrow">Additional packages needed</p>
     <h1>{{ label or 'Plugin' }}</h1>
   </div>
-  <a class="secondary-button" href="{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
 </section>
 
 <div class="quiet-box" data-i18n="plugin.requirements_needed_explanation">
@@ -34,8 +34,10 @@
   {% if source_id is not none %}
   <input type="hidden" name="source_id" value="{{ source_id }}">
   {% endif %}
+  <input type="hidden" name="plugin_kind" value="{{ plugin_kind }}">
+  <input type="hidden" name="module_key" value="{{ module_key }}">
   <button class="primary-button" type="submit" data-i18n="plugin.install_requirements_now">Install now</button>
-  <a class="secondary-button" href="{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
 </form>
 
 <p class="quiet-box" data-i18n="plugin.requirements_installed_retry_hint">

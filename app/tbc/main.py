@@ -4162,6 +4162,8 @@ async def plugin_requirements_confirm_page(
     retry_url: str = Query("/plugin-sources"),
     label: str = Query(""),
     source_id: int | None = Query(None),
+    plugin_kind: str = Query(""),
+    module_key: str = Query(""),
 ):
     guard = _require_admin(request)
     if guard:
@@ -4177,6 +4179,8 @@ async def plugin_requirements_confirm_page(
             "retry_url": _safe_internal_path(retry_url, "/plugin-sources"),
             "label": label,
             "source_id": source_id,
+            "plugin_kind": plugin_kind,
+            "module_key": module_key,
             "flash": _pop_flash(request),
         },
     )
@@ -4188,6 +4192,8 @@ async def install_plugin_requirements_route(
     requirements: list[str] = Form(...),
     retry_url: str = Form("/plugin-sources"),
     source_id: int | None = Form(None),
+    plugin_kind: str = Form(""),
+    module_key: str = Form(""),
 ):
     guard = _require_admin(request)
     if guard:
@@ -4198,6 +4204,14 @@ async def install_plugin_requirements_route(
     except PluginRequirementsInstallError as exc:
         _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(safe_retry_url)
+    if plugin_kind == "camera" and module_key:
+        # The packages just installed may be exactly what an already-
+        # configured camera on this module was missing - refresh it now
+        # instead of leaving its detail page showing a stale "library not
+        # installed" probe result until the next background poll cycle or a
+        # manual "Refresh" click.
+        for camera_id in database.list_camera_ids_by_module(SETTINGS.database_path, module_key):
+            asyncio.create_task(_refresh_camera(camera_id))
     if source_id is not None:
         # Came from a GitHub-sync attempt, not a ZIP upload - we know exactly
         # which source to retry, so do it now instead of making the admin
@@ -5841,7 +5855,13 @@ def _safe_internal_path(path: str, fallback: str) -> str:
 def _redirect_to_requirements_confirm(
     exc: MissingPluginRequirements, retry_url: str, *, source_id: int | None = None
 ) -> RedirectResponse:
-    params: dict[str, Any] = {"requirements": list(exc.missing), "retry_url": retry_url, "label": exc.plugin_label}
+    params: dict[str, Any] = {
+        "requirements": list(exc.missing),
+        "retry_url": retry_url,
+        "label": exc.plugin_label,
+        "plugin_kind": exc.plugin_kind,
+        "module_key": exc.module_key,
+    }
     if source_id is not None:
         params["source_id"] = source_id
     query = urlencode(params, doseq=True)
