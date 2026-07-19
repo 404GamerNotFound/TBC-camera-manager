@@ -96,6 +96,13 @@ TBC checks GitHub releases and registered plugin sources hourly.
 Installed plugins execute with the privileges of the TBC process. Update from trusted repositories
 and use the bundled plugin tests as an additional check, not as a security boundary.
 
+If a plugin (its own or a newly synced update's) declares Python packages TBC does not already
+have installed, **Synchronize**/**Update now**/**Install directly** stops and redirects to a
+confirmation page listing exactly what is missing instead of failing later with an opaque
+error. Nothing installs until **Install now** is clicked explicitly; see
+[**Plugin-declared pip requirements**](plugin-sources.md#plugin-declared-pip-requirements-requirements)
+in plugin-sources.md.
+
 ## Security checklist
 
 - Replace the default administrator password and `TBC_SECRET_KEY` before exposing TBC.

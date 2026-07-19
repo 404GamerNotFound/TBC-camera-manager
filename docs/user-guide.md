@@ -136,3 +136,10 @@ A network-provider account reads clients from a router or controller. Map a came
 MAC address to show online/offline state, wired or Wi-Fi connection, uplink name, signal strength,
 IP address, and last-seen time. This mapping supplements the camera module; it does not carry video
 or control traffic. See [network-accounts.md](network-accounts.md) for the provider contract.
+
+`/network-mappings` (linked from a mapped camera's **Network** tab) shows every mapped camera as a
+three-level **Network topology** tree: network account → the switch or access point it currently
+connects through → the cameras on that uplink. A camera that has gone offline keeps showing the
+uplink it was last seen on instead of dropping out of the tree, so you can still tell where to look
+for it physically. Expand a camera's **History** to see its recent connectivity events
+(online/offline transitions and uplink changes) with timestamps.

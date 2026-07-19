@@ -32,9 +32,16 @@ acme-camera-plugin.zip
   "description": "Acme cameras",
   "entrypoint": "plugin.py",
   "capabilities": ["live", "detections"],
-  "ports": {"onvif": 8000, "http": 80, "rtsp": 554}
+  "ports": {"onvif": 8000, "http": 80, "rtsp": 554},
+  "requirements": ["acme-camera-sdk==2.1.0"]
 }
 ```
+
+`requirements` is optional - a list of the plugin's own pip dependencies TBC does not already
+ship, installed on demand with an explicit admin confirmation instead of having to live in
+TBC's own `requirements.txt`. See
+[**Plugin-declared pip requirements**](plugin-sources.md#plugin-declared-pip-requirements-requirements)
+in plugin-sources.md.
 
 Built-in modules are completely contained in `app/tbc/camera_plugins/<key>/`. This includes
 not only `manifest.json`, `plugin.py`, and `detections.json`, but also the full

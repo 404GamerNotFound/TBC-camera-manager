@@ -26,6 +26,7 @@ authoritative configuration:
   "entrypoint": "plugin.py",
   "auth_type": "credentials",
   "verification_support": "not_applicable",
+  "requirements": ["acme-cloud-sdk==1.0.0"],
   "account_fields": [
     {
       "key": "email",
@@ -54,6 +55,12 @@ authoritative configuration:
   ]
 }
 ```
+
+`requirements` is optional - a list of the plugin's own pip dependencies TBC does not already
+ship, installed on demand with an explicit admin confirmation instead of having to live in
+TBC's own `requirements.txt`. See
+[**Plugin-declared pip requirements**](plugin-sources.md#plugin-declared-pip-requirements-requirements)
+in plugin-sources.md.
 
 `account_fields` is the complete, plugin-supplied description of the account form. The main
 project has no knowledge of provider-specific fields. Supported types are `text`, `email`,

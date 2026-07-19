@@ -29,7 +29,7 @@ viewer.
   mappings.
 - [Design themes](design-themes.md) - theme manifests, stylesheets, assets, and activation.
 - [Plugin tests and external sources](plugin-sources.md) - repository installation, validation,
-  tests, synchronization, and update detection.
+  tests, synchronization, update detection, and a plugin's own pip requirements.
 
 ## Documentation conventions
 
