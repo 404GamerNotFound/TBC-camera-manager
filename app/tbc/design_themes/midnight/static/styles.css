@@ -1664,6 +1664,98 @@ code {
   padding: 16px;
 }
 
+.topology-tree {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 0 20px;
+  list-style: none;
+  border-left: 2px solid var(--line);
+}
+
+.topology-tree li {
+  position: relative;
+  padding-left: 12px;
+}
+
+.topology-tree li::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 14px;
+  width: 12px;
+  height: 2px;
+  background: var(--line);
+}
+
+.topology-tree-accounts {
+  border-left: none;
+  padding-left: 0;
+}
+
+.topology-tree-accounts > li::before {
+  display: none;
+}
+
+.topology-account summary {
+  cursor: pointer;
+}
+
+.topology-account-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.topology-uplink-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.topology-camera-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topology-camera-row small {
+  color: var(--muted);
+}
+
+.topology-camera-log {
+  margin-top: 4px;
+}
+
+.topology-camera-log summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.topology-camera-log ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.topology-camera-log li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 0;
+}
+
+.topology-camera-log li::before {
+  content: none;
+}
+
 .plugin-manager {
   display: grid;
   gap: 18px;

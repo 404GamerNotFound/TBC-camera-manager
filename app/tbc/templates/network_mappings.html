@@ -21,6 +21,64 @@
 
 <section class="table-section">
   <div class="section-title">
+    <h2 data-i18n="network_account.topology">Network topology</h2>
+    <span>{{ topology | length }}</span>
+  </div>
+  {% if topology %}
+  <div class="storage-list">
+    {% for account_node in topology %}
+    <details class="source-disclosure topology-account" open>
+      <summary>
+        <span class="topology-account-name">{{ account_node.account_label }}</span>
+        <span>{{ account_node.total_cameras }}</span>
+      </summary>
+      <ul class="topology-tree topology-tree-accounts">
+        {% for group in account_node.groups %}
+        <li class="topology-uplink">
+          <div class="topology-uplink-header">
+            <strong>{{ group.uplink_name }}</strong>
+            <span>{{ group.cameras | length }}</span>
+          </div>
+          <ul class="topology-tree">
+            {% for entry in group.cameras %}
+            <li>
+              <div class="topology-camera-row">
+                <a href="/cameras/{{ entry.camera.id }}#network">{{ entry.camera.name }}</a>
+                <span class="status-pill {{ 'status-active' if entry.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if entry.online else 'network_account.offline' }}">{{ 'online' if entry.online else 'offline' }}</span>
+                {% if not entry.online and entry.last_seen %}
+                <small data-i18n="network_account.last_connected_at" data-i18n-params='{{ {"time": entry.last_seen} | tojson }}'>Last connected: {{ entry.last_seen }}</small>
+                {% endif %}
+              </div>
+              {% if entry.events %}
+              <details class="topology-camera-log">
+                <summary data-i18n="network_account.history">History</summary>
+                <ul>
+                  {% for event in entry.events %}
+                  <li>
+                    <span class="status-pill {{ 'status-active' if event.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if event.online else 'network_account.offline' }}">{{ 'online' if event.online else 'offline' }}</span>
+                    <span>{{ event.uplink_name or '–' }}</span>
+                    <span>{{ event.created_at }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </details>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="quiet-box" data-i18n="network_account.no_topology_available">No switch/AP connection info is available for any mapped camera yet.</p>
+  {% endif %}
+</section>
+
+<section class="table-section">
+  <div class="section-title">
     <h2 data-i18n="network_account.mapped_cameras">Mapped cameras</h2>
     <span>{{ mapped | length }}</span>
   </div>

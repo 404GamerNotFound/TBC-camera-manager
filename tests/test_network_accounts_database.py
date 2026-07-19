@@ -174,5 +174,74 @@ class CameraNetworkMappingTests(unittest.TestCase):
             self.assertIsNone(camera["network_device_mac"])
 
 
+class NetworkDeviceStatusAndEventsTests(unittest.TestCase):
+    def _camera_id(self, db_path: str) -> int:
+        return database.create_camera(
+            db_path, name="Front Door", host="192.168.1.50", onvif_port=8000, http_port=80,
+            username="admin", password="secret",
+        )
+
+    def test_first_upsert_records_status_and_one_event(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = self._camera_id(handle.name)
+
+            database.upsert_network_device_status(
+                handle.name, camera_id, online=True, connection_type="wired",
+                uplink_name="Schuppen PoE", signal_dbm=None,
+            )
+
+            status = database.get_network_device_status(handle.name, camera_id)
+            self.assertTrue(status["online"])
+            self.assertEqual(status["uplink_name"], "Schuppen PoE")
+
+            events = database.list_network_device_events(handle.name, camera_id)
+            self.assertEqual(len(events), 1)
+            self.assertIsNone(events[0]["previous_online"])
+            self.assertTrue(events[0]["online"])
+
+    def test_repeated_unchanged_state_does_not_add_events(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = self._camera_id(handle.name)
+
+            for _ in range(3):
+                database.upsert_network_device_status(
+                    handle.name, camera_id, online=True, connection_type="wired",
+                    uplink_name="Schuppen PoE", signal_dbm=-40,
+                )
+
+            events = database.list_network_device_events(handle.name, camera_id)
+            self.assertEqual(len(events), 1)
+
+    def test_going_offline_and_reconnecting_elsewhere_each_add_an_event(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = self._camera_id(handle.name)
+
+            database.upsert_network_device_status(
+                handle.name, camera_id, online=True, connection_type="wired",
+                uplink_name="Schuppen PoE", signal_dbm=None,
+            )
+            database.upsert_network_device_status(
+                handle.name, camera_id, online=False, connection_type=None,
+                uplink_name=None, signal_dbm=None,
+            )
+            database.upsert_network_device_status(
+                handle.name, camera_id, online=True, connection_type="wifi",
+                uplink_name="Schuppen - U7 Long-Range", signal_dbm=-62,
+            )
+
+            status = database.get_network_device_status(handle.name, camera_id)
+            self.assertEqual(status["uplink_name"], "Schuppen - U7 Long-Range")
+
+            events = database.list_network_device_events(handle.name, camera_id)
+            self.assertEqual(len(events), 3)
+            # Most recent first.
+            self.assertEqual(events[0]["uplink_name"], "Schuppen - U7 Long-Range")
+            self.assertFalse(events[1]["online"])
+            self.assertTrue(events[1]["previous_online"])
+
+
 if __name__ == "__main__":
     unittest.main()

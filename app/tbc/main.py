@@ -1183,8 +1183,47 @@ async def _publish_network_state(network_account_id: int) -> None:
             return
         NETWORK_STATE_CACHE[network_account_id] = [_network_device_to_dict(device) for device in devices]
         NETWORK_STATE_PROBE_RETRY_AFTER.pop(network_account_id, None)
+        _record_network_device_status(network_account_id, NETWORK_STATE_CACHE[network_account_id])
     finally:
         NETWORK_STATE_PROBES_IN_FLIGHT.discard(network_account_id)
+
+
+def _record_network_device_status(network_account_id: int, devices: list[dict[str, Any]]) -> None:
+    """Persist each mapped camera's connectivity so offline devices still show
+
+    where they were last connected (network_mappings.html's tree) and build
+    up a per-camera history (network_device_events). A camera missing from
+    `devices` (the controller no longer reports it - offline, or briefly
+    dropped from the client list) falls back to whatever location/signal was
+    last known instead of erasing it.
+    """
+    devices_by_mac = {str(device["mac_address"]).strip().lower(): device for device in devices}
+    for camera in database.list_cameras(SETTINGS.database_path):
+        if camera.get("network_account_id") != network_account_id:
+            continue
+        mac = camera.get("network_device_mac")
+        if not mac:
+            continue
+        camera_id = int(camera["id"])
+        device = devices_by_mac.get(mac)
+        online = device.get("online") if device else False
+        connection_type = device.get("connection_type") if device else None
+        uplink_name = device.get("uplink_name") if device else None
+        signal_dbm = device.get("signal_dbm") if device else None
+        if not uplink_name:
+            previous = database.get_network_device_status(SETTINGS.database_path, camera_id)
+            if previous:
+                connection_type = connection_type or previous["connection_type"]
+                uplink_name = uplink_name or previous["uplink_name"]
+                signal_dbm = signal_dbm if signal_dbm is not None else previous["signal_dbm"]
+        database.upsert_network_device_status(
+            SETTINGS.database_path,
+            camera_id,
+            online=online,
+            connection_type=connection_type,
+            uplink_name=uplink_name,
+            signal_dbm=signal_dbm,
+        )
 
 
 def _network_device_to_dict(device: Any) -> dict[str, Any]:
@@ -3679,6 +3718,7 @@ async def test_network_account_route(request: Request, account_id: int):
         _set_flash(request, "common.raw_message", {"message": message}, "error")
         return _redirect(account_url)
     NETWORK_STATE_CACHE[account_id] = [_network_device_to_dict(device) for device in devices]
+    _record_network_device_status(account_id, NETWORK_STATE_CACHE[account_id])
     message = _t_en("network_account.connected_devices_found", count=len(devices))
     database.update_network_account_test_result(SETTINGS.database_path, account_id, status="ok", message=message)
     _set_flash(request, "common.raw_message", {"message": message})
@@ -3742,14 +3782,19 @@ async def network_mappings_page(request: Request):
                 (device for device in cached_devices if str(device["mac_address"]).strip().lower() == mac),
                 None,
             )
+        camera_id = int(camera["id"])
+        events = database.list_network_device_events(SETTINGS.database_path, camera_id, limit=10)
         mapped.append(
             {
                 "camera": camera,
                 "account": accounts_by_id.get(account_id),
                 "mac": mac,
                 "state": state,
+                "last_status": database.get_network_device_status(SETTINGS.database_path, camera_id),
+                "events": events,
             }
         )
+    topology = _network_topology(mapped)
     return templates.TemplateResponse(
         request,
         "network_mappings.html",
@@ -3759,10 +3804,60 @@ async def network_mappings_page(request: Request):
             "role": "admin",
             "mapped": mapped,
             "unmapped": unmapped,
+            "topology": topology,
             "has_network_accounts": bool(accounts_by_id),
             "flash": _pop_flash(request),
         },
     )
+
+
+def _network_topology(mapped: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group mapped cameras by network account, then by the switch/AP they
+    connect through - a real (if two-level-deep) tree under each account's
+    controller, not just a flat list of switches/APs.
+
+    `network_device_status` (kept in sync on every probe, see
+    _record_network_device_status) is preferred over the live probe cache so
+    an offline camera - or one the controller briefly reports nothing for -
+    still shows up under the switch/AP it was last connected to, instead of
+    disappearing from the tree the moment it drops offline. The provider
+    only tells us a camera's own immediate uplink, not that switch/AP's own
+    uplink, so this cannot go deeper than account -> uplink device -> camera.
+    """
+    accounts: dict[Any, dict[str, Any]] = {}
+    for entry in mapped:
+        source = entry.get("last_status") or entry.get("state")
+        uplink_name = (source or {}).get("uplink_name")
+        if not uplink_name:
+            continue
+        account = entry.get("account")
+        account_id = account["id"] if account else 0
+        account_bucket = accounts.setdefault(
+            account_id, {"account_label": account["label"] if account else "–", "groups": {}}
+        )
+        events = entry.get("events") or []
+        account_bucket["groups"].setdefault(uplink_name, []).append(
+            {
+                **entry,
+                "online": (source or {}).get("online"),
+                "uplink_name": uplink_name,
+                "last_seen": events[0]["created_at"] if events else None,
+            }
+        )
+    result = []
+    for bucket in sorted(accounts.values(), key=lambda item: item["account_label"].lower()):
+        groups = [
+            {"uplink_name": name, "cameras": cameras}
+            for name, cameras in sorted(bucket["groups"].items(), key=lambda item: item[0].lower())
+        ]
+        result.append(
+            {
+                "account_label": bucket["account_label"],
+                "groups": groups,
+                "total_cameras": sum(len(group["cameras"]) for group in groups),
+            }
+        )
+    return result
 
 
 @app.get("/design", response_class=HTMLResponse)

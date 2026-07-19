@@ -478,6 +478,30 @@ CREATE TABLE IF NOT EXISTS recognition_events (
     FOREIGN KEY(matched_face_id) REFERENCES known_faces(id) ON DELETE SET NULL,
     FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS network_device_status (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    camera_id INTEGER NOT NULL,
+    online INTEGER,
+    connection_type TEXT,
+    uplink_name TEXT,
+    signal_dbm INTEGER,
+    checked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(camera_id),
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS network_device_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    camera_id INTEGER NOT NULL,
+    previous_online INTEGER,
+    online INTEGER,
+    connection_type TEXT,
+    uplink_name TEXT,
+    signal_dbm INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -1148,6 +1172,86 @@ def clear_camera_network_mapping(database_path: str, camera_id: int) -> None:
             """,
             (camera_id,),
         )
+
+
+def upsert_network_device_status(
+    database_path: str,
+    camera_id: int,
+    *,
+    online: bool | None,
+    connection_type: str | None,
+    uplink_name: str | None,
+    signal_dbm: int | None,
+) -> None:
+    """Record a camera's current network-connectivity snapshot.
+
+    Mirrors upsert_health_status()/health_events: network_device_status holds
+    only the latest snapshot per camera (so "where was it last seen" survives
+    a probe that returns nothing, e.g. the device went offline and dropped
+    out of the controller's client list); a network_device_events row is
+    appended only when online state or the uplink device changes, so the log
+    doesn't grow every poll cycle (default 60s) for an unchanged camera.
+    """
+    with connect(database_path) as db:
+        previous = db.execute(
+            "SELECT online, uplink_name FROM network_device_status WHERE camera_id = ?",
+            (camera_id,),
+        ).fetchone()
+        db.execute(
+            """
+            INSERT INTO network_device_status (
+                camera_id, online, connection_type, uplink_name, signal_dbm, checked_at
+            )
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(camera_id) DO UPDATE SET
+                online = excluded.online,
+                connection_type = excluded.connection_type,
+                uplink_name = excluded.uplink_name,
+                signal_dbm = excluded.signal_dbm,
+                checked_at = CURRENT_TIMESTAMP
+            """,
+            (camera_id, online, connection_type, uplink_name, signal_dbm),
+        )
+        changed = previous is None or bool(previous["online"]) != bool(online) or previous["uplink_name"] != uplink_name
+        if changed:
+            db.execute(
+                """
+                INSERT INTO network_device_events (
+                    camera_id, previous_online, online, connection_type, uplink_name, signal_dbm
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    camera_id,
+                    previous["online"] if previous else None,
+                    online,
+                    connection_type,
+                    uplink_name,
+                    signal_dbm,
+                ),
+            )
+
+
+def get_network_device_status(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM network_device_status WHERE camera_id = ?", (camera_id,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_network_device_events(database_path: str, camera_id: int, limit: int = 50) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT * FROM network_device_events
+             WHERE camera_id = ?
+             ORDER BY id DESC
+             LIMIT ?
+            """,
+            (camera_id, limit),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def create_plugin_source(

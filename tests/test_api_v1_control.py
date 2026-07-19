@@ -486,5 +486,166 @@ class CloudDeviceCredentialCarryoverImportTests(unittest.TestCase):
         self.assertEqual(database.list_cameras(main.SETTINGS.database_path), [])
 
 
+class NetworkTopologyTests(unittest.TestCase):
+    """_network_topology() groups mapped cameras by network account, then by
+    the switch/AP they're connected through - a real (account -> uplink ->
+    camera) tree for the "Network mappings" page. See database.py's
+    network_device_status/network_device_events for how offline cameras
+    still resolve a last-known uplink here instead of vanishing from the
+    tree.
+
+    Lives in this file (rather than its own) because only one test module in
+    the suite may own app.tbc.main's TestClient - see this file's docstring.
+    """
+
+    def test_groups_cameras_by_account_then_uplink_sorted_alphabetically(self):
+        mapped = [
+            {
+                "camera": {"id": 1, "name": "Pool"},
+                "account": {"id": 1, "label": "Unifi Home"},
+                "state": {"uplink_name": "Schuppen PoE", "online": True},
+                "last_status": None,
+                "events": [],
+            },
+            {
+                "camera": {"id": 2, "name": "Terasse"},
+                "account": {"id": 1, "label": "Unifi Home"},
+                "state": {"uplink_name": "Schuppen - U7 Long-Range", "online": False},
+                "last_status": None,
+                "events": [],
+            },
+            {
+                "camera": {"id": 3, "name": "Einfahrt"},
+                "account": {"id": 1, "label": "Unifi Home"},
+                "state": {"uplink_name": "Schuppen PoE", "online": True},
+                "last_status": None,
+                "events": [],
+            },
+        ]
+
+        topology = main._network_topology(mapped)
+
+        self.assertEqual(len(topology), 1)
+        account_node = topology[0]
+        self.assertEqual(account_node["account_label"], "Unifi Home")
+        self.assertEqual(account_node["total_cameras"], 3)
+        self.assertEqual(
+            [group["uplink_name"] for group in account_node["groups"]],
+            ["Schuppen - U7 Long-Range", "Schuppen PoE"],
+        )
+        schuppen_poe = next(g for g in account_node["groups"] if g["uplink_name"] == "Schuppen PoE")
+        self.assertEqual([entry["camera"]["name"] for entry in schuppen_poe["cameras"]], ["Pool", "Einfahrt"])
+
+    def test_cameras_without_any_known_uplink_are_omitted(self):
+        mapped = [
+            {
+                "camera": {"id": 1, "name": "Pool"},
+                "account": {"id": 1, "label": "Unifi Home"},
+                "state": {"uplink_name": "Schuppen PoE", "online": True},
+                "last_status": None,
+                "events": [],
+            },
+            {
+                "camera": {"id": 2, "name": "Flur"},
+                "account": {"id": 1, "label": "Unifi Home"},
+                "state": None,
+                "last_status": None,
+                "events": [],
+            },
+        ]
+
+        topology = main._network_topology(mapped)
+
+        self.assertEqual(len(topology), 1)
+        self.assertEqual(topology[0]["total_cameras"], 1)
+
+    def test_offline_camera_falls_back_to_last_known_uplink(self):
+        mapped = [
+            {
+                "camera": {"id": 1, "name": "Pool"},
+                "account": {"id": 1, "label": "Unifi Home"},
+                "state": None,
+                "last_status": {"online": False, "uplink_name": "Schuppen PoE", "connection_type": "wired"},
+                "events": [{"online": False, "uplink_name": "Schuppen PoE", "created_at": "2026-07-19T06:00:00+00:00"}],
+            },
+        ]
+
+        topology = main._network_topology(mapped)
+
+        camera_entry = topology[0]["groups"][0]["cameras"][0]
+        self.assertFalse(camera_entry["online"])
+        self.assertEqual(camera_entry["uplink_name"], "Schuppen PoE")
+        self.assertEqual(camera_entry["last_seen"], "2026-07-19T06:00:00+00:00")
+
+    def test_network_mappings_page_renders_the_topology_tree(self):
+        db_path = main.SETTINGS.database_path
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        database.initialize(db_path, main.SETTINGS.recordings_path)
+        database.ensure_admin_user(db_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+        account_id = database.create_network_account(
+            db_path, module_key="unifi-network", label="Home", config={"host": "10.0.0.1", "identifier": "admin", "secret": "secret"}
+        )
+        camera_id = database.create_camera(
+            db_path, name="Einfahrt", host="", onvif_port=8000, http_port=80, username="", password=""
+        )
+        database.set_camera_network_mapping(db_path, camera_id, network_account_id=account_id, mac="ec:71:db:a3:ee:17")
+        main.NETWORK_STATE_CACHE[account_id] = [
+            {
+                "mac_address": "ec:71:db:a3:ee:17",
+                "name": "Einfahrt",
+                "ip_address": "10.0.0.20",
+                "online": True,
+                "connection_type": "wired",
+                "uplink_name": "Schuppen PoE",
+                "signal_dbm": None,
+                "last_seen": "2026-07-19T07:31:05+00:00",
+            }
+        ]
+        main._record_network_device_status(account_id, main.NETWORK_STATE_CACHE[account_id])
+
+        response = CLIENT.get("/network-mappings")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Schuppen PoE", response.text)
+        self.assertIn("Home", response.text)
+        self.assertIn("topology-tree", response.text)
+        self.assertIn("topology-camera-log", response.text)
+
+    def test_offline_camera_shows_last_connected_hint_on_the_page(self):
+        db_path = main.SETTINGS.database_path
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        database.initialize(db_path, main.SETTINGS.recordings_path)
+        database.ensure_admin_user(db_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+        account_id = database.create_network_account(
+            db_path, module_key="unifi-network", label="Home", config={"host": "10.0.0.1", "identifier": "admin", "secret": "secret"}
+        )
+        camera_id = database.create_camera(
+            db_path, name="Pool", host="", onvif_port=8000, http_port=80, username="", password=""
+        )
+        database.set_camera_network_mapping(db_path, camera_id, network_account_id=account_id, mac="ec:71:db:80:98:59")
+        main.NETWORK_STATE_CACHE[account_id] = [
+            {
+                "mac_address": "ec:71:db:80:98:59", "name": "Pool", "ip_address": "10.0.0.30", "online": True,
+                "connection_type": "wired", "uplink_name": "Schuppen PoE", "signal_dbm": None, "last_seen": None,
+            }
+        ]
+        main._record_network_device_status(account_id, main.NETWORK_STATE_CACHE[account_id])
+        # Second probe: the camera dropped out of the controller's client list entirely.
+        main.NETWORK_STATE_CACHE[account_id] = []
+        main._record_network_device_status(account_id, main.NETWORK_STATE_CACHE[account_id])
+
+        response = CLIENT.get("/network-mappings")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Schuppen PoE", response.text)
+        self.assertIn("network_account.last_connected_at", response.text)
+
+
 if __name__ == "__main__":
     unittest.main()
