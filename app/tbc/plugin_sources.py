@@ -129,6 +129,13 @@ STANDARD_PLUGIN_SOURCES = (
         repo_url="https://github.com/404GamerNotFound/TBC-network-ubiquiti",
     ),
     StandardPluginSource(
+        key="fritzbox-network",
+        plugin_kind="network",
+        label="AVM FRITZ!Box",
+        description="Maps cameras to FRITZ!Box/mesh devices for live connectivity status (mesh node, signal, online state)",
+        repo_url="https://github.com/404GamerNotFound/TBC-fritz.box",
+    ),
+    StandardPluginSource(
         key="xsense-cloud",
         plugin_kind="cloud",
         label="X-Sense",

@@ -127,6 +127,17 @@ via `Controller.devices`. `verify_ssl` defaults to off, since almost every local
 uses a self-signed certificate. This is a network provider only - not to be confused with the
 already-existing `unifi_protect` **cloud** plugin, which imports UniFi Protect cameras.
 
+## Reference implementation: AVM FRITZ!Box
+
+[`TBC-fritz.box`](https://github.com/404GamerNotFound/TBC-fritz.box) reads a FRITZ!Box's
+device list (`Hosts:GetGenericHostEntry`) and mesh topology (`X_AVM-DE_GetMeshListPath`,
+the same data the FRITZ!Box web UI's network map uses) through
+[`fritzconnection`](https://pypi.org/project/fritzconnection/), resolving which FRITZ!Box or
+mesh repeater each device is currently connected through and, for Wi-Fi clients, signal
+quality. `fritzconnection` is synchronous, so every call runs via `asyncio.to_thread()`. The
+mesh-topology action isn't available on every Fritz!OS version - `discover_devices()` falls
+back to the plain device list (no `uplink_name`) rather than failing outright if it's missing.
+
 ## Import, export, and admin interface
 
 Administrators manage network plugins under `Admin → Network providers`, including import,

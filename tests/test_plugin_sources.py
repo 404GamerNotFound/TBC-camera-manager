@@ -103,6 +103,15 @@ class StandardPluginSourceTests(unittest.TestCase):
         self.assertEqual(source.ref, "main")
         self.assertEqual(source.subdirectory, "")
 
+    def test_fritzbox_standard_repository_is_available(self):
+        source = get_standard_plugin_source("fritzbox-network")
+
+        self.assertIsNotNone(source)
+        self.assertEqual(source.plugin_kind, "network")
+        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-fritz.box")
+        self.assertEqual(source.ref, "main")
+        self.assertEqual(source.subdirectory, "")
+
     def test_xsense_standard_repositories_share_one_repo_via_subdirectory(self):
         cloud_source = get_standard_plugin_source("xsense-cloud")
         camera_source = get_standard_plugin_source("xsense-camera")
