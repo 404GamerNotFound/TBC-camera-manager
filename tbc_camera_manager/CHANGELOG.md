@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.1 - "Integrated, properly"
+
+- Fixed a bug in 0.6.0's Home Assistant Ingress support: setting the ASGI `root_path` to make
+  link generation prefix-aware broke routing for mounted sub-apps (`/static`, `/mcp`) instead,
+  making every CSS/JS asset 404 and the page render blank when opened from the sidebar. Every
+  outgoing URL is now built with a plain, manually prefixed path instead.
+- A camera on a plugin that was missing a Python requirement (e.g. Reolink without
+  `reolink-aio`) is now refreshed automatically right after the missing package is installed,
+  instead of keeping a stale probe result on its detail page until the next background poll or
+  a manual **Refresh** click.
+
 ## 0.6.0 - "Integrated"
 
 - Added Home Assistant Ingress support: TBC now appears in the Home Assistant sidebar, and
