@@ -1765,6 +1765,40 @@ code {
   line-height: 1.4;
 }
 
+.source-add-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.source-add-panel > .standard-source-intro {
+  margin: -4px 0 0;
+}
+
+.source-add-panel > .editor-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.plugin-external-source-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.plugin-external-source-hint a {
+  flex: 0 0 auto;
+}
+
 .source-disclosure {
   margin-top: 12px;
   overflow: hidden;

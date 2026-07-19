@@ -12,58 +12,11 @@
   External sources install plugins directly from a public GitHub repository instead of requiring a manual ZIP upload. Synchronizing downloads and installs the latest version again; only public repositories are supported. Each registered source is also checked hourly for a newer update; see <code data-i18n="plugin_source.admin_updates">Admin → Updates</code>.
 </div>
 
-<section class="storage-list standard-source-grid">
+<section class="source-add-panel" id="add-source">
   <div class="section-title">
-    <h2 data-i18n="plugin_source.standard_repositories">Standard repositories</h2>
-    <span>{{ standard_sources | length }}</span>
+    <h2 data-i18n="plugin_source.add_source">Add source</h2>
   </div>
-  <p class="standard-source-intro" data-i18n="plugin_source.preconfigured_public_repositories_can_be">Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.</p>
-  {% for entry in standard_sources %}
-  <article class="storage-item standard-source-card" id="standard-source-{{ entry.source.key }}">
-    <div class="standard-source-card-head">
-      <h3>{{ entry.source.label }}</h3>
-      <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}" data-i18n="{{ 'plugin_source.already_registered' if entry.registered_source else 'plugin_source.ready_to_install' }}">{{ 'already registered' if entry.registered_source else 'ready to install' }}</span>
-    </div>
-    <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a> · {{ entry.source.ref }}</p>
-    <p class="standard-source-description">{{ entry.source.description }}</p>
-    <div class="standard-source-card-footer">
-      <span class="status-pill status-idle">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
-      {% if entry.registered_source %}
-      <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
-        <button class="primary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
-      </form>
-      {% else %}
-      <form method="post" action="/plugin-sources/standard/{{ entry.source.key }}/install">
-        <button class="primary-button" type="submit" data-i18n="plugin_source.install_directly">Install directly</button>
-      </form>
-      {% endif %}
-    </div>
-  </article>
-  {% endfor %}
-</section>
-
-<details class="source-disclosure">
-  <summary><strong data-i18n="plugin_source.required_plugin_structure">Required plugin structure</strong></summary>
-  <section class="source-disclosure-body">
-    <p data-i18n="plugin_source.repository_or_specified_subdirectory_within">A repository (or the specified subdirectory within it) must have the same structure as a manual ZIP import:</p>
-    <dl class="metric-row">
-      <div><dt data-i18n="plugin_source.camera_plugin">Camera plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> and <code>tests/test_*.py</code></dd></div>
-      <div><dt data-i18n="base.cloud_providers">Cloud providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
-      <div><dt data-i18n="base.network_providers">Network providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
-      <div><dt data-i18n="common.design">Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - no code, no tests</dd></div>
-    </dl>
-    <p><code>manifest.json</code> must <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> and (except for designs) <code>entrypoint</code> contain; <code>plugin.py</code> provides <code>create_module()</code> which returns a <code>CameraModule</code>or <code>CloudAccountModule</code>instance. An optional <code>tests/</code>folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in <code>docs/plugin-sources.md</code> in the TBC repository, as well as <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
-    <div class="form-actions">
-      <a class="secondary-button" href="/plugin-sources/template/camera" data-i18n="plugin_source.template_camera_plugin">Template: camera plugin</a>
-      <a class="secondary-button" href="/plugin-sources/template/cloud" data-i18n="plugin_source.template_cloud_provider">Template: cloud provider</a>
-      <a class="secondary-button" href="/plugin-sources/template/network" data-i18n="plugin_source.template_network_provider">Template: network provider</a>
-      <a class="secondary-button" href="/plugin-sources/template/design" data-i18n="plugin_source.template_design">Template: design</a>
-    </div>
-  </section>
-</details>
-
-<details class="source-disclosure">
-  <summary><strong data-i18n="plugin_source.add_source">Add source</strong></summary>
+  <p class="standard-source-intro" data-i18n="plugin_source.add_source_intro">Register any public GitHub repository as a plugin source - TBC downloads the code, validates it like a manual ZIP import, and keeps it in sync automatically.</p>
   <form class="editor-form compact-form" method="post" action="/plugin-sources">
     <div class="form-grid">
       <label>
@@ -96,7 +49,37 @@
       <button class="primary-button" type="submit" data-i18n="plugin_source.add_source">Add source</button>
     </div>
   </form>
-</details>
+</section>
+
+<section class="storage-list standard-source-grid">
+  <div class="section-title">
+    <h2 data-i18n="plugin_source.standard_repositories">Standard repositories</h2>
+    <span>{{ standard_sources | length }}</span>
+  </div>
+  <p class="standard-source-intro" data-i18n="plugin_source.preconfigured_public_repositories_can_be">Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.</p>
+  {% for entry in standard_sources %}
+  <article class="storage-item standard-source-card" id="standard-source-{{ entry.source.key }}">
+    <div class="standard-source-card-head">
+      <h3>{{ entry.source.label }}</h3>
+      <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}" data-i18n="{{ 'plugin_source.already_registered' if entry.registered_source else 'plugin_source.ready_to_install' }}">{{ 'already registered' if entry.registered_source else 'ready to install' }}</span>
+    </div>
+    <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a> · {{ entry.source.ref }}</p>
+    <p class="standard-source-description">{{ entry.source.description }}</p>
+    <div class="standard-source-card-footer">
+      <span class="status-pill status-idle">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
+      {% if entry.registered_source %}
+      <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
+        <button class="primary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
+      </form>
+      {% else %}
+      <form method="post" action="/plugin-sources/standard/{{ entry.source.key }}/install">
+        <button class="primary-button" type="submit" data-i18n="plugin_source.install_directly">Install directly</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</section>
 
 <section class="storage-list source-registration-grid">
   <div class="section-title">
@@ -138,4 +121,24 @@
   <p class="quiet-box" data-i18n="plugin_source.no_external_sources_have_been">No external sources have been registered yet.</p>
   {% endfor %}
 </section>
+
+<details class="source-disclosure">
+  <summary><strong data-i18n="plugin_source.required_plugin_structure">Required plugin structure</strong></summary>
+  <section class="source-disclosure-body">
+    <p data-i18n="plugin_source.repository_or_specified_subdirectory_within">A repository (or the specified subdirectory within it) must have the same structure as a manual ZIP import:</p>
+    <dl class="metric-row">
+      <div><dt data-i18n="plugin_source.camera_plugin">Camera plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> and <code>tests/test_*.py</code></dd></div>
+      <div><dt data-i18n="base.cloud_providers">Cloud providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
+      <div><dt data-i18n="base.network_providers">Network providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
+      <div><dt data-i18n="common.design">Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - no code, no tests</dd></div>
+    </dl>
+    <p><code>manifest.json</code> must <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> and (except for designs) <code>entrypoint</code> contain; <code>plugin.py</code> provides <code>create_module()</code> which returns a <code>CameraModule</code>or <code>CloudAccountModule</code>instance. An optional <code>tests/</code>folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in <code>docs/plugin-sources.md</code> in the TBC repository, as well as <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
+    <div class="form-actions">
+      <a class="secondary-button" href="/plugin-sources/template/camera" data-i18n="plugin_source.template_camera_plugin">Template: camera plugin</a>
+      <a class="secondary-button" href="/plugin-sources/template/cloud" data-i18n="plugin_source.template_cloud_provider">Template: cloud provider</a>
+      <a class="secondary-button" href="/plugin-sources/template/network" data-i18n="plugin_source.template_network_provider">Template: network provider</a>
+      <a class="secondary-button" href="/plugin-sources/template/design" data-i18n="plugin_source.template_design">Template: design</a>
+    </div>
+  </section>
+</details>
 {% endblock %}
