@@ -178,7 +178,10 @@ class StandardPluginSourceTests(unittest.TestCase):
         )
 
         by_key = {candidate.key: candidate for candidate in candidates}
-        self.assertEqual(set(by_key), {"example-cloud", "xsense-cloud"})
+        self.assertEqual(
+            set(by_key),
+            {"example-cloud", "xsense-cloud", "eufy", "unifi_protect", "ewelink"},
+        )
         self.assertEqual(by_key["example-cloud"].install_url, "/plugin-sources#source-21")
         self.assertEqual(by_key["xsense-cloud"].install_url, "/plugin-sources#standard-source-xsense-cloud")
 

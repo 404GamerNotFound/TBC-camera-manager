@@ -125,7 +125,8 @@ a self-hosted UniFi Network controller (or a UDM/UDM-Pro's built-in controller) 
 (`Controller.clients`), resolving each client's access point or switch MAC to a friendly name
 via `Controller.devices`. `verify_ssl` defaults to off, since almost every local controller
 uses a self-signed certificate. This is a network provider only - not to be confused with the
-already-existing `unifi_protect` **cloud** plugin, which imports UniFi Protect cameras.
+separately-installed [`TBC-unifi-protect`](https://github.com/404GamerNotFound/TBC-unifi-protect)
+**cloud** plugin, which imports UniFi Protect cameras.
 
 ## Reference implementation: AVM FRITZ!Box
 

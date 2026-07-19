@@ -27,17 +27,9 @@ THIRD_PARTY_LICENSES: list[dict[str, str]] = [
     {"category": "Web framework & core", "name": "MCP Python SDK", "license": "MIT", "url": "https://github.com/modelcontextprotocol/python-sdk"},
 
     # Camera & cloud integrations
-    {"category": "Camera & cloud integrations", "name": "python-onvif (onvif-zeep)", "license": "MIT", "url": "https://github.com/quatanium/python-onvif"},
-    {"category": "Camera & cloud integrations", "name": "reolink-aio", "license": "MIT", "url": "https://github.com/starkillerOG/reolink_aio"},
-    {"category": "Camera & cloud integrations", "name": "uiprotect", "license": "MIT", "url": "https://github.com/uilibs/uiprotect"},
-    {"category": "Camera & cloud integrations", "name": "pyeufysecurity", "license": "MIT", "url": "https://github.com/ptarjan/pyeufysecurity"},
-    {"category": "Camera & cloud integrations", "name": "ewelink", "license": "GPL-3.0", "url": "https://github.com/Olindholm/ewelink"},
     {"category": "Camera & cloud integrations", "name": "paho-mqtt", "license": "EPL-2.0 / EDL-1.0", "url": "https://github.com/eclipse-paho/paho.mqtt.python"},
     {"category": "Camera & cloud integrations", "name": "boto3", "license": "Apache-2.0", "url": "https://github.com/boto/boto3"},
     {"category": "Camera & cloud integrations", "name": "go2rtc", "license": "MIT", "url": "https://github.com/AlexxIT/go2rtc"},
-
-    # Network integrations
-    {"category": "Network integrations", "name": "aiounifi", "license": "MIT", "url": "https://github.com/Kane610/aiounifi"},
 
     # AI detection & recognition
     {"category": "AI detection & recognition", "name": "NumPy", "license": "BSD-3-Clause", "url": "https://github.com/numpy/numpy"},

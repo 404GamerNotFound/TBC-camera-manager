@@ -151,6 +151,27 @@ STANDARD_PLUGIN_SOURCES = (
         repo_url="https://github.com/404GamerNotFound/TBC-X-Sense",
         subdirectory="camera",
     ),
+    StandardPluginSource(
+        key="eufy",
+        plugin_kind="cloud",
+        label="Eufy Security",
+        description="Eufy Security cloud account and camera discovery via pyeufysecurity",
+        repo_url="https://github.com/404GamerNotFound/TBC-eufy",
+    ),
+    StandardPluginSource(
+        key="unifi_protect",
+        plugin_kind="cloud",
+        label="UniFi Protect",
+        description="Ubiquiti UniFi Protect Controller (local or via the ui.com cloud console) via uiprotect",
+        repo_url="https://github.com/404GamerNotFound/TBC-unifi-protect",
+    ),
+    StandardPluginSource(
+        key="ewelink",
+        plugin_kind="cloud",
+        label="eWeLink (SONOFF)",
+        description="SONOFF devices via the official eWeLink/CoolKit Open Platform cloud account",
+        repo_url="https://github.com/404GamerNotFound/TBC-ewelink",
+    ),
 )
 
 

@@ -7,11 +7,6 @@ Markdown>=3.7,<4
 python-multipart==0.0.32
 itsdangerous==2.2.0
 cryptography>=48,<50
-onvif-zeep==0.2.12
-reolink-aio==0.21.3
-uiprotect==15.12.2
-pyeufysecurity==0.4.4
-ewelink==0.2.1
 aiohttp>=3.9,<4
 boto3>=1.43.49,<2
 paho-mqtt==2.1.0

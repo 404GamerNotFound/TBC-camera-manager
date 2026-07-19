@@ -3,10 +3,11 @@ import tempfile
 import unittest
 import zipfile
 from io import BytesIO
+from unittest.mock import patch
 
 from pathlib import Path
 
-from app.tbc.cloud_modules import CloudAuthType, CloudVerificationSupport, normalize_account_configuration
+from app.tbc.cloud_modules import CloudAuthType
 from app.tbc.cloud_modules.packages import (
     CloudPluginError,
     discover_plugin_packages,
@@ -58,70 +59,16 @@ def create_module():
 
 
 class CloudPluginPackageTests(unittest.TestCase):
-    def test_builtin_plugins_have_exportable_manifests(self):
+    def test_no_builtin_cloud_plugins_are_bundled(self):
+        # By design: device-specific cloud integrations (eufy, unifi_protect,
+        # ewelink) live in their own external plugin repos (TBC-eufy,
+        # TBC-unifi-protect, TBC-ewelink), installed like any other plugin
+        # via STANDARD_PLUGIN_SOURCES - unlike camera's rtsp_only/
+        # standard_onvif, cloud has no vendor-neutral case for a built-in.
         with tempfile.TemporaryDirectory() as external_path:
             packages = discover_plugin_packages(external_path)
 
-        self.assertEqual([package.manifest.key for package in packages], ["eufy", "ewelink", "unifi_protect"])
-        for package in packages:
-            archive = export_plugin_archive(package)
-            with zipfile.ZipFile(BytesIO(archive)) as bundle:
-                self.assertIn("manifest.json", bundle.namelist())
-                self.assertIn("plugin.py", bundle.namelist())
-                self.assertIn("module.py", bundle.namelist())
-
-    def test_builtin_unifi_protect_manifest_fields(self):
-        with tempfile.TemporaryDirectory() as external_path:
-            packages = discover_plugin_packages(external_path)
-
-        unifi = next(package for package in packages if package.manifest.key == "unifi_protect")
-        self.assertEqual(unifi.manifest.auth_type, CloudAuthType.CREDENTIALS)
-        self.assertTrue(unifi.manifest.requires_host)
-        self.assertEqual(unifi.manifest.default_port, 443)
-        self.assertEqual(unifi.manifest.verification_support, CloudVerificationSupport.NOT_APPLICABLE)
-        self.assertEqual(
-            [field.key for field in unifi.manifest.account_fields],
-            ["host", "port", "identifier", "secret", "verify_ssl"],
-        )
-
-    def test_builtin_ewelink_manifest_requires_coolkit_app_credentials(self):
-        with tempfile.TemporaryDirectory() as external_path:
-            packages = discover_plugin_packages(external_path)
-
-        ewelink = next(package for package in packages if package.manifest.key == "ewelink")
-        self.assertEqual(ewelink.manifest.verification_support, CloudVerificationSupport.NOT_APPLICABLE)
-        self.assertEqual(
-            [field.key for field in ewelink.manifest.account_fields],
-            ["app_id", "app_secret", "email", "password"],
-        )
-
-    def test_builtin_eufy_manifest_owns_its_account_fields(self):
-        with tempfile.TemporaryDirectory() as external_path:
-            packages = discover_plugin_packages(external_path)
-
-        eufy = next(package for package in packages if package.manifest.key == "eufy")
-        self.assertEqual(eufy.manifest.verification_support, CloudVerificationSupport.SUPPORTED)
-        self.assertEqual(
-            [field.key for field in eufy.manifest.account_fields],
-            [
-                "email",
-                "password",
-                "country",
-                "verification_code",
-                "rtsp_username",
-                "rtsp_password",
-            ],
-        )
-        verification_field = next(
-            field for field in eufy.manifest.account_fields if field.key == "verification_code"
-        )
-        self.assertTrue(verification_field.transient)
-        config = normalize_account_configuration(
-            eufy.manifest.account_fields,
-            {"email": "user@example.com", "password": "secret"},
-        )
-        self.assertEqual(config["country"], "DE")
-        self.assertEqual(config["rtsp_username"], "")
+        self.assertEqual([package.manifest.key for package in packages], [])
 
     def test_satisfied_requirement_installs_normally(self):
         archive = plugin_archive(requirements=["boto3"])
@@ -169,9 +116,15 @@ class CloudPluginPackageTests(unittest.TestCase):
                 install_plugin_archive(archive, external_path)
 
     def test_builtin_plugin_cannot_be_overwritten(self):
-        with tempfile.TemporaryDirectory() as external_path:
-            with self.assertRaisesRegex(CloudPluginError, "cannot be overwritten"):
-                install_plugin_archive(plugin_archive(key="unifi_protect"), external_path)
+        # Cloud has no real builtin plugin left to test against (eufy/
+        # unifi_protect/ewelink are now external, see
+        # test_no_builtin_cloud_plugins_are_bundled), so fake one via a
+        # patched builtin_plugins_path() to still exercise the guard itself.
+        with tempfile.TemporaryDirectory() as builtin_path, tempfile.TemporaryDirectory() as external_path:
+            (Path(builtin_path) / "acme_cloud").mkdir()
+            with patch("app.tbc.cloud_modules.packages.builtin_plugins_path", return_value=Path(builtin_path)):
+                with self.assertRaisesRegex(CloudPluginError, "cannot be overwritten"):
+                    install_plugin_archive(plugin_archive(key="acme_cloud"), external_path)
 
     def test_invalid_zip_is_reported_as_plugin_error(self):
         with tempfile.TemporaryDirectory() as external_path:

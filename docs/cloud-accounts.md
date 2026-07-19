@@ -85,8 +85,9 @@ also flattens the configuration into the `account` dictionary so a plugin can re
 `requires_host`, and `default_port` remain compatible. If `account_fields` is absent, the
 loader generates the original standard form from those values.
 
-Built-in plugins are completely contained in `app/tbc/cloud_plugins/<key>/`. They are
-self-contained and can be exported as ZIP files.
+Every cloud plugin - including the reference ones below - is a self-contained external plugin,
+installed like any other from `STANDARD_PLUGIN_SOURCES` or a custom GitHub repository. TBC
+ships none of them built-in; see [plugin-sources.md](plugin-sources.md).
 
 ## Public contract
 
@@ -152,13 +153,14 @@ corresponding login request could otherwise no longer be identified reliably.
 A plugin that must preserve state between requesting and entering a code, for example to
 continue the same partial login instead of starting again, manages that state itself. A common
 implementation is a process-wide, time-limited cache such as `_PENDING_CHALLENGES` in the
-`eufy` plugin. TBC passes only the administrator-entered code as a field value.
+[`TBC-eufy`](https://github.com/404GamerNotFound/TBC-eufy) plugin. TBC passes only the
+administrator-entered code as a field value.
 
 ## Reference implementation: UniFi Protect
 
-The built-in `unifi_protect` plugin signs in to a controller through
-[`uiprotect`](https://pypi.org/project/uiprotect/), either locally by IP address or through a
-`<console-id>.ui.com` cloud address. `discover_devices()` reads
+[`TBC-unifi-protect`](https://github.com/404GamerNotFound/TBC-unifi-protect) signs in to a
+controller through [`uiprotect`](https://pypi.org/project/uiprotect/), either locally by IP
+address or through a `<console-id>.ui.com` cloud address. `discover_devices()` reads
 `ProtectApiClient.update()` → `Bootstrap.cameras` and resolves the first RTSP-enabled channel
 through `CameraChannel.rtsp_url`. When RTSP is disabled, `manual_stream_uri` remains empty.
 Discovered devices use `suggested_module_key="ubiquiti"`.
@@ -172,7 +174,7 @@ it reliably. Affected administrators need a separate local account without 2FA.
 
 ## Reference implementation: Eufy Security
 
-The built-in `eufy` plugin uses
+[`TBC-eufy`](https://github.com/404GamerNotFound/TBC-eufy) uses
 [`pyeufysecurity`](https://pypi.org/project/pyeufysecurity/) for encrypted Eufy v2 cloud
 authentication and device discovery. Its manifest supplies an email address, password, ISO
 country code, one-time verification code with `transient: true`, and optional local RTSP
@@ -204,8 +206,9 @@ never logged.
 
 ## Reference implementation: eWeLink (SONOFF)
 
-The built-in `ewelink` plugin uses the [`ewelink`](https://pypi.org/project/ewelink/) library,
-which calls the official CoolKit Open Platform API through `v2/user/login`,
+[`TBC-ewelink`](https://github.com/404GamerNotFound/TBC-ewelink) uses the
+[`ewelink`](https://pypi.org/project/ewelink/) library, which calls the official CoolKit Open
+Platform API through `v2/user/login`,
 `v2/device/thing`, and HMAC-signed requests. Unlike Eufy or UniFi Protect, an eWeLink app
 account with email and password is not sufficient. CoolKit also requires a dedicated **app ID
 and app secret**, which can be registered for free at

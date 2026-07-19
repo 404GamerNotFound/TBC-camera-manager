@@ -20,11 +20,11 @@ Theme packages intentionally contain no executable code and therefore no tests; 
 [design-themes.md](design-themes.md).
 
 The reference example is
-`app/tbc/cloud_plugins/unifi_protect/tests/test_unifi_protect_module.py`, a built-in plugin
-whose tests live entirely inside its own plugin directory rather than the project-wide
-`tests/` directory. Some older built-in plugins still keep tests in the project-wide
-directory. That layout remains valid, but new and externally contributed plugins should use
-the in-plugin convention.
+[`TBC-unifi-protect/tests/test_module.py`](https://github.com/404GamerNotFound/TBC-unifi-protect),
+an external plugin whose tests live entirely inside its own repository rather than the
+project-wide `tests/` directory. Some older built-in plugins still keep tests in the
+project-wide directory. That layout remains valid, but new and externally contributed plugins
+should use the in-plugin convention.
 
 ### Running tests
 
