@@ -241,3 +241,7 @@ python -m unittest discover -s tests
 python -m compileall app tests
 docker compose config
 ```
+
+## License
+
+TBC is licensed under the [MIT License](LICENSE).
