@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set plugin_kind_keys = {'camera': 'plugin_source.camera_plugin', 'cloud': 'plugin.cloud_provider', 'network': 'plugin.network_provider', 'design': 'common.design'} %}
 <section class="page-heading">
   <div>
     <p class="eyebrow" data-i18n="plugin.extensions">Extensions</p>
@@ -9,7 +10,7 @@
 </section>
 
 <div class="quiet-box source-page-intro">
-  External sources install plugins directly from a public GitHub repository instead of requiring a manual ZIP upload. Synchronizing downloads and installs the latest version again; only public repositories are supported. Each registered source is also checked hourly for a newer update; see <code data-i18n="plugin_source.admin_updates">Admin → Updates</code>.
+  <span data-i18n="plugin_source.external_sources_install_plugins_directly">External sources install plugins directly from a public GitHub repository instead of requiring a manual ZIP upload. Synchronizing downloads and installs the latest version again; only public repositories are supported. Each registered source is also checked hourly for a newer update; see</span> <code data-i18n="plugin_source.admin_updates">Admin → Updates</code>.
 </div>
 
 <section class="source-add-panel" id="add-source">
@@ -42,7 +43,7 @@
       </label>
       <label>
         <span data-i18n="plugin_source.subdirectory_optional">Subdirectory (optional)</span>
-        <input name="subdirectory" placeholder="z. B. plugins/acme">
+        <input name="subdirectory" placeholder="e.g. plugins/acme" data-i18n-placeholder="plugin_source.subdirectory_placeholder">
       </label>
     </div>
     <div class="form-actions">
@@ -66,7 +67,7 @@
     <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a> · {{ entry.source.ref }}</p>
     <p class="standard-source-description">{{ entry.source.description }}</p>
     <div class="standard-source-card-footer">
-      <span class="status-pill status-idle">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
+      <span class="status-pill status-idle" data-i18n="{{ plugin_kind_keys[entry.source.plugin_kind] }}">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
       {% if entry.registered_source %}
       <form method="post" action="/plugin-sources/{{ entry.registered_source.id }}/sync">
         <button class="primary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
@@ -90,11 +91,11 @@
   <article class="storage-item source-registration-card" id="source-{{ source.id }}">
     <div class="source-registration-card-head">
       <h3>{{ source.label }}</h3>
-      <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}">{{ source.last_sync_message if source.last_sync_status else 'not synchronized yet' }}</span>
+      <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}"{% if not source.last_sync_status %} data-i18n="plugin_source.not_synchronized_yet"{% endif %}>{{ source.last_sync_message if source.last_sync_status else 'not synchronized yet' }}</span>
     </div>
     <p class="standard-source-linkline">{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
     <dl class="metric-row source-registration-meta">
-      <div><dt data-i18n="plugin_source.plugin_type">Plugin type</dt><dd>{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
+      <div><dt data-i18n="plugin_source.plugin_type">Plugin type</dt><dd data-i18n="{{ plugin_kind_keys[source.plugin_kind] }}">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
       {% if source.installed_key %}
       <div><dt data-i18n="plugin_source.installed_as">Installed as</dt><dd>{{ source.installed_key }}</dd></div>
       {% endif %}
@@ -127,12 +128,12 @@
   <section class="source-disclosure-body">
     <p data-i18n="plugin_source.repository_or_specified_subdirectory_within">A repository (or the specified subdirectory within it) must have the same structure as a manual ZIP import:</p>
     <dl class="metric-row">
-      <div><dt data-i18n="plugin_source.camera_plugin">Camera plugin</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>detections.json</code> and <code>tests/test_*.py</code></dd></div>
-      <div><dt data-i18n="base.cloud_providers">Cloud providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
-      <div><dt data-i18n="base.network_providers">Network providers</dt><dd><code>manifest.json</code>, <code>plugin.py</code>, <code>module.py</code>, optional <code>tests/test_*.py</code></dd></div>
-      <div><dt data-i18n="common.design">Design</dt><dd><code>manifest.json</code>, <code>static/styles.css</code> - no code, no tests</dd></div>
+      <div><dt data-i18n="plugin_source.camera_plugin">Camera plugin</dt><dd data-i18n="plugin_source.camera_structure">manifest.json, plugin.py, module.py, optional detections.json and tests/test_*.py</dd></div>
+      <div><dt data-i18n="base.cloud_providers">Cloud providers</dt><dd data-i18n="plugin_source.cloud_structure">manifest.json, plugin.py, module.py, optional tests/test_*.py</dd></div>
+      <div><dt data-i18n="base.network_providers">Network providers</dt><dd data-i18n="plugin_source.network_structure">manifest.json, plugin.py, module.py, optional tests/test_*.py</dd></div>
+      <div><dt data-i18n="common.design">Design</dt><dd data-i18n="plugin_source.design_structure">manifest.json, static/styles.css - no code, no tests</dd></div>
     </dl>
-    <p><code>manifest.json</code> must <code>schema_version</code>, <code>key</code>, <code>label</code>, <code>version</code> and (except for designs) <code>entrypoint</code> contain; <code>plugin.py</code> provides <code>create_module()</code> which returns a <code>CameraModule</code>or <code>CloudAccountModule</code>instance. An optional <code>tests/</code>folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in <code>docs/plugin-sources.md</code> in the TBC repository, as well as <code>docs/camera-modules.md</code>/<code>docs/cloud-accounts.md</code>/<code>docs/design-themes.md</code>.</p>
+    <p data-i18n="plugin_source.manifest_requirements">manifest.json must contain schema_version, key, label, version and, except for designs, entrypoint. plugin.py provides create_module(), which returns a CameraModule or CloudAccountModule instance. An optional tests/ folder containing pytest tests can be run directly in TBC using “Run tests”. The full reference is available in docs/plugin-sources.md in the TBC repository, as well as docs/camera-modules.md, docs/cloud-accounts.md and docs/design-themes.md.</p>
     <div class="form-actions">
       <a class="secondary-button" href="/plugin-sources/template/camera" data-i18n="plugin_source.template_camera_plugin">Template: camera plugin</a>
       <a class="secondary-button" href="/plugin-sources/template/cloud" data-i18n="plugin_source.template_cloud_provider">Template: cloud provider</a>

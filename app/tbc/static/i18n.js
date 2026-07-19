@@ -59,7 +59,7 @@
     return interpolate(template, parameters);
   };
 
-  const ATTRS = ["aria-label", "title", "placeholder", "data-tooltip"];
+  const ATTRS = ["aria-label", "title", "placeholder", "data-tooltip", "alt"];
   const datasetKeyFor = (attribute) =>
     `i18n${attribute.replace(/(^|-)([a-z])/g, (_, __, letter) => letter.toUpperCase())}`;
 
@@ -78,13 +78,13 @@
     if (element.dataset.i18n) element.textContent = translate(element.dataset.i18n, paramsFor(element));
     for (const attribute of ATTRS) {
       const key = element.dataset[datasetKeyFor(attribute)];
-      if (key) element.setAttribute(attribute, translate(key));
+      if (key) element.setAttribute(attribute, translate(key, paramsFor(element)));
     }
-    element.querySelectorAll("[data-i18n], [data-i18n-aria-label], [data-i18n-title], [data-i18n-placeholder], [data-i18n-data-tooltip]").forEach((child) => {
+    element.querySelectorAll("[data-i18n], [data-i18n-aria-label], [data-i18n-title], [data-i18n-placeholder], [data-i18n-data-tooltip], [data-i18n-alt]").forEach((child) => {
       if (child.dataset.i18n) child.textContent = translate(child.dataset.i18n, paramsFor(child));
       for (const attribute of ATTRS) {
         const key = child.dataset[datasetKeyFor(attribute)];
-        if (key) child.setAttribute(attribute, translate(key));
+        if (key) child.setAttribute(attribute, translate(key, paramsFor(child)));
       }
     });
   };
@@ -114,7 +114,7 @@
 
   const initialize = () => {
     document.documentElement.lang = language;
-    translateElement(document.body);
+    translateElement(document.documentElement);
     updateControls();
     document.addEventListener("click", (event) => {
       const control = event.target.closest("[data-language]");

@@ -22,16 +22,16 @@
       <label class="check-row"><input name="face_enabled" type="checkbox" {% if settings.face_enabled %}checked{% endif %}><span data-i18n="recognition.enable_face_recognition">Enable face recognition</span></label>
       <label><span data-i18n="recognition.face_recognition_mode">Face recognition mode</span>
         <select name="face_mode">
-          <option value="snapshot" {% if settings.face_mode == 'snapshot' %}selected{% endif %}>Snapshot (after recording)</option>
-          <option value="live" {% if settings.face_mode == 'live' %}selected{% endif %}>Live (during detection)</option>
+          <option value="snapshot" {% if settings.face_mode == 'snapshot' %}selected{% endif %} data-i18n="recognition.snapshot_after_recording">Snapshot (after recording)</option>
+          <option value="live" {% if settings.face_mode == 'live' %}selected{% endif %} data-i18n="recognition.live_during_detection">Live (during detection)</option>
         </select>
       </label>
       <label><span data-i18n="recognition.match_threshold_0_1_higher">Match threshold (0-1, higher = stricter)</span><input name="face_match_threshold" type="number" min="0" max="1" step="0.01" value="{{ settings.face_match_threshold }}"></label>
       <label class="check-row"><input name="plate_enabled" type="checkbox" {% if settings.plate_enabled %}checked{% endif %}><span data-i18n="recognition.enable_license_plate_recognition">Enable license plate recognition</span></label>
       <label><span data-i18n="recognition.plate_recognition_mode">Plate recognition mode</span>
         <select name="plate_mode">
-          <option value="snapshot" {% if settings.plate_mode == 'snapshot' %}selected{% endif %}>Snapshot (after recording)</option>
-          <option value="live" {% if settings.plate_mode == 'live' %}selected{% endif %}>Live (during detection)</option>
+          <option value="snapshot" {% if settings.plate_mode == 'snapshot' %}selected{% endif %} data-i18n="recognition.snapshot_after_recording">Snapshot (after recording)</option>
+          <option value="live" {% if settings.plate_mode == 'live' %}selected{% endif %} data-i18n="recognition.live_during_detection">Live (during detection)</option>
         </select>
       </label>
     </div>

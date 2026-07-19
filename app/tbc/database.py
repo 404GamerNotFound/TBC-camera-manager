@@ -1830,7 +1830,7 @@ def create_continuous_recording(
                 file_name, local_path, remote_key, duration_seconds, size_bytes,
                 started_at, ended_at
             )
-            VALUES (?, ?, 'continuous', 'Daueraufzeichnung', 'ready', ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, 'continuous', 'Continuous', 'ready', ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 camera_id,

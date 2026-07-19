@@ -82,7 +82,7 @@
       const download = document.createElement("a");
       download.className = "secondary-button";
       download.href = recording.download_url;
-      download.textContent = "Download";
+      download.textContent = t("common.download");
 
       actions.append(preview, download);
       actionCell.append(actions);

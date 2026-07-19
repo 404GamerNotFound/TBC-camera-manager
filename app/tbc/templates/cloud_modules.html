@@ -15,7 +15,7 @@
         <strong data-i18n="plugin.import_plugin">Import plugin</strong>
         <small data-i18n="plugin.plugin_file">Plugin file</small>
       </span>
-      <span class="status-pill status-idle">ZIP</span>
+      <span class="status-pill status-idle" data-i18n="plugin.zip">ZIP</span>
     </summary>
     <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
       <div class="quiet-box" data-i18n="plugin.cloud_plugins_contain_executable_python">
@@ -63,7 +63,7 @@
       </dl>
       <p class="plugin-card-capabilities">
         <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
-        <span class="status-pill status-idle">{{ cloud_module.account_fields | length }} account fields</span>
+        <span class="status-pill status-idle" data-i18n="plugin.account_fields" data-i18n-params='{{ {"count": cloud_module.account_fields | length} | tojson }}'>{{ cloud_module.account_fields | length }} account fields</span>
         {% if cloud_module.verification_support.value == 'supported' %}
         <span class="status-pill status-active" data-i18n="plugin.2fa_supported">2FA supported</span>
         {% else %}
@@ -79,7 +79,7 @@
         {% endif %}
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/cloud-modules/{{ cloud_module.key }}/delete">
-          <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %}>Remove</button>
+          <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %} data-i18n="plugin.remove">Remove</button>
         </form>
         {% endif %}
       </div>

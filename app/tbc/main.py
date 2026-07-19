@@ -79,6 +79,11 @@ from .network_modules.registry import UnknownNetworkModuleError
 from .config import load_settings
 from .debug_log import clear_entries as clear_debug_log_entries
 from .debug_log import install_debug_log, list_entries as list_debug_log_entries
+from .documentation import (
+    documentation_files as _documentation_files,
+    render_documentation_markdown as _render_documentation_markdown,
+    resolve_documentation_file as _resolve_documentation_file,
+)
 from .detection import factory as detection_factory
 from .detection.classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection.model_provisioning import ensure_default_coral_model, ensure_default_model
@@ -142,7 +147,7 @@ _LOCALE_EN: dict[str, str] = json.loads((BASE_DIR / "static" / "i18n" / "en.json
 # deploy) so browsers don't keep serving JS/CSS cached from before the restart.
 ASSET_VERSION = str(int(datetime.now().timestamp()))
 
-app = FastAPI(title="TBC - TB Camera")
+app = FastAPI(title="TBC - TB Camera", docs_url="/api/docs", redoc_url="/api/redoc")
 app.add_middleware(
     SessionMiddleware,
     secret_key=SETTINGS.secret_key,
@@ -4071,6 +4076,39 @@ async def license_page(request: Request):
             "flash": _pop_flash(request),
         },
     )
+
+
+def _documentation_response(request: Request, document_name: str):
+    guard = _require_login(request)
+    if guard:
+        return guard
+    user = _current_user(request)
+    document_path = _resolve_documentation_file(document_name)
+    document_source = document_path.read_text(encoding="utf-8") if document_path else ""
+    return templates.TemplateResponse(
+        request,
+        "docs.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": user["role"],
+            "documents": _documentation_files(),
+            "current_document": document_path.name if document_path else None,
+            "document_html": _render_documentation_markdown(document_source) if document_path else None,
+            "flash": _pop_flash(request),
+        },
+        status_code=status.HTTP_200_OK if document_path else status.HTTP_404_NOT_FOUND,
+    )
+
+
+@app.get("/docs", response_class=HTMLResponse)
+async def documentation_index(request: Request):
+    return _documentation_response(request, "README.md")
+
+
+@app.get("/docs/{document_name}", response_class=HTMLResponse)
+async def documentation_page(request: Request, document_name: str):
+    return _documentation_response(request, document_name)
 
 
 @app.get("/api/debug-log")

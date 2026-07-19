@@ -62,12 +62,12 @@
     <div class="clip-body">
       <div class="card-header">
         <div>
-          <h2>{{ clip.event_label }}</h2>
+          <h2{% if clip.detection_key == 'continuous' %} data-i18n="timeline.continuous"{% endif %}>{{ 'Continuous' if clip.detection_key == 'continuous' else clip.event_label }}</h2>
           <p>{{ clip.camera_name }} · {{ clip.started_at }}</p>
         </div>
         <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
         {% if clip.locked %}
-        <span class="status-pill status-warning" data-i18n="recording.locked_badge" title="Locked">🔒</span>
+        <span class="status-pill status-warning" data-i18n="recording.locked_badge" title="Locked" data-i18n-title="recording.locked_badge">🔒</span>
         {% endif %}
       </div>
       {% if clip.message %}

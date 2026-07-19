@@ -30,8 +30,8 @@
   <label>
     <span data-i18n="camera.stream">Stream</span>
     <select name="stream">
-      <option value="main" {% if filters.stream == 'main' %}selected{% endif %}>Main</option>
-      <option value="sub" {% if filters.stream == 'sub' %}selected{% endif %}>Sub</option>
+      <option value="main" {% if filters.stream == 'main' %}selected{% endif %} data-i18n="sd_card.main">Main</option>
+      <option value="sub" {% if filters.stream == 'sub' %}selected{% endif %} data-i18n="sd_card.sub">Sub</option>
     </select>
   </label>
   <label>

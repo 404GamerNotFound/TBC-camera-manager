@@ -1,5 +1,8 @@
 # External API (`/api/v1/...`)
 
+The interactive OpenAPI interfaces are available at `/api/docs` (Swagger UI) and `/api/redoc`
+(ReDoc). The machine-readable schema remains at `/openapi.json`.
+
 In addition to the internal `/api/...` routes, which use session-cookie authentication for the
 web UI, TBC provides a standalone API for external scripts, dashboards, and integrations such
 as the [TBC Home Assistant integration](https://github.com/404GamerNotFound/TBC-ha_integration)

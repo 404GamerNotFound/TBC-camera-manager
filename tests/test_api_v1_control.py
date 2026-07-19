@@ -110,6 +110,43 @@ class ApiControlScopeTests(unittest.TestCase):
         self.assertFalse(read_only.json()["api_can_control"])
         self.assertTrue(control.json()["api_can_control"])
 
+    def test_documentation_requires_login_and_renders_repository_markdown(self):
+        CLIENT.post("/logout")
+        unauthorized = CLIENT.get("/docs", follow_redirects=False)
+        self.assertEqual(unauthorized.status_code, 303)
+        self.assertEqual(unauthorized.headers["location"], "/login")
+
+        _login()
+        overview = CLIENT.get("/docs")
+        api_reference = CLIENT.get("/docs/api.md")
+        missing = CLIENT.get("/docs/missing.md")
+        openapi_ui = CLIENT.get("/api/docs")
+
+        self.assertEqual(overview.status_code, 200)
+        self.assertIn('<h1 id="tbc-documentation">TBC documentation</h1>', overview.text)
+        self.assertIn('href="/docs/user-guide.md"', overview.text)
+        self.assertIn('href="/docs" data-i18n="docs.footer_link"', overview.text)
+        self.assertEqual(api_reference.status_code, 200)
+        self.assertIn('<article class="docs-article markdown-body">', api_reference.text)
+        self.assertEqual(missing.status_code, 404)
+        self.assertIn('data-i18n="docs.not_found"', missing.text)
+        self.assertEqual(openapi_ui.status_code, 200)
+        self.assertIn("Swagger UI", openapi_ui.text)
+
+        CLIENT.post("/logout")
+        database.create_user(
+            main.SETTINGS.database_path,
+            username="docs-viewer",
+            password="viewerpass123",
+            role="viewer",
+        )
+        CLIENT.post("/login", data={"username": "docs-viewer", "password": "viewerpass123"})
+        viewer_overview = CLIENT.get("/docs")
+        self.assertEqual(viewer_overview.status_code, 200)
+        self.assertIn('href="/docs" data-i18n="docs.footer_link"', viewer_overview.text)
+        self.assertNotIn('href="/license"', viewer_overview.text)
+        self.assertNotIn("data-debug-toggle", viewer_overview.text)
+
     def test_read_only_token_cannot_write_recording_settings(self):
         response = CLIENT.post(
             f"/api/v1/cameras/{self.camera_id}/recording",

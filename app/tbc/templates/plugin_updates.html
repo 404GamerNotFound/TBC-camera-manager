@@ -19,12 +19,11 @@
   <article class="storage-item">
     <dl class="metric-row">
       <div><dt data-i18n="plugin_updates.installed">Installed</dt><dd>{{ app_version }}</dd></div>
-      <div><dt data-i18n="plugin_updates.latest_version">Latest version</dt><dd>{{ app_latest_version or 'not checked yet' }}</dd></div>
+      <div><dt data-i18n="plugin_updates.latest_version">Latest version</dt><dd>{% if app_latest_version %}{{ app_latest_version }}{% else %}<span data-i18n="plugin_updates.not_checked_yet">not checked yet</span>{% endif %}</dd></div>
     </dl>
     <p class="quiet-box">
-      Published GitHub releases are checked hourly. Updating to a new version is a manual operation
-      (rebuild or pull the Docker image, or run <code>git pull</code>); there is intentionally no
-      one-click installer for the application itself.
+      <span data-i18n="plugin_updates.manual_update_intro">Published GitHub releases are checked hourly. Updating to a new version is a manual operation (rebuild or pull the Docker image, or run</span>
+      <code>git pull</code><span data-i18n="plugin_updates.manual_update_outro">); there is intentionally no one-click installer for the application itself.</span>
     </p>
     {% if app_update_available and app_update_url %}
     <div class="form-actions">

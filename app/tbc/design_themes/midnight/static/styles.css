@@ -3270,6 +3270,129 @@ tr:last-child td {
   padding: 22px;
 }
 
+.docs-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.docs-sidebar,
+.docs-article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.docs-sidebar {
+  position: sticky;
+  top: 92px;
+  padding: 18px;
+}
+
+.docs-navigation {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.docs-navigation a {
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.docs-navigation a:hover,
+.docs-navigation a:focus,
+.docs-navigation a.active {
+  color: var(--brand-strong);
+  background: var(--surface-soft);
+}
+
+.docs-navigation a.active {
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.docs-article {
+  min-width: 0;
+  padding: clamp(22px, 4vw, 44px);
+}
+
+.markdown-body {
+  overflow-wrap: anywhere;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: 1.6em 0 0.55em;
+  line-height: 1.2;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--line);
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+
+.markdown-body h2 {
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+.markdown-body p,
+.markdown-body li {
+  line-height: 1.7;
+}
+
+.markdown-body a {
+  color: var(--brand-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.markdown-body pre,
+.markdown-body :not(pre) > code {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.markdown-body pre {
+  max-width: 100%;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.markdown-body :not(pre) > code {
+  padding: 0.12em 0.35em;
+}
+
+.markdown-body blockquote {
+  margin: 1.25rem 0;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 4px solid var(--brand);
+  color: var(--muted);
+}
+
+.markdown-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 
 @media (max-width: 1199.98px) {
   .overview-metrics {
@@ -3348,6 +3471,14 @@ tr:last-child td {
 }
 
 @media (max-width: 760px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-sidebar {
+    position: static;
+  }
+
   .auth-panel,
   .form-grid,
   .details-strip,

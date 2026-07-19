@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ app_name }} - TB Camera</title>
+    <title data-i18n="nav.page_title" data-i18n-params='{{ {"app_name": app_name} | tojson }}'>{{ app_name }} - TB Camera</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     {% if active_theme %}
     <link rel="stylesheet" href="{{ url_for('theme_asset', theme_key=active_theme.key, asset_path=active_theme.stylesheet) }}?v={{ asset_version }}">
@@ -125,7 +125,7 @@
                 <li>
                   <a class="dropdown-item{% if path.startswith('/mqtt') %} active{% endif %}" href="/mqtt">
                     <span class="nav-shortcut" aria-hidden="true">M</span>
-                    <span>MQTT</span>
+                    <span data-i18n="mqtt.title">MQTT</span>
                   </a>
                 </li>
               </ul>
@@ -133,9 +133,9 @@
             {% set total_update_count = pending_plugin_update_count + (1 if app_update_available else 0) %}
             <li class="nav-item dropdown{% if admin_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if admin_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
-                Admin
+                <span data-i18n="common.admin">Admin</span>
                 {% if total_update_count %}
-                <span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>
+                <span class="nav-update-badge" title="{{ total_update_count }} update(s) available" data-i18n-title="plugin_updates.count_available" data-i18n-params='{{ {"count": total_update_count} | tojson }}'>{{ total_update_count }}</span>
                 {% endif %}
               </button>
               <div class="dropdown-menu dropdown-menu-end mega-menu" data-menu-panel>
@@ -184,9 +184,9 @@
                       <span class="nav-shortcut" aria-hidden="true">A</span>
                       <span data-i18n="base.settings">Settings</span>
                     </a>
-                    <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}">
+                    <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}" data-i18n-title="{{ 'plugin_updates.app_version_update_available' if app_update_available else 'plugin_updates.app_version' }}" data-i18n-params='{{ {"version": app_version, "latest_version": app_latest_version} | tojson }}'>
                       <span class="nav-shortcut" aria-hidden="true">U</span>
-                      <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>{% endif %}</span>
+                      <span><span data-i18n="plugin_updates.updates">Updates</span>{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available" data-i18n-title="plugin_updates.count_available" data-i18n-params='{{ {"count": total_update_count} | tojson }}'>{{ total_update_count }}</span>{% endif %}</span>
                     </a>
                     <a class="dropdown-item{% if path.startswith('/network-mappings') %} active{% endif %}" href="/network-mappings">
                       <span class="nav-shortcut" aria-hidden="true">M</span>
@@ -226,7 +226,7 @@
             </li>
             <li class="nav-item nav-logout">
               <form method="post" action="/logout">
-                <button class="icon-button" title="Sign out" data-i18n-title="nav.sign_out" aria-label="Sign out" data-i18n-aria-label="nav.sign_out" data-i18n-title="nav.sign_out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
+                <button class="icon-button" title="Sign out" data-i18n-title="nav.sign_out" aria-label="Sign out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
               </form>
             </li>
           </ul>
@@ -248,12 +248,13 @@
           <span class="brand-mark">TBC</span>
           <span class="app-footer-meta" data-i18n="nav.footer_version" data-i18n-params='{{ {"app_name": app_name, "version": app_version} | tojson }}'>{{ app_name }} {{ app_version }}</span>
         </div>
-        {% if role == 'admin' %}
         <nav class="app-footer-links" aria-label="Footer" data-i18n-aria-label="nav.footer">
+          <a href="/docs" data-i18n="docs.footer_link">Docs</a>
+          {% if role == 'admin' %}
           <a href="/license" data-i18n="base.license">License</a>
           <button type="button" data-debug-toggle data-i18n="settings.debug_log">Debug Log</button>
+          {% endif %}
         </nav>
-        {% endif %}
       </div>
     </footer>
     {% endif %}

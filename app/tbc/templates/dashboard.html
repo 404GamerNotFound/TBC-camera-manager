@@ -60,9 +60,11 @@
     <figure class="camera-snapshot">
       <img src="/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
            alt="Current preview image from {{ camera.name }}"
+           data-i18n-alt="dashboard.current_preview_from"
+           data-i18n-params='{{ {"camera": camera.name} | tojson }}'
            loading="lazy"
            decoding="async">
-      <figcaption>Vorschaubild · Aktualisierung alle {{ snapshot_interval_minutes }} Minuten</figcaption>
+      <figcaption data-i18n="dashboard.preview_refresh_interval" data-i18n-params='{{ {"minutes": snapshot_interval_minutes} | tojson }}'>Preview image · refresh every {{ snapshot_interval_minutes }} minutes</figcaption>
     </figure>
     {% else %}
     <div class="camera-snapshot camera-snapshot-empty" data-i18n="dashboard.no_stream_available_preview_image">No stream is available for a preview image yet</div>

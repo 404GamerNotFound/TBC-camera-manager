@@ -25,7 +25,10 @@
   const statusPill = (value) => {
     const span = document.createElement("span");
     span.className = `status-pill status-${value || "unknown"}`;
-    span.textContent = value || "unknown";
+    const status = value || "unknown";
+    const key = `status.${status}`;
+    const translated = t(key);
+    span.textContent = translated === key ? status : translated;
     return span;
   };
 

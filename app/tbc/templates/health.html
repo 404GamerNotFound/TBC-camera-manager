@@ -15,17 +15,17 @@
 <section class="performance-grid" aria-label="Current system performance" data-i18n-aria-label="health.current_system_performance">
   <article class="performance-card">
     <div class="performance-card-head">
-      <span>CPU</span>
+      <span data-i18n="health.cpu">CPU</span>
       <strong data-health-cpu-label>{{ system_usage.cpu_label }}</strong>
     </div>
     <div class="usage-bar" aria-hidden="true">
       <span style="width: {{ system_usage.cpu_percent or 0 }}%" data-health-cpu-bar></span>
     </div>
-    <p data-health-cpu-detail>{{ system_usage.cpu_cores }} Kerne · {{ system_usage.load_label }}</p>
+    <p data-health-cpu-detail data-i18n="health.cores" data-i18n-params='{{ {"count": system_usage.cpu_cores, "load": system_usage.load_label} | tojson }}'>{{ system_usage.cpu_cores }} cores · {{ system_usage.load_label }}</p>
   </article>
   <article class="performance-card">
     <div class="performance-card-head">
-      <span>RAM</span>
+      <span data-i18n="health.ram">RAM</span>
       <strong data-health-memory-label>{{ system_usage.memory_label }}</strong>
     </div>
     <div class="usage-bar" aria-hidden="true">
@@ -45,7 +45,7 @@
       <thead>
         <tr>
           <th data-i18n="health.component">Component</th>
-          <th>ID</th>
+          <th data-i18n="health.id">ID</th>
           <th data-i18n="camera.status">Status</th>
           <th data-i18n="detection.message">Message</th>
           <th data-i18n="health.checked">Checked</th>
@@ -56,7 +56,7 @@
         <tr>
           <td>{{ item.component_type }}</td>
           <td>{{ item.component_id }}</td>
-          <td><span class="status-pill status-{{ item.status }}">{{ item.status }}</span></td>
+          <td><span class="status-pill status-{{ item.status }}" data-i18n="status.{{ item.status }}">{{ item.status }}</span></td>
           <td>{{ item.message }}</td>
           <td>{{ item.checked_at }}</td>
         </tr>
@@ -88,7 +88,7 @@
           <td>{{ event.created_at }}</td>
           <td>{{ event.component_type }} {{ event.component_id }}</td>
           <td>{{ event.previous_status or '-' }}</td>
-          <td><span class="status-pill status-{{ event.status }}">{{ event.status }}</span></td>
+          <td><span class="status-pill status-{{ event.status }}" data-i18n="status.{{ event.status }}">{{ event.status }}</span></td>
           <td>{{ event.message }}</td>
         </tr>
         {% endfor %}

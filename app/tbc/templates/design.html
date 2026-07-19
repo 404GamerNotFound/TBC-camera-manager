@@ -15,7 +15,7 @@
         <strong data-i18n="design.import_design">Import design</strong>
         <small data-i18n="design.design_file">Design file</small>
       </span>
-      <span class="status-pill status-idle">ZIP</span>
+      <span class="status-pill status-idle" data-i18n="plugin.zip">ZIP</span>
     </summary>
     <form class="editor-form compact-form" method="post" action="/design/import" enctype="multipart/form-data">
       <div class="quiet-box" data-i18n="design.design_packages_contain_only_stylesheets">
@@ -68,7 +68,7 @@
         <a class="secondary-button" href="/design/{{ manifest.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/design/{{ manifest.key }}/delete">
-          <button class="danger-button" type="submit" {% if manifest.key == active_theme_key %}disabled{% endif %}>Remove</button>
+          <button class="danger-button" type="submit" {% if manifest.key == active_theme_key %}disabled{% endif %} data-i18n="plugin.remove">Remove</button>
         </form>
         {% endif %}
       </div>

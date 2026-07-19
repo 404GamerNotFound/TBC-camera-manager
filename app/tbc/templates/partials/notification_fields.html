@@ -2,13 +2,13 @@
   <label><span data-i18n="common.name">Name</span><input name="name" value="{{ values.name if values is defined else '' }}" required></label>
   <label><span data-i18n="notification.type">Type</span><select name="kind">
     {% set kind = values.kind if values is defined else 'webhook' %}
-    <option value="webhook" {% if kind == 'webhook' %}selected{% endif %}>Webhook</option>
-    <option value="telegram" {% if kind == 'telegram' %}selected{% endif %}>Telegram</option>
-    <option value="email" {% if kind == 'email' %}selected{% endif %}>E-Mail</option>
-    <option value="pushover" {% if kind == 'pushover' %}selected{% endif %}>Pushover</option>
-    <option value="home_assistant" {% if kind == 'home_assistant' %}selected{% endif %}>Home Assistant Notify</option>
-    <option value="ntfy" {% if kind == 'ntfy' %}selected{% endif %}>ntfy (self-hosted push)</option>
-    <option value="gotify" {% if kind == 'gotify' %}selected{% endif %}>Gotify (self-hosted push)</option>
+    <option value="webhook" {% if kind == 'webhook' %}selected{% endif %} data-i18n="notification.webhook">Webhook</option>
+    <option value="telegram" {% if kind == 'telegram' %}selected{% endif %} data-i18n="notification.telegram">Telegram</option>
+    <option value="email" {% if kind == 'email' %}selected{% endif %} data-i18n="notification.channel_email">E-Mail</option>
+    <option value="pushover" {% if kind == 'pushover' %}selected{% endif %} data-i18n="notification.pushover">Pushover</option>
+    <option value="home_assistant" {% if kind == 'home_assistant' %}selected{% endif %} data-i18n="notification.ha_notify">Home Assistant Notify</option>
+    <option value="ntfy" {% if kind == 'ntfy' %}selected{% endif %} data-i18n="notification.ntfy_self_hosted_push">ntfy (self-hosted push)</option>
+    <option value="gotify" {% if kind == 'gotify' %}selected{% endif %} data-i18n="notification.gotify_self_hosted_push">Gotify (self-hosted push)</option>
   </select></label>
   <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
   <label class="check-row"><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span data-i18n="notification.attach_snapshot">Attach snapshot</span></label>

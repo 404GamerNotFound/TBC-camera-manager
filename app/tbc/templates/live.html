@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-heading">
   <div>
-    <p class="eyebrow">HLS</p>
+    <p class="eyebrow" data-i18n="live.transport_hls">HLS</p>
     <h1 data-i18n="camera.live">Live</h1>
   </div>
   <div class="button-row live-toolbar">
@@ -34,7 +34,7 @@
       <span data-i18n="live.grid_columns">Grid columns</span>
       <select name="columns" class="live-columns-select">
         {% for n in [2, 3, 4, 5, 6] %}
-        <option value="{{ n }}" {% if wall_settings.columns == n %}selected{% endif %}>{{ n }} Spalten</option>
+        <option value="{{ n }}" {% if wall_settings.columns == n %}selected{% endif %} data-i18n="live.columns" data-i18n-params='{{ {"count": n} | tojson }}'>{{ n }} columns</option>
         {% endfor %}
       </select>
     </label>
@@ -89,12 +89,12 @@
       <div class="live-card-overlay-row">
         <span class="live-card-name">{{ item.name }}</span>
         <div class="live-card-tools">
-          <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status>{{ item.status }}</span>
+          <span class="status-pill status-{{ 'active' if item.status == 'running' else 'warning' if item.status == 'starting' else 'error' if item.status in ['failed', 'missing'] else 'idle' }}" data-live-status data-i18n="status.{{ item.status }}">{{ item.status }}</span>
           <div class="live-transport-switch" data-live-transport-switch {% if not item.webrtc_available %}hidden{% endif %}>
             <button type="button" class="live-transport-btn" data-live-transport-btn="hls" data-i18n="live.transport_hls">HLS</button>
             <button type="button" class="live-transport-btn" data-live-transport-btn="webrtc" data-i18n="live.transport_webrtc">WebRTC</button>
           </div>
-          <a class="live-card-tool-btn" href="{{ item.playlist_url }}" aria-label="Open HLS playlist" data-i18n-aria-label="live.open_hls_playlist" title="HLS-Playlist">HLS</a>
+          <a class="live-card-tool-btn" href="{{ item.playlist_url }}" aria-label="Open HLS playlist" data-i18n-aria-label="live.open_hls_playlist" title="HLS playlist" data-i18n-title="live.hls_playlist">HLS</a>
           {% if role == 'admin' %}
           <button class="live-card-tool-btn live-drag-handle" type="button" draggable="true" data-live-drag-handle aria-label="Move tile" data-i18n-aria-label="live.move_tile" title="Move" data-i18n-title="live.move">⠿</button>
           <button

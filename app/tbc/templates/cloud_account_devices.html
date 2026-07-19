@@ -4,7 +4,7 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow">{{ cloud_module.label }}</p>
-    <h1>Devices from {{ account.label }}</h1>
+    <h1 data-i18n="cloud_account.devices_from" data-i18n-params='{{ {"account": account.label} | tojson }}'>Devices from {{ account.label }}</h1>
   </div>
   <a class="secondary-button" href="/cloud-accounts" data-i18n="cloud_account.back_cloud_accounts">Back to cloud accounts</a>
 </section>

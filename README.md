@@ -231,6 +231,10 @@ For a richer Home Assistant experience - camera entities with live streaming, la
 
 ## Development
 
+The complete documentation is maintained in [`docs/`](docs/README.md) and is also available from
+the **Docs** link in the footer of a running TBC instance. It includes the user guide, operations,
+deployment, API/MCP references, and plugin-development contracts.
+
 ```bash
 pytest -q
 python -m unittest discover -s tests

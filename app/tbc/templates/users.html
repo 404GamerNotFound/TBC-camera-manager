@@ -66,8 +66,8 @@
           <label>
             <span data-i18n="users.role">Role</span>
             <select name="role">
-              <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %}>Viewer</option>
-              <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+              <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %} data-i18n="common.viewer">Viewer</option>
+              <option value="admin" {% if user.role == 'admin' %}selected{% endif %} data-i18n="common.admin">Admin</option>
             </select>
           </label>
           <fieldset class="span-2 checkbox-field">
@@ -94,4 +94,3 @@
   </section>
 </section>
 {% endblock %}
-

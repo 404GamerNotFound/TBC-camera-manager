@@ -7,6 +7,12 @@
   'recording_failed': 'Recording failed',
   'recording_skipped': 'Recording skipped'
 } %}
+{% set event_type_keys = {
+  'recording_started': 'camera.event_recording_started',
+  'recording_finished': 'camera.event_recording_saved',
+  'recording_failed': 'camera.event_recording_failed',
+  'recording_skipped': 'camera.event_recording_skipped'
+} %}
 <section class="page-heading camera-detail-heading">
   <div>
     <p class="eyebrow">{{ camera_module.label if camera_module else camera.module_key }} · {{ camera.host }}:{{ camera.onvif_port }}</p>
@@ -14,7 +20,7 @@
     <div class="camera-heading-status">
       <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'new' }}</span>
       {% if camera.recording_enabled %}<span data-i18n="camera.recording_active">Recording active</span>{% endif %}
-      <span>{{ detections | selectattr('active') | list | length }} active detections</span>
+      <span data-i18n="camera.active_detections" data-i18n-params='{{ {"count": detections | selectattr("active") | list | length} | tojson }}'>{{ detections | selectattr('active') | list | length }} active detections</span>
     </div>
   </div>
   {% if role == 'admin' %}
@@ -44,12 +50,12 @@
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-plugin" data-detail-tab="plugin" data-i18n="camera.plugin">Plugin</button>
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-network" data-detail-tab="network" data-i18n="camera.network_tab">Network</button>
   {% if role == 'admin' %}
-  {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Recording <span class="tab-count">{{ events | length }}</span></button>{% endif %}
-  {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones">AI detection <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
+  {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording"><span data-i18n="camera.recording">Recording</span> <span class="tab-count">{{ events | length }}</span></button>{% endif %}
+  {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones"><span data-i18n="base.ai_detection">AI detection</span> <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
   {% if 'control' in module_capabilities %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-control" data-detail-tab="control" data-i18n="camera.controls">Controls</button>{% endif %}
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-connection" data-detail-tab="connection" data-i18n="camera.connection">Connection</button>
   {% endif %}
-  <button type="button" role="tab" aria-selected="false" aria-controls="camera-detections" data-detail-tab="detections">Detections <span class="tab-count">{{ detections | length }}</span></button>
+  <button type="button" role="tab" aria-selected="false" aria-controls="camera-detections" data-detail-tab="detections"><span data-i18n="camera.detections">Detections</span> <span class="tab-count">{{ detections | length }}</span></button>
 </nav>
 
 <div class="detail-tab-panel" id="camera-overview" role="tabpanel" data-detail-panel="overview">
@@ -57,7 +63,7 @@
   <div class="overview-metric overview-metric-device">
     <span data-i18n="camera.device">Device</span>
     <strong>{{ camera.manufacturer or 'Unknown' }} {{ camera.model or '' }}</strong>
-    <small>Firmware {{ camera.firmware or 'not reported' }}</small>
+    <small><span data-i18n="camera.firmware">Firmware</span> {% if camera.firmware %}{{ camera.firmware }}{% else %}<span data-i18n="camera.not_reported">not reported</span>{% endif %}</small>
   </div>
   <div class="overview-metric">
     <span data-i18n="camera.cpu_load">CPU load</span>
@@ -78,8 +84,8 @@
   </div>
   <div class="overview-metric">
     <span data-i18n="camera.last_check">Last check</span>
-    <strong class="overview-metric-time">{{ camera.last_probe_at or 'Not checked yet' }}</strong>
-    <small>{{ channels | length }} channel(s) · {{ detections | selectattr('supported') | list | length }} detections</small>
+    {% if camera.last_probe_at %}<strong class="overview-metric-time">{{ camera.last_probe_at }}</strong>{% else %}<strong class="overview-metric-time" data-i18n="camera.not_checked_yet">Not checked yet</strong>{% endif %}
+    <small>{{ channels | length }} <span data-i18n="camera.channels">channels</span> · {{ detections | selectattr('supported') | list | length }} <span data-i18n="camera.detections_lower">detections</span></small>
   </div>
 </section>
 {% if camera.stream_uri %}
@@ -126,7 +132,7 @@
                 <input name="enabled" type="checkbox" {% if channel.enabled %}checked{% endif %}>
                 <span data-i18n="camera.active">active</span>
               </label>
-              <button class="secondary-button" type="submit">OK</button>
+              <button class="secondary-button" type="submit" data-i18n="common.ok">OK</button>
             </form>
             {% else %}
             {{ channel.name }}
@@ -166,7 +172,7 @@
       <div class="clip-body">
         <div class="card-header">
           <div>
-            <h2>{{ clip.event_label }}</h2>
+            <h2{% if clip.detection_key == 'continuous' %} data-i18n="timeline.continuous"{% endif %}>{{ 'Continuous' if clip.detection_key == 'continuous' else clip.event_label }}</h2>
             <p>{{ clip.started_at }}</p>
           </div>
           <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
@@ -396,7 +402,7 @@
         <span data-i18n="camera.new_rtsp_rtsps_url">New RTSP/RTSPS URL</span>
         <input name="manual_stream_uri" type="password" autocomplete="off" placeholder="leave blank = unchanged" data-i18n-placeholder="camera.leave_blank_unchanged">
         {% if camera.manual_stream_uri %}
-        <small>Current: <code>{{ camera.manual_stream_uri | redact_rtsp_credentials }}</code></small>
+        <small><span data-i18n="camera.current">Current:</span> <code>{{ camera.manual_stream_uri | redact_rtsp_credentials }}</code></small>
         {% else %}
         <small data-i18n="camera.full_url_stored_securely_redacted">The full URL is stored securely and redacted in the interface.</small>
         {% endif %}
@@ -536,7 +542,7 @@
         {% endif %}
         <p class="hint-text" data-i18n="camera.local_ai_hint">Detections produced by the TBC server's image model, independently of the events reported by the camera.</p>
         <div class="button-row trigger-actions">
-          <button class="text-button" type="button" data-trigger-selection="all" {% if not local_ai_enabled %}disabled{% endif %}>Select all</button>
+          <button class="text-button" type="button" data-trigger-selection="all" {% if not local_ai_enabled %}disabled{% endif %} data-i18n="camera.select_all">Select all</button>
         </div>
         <div class="checkbox-grid">
           {% for trigger in ai_triggers %}
@@ -570,7 +576,7 @@
       {% for event in events %}
       <li>
         <div class="event-list-heading">
-          <strong>{{ event_type_labels.get(event.event_type, event.event_type) }}</strong>
+          <strong data-i18n="{{ event_type_keys.get(event.event_type, '') }}">{{ event_type_labels.get(event.event_type, event.event_type) }}</strong>
           {% if event.detection_key %}
           {% set event_key = event.detection_key.split(':')[-1] %}
           <span class="event-trigger">{{ trigger_labels.get(event_key, event_key | replace('_', ' ') | title) }}</span>
@@ -602,9 +608,8 @@
       {% endif %}
     </div>
     <p class="hint-text">
-      Detects people, vehicles, and animals directly in the video stream, independently of the events reported by the camera.
-      It runs on the TBC server's CPU and may require noticeable processing power depending on the camera resolution.
-      {% if 'recording' not in module_capabilities %}This camera module does not support event recordings. Detections are still captured and exposed through MQTT/Home Assistant, but they do not create a clip.{% endif %}
+      <span data-i18n="camera.local_ai_description">Detects people, vehicles, and animals directly in the video stream, independently of the events reported by the camera. It runs on the TBC server's CPU and may require noticeable processing power depending on the camera resolution.</span>
+      {% if 'recording' not in module_capabilities %}<span data-i18n="camera.local_ai_no_recording_hint">This camera module does not support event recordings. Detections are still captured and exposed through MQTT/Home Assistant, but they do not create a clip.</span>{% endif %}
     </p>
     <label class="check-row">
       <input name="detection_enabled" type="checkbox" {% if detection_settings and detection_settings.enabled %}checked{% endif %}>
@@ -623,7 +628,7 @@
         <span data-i18n="camera.backend">Backend</span>
         <select name="detection_backend">
           {% for key, available, message in detection_backend_status %}
-          <option value="{{ key }}" {% if (detection_settings.backend if detection_settings else 'cpu') == key %}selected{% endif %}>
+          <option value="{{ key }}" {% if (detection_settings.backend if detection_settings else 'cpu') == key %}selected{% endif %}{% if not available %} data-i18n="camera.backend_option_unavailable" data-i18n-params='{{ {"label": detection_backend_labels.get(key, key | upper)} | tojson }}'{% endif %}>
             {{ detection_backend_labels.get(key, key | upper) }}{% if not available %} (unavailable on this server){% endif %}
           </option>
           {% endfor %}
@@ -648,7 +653,7 @@
       local AI detection evaluates the entire image.
     </p>
     <div class="zone-editor-canvas-wrap">
-      <img class="zone-editor-image" data-zone-image src="/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image">
+      <img class="zone-editor-image" data-zone-image src="/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
       <canvas class="zone-editor-canvas" data-zone-canvas></canvas>
     </div>
     <div class="zone-editor-toolbar">
@@ -696,12 +701,12 @@
       <li data-zone-id="{{ zone.id }}">
         <div class="zone-list-heading">
           <strong>{{ zone.name }}</strong>
-          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}">
+          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}" data-i18n="{% if zone.mode == 'exclude' %}zones.mode_exclude{% elif zone.mode == 'loiter' %}zones.mode_loiter{% else %}zones.mode_include{% endif %}" data-i18n-params='{{ {"seconds": zone.min_dwell_seconds} | tojson }}'>
             {% if zone.mode == 'exclude' %}Exclude{% elif zone.mode == 'loiter' %}Loitering zone ({{ zone.min_dwell_seconds }}s){% else %}Include{% endif %}
           </span>
         </div>
         <span>
-          {% if zone.classes %}{% for key in zone.classes %}{{ detection_key_labels.get(key, key) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}All classes{% endif %}
+          {% if zone.classes %}{% for key in zone.classes %}{{ detection_key_labels.get(key, key) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span data-i18n="common.all_classes">All classes</span>{% endif %}
         </span>
         <button class="text-button" type="button" data-zone-delete="{{ zone.id }}" data-i18n="common.delete">Delete</button>
       </li>
@@ -724,7 +729,7 @@
       <span data-i18n="camera.channel">Channel</span>
       <select name="control_channel" data-control-channel-select>
         {% for option in control_channel_options %}
-        <option value="{{ option }}" {% if option == selected_control_channel %}selected{% endif %}>Channel {{ option + 1 }}</option>
+        <option value="{{ option }}" {% if option == selected_control_channel %}selected{% endif %} data-i18n="camera.channel_number" data-i18n-params='{{ {"number": option + 1} | tojson }}'>Channel {{ option + 1 }}</option>
         {% endfor %}
       </select>
     </label>
@@ -782,11 +787,11 @@
 
   {% if control_state and (control_state.zoom_supported or control_state.focus_supported) %}
   <section class="table-section">
-    <div class="section-title"><h2 data-i18n="camera.zoom_focus">Zoom &amp; Fokus</h2></div>
+    <div class="section-title"><h2 data-i18n="camera.zoom_focus">Zoom &amp; Focus</h2></div>
     {% if control_state.zoom_supported %}
     <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/zoom" data-control-form>
       <label>
-        <span>Zoom ({{ control_state.zoom_range.min }}–{{ control_state.zoom_range.max }})</span>
+        <span data-i18n="camera.zoom_range" data-i18n-params='{{ {"min": control_state.zoom_range.min, "max": control_state.zoom_range.max} | tojson }}'>Zoom ({{ control_state.zoom_range.min }}–{{ control_state.zoom_range.max }})</span>
         <input name="position" type="range" min="{{ control_state.zoom_range.min or 0 }}" max="{{ control_state.zoom_range.max or 100 }}" value="{{ control_state.zoom_position or control_state.zoom_range.min or 0 }}">
       </label>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
@@ -796,7 +801,7 @@
     {% if control_state.focus_supported %}
     <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/focus" data-control-form>
       <label>
-        <span>Fokus ({{ control_state.focus_range.min }}–{{ control_state.focus_range.max }})</span>
+        <span data-i18n="camera.focus_range" data-i18n-params='{{ {"min": control_state.focus_range.min, "max": control_state.focus_range.max} | tojson }}'>Focus ({{ control_state.focus_range.min }}–{{ control_state.focus_range.max }})</span>
         <input name="position" type="range" min="{{ control_state.focus_range.min or 0 }}" max="{{ control_state.focus_range.max or 100 }}" value="{{ control_state.focus_position or control_state.focus_range.min or 0 }}">
       </label>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">

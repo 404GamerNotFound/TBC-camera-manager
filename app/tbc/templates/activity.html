@@ -20,7 +20,7 @@
   </div>
   <label class="check-row{% if not any_sd_card_available %} is-disabled{% endif %}">
     <input type="checkbox" data-activity-toggle="sdcard" {% if not any_sd_card_available %}disabled{% endif %}>
-    <span>SD card recordings{% if not any_sd_card_available %} (unavailable){% endif %}</span>
+    <span data-i18n="{{ 'activity.sd_card_recordings_unavailable' if not any_sd_card_available else 'activity.sd_card_recordings' }}">SD card recordings{% if not any_sd_card_available %} (unavailable){% endif %}</span>
   </label>
 </form>
 
@@ -48,7 +48,7 @@
       <div data-activity-lanes></div>
     </div>
   </div>
-  <p class="timeline-hint" data-activity-empty {% if total_events %}hidden{% endif %}>No event recordings are available for this day.</p>
+  <p class="timeline-hint" data-activity-empty {% if total_events %}hidden{% endif %} data-i18n="activity.no_event_recordings_available_day">No event recordings are available for this day.</p>
 </section>
 {% endif %}
 

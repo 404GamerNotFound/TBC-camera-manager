@@ -44,7 +44,7 @@
       </label>
       <label>
         <span data-i18n="storage.s3_prefix">S3 Prefix</span>
-        <input name="s3_prefix" placeholder="tbc/aufnahmen">
+        <input name="s3_prefix" placeholder="tbc/recordings">
       </label>
       <label>
         <span data-i18n="storage.access_key">Access Key</span>
@@ -76,8 +76,8 @@
           <label>
             <span data-i18n="notification.type">Type</span>
             <select name="kind">
-              <option value="local" {% if target.kind == 'local' %}selected{% endif %}>Local/mounted path</option>
-              <option value="s3" {% if target.kind == 's3' %}selected{% endif %}>S3 Cloud</option>
+              <option value="local" {% if target.kind == 'local' %}selected{% endif %} data-i18n="storage.local_mounted_path">Local/mounted path</option>
+              <option value="s3" {% if target.kind == 's3' %}selected{% endif %} data-i18n="storage.s3_cloud">S3 Cloud</option>
             </select>
           </label>
           <label class="span-2">

@@ -54,7 +54,7 @@
       </label>
       <label class="check-row{% if not sd_card_available %} is-disabled{% endif %}">
         <input type="checkbox" data-timeline-toggle="sdcard" {% if sd_card_available %}checked{% endif %} {% if not sd_card_available %}disabled{% endif %}>
-        <span>SD card recordings{% if not sd_card_available %} (unavailable){% endif %}</span>
+        <span data-i18n="{{ 'activity.sd_card_recordings_unavailable' if not sd_card_available else 'activity.sd_card_recordings' }}">SD card recordings{% if not sd_card_available %} (unavailable){% endif %}</span>
       </label>
     </div>
     <div class="timeline-zoom-controls">

@@ -15,7 +15,7 @@
         <strong data-i18n="plugin.import_plugin">Import plugin</strong>
         <small data-i18n="plugin.plugin_file">Plugin file</small>
       </span>
-      <span class="status-pill status-idle">ZIP</span>
+      <span class="status-pill status-idle" data-i18n="plugin.zip">ZIP</span>
     </summary>
     <form class="editor-form compact-form" method="post" action="/network-modules/import" enctype="multipart/form-data">
       <div class="quiet-box" data-i18n="plugin.network_plugins_contain_executable_python">
@@ -62,7 +62,7 @@
         <div><dt data-i18n="plugin.accounts">Accounts</dt><dd>{{ account_counts[network_module.key] }}</dd></div>
       </dl>
       <p class="plugin-card-capabilities">
-        <span class="status-pill status-idle">{{ network_module.account_fields | length }} account fields</span>
+        <span class="status-pill status-idle" data-i18n="plugin.account_fields" data-i18n-params='{{ {"count": network_module.account_fields | length} | tojson }}'>{{ network_module.account_fields | length }} account fields</span>
       </p>
       <div class="form-actions plugin-card-actions">
         <a class="secondary-button" href="/network-modules/{{ network_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
@@ -73,7 +73,7 @@
         {% endif %}
         {% if registration.origin == 'uploaded' %}
         <form method="post" action="/network-modules/{{ network_module.key }}/delete">
-          <button class="danger-button" type="submit" {% if account_counts[network_module.key] %}disabled{% endif %}>Remove</button>
+          <button class="danger-button" type="submit" {% if account_counts[network_module.key] %}disabled{% endif %} data-i18n="plugin.remove">Remove</button>
         </form>
         {% endif %}
       </div>

@@ -63,7 +63,7 @@
     summary.className = `status-pill ${failed ? "status-error" : starting ? "status-warning" : "status-active"}`;
     const startingText = starting ? t("live.starting_count", {count: starting}) : "";
     const failedText = failed ? t("live.error_count", {count: failed}) : "";
-    summary.textContent = `${running}/${items.length} live${startingText}${failedText}`;
+    summary.textContent = `${running}/${items.length} ${t("live.status_live")}${startingText}${failedText}`;
   };
 
   const placeholderText = (status) => {
@@ -203,7 +203,9 @@
     const player = card.querySelector("[data-live-player]");
     if (pill) {
       pill.className = `status-pill ${statusClass(item.status)}`;
-      pill.textContent = item.status;
+      const statusKey = `status.${item.status}`;
+      const statusText = t(statusKey);
+      pill.textContent = statusText === statusKey ? item.status : statusText;
     }
     if (message) {
       message.textContent = item.message || "";
