@@ -3,11 +3,11 @@
   "key": "unifi_protect",
   "label": "UniFi Protect",
   "version": "1.0.0",
-  "description": "Ubiquiti UniFi Protect Controller (lokal oder über die ui.com-Cloud-Konsole) via uiprotect",
+  "description": "Ubiquiti UniFi Protect Controller (local or via the ui.com cloud console) via uiprotect",
   "entrypoint": "plugin.py",
   "auth_type": "credentials",
-  "identifier_label": "Benutzername",
-  "secret_label": "Passwort",
+  "identifier_label": "Username",
+  "secret_label": "Password",
   "requires_host": true,
   "default_port": 443,
   "verification_support": "not_applicable",
@@ -17,7 +17,7 @@
       "label": "Host",
       "type": "text",
       "required": true,
-      "placeholder": "192.168.1.1 oder abc123.ui.com"
+      "placeholder": "192.168.1.1 or abc123.ui.com"
     },
     {
       "key": "port",
@@ -29,21 +29,21 @@
     },
     {
       "key": "identifier",
-      "label": "Benutzername",
+      "label": "Username",
       "type": "text",
       "required": true,
       "autocomplete": "username"
     },
     {
       "key": "secret",
-      "label": "Passwort",
+      "label": "Password",
       "type": "password",
       "required": true,
       "autocomplete": "current-password"
     },
     {
       "key": "verify_ssl",
-      "label": "SSL-Zertifikat prüfen",
+      "label": "Verify SSL certificate",
       "type": "checkbox"
     }
   ]

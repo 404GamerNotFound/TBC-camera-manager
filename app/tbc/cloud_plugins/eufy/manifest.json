@@ -3,18 +3,18 @@
   "key": "eufy",
   "label": "Eufy Security",
   "version": "1.3.1",
-  "description": "Eufy-Security-Cloud-Konto und Kamerasuche via pyeufysecurity",
+  "description": "Eufy Security cloud account and camera discovery via pyeufysecurity",
   "entrypoint": "plugin.py",
   "auth_type": "credentials",
-  "identifier_label": "E-Mail-Adresse",
-  "secret_label": "Passwort",
+  "identifier_label": "Email address",
+  "secret_label": "Password",
   "requires_host": false,
   "default_port": 443,
   "verification_support": "supported",
   "account_fields": [
     {
       "key": "email",
-      "label": "E-Mail-Adresse",
+      "label": "Email address",
       "type": "email",
       "required": true,
       "autocomplete": "username",
@@ -22,39 +22,39 @@
     },
     {
       "key": "password",
-      "label": "Passwort",
+      "label": "Password",
       "type": "password",
       "required": true,
       "autocomplete": "current-password"
     },
     {
       "key": "country",
-      "label": "Ländercode",
+      "label": "Country code",
       "type": "text",
       "required": true,
       "default": "DE",
       "placeholder": "DE",
-      "help_text": "Zweistelliger ISO-Ländercode des Eufy-Kontos, z. B. DE, AT oder CH."
+      "help_text": "Two-letter ISO country code of the Eufy account, e.g. DE, AT or CH."
     },
     {
       "key": "verification_code",
-      "label": "Eufy-Bestätigungscode (einmalig)",
+      "label": "Eufy verification code (one-time)",
       "type": "text",
       "autocomplete": "one-time-code",
-      "placeholder": "Code aus der E-Mail",
-      "help_text": "Leer lassen, um einen Code anzufordern. Nach erfolgreicher Bestätigung wird dieses Feld automatisch geleert.",
+      "placeholder": "Code from the email",
+      "help_text": "Leave empty to request a code. This field is cleared automatically after successful verification.",
       "transient": true
     },
     {
       "key": "rtsp_username",
-      "label": "Lokaler RTSP-Benutzername (optional)",
+      "label": "Local RTSP username (optional)",
       "type": "text",
       "autocomplete": "off",
-      "help_text": "Nur nötig, um Kameras mit in der Eufy-App aktiviertem NAS/RTSP als dauerhaften Stream zu übernehmen."
+      "help_text": "Only needed to take over cameras with NAS/RTSP enabled in the Eufy app as a permanent stream."
     },
     {
       "key": "rtsp_password",
-      "label": "Lokales RTSP-Passwort (optional)",
+      "label": "Local RTSP password (optional)",
       "type": "password",
       "autocomplete": "off"
     }
