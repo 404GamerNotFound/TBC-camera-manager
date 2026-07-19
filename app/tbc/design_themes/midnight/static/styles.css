@@ -524,7 +524,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -545,7 +546,8 @@ input[type="radio"] {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 0;
   border-color: var(--brand);
   box-shadow: 0 0 0 0.2rem rgba(76, 123, 220, 0.16);
@@ -1043,6 +1045,71 @@ dd {
 
 .span-2 {
   grid-column: span 2;
+}
+
+.notification-events {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.notification-events-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px 18px;
+}
+
+.notification-events h3,
+.notification-events p {
+  margin: 0;
+}
+
+.notification-events h3 {
+  font-size: 1rem;
+}
+
+.notification-events-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.notification-placeholder-hint {
+  overflow-wrap: anywhere;
+}
+
+.notification-event-list {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-event-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(180px, 1fr) minmax(220px, 1.3fr);
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  transition: opacity 0.15s ease;
+}
+
+.notification-event-card.is-disabled {
+  opacity: 0.58;
+}
+
+.notification-event-card textarea {
+  min-height: 44px;
+  resize: vertical;
+}
+
+.notification-event-toggle {
+  min-height: 44px;
 }
 
 .compact-form {
@@ -3601,6 +3668,10 @@ tr:last-child td {
 
   .span-2 {
     grid-column: auto;
+  }
+
+  .notification-event-card {
+    grid-template-columns: 1fr;
   }
 
   .page-heading {

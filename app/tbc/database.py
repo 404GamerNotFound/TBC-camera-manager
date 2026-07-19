@@ -294,6 +294,19 @@ CREATE TABLE IF NOT EXISTS notification_channels (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS notification_event_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    title_template TEXT NOT NULL DEFAULT '{{ title }}',
+    message_template TEXT NOT NULL DEFAULT '{{ message }}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(channel_id) REFERENCES notification_channels(id) ON DELETE CASCADE,
+    UNIQUE(channel_id, event_type)
+);
+
 CREATE TABLE IF NOT EXISTS health_status (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     component_type TEXT NOT NULL,
@@ -543,6 +556,18 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE api_tokens ADD COLUMN can_control INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE cameras ADD COLUMN network_account_id INTEGER",
     "ALTER TABLE cameras ADD COLUMN network_device_mac TEXT",
+)
+
+
+NOTIFICATION_EVENT_DEFAULTS: tuple[dict[str, str], ...] = (
+    {"event_type": "recording_finished", "label": "Recording finished"},
+    {"event_type": "recording_failed", "label": "Recording failed"},
+    {"event_type": "known_face_detected", "label": "Known face detected"},
+    {"event_type": "unknown_face_detected", "label": "Unknown face detected"},
+    {"event_type": "known_plate_detected", "label": "Known plate detected"},
+    {"event_type": "unknown_plate_detected", "label": "Unknown plate detected"},
+    {"event_type": "cleanup_finished", "label": "Retention cleanup finished"},
+    {"event_type": "health_status_changed", "label": "Health status changed"},
 )
 
 
@@ -2272,6 +2297,52 @@ def list_notification_channels(database_path: str) -> list[dict[str, Any]]:
     return [_decrypt_row(dict(row), ("token", "smtp_password")) for row in rows]
 
 
+def notification_event_defaults() -> list[dict[str, Any]]:
+    """Return a fresh set of selectable notification event presets."""
+    return [
+        {
+            **event,
+            "enabled": 1,
+            "title_template": "{{ title }}",
+            "message_template": "{{ message }}",
+        }
+        for event in NOTIFICATION_EVENT_DEFAULTS
+    ]
+
+
+def list_notification_event_templates(database_path: str, channel_id: int, event_filter: str | None = None) -> list[dict[str, Any]]:
+    """Return every event preset, filling missing rows for legacy channels.
+
+    Old channel configurations used ``event_filter`` only.  Keeping that value
+    as the fallback means they retain their previous delivery behaviour until
+    an administrator saves the redesigned form.
+    """
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT event_type, enabled, title_template, message_template FROM notification_event_templates WHERE channel_id = ?",
+            (channel_id,),
+        ).fetchall()
+    configured = {str(row["event_type"]): dict(row) for row in rows}
+    enabled_events = {item.strip() for item in (event_filter or "").split(",") if item.strip()}
+    has_legacy_filter = bool(enabled_events)
+    templates: list[dict[str, Any]] = []
+    for event in notification_event_defaults():
+        stored = configured.get(str(event["event_type"]))
+        if stored:
+            event.update(stored)
+        elif has_legacy_filter:
+            event["enabled"] = int(event["event_type"] in enabled_events)
+        templates.append(event)
+    return templates
+
+
+def get_notification_event_template(database_path: str, channel: dict[str, Any], event_type: str) -> dict[str, Any] | None:
+    for template in list_notification_event_templates(database_path, int(channel["id"]), channel.get("event_filter")):
+        if template["event_type"] == event_type:
+            return template
+    return None
+
+
 def create_notification_channel(database_path: str, **values: Any) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
@@ -2284,7 +2355,9 @@ def create_notification_channel(database_path: str, **values: Any) -> int:
             """,
             _notification_values(values),
         )
-        return int(cursor.lastrowid)
+        channel_id = int(cursor.lastrowid)
+        _replace_notification_event_templates(db, channel_id, values.get("event_templates"))
+        return channel_id
 
 
 def update_notification_channel(database_path: str, channel_id: int, **values: Any) -> None:
@@ -2312,11 +2385,40 @@ def update_notification_channel(database_path: str, channel_id: int, **values: A
             """,
             (*_notification_values(values), channel_id),
         )
+        _replace_notification_event_templates(db, channel_id, values.get("event_templates"))
 
 
 def delete_notification_channel(database_path: str, channel_id: int) -> None:
     with connect(database_path) as db:
         db.execute("DELETE FROM notification_channels WHERE id = ?", (channel_id,))
+
+
+def _replace_notification_event_templates(db: sqlite3.Connection, channel_id: int, templates: Any) -> None:
+    """Persist the complete event-preset selection for one channel."""
+    if templates is None:
+        return
+    by_type = {
+        str(template.get("event_type")): template
+        for template in templates
+        if isinstance(template, dict) and template.get("event_type")
+    }
+    db.execute("DELETE FROM notification_event_templates WHERE channel_id = ?", (channel_id,))
+    for default in notification_event_defaults():
+        event_type = str(default["event_type"])
+        template = by_type.get(event_type, default)
+        db.execute(
+            """
+            INSERT INTO notification_event_templates (channel_id, event_type, enabled, title_template, message_template)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                channel_id,
+                event_type,
+                1 if template.get("enabled") else 0,
+                str(template.get("title_template") or "{{ title }}"),
+                str(template.get("message_template") or "{{ message }}"),
+            ),
+        )
 
 
 def upsert_health_status(

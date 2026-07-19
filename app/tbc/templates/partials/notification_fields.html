@@ -1,7 +1,8 @@
-<div class="form-grid">
+{% set kind = values.kind if values is defined else 'webhook' %}
+{% set events = values.events if values is defined and values.events is defined else notification_event_defaults %}
+<div class="form-grid notification-form" data-notification-form>
   <label><span data-i18n="common.name">Name</span><input name="name" value="{{ values.name if values is defined else '' }}" required></label>
-  <label><span data-i18n="notification.type">Type</span><select name="kind">
-    {% set kind = values.kind if values is defined else 'webhook' %}
+  <label><span data-i18n="notification.type">Type</span><select name="kind" data-notification-kind>
     <option value="webhook" {% if kind == 'webhook' %}selected{% endif %} data-i18n="notification.webhook">Webhook</option>
     <option value="telegram" {% if kind == 'telegram' %}selected{% endif %} data-i18n="notification.telegram">Telegram</option>
     <option value="email" {% if kind == 'email' %}selected{% endif %} data-i18n="notification.channel_email">E-Mail</option>
@@ -11,16 +12,51 @@
     <option value="gotify" {% if kind == 'gotify' %}selected{% endif %} data-i18n="notification.gotify_self_hosted_push">Gotify (self-hosted push)</option>
   </select></label>
   <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
-  <label class="check-row"><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span data-i18n="notification.attach_snapshot">Attach snapshot</span></label>
-  <label class="span-2"><span data-i18n="notification.event_filter">Event-Filter</span><input name="event_filter" value="{{ values.event_filter if values is defined and values.event_filter else '' }}" placeholder="recording_finished,recording_failed,unknown_face_detected,unknown_plate_detected"></label>
-  <label><span data-i18n="notification.url_pushover_user_ha_url">URL / Pushover User / HA URL / ntfy Topic-URL / Gotify Server-URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" placeholder="https://ntfy.example.com/tbc-alerts"></label>
-  <label><span data-i18n="notification.token_ntfy_access_token_gotify">Token (ntfy Access Token / Gotify App Token)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
-  <label><span data-i18n="notification.telegram_chat_id">Telegram Chat ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>
-  <label><span data-i18n="notification.ha_service">HA Service</span><input name="ha_service" value="{{ values.ha_service if values is defined and values.ha_service else '' }}" placeholder="notify.mobile_app"></label>
-  <label><span data-i18n="notification.email">Email to</span><input name="email_to" value="{{ values.email_to if values is defined and values.email_to else '' }}"></label>
-  <label><span data-i18n="notification.email_from">Email from</span><input name="email_from" value="{{ values.email_from if values is defined and values.email_from else '' }}"></label>
-  <label><span data-i18n="notification.smtp_host">SMTP Host</span><input name="smtp_host" value="{{ values.smtp_host if values is defined and values.smtp_host else '' }}"></label>
-  <label><span data-i18n="notification.smtp_port">SMTP Port</span><input name="smtp_port" type="number" value="{{ values.smtp_port if values is defined and values.smtp_port else '' }}"></label>
-  <label><span data-i18n="notification.smtp_username">SMTP username</span><input name="smtp_username" value="{{ values.smtp_username if values is defined and values.smtp_username else '' }}"></label>
-  <label><span data-i18n="notification.smtp_password">SMTP password</span><input name="smtp_password" type="password" value="{{ values.smtp_password if values is defined and values.smtp_password else '' }}"></label>
+
+  <label data-notification-fields="webhook"{% if kind != 'webhook' %} hidden{% endif %}><span data-i18n="notification.webhook_url">Webhook URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://example.com/webhook"></label>
+  <label data-notification-fields="webhook"{% if kind != 'webhook' %} hidden{% endif %}><span data-i18n="notification.bearer_token">Bearer token (optional)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+
+  <label data-notification-fields="telegram"{% if kind != 'telegram' %} hidden{% endif %}><span data-i18n="notification.telegram_bot_token">Telegram bot token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+  <label data-notification-fields="telegram"{% if kind != 'telegram' %} hidden{% endif %}><span data-i18n="notification.telegram_chat_id">Telegram Chat ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>
+
+  <label data-notification-fields="pushover"{% if kind != 'pushover' %} hidden{% endif %}><span data-i18n="notification.pushover_user">Pushover user key</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}"></label>
+  <label data-notification-fields="pushover"{% if kind != 'pushover' %} hidden{% endif %}><span data-i18n="notification.pushover_token">Pushover application token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+
+  <label data-notification-fields="home_assistant"{% if kind != 'home_assistant' %} hidden{% endif %}><span data-i18n="notification.ha_url">Home Assistant URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://homeassistant.local"></label>
+  <label data-notification-fields="home_assistant"{% if kind != 'home_assistant' %} hidden{% endif %}><span data-i18n="notification.ha_token">Long-lived access token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+  <label data-notification-fields="home_assistant"{% if kind != 'home_assistant' %} hidden{% endif %} class="span-2"><span data-i18n="notification.ha_service">HA Service</span><input name="ha_service" value="{{ values.ha_service if values is defined and values.ha_service else '' }}" placeholder="notify.mobile_app"></label>
+
+  <label data-notification-fields="ntfy"{% if kind != 'ntfy' %} hidden{% endif %}><span data-i18n="notification.ntfy_topic_url">ntfy topic URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://ntfy.example.com/tbc-alerts"></label>
+  <label data-notification-fields="ntfy"{% if kind != 'ntfy' %} hidden{% endif %}><span data-i18n="notification.ntfy_token">Access token (optional)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+
+  <label data-notification-fields="gotify"{% if kind != 'gotify' %} hidden{% endif %}><span data-i18n="notification.gotify_server_url">Gotify server URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://gotify.example.com"></label>
+  <label data-notification-fields="gotify"{% if kind != 'gotify' %} hidden{% endif %}><span data-i18n="notification.gotify_token">Gotify application token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+
+  <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.email">Email to</span><input name="email_to" type="email" value="{{ values.email_to if values is defined and values.email_to else '' }}"></label>
+  <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.email_from">Email from</span><input name="email_from" type="email" value="{{ values.email_from if values is defined and values.email_from else '' }}"></label>
+  <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_host">SMTP Host</span><input name="smtp_host" value="{{ values.smtp_host if values is defined and values.smtp_host else '' }}"></label>
+  <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_port">SMTP Port</span><input name="smtp_port" type="number" value="{{ values.smtp_port if values is defined and values.smtp_port else '' }}" placeholder="587"></label>
+  <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_username">SMTP username</span><input name="smtp_username" value="{{ values.smtp_username if values is defined and values.smtp_username else '' }}"></label>
+  <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_password">SMTP password</span><input name="smtp_password" type="password" value="{{ values.smtp_password if values is defined and values.smtp_password else '' }}"></label>
+
+  <label class="check-row" data-notification-fields="telegram,email,ntfy"{% if kind not in ['telegram', 'email', 'ntfy'] %} hidden{% endif %}><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span data-i18n="notification.attach_snapshot">Attach snapshot</span></label>
+
+  <section class="notification-events span-2" aria-labelledby="notification-events-title">
+    <div class="notification-events-heading">
+      <div>
+        <h3 id="notification-events-title" data-i18n="notification.events">Notification events</h3>
+        <p data-i18n="notification.events_hint">Choose events and adjust their delivery text.</p>
+      </div>
+      <p class="notification-placeholder-hint" data-i18n="notification.placeholders">{% raw %}Placeholders: {{ title }}, {{ message }}, {{ event_type }}{% endraw %}</p>
+    </div>
+    <div class="notification-event-list">
+      {% for event in events %}
+      <article class="notification-event-card" data-notification-event>
+        <label class="check-row notification-event-toggle"><input name="event_enabled" type="checkbox" value="{{ event.event_type }}" {% if event.enabled %}checked{% endif %} data-notification-event-toggle><span data-i18n="notification.event.{{ event.event_type }}">{{ event.label }}</span></label>
+        <label><span data-i18n="notification.title_template">Title</span><input name="event_title_{{ event.event_type }}" value="{{ event.title_template }}"></label>
+        <label><span data-i18n="notification.message_template">Message</span><textarea name="event_message_{{ event.event_type }}" rows="2">{{ event.message_template }}</textarea></label>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
 </div>

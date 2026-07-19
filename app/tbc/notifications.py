@@ -15,14 +15,28 @@ def notify_event(database_path: str, *, event_type: str, title: str, message: st
     for channel in database.list_notification_channels(database_path):
         if int(channel.get("enabled") or 0) != 1:
             continue
-        event_filter = (channel.get("event_filter") or "").strip()
-        if event_filter and event_type not in {part.strip() for part in event_filter.split(",")}:
+        event_template = database.get_notification_event_template(database_path, channel, event_type)
+        if event_template is None or int(event_template.get("enabled") or 0) != 1:
             continue
         try:
-            _send(channel, title, message, recording, public_base_url)
+            _send(
+                channel,
+                _render_template(event_template.get("title_template"), title=title, message=message, event_type=event_type),
+                _render_template(event_template.get("message_template"), title=title, message=message, event_type=event_type),
+                recording,
+                public_base_url,
+            )
         except Exception:
             # Notification failures should never break recording or health flows.
             continue
+
+
+def _render_template(template: str | None, *, title: str, message: str, event_type: str) -> str:
+    """Replace the deliberately small, documented notification placeholders."""
+    rendered = template or ""
+    for key, value in {"title": title, "message": message, "event_type": event_type}.items():
+        rendered = rendered.replace("{{ " + key + " }}", value).replace("{{" + key + "}}", value)
+    return rendered
 
 
 def _send(channel: dict[str, Any], title: str, message: str, recording: dict[str, Any] | None, public_base_url: str) -> None:
@@ -168,4 +182,3 @@ def _post_form(url: str, payload: dict[str, Any]) -> None:
     data = urllib.parse.urlencode(payload).encode("utf-8")
     request = urllib.request.Request(url, data=data, method="POST")
     urllib.request.urlopen(request, timeout=10).read()
-

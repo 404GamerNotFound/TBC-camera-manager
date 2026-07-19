@@ -5181,6 +5181,11 @@ async def notifications_page(request: Request):
     guard = _require_admin(request)
     if guard:
         return guard
+    channels = database.list_notification_channels(SETTINGS.database_path)
+    for channel in channels:
+        channel["events"] = database.list_notification_event_templates(
+            SETTINGS.database_path, int(channel["id"]), channel.get("event_filter")
+        )
     return templates.TemplateResponse(
         request,
         "notifications.html",
@@ -5188,7 +5193,8 @@ async def notifications_page(request: Request):
             "app_name": SETTINGS.app_name,
             "username": request.session.get("username"),
             "role": "admin",
-            "channels": database.list_notification_channels(SETTINGS.database_path),
+            "channels": channels,
+            "notification_event_defaults": database.notification_event_defaults(),
             "flash": _pop_flash(request),
         },
     )
@@ -5199,7 +5205,12 @@ async def create_notification(request: Request, name: str = Form(...), kind: str
     guard = _require_admin(request)
     if guard:
         return guard
-    database.create_notification_channel(SETTINGS.database_path, **_notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service))
+    form = await request.form()
+    event_templates = _notification_event_templates_from_form(form)
+    values = _notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service)
+    values["event_filter"] = _notification_event_filter(event_templates)
+    values["event_templates"] = event_templates
+    database.create_notification_channel(SETTINGS.database_path, **values)
     _set_flash(request, "notification.created")
     return _redirect("/notifications")
 
@@ -5209,7 +5220,12 @@ async def update_notification(request: Request, channel_id: int, name: str = For
     guard = _require_admin(request)
     if guard:
         return guard
-    database.update_notification_channel(SETTINGS.database_path, channel_id, **_notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service))
+    form = await request.form()
+    event_templates = _notification_event_templates_from_form(form)
+    values = _notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service)
+    values["event_filter"] = _notification_event_filter(event_templates)
+    values["event_templates"] = event_templates
+    database.update_notification_channel(SETTINGS.database_path, channel_id, **values)
     _set_flash(request, "notification.updated")
     return _redirect("/notifications")
 
@@ -6030,7 +6046,7 @@ def _notification_form_values(
 ) -> dict[str, Any]:
     return {
         "name": name.strip(),
-        "kind": kind if kind in {"telegram", "email", "webhook", "pushover", "home_assistant"} else "webhook",
+        "kind": kind if kind in {"telegram", "email", "webhook", "pushover", "home_assistant", "ntfy", "gotify"} else "webhook",
         "enabled": enabled == "on",
         "include_snapshot": include_snapshot == "on",
         "event_filter": _none_if_blank(event_filter),
@@ -6045,6 +6061,27 @@ def _notification_form_values(
         "smtp_password": _none_if_blank(smtp_password),
         "ha_service": _none_if_blank(ha_service),
     }
+
+
+def _notification_event_templates_from_form(form: Any) -> list[dict[str, Any]]:
+    enabled_events = set(form.getlist("event_enabled"))
+    templates: list[dict[str, Any]] = []
+    for event in database.notification_event_defaults():
+        event_type = str(event["event_type"])
+        templates.append(
+            {
+                "event_type": event_type,
+                "enabled": event_type in enabled_events,
+                "title_template": str(form.get(f"event_title_{event_type}") or "{{ title }}").strip(),
+                "message_template": str(form.get(f"event_message_{event_type}") or "{{ message }}").strip(),
+            }
+        )
+    return templates
+
+
+def _notification_event_filter(templates: list[dict[str, Any]]) -> str | None:
+    selected = [str(template["event_type"]) for template in templates if template.get("enabled")]
+    return ",".join(selected) or None
 
 
 def _latest_health_event_id() -> int:
