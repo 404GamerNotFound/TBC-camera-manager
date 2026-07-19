@@ -4081,7 +4081,7 @@ async def _sync_plugin_source(request: Request, source_id: int, redirect_target:
             status="error",
             message=f"Missing Python packages: {', '.join(exc.missing)}",
         )
-        return _redirect_to_requirements_confirm(exc, redirect_target)
+        return _redirect_to_requirements_confirm(exc, redirect_target, source_id=source_id)
     except (PluginSourceError, ValueError, OSError) as exc:
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=str(exc))
         _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
@@ -4149,6 +4149,7 @@ async def plugin_requirements_confirm_page(
     requirements: list[str] = Query(...),
     retry_url: str = Query("/plugin-sources"),
     label: str = Query(""),
+    source_id: int | None = Query(None),
 ):
     guard = _require_admin(request)
     if guard:
@@ -4163,6 +4164,7 @@ async def plugin_requirements_confirm_page(
             "requirements": requirements,
             "retry_url": _safe_internal_path(retry_url, "/plugin-sources"),
             "label": label,
+            "source_id": source_id,
             "flash": _pop_flash(request),
         },
     )
@@ -4173,6 +4175,7 @@ async def install_plugin_requirements_route(
     request: Request,
     requirements: list[str] = Form(...),
     retry_url: str = Form("/plugin-sources"),
+    source_id: int | None = Form(None),
 ):
     guard = _require_admin(request)
     if guard:
@@ -4183,6 +4186,12 @@ async def install_plugin_requirements_route(
     except PluginRequirementsInstallError as exc:
         _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
         return _redirect(safe_retry_url)
+    if source_id is not None:
+        # Came from a GitHub-sync attempt, not a ZIP upload - we know exactly
+        # which source to retry, so do it now instead of making the admin
+        # click "Update now"/"Install directly" again (each manual retry is
+        # another GitHub API call against the unauthenticated rate limit).
+        return await _sync_plugin_source(request, source_id, safe_retry_url)
     _set_flash(request, "plugin.requirements_installed", {"count": len(requirements)})
     return _redirect(safe_retry_url)
 
@@ -5806,11 +5815,13 @@ def _safe_internal_path(path: str, fallback: str) -> str:
     return fallback
 
 
-def _redirect_to_requirements_confirm(exc: MissingPluginRequirements, retry_url: str) -> RedirectResponse:
-    query = urlencode(
-        {"requirements": list(exc.missing), "retry_url": retry_url, "label": exc.plugin_label},
-        doseq=True,
-    )
+def _redirect_to_requirements_confirm(
+    exc: MissingPluginRequirements, retry_url: str, *, source_id: int | None = None
+) -> RedirectResponse:
+    params: dict[str, Any] = {"requirements": list(exc.missing), "retry_url": retry_url, "label": exc.plugin_label}
+    if source_id is not None:
+        params["source_id"] = source_id
+    query = urlencode(params, doseq=True)
     return _redirect(f"/plugin-requirements/confirm?{query}")
 
 

@@ -98,6 +98,25 @@ class InstallRequirementsTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("install", args)
         self.assertIn("fritzconnection==1.15.1", args)
 
+    async def test_successful_install_invalidates_import_caches(self):
+        # Regression test: without this, missing_requirements() called again
+        # later in the same long-running process could still report a
+        # just-installed package as missing, because Python's import system
+        # caches directory listings and doesn't necessarily notice a new
+        # *.dist-info appearing on disk mid-process - this was reported as
+        # the confirm/install flow looping forever against a real deployment.
+        process = AsyncMock()
+        process.communicate = AsyncMock(return_value=(b"Successfully installed fritzconnection-1.15.1\n", None))
+        process.returncode = 0
+
+        with (
+            patch("app.tbc.plugin_requirements.asyncio.create_subprocess_exec", return_value=process),
+            patch("app.tbc.plugin_requirements.importlib.invalidate_caches") as invalidate_caches,
+        ):
+            await install_requirements(("fritzconnection==1.15.1",))
+
+        invalidate_caches.assert_called_once()
+
     async def test_nonzero_exit_raises_with_output(self):
         process = AsyncMock()
         process.communicate = AsyncMock(return_value=(b"ERROR: Could not find a version\n", None))

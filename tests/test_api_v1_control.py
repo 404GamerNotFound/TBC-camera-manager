@@ -758,6 +758,67 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303)
         self.assertEqual(response.headers["location"], "/camera-modules")
 
+    def test_confirm_page_includes_source_id_hidden_field_when_present(self):
+        response = CLIENT.get(
+            "/plugin-requirements/confirm",
+            params={
+                "requirements": ["definitely-not-a-real-package-xyz==1.0"],
+                "retry_url": "/updates",
+                "label": "Acme Requirements Camera",
+                "source_id": 42,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('name="source_id" value="42"', response.text)
+
+    def test_confirm_page_omits_source_id_field_when_absent(self):
+        # A ZIP-upload origin (no source_id) can't be auto-retried - there's
+        # no archive left to re-run install_plugin_archive() against.
+        response = CLIENT.get(
+            "/plugin-requirements/confirm",
+            params={"requirements": ["pkg==1.0"], "retry_url": "/camera-modules"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('name="source_id"', response.text)
+
+    def test_install_now_with_source_id_retries_the_sync_instead_of_just_redirecting(self):
+        # Regression test: previously, confirming a missing-requirement
+        # install from the Updates/plugin-sources GitHub-sync flow just
+        # bounced back to a passive listing page that still showed the
+        # update as pending, forcing the admin to manually click "Update
+        # now" again - each retry burning another unauthenticated GitHub API
+        # call. Now the same source is retried automatically.
+        source_id = database.create_plugin_source(
+            main.SETTINGS.database_path,
+            plugin_kind="camera",
+            label="Acme Retry Camera",
+            repo_url="https://github.com/example/acme-retry",
+            ref="main",
+            subdirectory="",
+        )
+        archive = self._camera_plugin_zip(requirements=[])
+        with (
+            patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")),
+            patch("app.tbc.main.resolve_and_fetch_plugin", return_value=(archive, "abc123")) as fetch_mock,
+        ):
+            response = CLIENT.post(
+                "/plugin-requirements/install",
+                data={
+                    "requirements": ["definitely-not-a-real-package-xyz==1.0"],
+                    "retry_url": "/updates",
+                    "source_id": source_id,
+                },
+                follow_redirects=False,
+            )
+
+        fetch_mock.assert_called_once()
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/updates")
+        source = database.get_plugin_source(main.SETTINGS.database_path, source_id)
+        self.assertEqual(source["last_sync_status"], "ok")
+
 
 if __name__ == "__main__":
     unittest.main()

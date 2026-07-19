@@ -114,4 +114,10 @@ async def install_requirements(specs: tuple[str, ...]) -> str:
     output = stdout.decode("utf-8", errors="replace")
     if process.returncode != 0:
         raise PluginRequirementsInstallError(output[-MAX_OUTPUT_CHARS:] or f"pip exited with code {process.returncode}")
+    # Without this, a missing_requirements() call later in the same
+    # long-running process can still report a just-installed package as
+    # missing: Python's import system (importlib.metadata's underlying
+    # sys.path finders) caches directory listings and doesn't necessarily
+    # notice a new *.dist-info appearing on disk mid-process.
+    importlib.invalidate_caches()
     return output[-MAX_OUTPUT_CHARS:]

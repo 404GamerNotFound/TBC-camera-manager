@@ -27,6 +27,7 @@ THIRD_PARTY_LICENSES: list[dict[str, str]] = [
     {"category": "Web framework & core", "name": "MCP Python SDK", "license": "MIT", "url": "https://github.com/modelcontextprotocol/python-sdk"},
 
     # Camera & cloud integrations
+    {"category": "Camera & cloud integrations", "name": "python-onvif (onvif-zeep)", "license": "MIT", "url": "https://github.com/quatanium/python-onvif"},
     {"category": "Camera & cloud integrations", "name": "paho-mqtt", "license": "EPL-2.0 / EDL-1.0", "url": "https://github.com/eclipse-paho/paho.mqtt.python"},
     {"category": "Camera & cloud integrations", "name": "boto3", "license": "Apache-2.0", "url": "https://github.com/boto/boto3"},
     {"category": "Camera & cloud integrations", "name": "go2rtc", "license": "MIT", "url": "https://github.com/AlexxIT/go2rtc"},

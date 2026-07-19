@@ -31,6 +31,9 @@
   <input type="hidden" name="requirements" value="{{ requirement }}">
   {% endfor %}
   <input type="hidden" name="retry_url" value="{{ retry_url }}">
+  {% if source_id is not none %}
+  <input type="hidden" name="source_id" value="{{ source_id }}">
+  {% endif %}
   <button class="primary-button" type="submit" data-i18n="plugin.install_requirements_now">Install now</button>
   <a class="secondary-button" href="{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
 </form>

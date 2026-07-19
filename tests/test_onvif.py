@@ -1,6 +1,7 @@
 import sys
 import types
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from app.tbc.camera_modules import onvif
@@ -144,6 +145,23 @@ class OnvifTests(unittest.TestCase):
         self.assertEqual(result.stream_uris, ["rtsp://cam/bare"])
         self.assertIsNone(result.stream_profiles[0].width)
         self.assertIsNone(result.stream_profiles[0].source_token)
+
+
+class OnvifPackageIsDeclaredAsADependencyTests(unittest.TestCase):
+    """probe_onvif() and onvif_control.py both do a lazy `from onvif import
+    ONVIFCamera` (not a top-of-file import - see onvif.py:96), so a naive
+    grep for imports at the start of a line misses it entirely. That
+    exact mistake once let onvif-zeep get removed from requirements.txt,
+    breaking every ONVIF-based camera (including Reolink's ONVIF fallback)
+    in real deployments while every test here still passed, because these
+    tests correctly fake out the "onvif" module instead of importing the
+    real package. Guard against it recurring."""
+
+    def test_onvif_zeep_is_declared_in_requirements_txt(self):
+        repo_root = Path(__file__).resolve().parent.parent
+        for filename in ("requirements.txt", "requirements-gpu.txt"):
+            content = (repo_root / filename).read_text(encoding="utf-8")
+            self.assertIn("onvif-zeep", content, f"onvif-zeep missing from {filename}")
 
 
 if __name__ == "__main__":
