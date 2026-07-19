@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -173,6 +174,65 @@ class InstallRequirementsTests(unittest.IsolatedAsyncioTestCase):
                 await install_requirements(("fritzconnection==1.15.1",))
 
         self.assertIn("--user", create_subprocess.call_args.args)
+
+    async def test_successful_user_install_adds_the_user_site_to_sys_path_if_missing(self):
+        # Regression test: on a fresh container, ~/.local/lib/pythonX.Y/
+        # site-packages doesn't exist yet at interpreter startup, so
+        # Python's own site.py never puts it on sys.path in the first place
+        # (site.addusersitepackages() only does that if the directory
+        # already exists). pip creates it on the very first --user install,
+        # but nothing else makes the running process look there -
+        # importlib.invalidate_caches() alone only refreshes finders for
+        # paths *already on* sys.path, so without this fix a plugin's
+        # requirement kept showing as "still missing" forever after a
+        # "successful" install, in a real deployment (not caught by earlier
+        # local testing, where ~/.local/.../site-packages already existed
+        # from unrelated prior installs and thus was already on sys.path).
+        process = AsyncMock()
+        process.communicate = AsyncMock(return_value=(b"Successfully installed aiounifi-55\n", None))
+        process.returncode = 0
+
+        with (
+            patch("app.tbc.plugin_requirements._in_virtualenv", return_value=False),
+            patch("app.tbc.plugin_requirements.asyncio.create_subprocess_exec", return_value=process),
+            patch("app.tbc.plugin_requirements.site.getusersitepackages", return_value="/home/tbc/.local/lib/site-packages"),
+            patch("app.tbc.plugin_requirements.site.addsitedir") as addsitedir,
+            patch.object(sys, "path", []),
+        ):
+            await install_requirements(("aiounifi==55",))
+
+        addsitedir.assert_called_once_with("/home/tbc/.local/lib/site-packages")
+
+    async def test_user_site_already_on_sys_path_is_not_added_again(self):
+        process = AsyncMock()
+        process.communicate = AsyncMock(return_value=(b"Successfully installed aiounifi-55\n", None))
+        process.returncode = 0
+        existing_path = ["/home/tbc/.local/lib/site-packages"]
+
+        with (
+            patch("app.tbc.plugin_requirements._in_virtualenv", return_value=False),
+            patch("app.tbc.plugin_requirements.asyncio.create_subprocess_exec", return_value=process),
+            patch("app.tbc.plugin_requirements.site.getusersitepackages", return_value=existing_path[0]),
+            patch("app.tbc.plugin_requirements.site.addsitedir") as addsitedir,
+            patch.object(sys, "path", existing_path),
+        ):
+            await install_requirements(("aiounifi==55",))
+
+        addsitedir.assert_not_called()
+
+    async def test_virtualenv_install_does_not_touch_user_site(self):
+        process = AsyncMock()
+        process.communicate = AsyncMock(return_value=(b"Successfully installed aiounifi-55\n", None))
+        process.returncode = 0
+
+        with (
+            patch("app.tbc.plugin_requirements._in_virtualenv", return_value=True),
+            patch("app.tbc.plugin_requirements.asyncio.create_subprocess_exec", return_value=process),
+            patch("app.tbc.plugin_requirements.site.addsitedir") as addsitedir,
+        ):
+            await install_requirements(("aiounifi==55",))
+
+        addsitedir.assert_not_called()
 
 
 if __name__ == "__main__":

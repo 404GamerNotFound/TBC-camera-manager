@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.metadata
+import site
 import sys
 from typing import Any
 
@@ -90,8 +91,9 @@ async def install_requirements(specs: tuple[str, ...]) -> str:
     """
     if not specs:
         return ""
+    used_user_flag = not _in_virtualenv()
     command = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
-    if not _in_virtualenv():
+    if used_user_flag:
         command.append("--user")
     command.extend(specs)
     try:
@@ -114,10 +116,24 @@ async def install_requirements(specs: tuple[str, ...]) -> str:
     output = stdout.decode("utf-8", errors="replace")
     if process.returncode != 0:
         raise PluginRequirementsInstallError(output[-MAX_OUTPUT_CHARS:] or f"pip exited with code {process.returncode}")
-    # Without this, a missing_requirements() call later in the same
-    # long-running process can still report a just-installed package as
-    # missing: Python's import system (importlib.metadata's underlying
-    # sys.path finders) caches directory listings and doesn't necessarily
-    # notice a new *.dist-info appearing on disk mid-process.
+
+    if used_user_flag:
+        # On a fresh container, the --user site-packages directory
+        # (~/.local/lib/pythonX.Y/site-packages) does not exist yet at
+        # interpreter startup, so Python's own site.py never added it to
+        # sys.path in the first place (it only does so if the directory
+        # already exists - see CPython's site.addusersitepackages()).
+        # pip creates it now, on the first-ever --user install, but nothing
+        # else in this process would ever look there without this: not even
+        # importlib.invalidate_caches() below, since that only refreshes
+        # finders for paths *already on* sys.path.
+        user_site = site.getusersitepackages()
+        if user_site not in sys.path:
+            site.addsitedir(user_site)
+    # Beyond the sys.path gap above, a missing_requirements() call later in
+    # the same long-running process can still report a just-installed
+    # package as missing purely from caching: Python's import system caches
+    # directory listings per sys.path entry and doesn't necessarily notice a
+    # new *.dist-info appearing on disk mid-process.
     importlib.invalidate_caches()
     return output[-MAX_OUTPUT_CHARS:]
