@@ -114,6 +114,11 @@ from .plugin_sources import (
     parse_github_repo_url,
     resolve_and_fetch_plugin,
 )
+from .plugin_requirements import (
+    MissingPluginRequirements,
+    PluginRequirementsInstallError,
+    install_requirements,
+)
 from .plugin_templates import (
     build_camera_plugin_template,
     build_cloud_plugin_template,
@@ -2913,6 +2918,8 @@ async def import_camera_module(request: Request, plugin_file: UploadFile = File(
         package = install_plugin_archive(archive, SETTINGS.camera_modules_path)
         reload_camera_modules()
         _set_flash(request, "plugin.camera_installed", {"label": package.manifest.label})
+    except MissingPluginRequirements as exc:
+        return _redirect_to_requirements_confirm(exc, "/camera-modules")
     except (CameraPluginError, OSError) as exc:
         _set_flash(request, "plugin.camera_import_failed", {"error": exc}, "error")
     finally:
@@ -3018,6 +3025,8 @@ async def import_cloud_module(request: Request, plugin_file: UploadFile = File(.
         package = install_cloud_plugin_archive(archive, SETTINGS.cloud_modules_path)
         reload_cloud_modules()
         _set_flash(request, "plugin.cloud_installed", {"label": package.manifest.label})
+    except MissingPluginRequirements as exc:
+        return _redirect_to_requirements_confirm(exc, "/cloud-modules")
     except (CloudPluginError, OSError) as exc:
         _set_flash(request, "plugin.cloud_import_failed", {"error": exc}, "error")
     finally:
@@ -3485,6 +3494,8 @@ async def import_network_module(request: Request, plugin_file: UploadFile = File
         package = install_network_plugin_archive(archive, SETTINGS.network_modules_path)
         reload_network_modules()
         _set_flash(request, "plugin.network_installed", {"label": package.manifest.label})
+    except MissingPluginRequirements as exc:
+        return _redirect_to_requirements_confirm(exc, "/network-modules")
     except (NetworkPluginError, OSError) as exc:
         _set_flash(request, "plugin.network_import_failed", {"error": exc}, "error")
     finally:
@@ -4063,6 +4074,14 @@ async def _sync_plugin_source(request: Request, source_id: int, redirect_target:
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=message)
         _set_flash(request, "common.raw_message", {"message": message}, "error")
         return _redirect(redirect_target)
+    except MissingPluginRequirements as exc:
+        database.update_plugin_source_sync_result(
+            SETTINGS.database_path,
+            source_id,
+            status="error",
+            message=f"Missing Python packages: {', '.join(exc.missing)}",
+        )
+        return _redirect_to_requirements_confirm(exc, redirect_target)
     except (PluginSourceError, ValueError, OSError) as exc:
         database.update_plugin_source_sync_result(SETTINGS.database_path, source_id, status="error", message=str(exc))
         _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
@@ -4122,6 +4141,50 @@ async def delete_plugin_source_route(request: Request, source_id: int):
     database.delete_plugin_source(SETTINGS.database_path, source_id)
     _set_flash(request, "plugin_source.removed")
     return _redirect("/plugin-sources")
+
+
+@app.get("/plugin-requirements/confirm", response_class=HTMLResponse)
+async def plugin_requirements_confirm_page(
+    request: Request,
+    requirements: list[str] = Query(...),
+    retry_url: str = Query("/plugin-sources"),
+    label: str = Query(""),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    return templates.TemplateResponse(
+        request,
+        "plugin_requirements_confirm.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": "admin",
+            "requirements": requirements,
+            "retry_url": _safe_internal_path(retry_url, "/plugin-sources"),
+            "label": label,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@app.post("/plugin-requirements/install")
+async def install_plugin_requirements_route(
+    request: Request,
+    requirements: list[str] = Form(...),
+    retry_url: str = Form("/plugin-sources"),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    safe_retry_url = _safe_internal_path(retry_url, "/plugin-sources")
+    try:
+        await install_requirements(tuple(requirements))
+    except PluginRequirementsInstallError as exc:
+        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+        return _redirect(safe_retry_url)
+    _set_flash(request, "plugin.requirements_installed", {"count": len(requirements)})
+    return _redirect(safe_retry_url)
 
 
 @app.get("/updates", response_class=HTMLResponse)
@@ -5732,6 +5795,23 @@ def _cloud_module_selector_options() -> list[dict[str, Any]]:
 
 def _redirect(path: str) -> RedirectResponse:
     return RedirectResponse(path, status_code=status.HTTP_303_SEE_OTHER)
+
+
+def _safe_internal_path(path: str, fallback: str) -> str:
+    """Return `path` if it's a same-site path, else `fallback` - guards the
+    retry_url round-tripped through /plugin-requirements/confirm's query
+    string and back against being turned into an open redirect."""
+    if path.startswith("/") and not path.startswith("//") and "\\" not in path:
+        return path
+    return fallback
+
+
+def _redirect_to_requirements_confirm(exc: MissingPluginRequirements, retry_url: str) -> RedirectResponse:
+    query = urlencode(
+        {"requirements": list(exc.missing), "retry_url": retry_url, "label": exc.plugin_label},
+        doseq=True,
+    )
+    return _redirect(f"/plugin-requirements/confirm?{query}")
 
 
 def _plugin_has_tests(package: Any) -> bool:

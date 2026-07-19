@@ -26,6 +26,7 @@ from .base import (
     CloudVerificationRequired,
     CloudVerificationSupport,
 )
+from ..plugin_requirements import MissingPluginRequirements, missing_requirements, read_requirements_field
 
 PLUGIN_SCHEMA_VERSION = 1
 MAX_ARCHIVE_BYTES = 10 * 1024 * 1024
@@ -72,6 +73,7 @@ class CloudPluginManifest:
     default_port: int
     account_fields: tuple[CloudAccountField, ...]
     verification_support: CloudVerificationSupport
+    requirements: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -156,6 +158,10 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         )
     except ValueError as exc:
         raise CloudPluginError(f"Unknown value for verification_support: {exc}") from exc
+    try:
+        requirements = read_requirements_field(raw.get("requirements"))
+    except ValueError as exc:
+        raise CloudPluginError(str(exc)) from exc
     return CloudPluginManifest(
         schema_version=schema_version,
         key=key,
@@ -170,6 +176,7 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         default_port=default_port,
         account_fields=account_fields,
         verification_support=verification_support,
+        requirements=requirements,
     )
 
 
@@ -394,6 +401,9 @@ def install_plugin_archive(archive: bytes, external_path: str) -> CloudPluginPac
             manifest = read_manifest(staging / "manifest.json")
             if (builtin_plugins_path() / manifest.key).exists():
                 raise CloudPluginError("Built-in cloud plugins cannot be overwritten")
+            missing = missing_requirements(manifest.requirements)
+            if missing:
+                raise MissingPluginRequirements(missing, plugin_label=manifest.label)
             package = CloudPluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key

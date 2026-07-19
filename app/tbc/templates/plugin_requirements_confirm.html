@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="plugin.requirements_needed_eyebrow">Additional packages needed</p>
+    <h1>{{ label or 'Plugin' }}</h1>
+  </div>
+  <a class="secondary-button" href="{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
+</section>
+
+<div class="quiet-box" data-i18n="plugin.requirements_needed_explanation">
+  This plugin declares Python packages that aren't installed yet. Installing them runs `pip install` on this
+  server with the packages listed below - only do this for a plugin you trust.
+</div>
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="plugin.requirements_needed">Needed packages</h2>
+    <span>{{ requirements | length }}</span>
+  </div>
+  <ul class="topology-tree">
+    {% for requirement in requirements %}
+    <li><code>{{ requirement }}</code></li>
+    {% endfor %}
+  </ul>
+</section>
+
+<form method="post" action="/plugin-requirements/install" class="form-actions">
+  {% for requirement in requirements %}
+  <input type="hidden" name="requirements" value="{{ requirement }}">
+  {% endfor %}
+  <input type="hidden" name="retry_url" value="{{ retry_url }}">
+  <button class="primary-button" type="submit" data-i18n="plugin.install_requirements_now">Install now</button>
+  <a class="secondary-button" href="{{ retry_url }}" data-i18n="plugin.cancel">Cancel</a>
+</form>
+
+<p class="quiet-box" data-i18n="plugin.requirements_installed_retry_hint">
+  After installing, retry the plugin install/sync you started - it will pick up the newly installed packages.
+</p>
+{% endblock %}

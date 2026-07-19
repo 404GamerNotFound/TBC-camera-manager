@@ -16,13 +16,16 @@ cannot be safely re-entered after being torn down.
 """
 from __future__ import annotations
 
+import io
+import json
 import os
 import re
 import shutil
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 from urllib.parse import urlsplit
 
 _TMP_ROOT = tempfile.mkdtemp(prefix="tbc-api-control-test-")
@@ -41,6 +44,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.tbc import database, main  # noqa: E402
 from app.tbc.cloud_modules import CloudAccountField, CloudAccountFieldType  # noqa: E402
+from app.tbc.plugin_requirements import PluginRequirementsInstallError  # noqa: E402
 
 TOKEN_PATTERN = re.compile(r"tbc_[A-Za-z0-9_-]{20,}")
 
@@ -645,6 +649,114 @@ class NetworkTopologyTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Schuppen PoE", response.text)
         self.assertIn("network_account.last_connected_at", response.text)
+
+
+class PluginRequirementsFlowTests(unittest.TestCase):
+    """POST /camera-modules/import redirects to /plugin-requirements/confirm
+    when a plugin declares a pip requirement that isn't installed (see
+    app.tbc.plugin_requirements), and POST /plugin-requirements/install (pip
+    mocked out) lets the admin install it and retry.
+
+    Lives in this file (rather than its own) because only one test module in
+    the suite may own app.tbc.main's TestClient - see this file's docstring.
+    Uses the camera-modules import route (not network/cloud) because only
+    TBC_CAMERA_MODULES_PATH is pointed at a writable temp dir by this
+    module's env setup above.
+    """
+
+    def setUp(self):
+        db_path = main.SETTINGS.database_path
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        database.initialize(db_path, main.SETTINGS.recordings_path)
+        database.ensure_admin_user(db_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+
+    def _camera_plugin_zip(self, *, requirements):
+        manifest = {
+            "schema_version": 1,
+            "key": "acme_requirements_camera",
+            "label": "Acme Requirements Camera",
+            "version": "1.0.0",
+            "description": "",
+            "entrypoint": "plugin.py",
+            "capabilities": ["live"],
+            "requirements": requirements,
+        }
+        plugin_code = (
+            "from tbc_camera_api import CameraModule, CameraSnapshot\n\n"
+            "class AcmeModule(CameraModule):\n"
+            "    async def probe(self, camera):\n"
+            "        return CameraSnapshot(status='ok', message='Acme')\n\n"
+            "def create_module():\n"
+            "    return AcmeModule()\n"
+        )
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w") as bundle:
+            bundle.writestr("manifest.json", json.dumps(manifest))
+            bundle.writestr("plugin.py", plugin_code)
+        return output.getvalue()
+
+    def test_import_with_missing_requirement_redirects_to_confirm_page(self):
+        archive = self._camera_plugin_zip(requirements=["definitely-not-a-real-package-xyz==1.0"])
+
+        response = CLIENT.post(
+            "/camera-modules/import",
+            files={"plugin_file": ("plugin.zip", archive, "application/zip")},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("/plugin-requirements/confirm", response.headers["location"])
+        self.assertIn("definitely-not-a-real-package-xyz", response.headers["location"])
+
+    def test_confirm_page_renders_the_missing_packages_and_label(self):
+        response = CLIENT.get(
+            "/plugin-requirements/confirm",
+            params={
+                "requirements": ["definitely-not-a-real-package-xyz==1.0"],
+                "retry_url": "/camera-modules",
+                "label": "Acme Requirements Camera",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("definitely-not-a-real-package-xyz==1.0", response.text)
+        self.assertIn("Acme Requirements Camera", response.text)
+
+    def test_confirm_page_rejects_an_external_retry_url(self):
+        response = CLIENT.get(
+            "/plugin-requirements/confirm",
+            params={"requirements": ["pkg==1.0"], "retry_url": "https://evil.example/steal"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("https://evil.example", response.text)
+
+    def test_install_now_calls_pip_and_redirects_to_retry_url(self):
+        with patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")):
+            response = CLIENT.post(
+                "/plugin-requirements/install",
+                data={"requirements": ["definitely-not-a-real-package-xyz==1.0"], "retry_url": "/camera-modules"},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/camera-modules")
+
+    def test_install_now_failure_flashes_and_redirects_back(self):
+        with patch(
+            "app.tbc.main.install_requirements",
+            new=AsyncMock(side_effect=PluginRequirementsInstallError("ERROR: no matching distribution")),
+        ):
+            response = CLIENT.post(
+                "/plugin-requirements/install",
+                data={"requirements": ["definitely-not-a-real-package-xyz==1.0"], "retry_url": "/camera-modules"},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/camera-modules")
 
 
 if __name__ == "__main__":

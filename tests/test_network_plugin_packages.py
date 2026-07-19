@@ -4,6 +4,7 @@ import unittest
 import zipfile
 from dataclasses import replace
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 from app.tbc.network_modules import normalize_account_configuration
@@ -21,9 +22,10 @@ from app.tbc.network_modules.registry import (
     list_network_module_registrations,
     reload_network_modules,
 )
+from app.tbc.plugin_requirements import MissingPluginRequirements
 
 
-def plugin_archive(*, key="acme_network", wrapped=False, extra_files=None):
+def plugin_archive(*, key="acme_network", wrapped=False, extra_files=None, requirements=None):
     manifest = {
         "schema_version": 1,
         "key": key,
@@ -38,6 +40,8 @@ def plugin_archive(*, key="acme_network", wrapped=False, extra_files=None):
             {"key": "secret", "label": "Password", "type": "password", "required": True},
         ],
     }
+    if requirements is not None:
+        manifest["requirements"] = requirements
     plugin_code = """
 from tbc_network_api import NetworkAccountModule, NetworkDevice
 
@@ -123,6 +127,27 @@ class NetworkPluginPackageTests(unittest.TestCase):
 
             self.assertTrue((package.path / "LICENSE").is_file())
             self.assertEqual((package.path / "LICENSE").read_text(), "MIT License...")
+
+    def test_satisfied_requirement_installs_normally(self):
+        # "unittest" ships with Python itself - not a real pip-installable
+        # distribution, so this uses a genuinely always-present package
+        # instead: the app's own already-installed "boto3".
+        archive = plugin_archive(requirements=["boto3"])
+
+        with tempfile.TemporaryDirectory() as external_path:
+            package = install_plugin_archive(archive, external_path)
+
+        self.assertEqual(package.manifest.requirements, ("boto3",))
+
+    def test_missing_requirement_blocks_install_without_leaving_partial_files(self):
+        archive = plugin_archive(requirements=["definitely-not-a-real-package-xyz==1.0"])
+
+        with tempfile.TemporaryDirectory() as external_path:
+            with self.assertRaises(MissingPluginRequirements) as ctx:
+                install_plugin_archive(archive, external_path)
+            self.assertEqual(ctx.exception.missing, ("definitely-not-a-real-package-xyz==1.0",))
+            self.assertEqual(ctx.exception.plugin_label, "Acme Network")
+            self.assertEqual(list(Path(external_path).iterdir()), [])
 
     def test_normalize_account_configuration_validates_required_fields(self):
         with tempfile.TemporaryDirectory() as external_path:

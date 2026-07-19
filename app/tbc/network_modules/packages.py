@@ -23,6 +23,7 @@ from .base import (
     NetworkConnectionError,
     NetworkDevice,
 )
+from ..plugin_requirements import MissingPluginRequirements, missing_requirements, read_requirements_field
 
 PLUGIN_SCHEMA_VERSION = 1
 MAX_ARCHIVE_BYTES = 10 * 1024 * 1024
@@ -61,6 +62,7 @@ class NetworkPluginManifest:
     entrypoint: str
     default_port: int
     account_fields: tuple[NetworkAccountField, ...]
+    requirements: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -127,6 +129,10 @@ def read_manifest(path: Path) -> NetworkPluginManifest:
     if not 1 <= default_port <= 65535:
         raise NetworkPluginError("default_port must be between 1 and 65535")
     account_fields = _read_account_fields(raw.get("account_fields"))
+    try:
+        requirements = read_requirements_field(raw.get("requirements"))
+    except ValueError as exc:
+        raise NetworkPluginError(str(exc)) from exc
     return NetworkPluginManifest(
         schema_version=schema_version,
         key=key,
@@ -136,6 +142,7 @@ def read_manifest(path: Path) -> NetworkPluginManifest:
         entrypoint=entrypoint,
         default_port=default_port,
         account_fields=account_fields,
+        requirements=requirements,
     )
 
 
@@ -303,6 +310,9 @@ def install_plugin_archive(archive: bytes, external_path: str) -> NetworkPluginP
             manifest = read_manifest(staging / "manifest.json")
             if (builtin_plugins_path() / manifest.key).exists():
                 raise NetworkPluginError("Built-in network plugins cannot be overwritten")
+            missing = missing_requirements(manifest.requirements)
+            if missing:
+                raise MissingPluginRequirements(missing, plugin_label=manifest.label)
             package = NetworkPluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key

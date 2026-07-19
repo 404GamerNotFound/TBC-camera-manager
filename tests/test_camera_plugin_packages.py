@@ -4,6 +4,8 @@ import unittest
 import zipfile
 from io import BytesIO
 
+from pathlib import Path
+
 from app.tbc.camera_modules import CameraCapability
 from app.tbc.camera_modules.packages import (
     CameraPluginError,
@@ -13,9 +15,10 @@ from app.tbc.camera_modules.packages import (
     load_plugin_module,
     remove_external_plugin,
 )
+from app.tbc.plugin_requirements import MissingPluginRequirements
 
 
-def plugin_archive(*, key="acme", wrapped=False, extra_files=None):
+def plugin_archive(*, key="acme", wrapped=False, extra_files=None, requirements=None):
     manifest = {
         "schema_version": 1,
         "key": key,
@@ -26,6 +29,8 @@ def plugin_archive(*, key="acme", wrapped=False, extra_files=None):
         "capabilities": ["live"],
         "ports": {"onvif": 9000, "http": 8080, "rtsp": 8554},
     }
+    if requirements is not None:
+        manifest["requirements"] = requirements
     plugin_code = """
 from tbc_camera_api import CameraModule, CameraSnapshot
 
@@ -77,6 +82,24 @@ class CameraPluginPackageTests(unittest.TestCase):
         with zipfile.ZipFile(BytesIO(archive)) as bundle:
             names = set(bundle.namelist())
         self.assertTrue({"module.py", "service.py", "catalog.py", "control.py"} <= names)
+
+    def test_satisfied_requirement_installs_normally(self):
+        archive = plugin_archive(requirements=["boto3"])
+
+        with tempfile.TemporaryDirectory() as external_path:
+            package = install_plugin_archive(archive, external_path)
+
+        self.assertEqual(package.manifest.requirements, ("boto3",))
+
+    def test_missing_requirement_blocks_install_without_leaving_partial_files(self):
+        archive = plugin_archive(requirements=["definitely-not-a-real-package-xyz==1.0"])
+
+        with tempfile.TemporaryDirectory() as external_path:
+            with self.assertRaises(MissingPluginRequirements) as ctx:
+                install_plugin_archive(archive, external_path)
+            self.assertEqual(ctx.exception.missing, ("definitely-not-a-real-package-xyz==1.0",))
+            self.assertEqual(ctx.exception.plugin_label, "Acme Camera")
+            self.assertEqual(list(Path(external_path).iterdir()), [])
 
     def test_zip_plugin_can_be_installed_loaded_exported_and_removed(self):
         with tempfile.TemporaryDirectory() as external_path:

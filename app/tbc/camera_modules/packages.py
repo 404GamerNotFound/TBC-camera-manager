@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .base import ArchiveDownload, CameraCapability, CameraModule, CameraSnapshot, ModuleFeatureUnsupported
+from ..plugin_requirements import MissingPluginRequirements, missing_requirements, read_requirements_field
 
 PLUGIN_SCHEMA_VERSION = 1
 MAX_ARCHIVE_BYTES = 10 * 1024 * 1024
@@ -45,6 +46,7 @@ class PluginManifest:
     default_onvif_port: int
     default_http_port: int
     default_rtsp_port: int
+    requirements: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -114,6 +116,10 @@ def read_manifest(path: Path) -> PluginManifest:
     ports = raw.get("ports") or {}
     if not isinstance(ports, dict):
         raise CameraPluginError("ports must be a JSON object")
+    try:
+        requirements = read_requirements_field(raw.get("requirements"))
+    except ValueError as exc:
+        raise CameraPluginError(str(exc)) from exc
     return PluginManifest(
         schema_version=schema_version,
         key=key,
@@ -125,6 +131,7 @@ def read_manifest(path: Path) -> PluginManifest:
         default_onvif_port=_valid_port(ports.get("onvif"), 8000),
         default_http_port=_valid_port(ports.get("http"), 80),
         default_rtsp_port=_valid_port(ports.get("rtsp"), 554),
+        requirements=requirements,
     )
 
 
@@ -219,6 +226,9 @@ def install_plugin_archive(archive: bytes, external_path: str) -> PluginPackage:
             manifest = read_manifest(staging / "manifest.json")
             if (builtin_plugins_path() / manifest.key).exists():
                 raise CameraPluginError("Built-in plugins cannot be overwritten")
+            missing = missing_requirements(manifest.requirements)
+            if missing:
+                raise MissingPluginRequirements(missing, plugin_label=manifest.label)
             package = PluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key
