@@ -65,18 +65,21 @@ container and uses the environment variables supplied by Docker Compose.
 ## Publishing for maintainers
 
 The app version in `config.yaml` must match the TBC version in
-`app/tbc/__init__.py`. A Git tag in the format `vX.Y.Z` starts
-`.github/workflows/home-assistant-app.yml`. The workflow rejects a release when
-the tag and app version differ, builds separate `amd64` and `aarch64` images, and
-then publishes a shared multi-architecture manifest as:
+`app/tbc/__init__.py`. Changing the version in `config.yaml` on `main`, pushing a
+Git tag in the format `vX.Y.Z`, or manually dispatching
+`.github/workflows/home-assistant-app.yml` starts the image release. The workflow
+rejects a tagged release when the tag and app version differ, builds separate
+`amd64` and `aarch64` images, and then publishes a shared multi-architecture
+manifest as:
 
 ```text
 ghcr.io/404gamernotfound/tbc-camera-manager-ha:X.Y.Z
 ```
 
-The workflow can also be started manually from the GitHub Actions page. It must
-run at least once before the app can be installed. A configuration version alone
-does not create a container image.
+Wait until the workflow and its final anonymous-pull check succeed before asking
+users to install the new version. Home Assistant reads `config.yaml` directly
+from the app repository and cannot install an advertised version until its
+matching public image tag exists.
 
 GitHub Container Registry creates a new package as private by default. After the
 first publication, open the package settings and change its visibility to

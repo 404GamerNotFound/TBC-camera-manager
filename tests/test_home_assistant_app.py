@@ -30,6 +30,10 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
         )
         self.assertIn(f"ARG BUILD_VERSION={config['version']}", dockerfile)
 
+        root_dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY app ./app", root_dockerfile)
+        self.assertIn("COPY docs ./docs", root_dockerfile)
+
     def test_release_workflow_links_and_publicly_verifies_the_image(self):
         workflow = (ROOT / ".github" / "workflows" / "home-assistant-app.yml").read_text(
             encoding="utf-8"
@@ -44,6 +48,9 @@ class HomeAssistantAppPackageTests(unittest.TestCase):
         self.assertIn("docker logout ghcr.io", workflow)
         self.assertIn('docker pull "${IMAGE}:${VERSION}"', workflow)
         self.assertIn("change its visibility to Public", workflow)
+        self.assertIn("branches:\n      - main", workflow)
+        self.assertIn('paths:\n      - "tbc_camera_manager/config.yaml"', workflow)
+        self.assertIn("if: startsWith(github.ref, 'refs/tags/')", workflow)
 
 
 if __name__ == "__main__":

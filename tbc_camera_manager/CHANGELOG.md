@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 - "Installable"
+
+- Fixed Home Assistant installation and updates by automatically publishing the matching public
+  multi-architecture image whenever the advertised app version changes on `main`.
+- Added the repository documentation to the runtime image so the in-app Docs viewer also works in
+  Docker and Home Assistant installations.
+- Added package tests that keep the app version, image contents, and release triggers consistent.
+
 ## 0.5.0 - "Connected"
 
 - Added a "control" scope to API tokens: a token can now optionally be allowed to change camera and detection settings, not just read them. Existing tokens stay read-only.
