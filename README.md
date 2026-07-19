@@ -113,6 +113,8 @@ See [docs/cloud-accounts.md](docs/cloud-accounts.md).
 
 ## External sources, updates, and plugin tests
 
+![External sources](images/readme/external_sources.png)
+
 Public GitHub repositories can be registered as plugin sources instead of uploading ZIP files manually. Synchronization downloads and validates the current branch, tag, or subdirectory through the same safety checks as uploaded packages. TBC checks registered sources hourly by comparing commit SHAs and lists available updates under `Admin → Updates`.
 
 Camera and cloud plugins may include a `tests/` directory. These tests can be run directly from the corresponding plugin administration page. Ready-to-install templates are available for camera plugins, cloud plugins, and themes.
