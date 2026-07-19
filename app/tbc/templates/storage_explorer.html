@@ -39,10 +39,24 @@
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th data-i18n="camera_new_choice.camera">Camera</th><th data-i18n="recordings.event">Event</th><th data-i18n="common.clips">Clips</th><th data-i18n="sd_card.size">Size</th></tr></thead>
+      <thead><tr><th data-i18n="camera_new_choice.camera">Camera</th><th data-i18n="recordings.event">Event</th><th data-i18n="storage.destination">Storage destination</th><th data-i18n="common.clips">Clips</th><th data-i18n="sd_card.size">Size</th><th><span class="visually-hidden" data-i18n="common.delete">Delete</span></th></tr></thead>
       <tbody>
         {% for row in by_camera_event %}
-        <tr><td>{{ row.camera_name }}</td><td>{{ row.detection_key }}</td><td>{{ row.clip_count }}</td><td>{{ row.size_bytes // (1024 * 1024) }} MB</td></tr>
+        <tr>
+          <td>{{ row.camera_name }}</td>
+          <td>{{ row.detection_key }}</td>
+          <td>{{ row.storage_name }}</td>
+          <td>{{ row.clip_count }}</td>
+          <td>{{ row.size_bytes // (1024 * 1024) }} MB</td>
+          <td class="table-action-cell">
+            <form method="post" action="{{ ingress_prefix }}/storage/explorer/groups/delete">
+              <input type="hidden" name="camera_id" value="{{ row.camera_id }}">
+              <input type="hidden" name="detection_key" value="{{ row.detection_key }}">
+              <input type="hidden" name="storage_id" value="{{ row.storage_id if row.storage_id is not none else '' }}">
+              <button class="icon-button danger-icon-button" type="submit" title="Delete" data-i18n-title="storage.delete_group" aria-label="Delete" data-i18n-aria-label="storage.delete_group"><span aria-hidden="true">🗑</span></button>
+            </form>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -66,4 +80,3 @@
   </div>
 </section>
 {% endblock %}
-

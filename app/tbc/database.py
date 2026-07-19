@@ -2194,16 +2194,45 @@ def list_recording_sizes_by_camera_event(database_path: str) -> list[dict[str, A
         rows = db.execute(
             """
             SELECT c.name AS camera_name, r.camera_id, r.detection_key,
+                   r.storage_id,
+                   COALESCE(s.name, r.storage_kind, 'Unknown storage') AS storage_name,
                    COUNT(*) AS clip_count,
                    COALESCE(SUM(r.size_bytes), 0) AS size_bytes
               FROM recordings r
               JOIN cameras c ON c.id = r.camera_id
+              LEFT JOIN storage_targets s ON s.id = r.storage_id
              WHERE r.status = 'ready'
-             GROUP BY r.camera_id, r.detection_key
+             GROUP BY r.camera_id, r.detection_key, r.storage_id
              ORDER BY size_bytes DESC
             """
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_ready_recording_ids_by_camera_event(
+    database_path: str,
+    *,
+    camera_id: int,
+    detection_key: str,
+    storage_id: int | None,
+) -> list[int]:
+    """Return the exact ready-clip group shown in the storage explorer."""
+    storage_filter = "r.storage_id IS NULL" if storage_id is None else "r.storage_id = ?"
+    params: tuple[Any, ...] = (camera_id, detection_key) if storage_id is None else (camera_id, detection_key, storage_id)
+    with connect(database_path) as db:
+        rows = db.execute(
+            f"""
+            SELECT r.id
+              FROM recordings r
+             WHERE r.status = 'ready'
+               AND r.camera_id = ?
+               AND r.detection_key = ?
+               AND {storage_filter}
+             ORDER BY r.id
+            """,
+            params,
+        ).fetchall()
+    return [int(row["id"]) for row in rows]
 
 
 def list_ready_recordings_for_cleanup(database_path: str) -> list[dict[str, Any]]:

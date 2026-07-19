@@ -14,6 +14,7 @@ services:
       TBC_ADMIN_PASSWORD: ${TBC_ADMIN_PASSWORD:-bitte-aendern}
       TBC_SECRET_KEY: ${TBC_SECRET_KEY:-lokaler-dev-schluessel-bitte-aendern}
       TBC_DATABASE_PATH: /data/tbc.sqlite3
+      TBC_PLUGIN_SITE_PACKAGES_PATH: /data/plugin-site-packages
       TBC_RECORDINGS_PATH: /recordings
       TBC_LIVE_PATH: ${TBC_LIVE_PATH:-/tmp/tbc-live}
       TBC_CAMERA_MODULES_PATH: ${TBC_CAMERA_MODULES_PATH:-/data/camera-modules}

@@ -102,7 +102,7 @@ from .detection.supervisor import detection_supervisor
 from .health import current_system_usage, run_health_checks
 from .go2rtc import Go2rtcManager
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
-from .maintenance import apply_cleanup, cleanup_preview, storage_overview
+from .maintenance import apply_cleanup, cleanup_preview, delete_recording_group, storage_overview
 from .mcp_server import build_mcp_app
 from .plugin_sources import (
     STANDARD_PLUGIN_SOURCES,
@@ -5100,6 +5100,35 @@ async def storage_explorer(request: Request):
             "flash": _pop_flash(request),
         },
     )
+
+
+@app.post("/storage/explorer/groups/delete")
+async def delete_storage_explorer_group(
+    request: Request,
+    camera_id: int = Form(...),
+    detection_key: str = Form(...),
+    storage_id: str = Form(""),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    selected_storage_id = int(storage_id) if storage_id.strip() else None
+    deleted = delete_recording_group(
+        SETTINGS.database_path,
+        camera_id=camera_id,
+        detection_key=detection_key,
+        storage_id=selected_storage_id,
+    )
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "recording.group_deleted",
+        target_type="camera",
+        target_id=camera_id,
+        detail={"detection_key": detection_key, "storage_id": selected_storage_id, "count": deleted},
+    )
+    _set_flash(request, "recording.clips_deleted", {"count": deleted})
+    return _redirect("/storage/explorer")
 
 
 @app.get("/retention", response_class=HTMLResponse)

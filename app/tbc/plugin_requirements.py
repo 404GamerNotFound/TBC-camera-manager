@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import importlib.metadata
+import os
 import site
 import sys
+from pathlib import Path
 from typing import Any
 
 from packaging.requirements import InvalidRequirement, Requirement
@@ -11,6 +13,29 @@ from packaging.requirements import InvalidRequirement, Requirement
 INSTALL_TIMEOUT_SECONDS = 180
 MAX_OUTPUT_CHARS = 8000
 MAX_REQUIREMENTS = 20
+PLUGIN_SITE_PACKAGES_ENV = "TBC_PLUGIN_SITE_PACKAGES_PATH"
+
+
+def plugin_site_packages_path() -> Path:
+    """Return the persistent package directory used by external plugins.
+
+    ``/data`` survives Home Assistant App and container-image updates, unlike
+    the app user's home directory.  A custom path remains available for
+    non-container deployments and tests.
+    """
+    configured = os.getenv(PLUGIN_SITE_PACKAGES_ENV)
+    if configured:
+        return Path(configured)
+    database_path = Path(os.getenv("TBC_DATABASE_PATH", "/data/tbc.sqlite3"))
+    return database_path.parent / "plugin-site-packages"
+
+
+def activate_plugin_site_packages() -> Path:
+    """Make already-persisted plugin dependencies importable in this process."""
+    package_path = plugin_site_packages_path()
+    if package_path.is_dir() and str(package_path) not in sys.path:
+        site.addsitedir(str(package_path))
+    return package_path
 
 
 class MissingPluginRequirements(Exception):
@@ -88,27 +113,30 @@ def missing_requirements(requirements: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(missing)
 
 
-def _in_virtualenv() -> bool:
-    return sys.prefix != sys.base_prefix
-
-
 async def install_requirements(specs: tuple[str, ...]) -> str:
-    """Install `specs` via pip into the running Python environment.
+    """Install `specs` into the persistent plugin dependency directory.
 
     Admin-triggered, plugin-scoped, and time-bounded - the same trust
     boundary plugin_testing.py's run_plugin_tests() already crosses to run a
     plugin's own test suite, mirrored here (subprocess shape, timeout/kill,
-    captured-output-on-failure). Uses `--user` unless already running inside
-    a virtualenv (pip rejects --user there) - the container drops to an
-    unprivileged user before startup (see container_launcher.py) that can't
-    write to the system site-packages otherwise.
+    captured-output-on-failure).  The target is deliberately under `/data`
+    rather than the unprivileged user's home directory: `/data` survives an
+    app-image update, whereas `/home/tbc/.local` does not.
     """
     if not specs:
         return ""
-    used_user_flag = not _in_virtualenv()
-    command = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
-    if used_user_flag:
-        command.append("--user")
+    package_path = activate_plugin_site_packages()
+    package_path.mkdir(parents=True, exist_ok=True)
+    command = [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "--no-cache-dir",
+        "--upgrade",
+        "--target",
+        str(package_path),
+    ]
     command.extend(specs)
     try:
         process = await asyncio.create_subprocess_exec(
@@ -131,19 +159,9 @@ async def install_requirements(specs: tuple[str, ...]) -> str:
     if process.returncode != 0:
         raise PluginRequirementsInstallError(output[-MAX_OUTPUT_CHARS:] or f"pip exited with code {process.returncode}")
 
-    if used_user_flag:
-        # On a fresh container, the --user site-packages directory
-        # (~/.local/lib/pythonX.Y/site-packages) does not exist yet at
-        # interpreter startup, so Python's own site.py never added it to
-        # sys.path in the first place (it only does so if the directory
-        # already exists - see CPython's site.addusersitepackages()).
-        # pip creates it now, on the first-ever --user install, but nothing
-        # else in this process would ever look there without this: not even
-        # importlib.invalidate_caches() below, since that only refreshes
-        # finders for paths *already on* sys.path.
-        user_site = site.getusersitepackages()
-        if user_site not in sys.path:
-            site.addsitedir(user_site)
+    # A fresh target directory is created by pip after the first install, so
+    # add it only now if it did not exist when this function started.
+    activate_plugin_site_packages()
     # Beyond the sys.path gap above, a missing_requirements() call later in
     # the same long-running process can still report a just-installed
     # package as missing purely from caching: Python's import system caches
@@ -151,3 +169,9 @@ async def install_requirements(specs: tuple[str, ...]) -> str:
     # new *.dist-info appearing on disk mid-process.
     importlib.invalidate_caches()
     return output[-MAX_OUTPUT_CHARS:]
+
+
+# This module is imported while the plugin registries are set up.  Activating
+# the directory here makes dependencies installed before a main-app update
+# available again before external plugin code is loaded.
+activate_plugin_site_packages()

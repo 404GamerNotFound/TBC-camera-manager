@@ -779,6 +779,8 @@
   "storage.create_failed": "Speicherziel konnte nicht angelegt werden: {error}",
   "storage.created": "Speicherziel wurde angelegt",
   "storage.date": "Datum",
+  "storage.delete_group": "Alle Clips dieser Gruppe löschen",
+  "storage.destination": "Speicherziel",
   "storage.existing_destinations": "Vorhandene Ziele",
   "storage.free": "Frei",
   "storage.local_mounted_path": "Lokaler/gemounteter Pfad",

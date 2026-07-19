@@ -648,6 +648,28 @@ button,
   border-color: #872d2d;
 }
 
+.danger-icon-button {
+  color: white;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.danger-icon-button:hover,
+.danger-icon-button:focus {
+  color: white;
+  background: #872d2d;
+  border-color: #872d2d;
+}
+
+.table-action-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.table-action-cell form {
+  margin: 0;
+}
+
 .icon-button {
   width: 42px;
   padding: 0;

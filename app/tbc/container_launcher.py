@@ -66,6 +66,7 @@ def configure_home_assistant(options: dict[str, Any]) -> None:
             "TBC_ADMIN_PASSWORD": password,
             "TBC_SECRET_KEY": persistent_secret(),
             "TBC_DATABASE_PATH": "/data/tbc.sqlite3",
+            "TBC_PLUGIN_SITE_PACKAGES_PATH": "/data/plugin-site-packages",
             "TBC_RECORDINGS_PATH": str(HOME_ASSISTANT_RECORDINGS_PATH),
             "TBC_CAMERA_MODULES_PATH": "/data/camera-modules",
             "TBC_THEME_MODULES_PATH": "/data/design-themes",
@@ -87,7 +88,8 @@ def prepare_runtime_paths(home_assistant: bool) -> None:
 
     data_path = Path(os.environ.get("TBC_DATABASE_PATH", "/data/tbc.sqlite3")).parent
     recordings_path = Path(os.environ.get("TBC_RECORDINGS_PATH", "/recordings"))
-    for path in (data_path, recordings_path):
+    plugin_packages_path = Path(os.environ.get("TBC_PLUGIN_SITE_PACKAGES_PATH", data_path / "plugin-site-packages"))
+    for path in (data_path, recordings_path, plugin_packages_path):
         path.mkdir(parents=True, exist_ok=True)
 
     if os.geteuid() != 0:
@@ -96,7 +98,7 @@ def prepare_runtime_paths(home_assistant: bool) -> None:
     # /data is private to this app. The mapped Home Assistant media directory is
     # shared, so only the dedicated TBC child directory is ever re-owned.
     account = pwd.getpwnam(APP_USER)
-    paths_to_own = [data_path]
+    paths_to_own = [data_path, plugin_packages_path]
     if home_assistant:
         paths_to_own.append(recordings_path)
     for path in paths_to_own:

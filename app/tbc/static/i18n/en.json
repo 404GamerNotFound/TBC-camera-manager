@@ -779,6 +779,8 @@
   "storage.create_failed": "Storage destination could not be created: {error}",
   "storage.created": "Storage destination was created",
   "storage.date": "Date",
+  "storage.delete_group": "Delete all clips in this group",
+  "storage.destination": "Storage destination",
   "storage.existing_destinations": "Existing destinations",
   "storage.free": "Free",
   "storage.local_mounted_path": "Local/mounted path",

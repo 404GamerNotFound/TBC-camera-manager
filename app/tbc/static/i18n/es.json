@@ -779,6 +779,8 @@
   "storage.create_failed": "No se pudo crear el destino de almacenamiento: {error}",
   "storage.created": "Se creó el destino de almacenamiento",
   "storage.date": "Fecha",
+  "storage.delete_group": "Eliminar todos los clips de este grupo",
+  "storage.destination": "Destino de almacenamiento",
   "storage.existing_destinations": "Destinos existentes",
   "storage.free": "Libre",
   "storage.local_mounted_path": "Ruta local/montada",

@@ -8,6 +8,7 @@ ARG BUILD_ARCH=amd64
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     TBC_DATABASE_PATH=/data/tbc.sqlite3 \
+    TBC_PLUGIN_SITE_PACKAGES_PATH=/data/plugin-site-packages \
     TBC_RECORDINGS_PATH=/recordings \
     TBC_CAMERA_MODULES_PATH=/data/camera-modules \
     TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \

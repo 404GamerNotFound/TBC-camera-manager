@@ -190,10 +190,11 @@ silently failing to load with an opaque `ModuleNotFoundError` later.
 The confirmation page lists exactly which packages are missing and requires an explicit
 **Install now** click before anything happens - TBC never runs `pip install` on its own or as a
 side effect of the hourly update check above. Once confirmed, TBC installs the listed packages
-into the running container (`pip install --user <packages>`, or a plain install when already
-running inside a virtualenv) and automatically retries the installation or synchronization that
-triggered the check, so a GitHub-sourced plugin never needs a second manual click. A ZIP upload
-has no archive left to retry automatically; re-upload the same file once the packages are
+into its persistent plugin package directory under `/data` and automatically retries the
+installation or synchronization that triggered the check, so a GitHub-sourced plugin never needs
+a second manual click. This directory survives a Home Assistant App or container-image update;
+plugin dependencies such as `reolink-aio` therefore remain available after upgrading TBC. A ZIP
+upload has no archive left to retry automatically; re-upload the same file once the packages are
 installed. Installation happens into the already-running process - no container restart is
 needed before the plugin loads successfully.
 
