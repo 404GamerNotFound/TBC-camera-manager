@@ -8,7 +8,7 @@ python-multipart==0.0.32
 itsdangerous==2.2.0
 cryptography>=49.0.0,<50
 onvif-zeep==0.2.12
-aiohttp>=3.9,<4
+aiohttp>=3.14.1,<4
 boto3>=1.43.51,<2
 paho-mqtt==2.1.0
 packaging>=26.2
