@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0 - "Available"
+
+- Every tagged release now publishes a multi-arch (`amd64`/`aarch64`) prebuilt image to
+  `ghcr.io/404gamernotfound/tbc-camera-manager`, tagged `latest`, `<major>.<minor>`, and the
+  exact version - `docker pull` now works as an alternative to `docker compose up --build`. This
+  is separate from, and does not change, the existing Home Assistant app image.
+- Fixed a latent bug in the Dockerfile's `BUILD_ARCH` build argument: it defaulted to `amd64`
+  unconditionally, so a plain multi-arch build without an explicit override could silently bundle
+  the wrong-architecture `go2rtc` binary on `aarch64`. It now derives from Docker Buildx's own
+  `TARGETARCH` by default and can still be overridden explicitly (as the Home Assistant app build
+  already does).
+- Bumped the minimum versions of `packaging`, `Markdown`, `cryptography`, `onnxruntime`, `aiohttp`,
+  and `boto3` in `requirements.txt` to match what was already being installed and tested.
+
 ## 0.7.0 - "Hardened"
 
 - Added CSRF protection: every session-cookie-authenticated form and JS request now carries a
