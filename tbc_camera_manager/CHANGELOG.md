@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.7.0 - "Hardened"
+
+- Added CSRF protection: every session-cookie-authenticated form and JS request now carries a
+  per-session token, checked before the request is allowed through. The public, API-key-secured
+  `/api/v1/...` API and the MCP endpoint are unaffected, since browsers never attach those
+  credentials automatically.
+- Added a login lockout: repeated failed sign-ins for the same username are throttled with
+  increasing delays instead of being retried indefinitely.
+- Added standard security response headers (`X-Content-Type-Options`, `Referrer-Policy`,
+  `X-Frame-Options`/`Content-Security-Policy`, `Strict-Transport-Security` when
+  `TBC_COOKIE_SECURE` is set). The clickjacking headers are skipped for requests coming through
+  Home Assistant Ingress, which legitimately embeds TBC in an iframe.
+- Bootstrap is now bundled locally instead of loaded from a CDN, matching how `hls.js` is
+  already shipped - the UI (including the login page) no longer depends on internet access to
+  render correctly.
+- Added `TBC_SESSION_MAX_AGE_SECONDS` to make the session cookie lifetime configurable (default
+  unchanged: 14 days).
+- Added indexes for the columns the clip browser, timeline, cleanup pass, and audit log
+  actually filter or sort by, so those queries stop full-scanning as recordings/events accumulate.
+- Reduced the Docker image size by moving the C-toolchain packages needed to build a few
+  dependencies into a separate build stage that isn't shipped in the final image.
+- Removed 94 stale, accidentally committed duplicate files (`" 2"`-suffixed copies) left over
+  from a local sync-tool conflict.
+- Internal: split the 6,000+ line `app/tbc/main.py` route module into per-domain routers under
+  `app/tbc/routers/`, and migrated off FastAPI's deprecated `on_event` startup/shutdown hooks.
+  No route paths or behavior changed. Added `pytest-cov` with a 50% coverage floor in CI.
+
 ## 0.6.1 - "Integrated, properly"
 
 - Fixed a bug in 0.6.0's Home Assistant Ingress support: setting the ASGI `root_path` to make
