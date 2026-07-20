@@ -65,6 +65,7 @@ Persist `/data` and recording paths. The live directory is transient and should 
 | `TBC_POLL_INTERVAL_SECONDS` | `60` | Camera and network polling interval, minimum 15 seconds |
 | `TBC_PORT` | `8732` | Web server port |
 | `TBC_COOKIE_SECURE` | `false` | Mark session cookies HTTPS-only |
+| `TBC_SESSION_MAX_AGE_SECONDS` | `1209600` (14 days) | Session cookie lifetime, minimum 300 seconds |
 
 ## Ports and network access
 

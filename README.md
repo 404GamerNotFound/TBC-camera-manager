@@ -242,6 +242,10 @@ python -m compileall app tests
 docker compose config
 ```
 
+Run `pytest -q --cov --cov-report=term-missing` (needs `pytest-cov`, see
+[`.github/requirements-ci.txt`](.github/requirements-ci.txt)) to see per-file coverage; CI enforces a
+50% floor via `--cov-fail-under=50` (see [`.coveragerc`](.coveragerc) for scope/exclusions).
+
 ## License
 
 TBC is licensed under the [MIT License](LICENSE).

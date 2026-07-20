@@ -49,8 +49,8 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q app tests
 
-      - name: Run tests
-        run: python -m pytest -q
+      - name: Run tests with coverage
+        run: python -m pytest -q --cov --cov-report=term-missing --cov-fail-under=50
 
       - name: Validate Docker Compose
         run: docker compose config --quiet

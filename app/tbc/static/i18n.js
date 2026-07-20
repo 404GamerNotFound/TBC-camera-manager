@@ -5,8 +5,48 @@
 // it for its own fetch()/src assignments instead of hardcoding a path.
 window.tbcUrl = (path) => (window.TBC_INGRESS_PREFIX || "") + path;
 
+// Reads the per-session CSRF token base.html renders into <meta
+// name="csrf-token">. See the _csrf_protect middleware in app/tbc/main.py.
+window.tbcCsrfToken = () => {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.content : "";
+};
+
 (() => {
   "use strict";
+
+  // Every state-changing request in this app is same-origin and either a
+  // classic <form method="post"> or a fetch() call using the session
+  // cookie - both need the CSRF token the middleware checks. Patching
+  // fetch() once here covers every existing and future fetch() call site
+  // (live.js, camera-detail.js, video-player.js, health.js, ...) without
+  // threading the header through each of them individually.
+  const CSRF_UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const method = ((init && init.method) || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
+    if (!CSRF_UNSAFE_METHODS.has(method)) return nativeFetch(input, init);
+    const headers = new Headers((init && init.headers) || (input instanceof Request ? input.headers : undefined));
+    if (!headers.has("X-CSRF-Token")) headers.set("X-CSRF-Token", window.tbcCsrfToken());
+    return nativeFetch(input, { ...init, headers });
+  };
+
+  // Classic form POSTs (not fetch) prove the token via a hidden field
+  // instead of a header - inject it into every same-page <form
+  // method="post"> that doesn't already carry one.
+  const injectCsrfInputs = (root) => {
+    const token = window.tbcCsrfToken();
+    if (!token) return;
+    const forms = root instanceof HTMLFormElement ? [root] : root.querySelectorAll ? [...root.querySelectorAll("form")] : [];
+    forms.forEach((form) => {
+      if (form.method.toLowerCase() !== "post" || form.querySelector('input[name="csrf_token"]')) return;
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "csrf_token";
+      input.value = token;
+      form.appendChild(input);
+    });
+  };
 
   const STORAGE_KEY = "tbc-language";
   const SUPPORTED_LANGUAGES = ["de", "en", "es", "pt"];
@@ -123,6 +163,7 @@ window.tbcUrl = (path) => (window.TBC_INGRESS_PREFIX || "") + path;
     document.documentElement.lang = language;
     translateElement(document.documentElement);
     updateControls();
+    injectCsrfInputs(document);
     document.addEventListener("click", (event) => {
       const control = event.target.closest("[data-language]");
       if (control) setLanguage(control.dataset.language);
@@ -130,7 +171,9 @@ window.tbcUrl = (path) => (window.TBC_INGRESS_PREFIX || "") + path;
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) translateElement(node);
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
+          translateElement(node);
+          injectCsrfInputs(node);
         });
       }
     });

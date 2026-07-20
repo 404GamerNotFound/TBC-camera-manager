@@ -427,6 +427,7 @@
   "live.webrtc_explanation_title": "HLS ou WebRTC: qual devo usar?",
   "live.webrtc_explanation_webrtc": "Atraso inferior a um segundo, ideal para «quem está a tocar à campainha agora?» — mas exige que a porta de rede 8555 esteja acessível para visualização remota/fora da rede, tolera pior a perda de pacotes (pode gaguejar em vez de armazenar em buffer) e utiliza um pouco mais de carga do servidor por cada espectador em simultâneo.",
   "live.webrtc_start_failed": "Não foi possível iniciar o WebRTC: {error}. Verifica se o binário do go2rtc incluído corresponde à arquitetura de CPU deste dispositivo (amd64/aarch64) e se o contentor tem permissão de escrita no caminho de armazenamento da vista em direto, e tenta novamente.",
+  "login.locked_out": "Demasiadas tentativas de início de sessão falhadas. Tenta novamente em {seconds} segundos.",
   "login.sign": "Iniciar sessão",
   "login.sign_in_failed": "Falha ao iniciar sessão",
   "mcp.description.activity": "Gravações de eventos de todas as câmaras para um dia.",

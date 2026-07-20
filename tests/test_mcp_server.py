@@ -2,6 +2,7 @@ import asyncio
 import json
 import tempfile
 import unittest
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -59,16 +60,14 @@ class McpServerTests(unittest.TestCase):
             snapshot_semaphore=asyncio.Semaphore(2),
             stream_uri_for=lambda camera: None,
         )
-        app = FastAPI()
-        app.mount("/mcp", mcp_app)
-
-        @app.on_event("startup")
-        async def _start():
+        @asynccontextmanager
+        async def _lifespan(_app: FastAPI):
             await session_cm.__aenter__()
-
-        @app.on_event("shutdown")
-        async def _stop():
+            yield
             await session_cm.__aexit__(None, None, None)
+
+        app = FastAPI(lifespan=_lifespan)
+        app.mount("/mcp", mcp_app)
 
         self._client_cm = TestClient(app)
         self.client = self._client_cm.__enter__()

@@ -51,11 +51,32 @@ TOKEN_PATTERN = re.compile(r"tbc_[A-Za-z0-9_-]{20,}")
 _client_cm = None
 CLIENT: TestClient
 
+_CSRF_TOKEN_RE = re.compile(r'<meta name="csrf-token" content="([^"]*)">')
+_csrf_token = {"value": ""}
+
+
+def _capture_csrf_token(response) -> None:
+    response.read()
+    match = _CSRF_TOKEN_RE.search(response.text)
+    if match and match.group(1):
+        _csrf_token["value"] = match.group(1)
+
+
+def _attach_csrf_token(request) -> None:
+    # Mirrors what static/i18n.js does in the browser: read the token
+    # app.tbc.main's CSRF middleware minted into the session (exposed via
+    # the <meta name="csrf-token"> tag on any rendered page) and send it
+    # back as a header on state-changing requests.
+    if request.method in ("POST", "PUT", "PATCH", "DELETE") and _csrf_token["value"]:
+        request.headers["X-CSRF-Token"] = _csrf_token["value"]
+
 
 def setUpModule():
     global _client_cm, CLIENT
     _client_cm = TestClient(main.app)
     CLIENT = _client_cm.__enter__()
+    CLIENT.event_hooks["request"].append(_attach_csrf_token)
+    CLIENT.event_hooks["response"].append(_capture_csrf_token)
 
 
 def tearDownModule():
@@ -425,7 +446,7 @@ class CloudDeviceCredentialCarryoverImportTests(unittest.TestCase):
         CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
 
     def test_add_as_camera_reuses_the_cloud_account_s_own_credentials(self):
-        with patch("app.tbc.main.get_cloud_module", return_value=_FakeXSenseCloudModule()):
+        with patch("app.tbc.routers.cloud_accounts.get_cloud_module", return_value=_FakeXSenseCloudModule()):
             account_id = database.create_cloud_account(
                 main.SETTINGS.database_path,
                 module_key="xsense-cloud",
@@ -450,7 +471,7 @@ class CloudDeviceCredentialCarryoverImportTests(unittest.TestCase):
         self.assertEqual(camera.get("manual_stream_uri") or "", "")
 
     def test_import_without_manual_stream_uri_or_external_id_is_rejected(self):
-        with patch("app.tbc.main.get_cloud_module", return_value=_FakeXSenseCloudModule()):
+        with patch("app.tbc.routers.cloud_accounts.get_cloud_module", return_value=_FakeXSenseCloudModule()):
             account_id = database.create_cloud_account(
                 main.SETTINGS.database_path,
                 module_key="xsense-cloud",
@@ -472,7 +493,7 @@ class CloudDeviceCredentialCarryoverImportTests(unittest.TestCase):
             account_username_field = None
             account_password_field = None
 
-        with patch("app.tbc.main.get_cloud_module", return_value=_ModuleWithoutCredentialFields()):
+        with patch("app.tbc.routers.cloud_accounts.get_cloud_module", return_value=_ModuleWithoutCredentialFields()):
             account_id = database.create_cloud_account(
                 main.SETTINGS.database_path,
                 module_key="xsense-cloud",
@@ -734,7 +755,7 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         self.assertNotIn("https://evil.example", response.text)
 
     def test_install_now_calls_pip_and_redirects_to_retry_url(self):
-        with patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")):
+        with patch("app.tbc.routers.plugins.install_requirements", new=AsyncMock(return_value="Successfully installed")):
             response = CLIENT.post(
                 "/plugin-requirements/install",
                 data={"requirements": ["definitely-not-a-real-package-xyz==1.0"], "retry_url": "/camera-modules"},
@@ -773,8 +794,8 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         )
 
         with (
-            patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")),
-            patch("app.tbc.main._refresh_camera", new=AsyncMock()) as refresh_mock,
+            patch("app.tbc.routers.plugins.install_requirements", new=AsyncMock(return_value="Successfully installed")),
+            patch("app.tbc.routers.plugins._refresh_camera", new=AsyncMock()) as refresh_mock,
         ):
             response = CLIENT.post(
                 "/plugin-requirements/install",
@@ -804,8 +825,8 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         )
 
         with (
-            patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")),
-            patch("app.tbc.main._refresh_camera", new=AsyncMock()) as refresh_mock,
+            patch("app.tbc.routers.plugins.install_requirements", new=AsyncMock(return_value="Successfully installed")),
+            patch("app.tbc.routers.plugins._refresh_camera", new=AsyncMock()) as refresh_mock,
         ):
             CLIENT.post(
                 "/plugin-requirements/install",
@@ -817,7 +838,7 @@ class PluginRequirementsFlowTests(unittest.TestCase):
 
     def test_install_now_failure_flashes_and_redirects_back(self):
         with patch(
-            "app.tbc.main.install_requirements",
+            "app.tbc.routers.plugins.install_requirements",
             new=AsyncMock(side_effect=PluginRequirementsInstallError("ERROR: no matching distribution")),
         ):
             response = CLIENT.post(
@@ -871,7 +892,7 @@ class PluginRequirementsFlowTests(unittest.TestCase):
         )
         archive = self._camera_plugin_zip(requirements=[])
         with (
-            patch("app.tbc.main.install_requirements", new=AsyncMock(return_value="Successfully installed")),
+            patch("app.tbc.routers.plugins.install_requirements", new=AsyncMock(return_value="Successfully installed")),
             patch("app.tbc.main.resolve_and_fetch_plugin", return_value=(archive, "abc123")) as fetch_mock,
         ):
             response = CLIENT.post(

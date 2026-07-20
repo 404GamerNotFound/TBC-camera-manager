@@ -19,6 +19,10 @@ class Settings:
     poll_interval_seconds: int = 60
     web_port: int = 8732
     cookie_secure: bool = False
+    # 14 days matches Starlette's own SessionMiddleware default - kept as
+    # the default here so leaving TBC_SESSION_MAX_AGE_SECONDS unset doesn't
+    # change behavior for existing deployments, just makes it configurable.
+    session_max_age_seconds: int = 14 * 24 * 60 * 60
     camera_modules_path: str = "/data/camera-modules"
     theme_modules_path: str = "/data/design-themes"
     cloud_modules_path: str = "/data/cloud-modules"
@@ -45,6 +49,7 @@ def load_settings() -> Settings:
         poll_interval_seconds=max(15, int(os.getenv("TBC_POLL_INTERVAL_SECONDS", "60"))),
         web_port=int(os.getenv("TBC_PORT", "8732")),
         cookie_secure=os.getenv("TBC_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"},
+        session_max_age_seconds=max(300, int(os.getenv("TBC_SESSION_MAX_AGE_SECONDS", str(14 * 24 * 60 * 60)))),
         camera_modules_path=os.getenv("TBC_CAMERA_MODULES_PATH", "/data/camera-modules"),
         theme_modules_path=os.getenv("TBC_THEME_MODULES_PATH", "/data/design-themes"),
         cloud_modules_path=os.getenv("TBC_CLOUD_MODULES_PATH", "/data/cloud-modules"),

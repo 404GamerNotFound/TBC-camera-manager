@@ -1,24 +1,17 @@
 # Python 3.13 is intentional: some camera-provider dependencies are not yet
 # compatible with Python 3.14.
-FROM python:3.13-slim
+#
+# Multi-stage build: the builder stage has the compiler toolchain
+# (gcc/libxml2-dev/libxslt1-dev) some pure-Python-only wheels' rare source
+# fallback needs to build lxml/cryptography from sdist, plus curl to fetch
+# go2rtc. None of that - nor pip's build cache - ends up in the runtime
+# image, which only carries ffmpeg and the installed Python packages.
+FROM python:3.13-slim AS builder
 
-ARG BUILD_VERSION=dev
 ARG BUILD_ARCH=amd64
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    TBC_DATABASE_PATH=/data/tbc.sqlite3 \
-    TBC_PLUGIN_SITE_PACKAGES_PATH=/data/plugin-site-packages \
-    TBC_RECORDINGS_PATH=/recordings \
-    TBC_CAMERA_MODULES_PATH=/data/camera-modules \
-    TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
-    TBC_DETECTION_MODELS_PATH=/data/detection-models \
-    TBC_PORT=8732
-
-WORKDIR /app
-
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg gcc libxml2-dev libxslt1-dev curl \
+    && apt-get install -y --no-install-recommends gcc libxml2-dev libxslt1-dev curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # go2rtc powers the optional WebRTC live-view mode (sub-second latency vs. HLS's
@@ -38,7 +31,33 @@ RUN case "${BUILD_ARCH}" in \
     && chmod +x /usr/local/bin/go2rtc
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ---------------------------------------------------------------------------
+
+FROM python:3.13-slim
+
+ARG BUILD_VERSION=dev
+ARG BUILD_ARCH=amd64
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TBC_DATABASE_PATH=/data/tbc.sqlite3 \
+    TBC_PLUGIN_SITE_PACKAGES_PATH=/data/plugin-site-packages \
+    TBC_RECORDINGS_PATH=/recordings \
+    TBC_CAMERA_MODULES_PATH=/data/camera-modules \
+    TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
+    TBC_DETECTION_MODELS_PATH=/data/detection-models \
+    TBC_PORT=8732
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /install /usr/local
+COPY --from=builder /usr/local/bin/go2rtc /usr/local/bin/go2rtc
 
 COPY app ./app
 COPY docs ./docs

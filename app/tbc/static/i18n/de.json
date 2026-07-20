@@ -427,6 +427,7 @@
   "live.webrtc_explanation_title": "HLS oder WebRTC: Was soll ich nutzen?",
   "live.webrtc_explanation_webrtc": "Verzögerung unter einer Sekunde, ideal für „Wer klingelt gerade?“ — benötigt aber einen erreichbaren Netzwerkport 8555 für die Ansicht von unterwegs/außerhalb des Netzwerks, verkraftet Paketverluste schlechter (kann stocken statt zu puffern) und benötigt etwas mehr Serverlast pro gleichzeitigem Betrachter.",
   "live.webrtc_start_failed": "WebRTC konnte nicht gestartet werden: {error}. Prüfe, ob die mitgelieferte go2rtc-Binärdatei zur CPU-Architektur dieses Geräts passt (amd64/aarch64) und ob der Container in seinen Live-Ansicht-Speicherpfad schreiben darf, und versuche es erneut.",
+  "login.locked_out": "Zu viele fehlgeschlagene Anmeldeversuche. Versuche es in {seconds} Sekunden erneut.",
   "login.sign": "Anmelden",
   "login.sign_in_failed": "Anmeldung fehlgeschlagen",
   "mcp.description.activity": "Ereignisaufnahmen aller Kameras für einen Tag.",

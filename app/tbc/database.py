@@ -515,6 +515,24 @@ CREATE TABLE IF NOT EXISTS network_device_events (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
+
+-- SQLite doesn't index foreign keys automatically, and these are the
+-- columns the clip browser, timeline, cleanup/retention pass, and event/
+-- audit lists actually filter or sort by (see list_recordings,
+-- list_ready_recordings_for_cleanup, list_recent_events, list_detections,
+-- list_recognition_events, list_network_device_events, list_audit_events
+-- in database.py). IF NOT EXISTS makes these safe to add here rather than
+-- as a MIGRATIONS entry - they backfill on every existing database's next
+-- startup same as the CREATE TABLE statements above.
+CREATE INDEX IF NOT EXISTS idx_recordings_camera_started ON recordings(camera_id, started_at);
+CREATE INDEX IF NOT EXISTS idx_recordings_status ON recordings(status);
+CREATE INDEX IF NOT EXISTS idx_camera_events_camera_id ON camera_events(camera_id);
+CREATE INDEX IF NOT EXISTS idx_camera_detections_camera_id ON camera_detections(camera_id);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_camera_id ON recognition_events(camera_id);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_created_at ON recognition_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_network_device_events_camera_id ON network_device_events(camera_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_audit_log_username ON audit_log(username);
 """
 
 MIGRATIONS: tuple[str, ...] = (
