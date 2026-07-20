@@ -30,6 +30,20 @@ Default values from `docker-compose.yml`:
 
 Change `TBC_ADMIN_PASSWORD` and `TBC_SECRET_KEY` in `.env` before using TBC outside a test environment. Set `TBC_PUBLIC_BASE_URL` when webhooks or Home Assistant notifications should include links to clips and snapshots.
 
+### Prebuilt image
+
+Every tagged release also publishes a multi-arch (`amd64`/`aarch64`) image to GHCR, so `docker compose up --build` above can be skipped in favor of a plain pull - useful for Swarm stacks too, which ignore local `build` instructions:
+
+```bash
+docker pull ghcr.io/404gamernotfound/tbc-camera-manager:latest
+docker run -d --name tbc-camera-manager -p 8732:8732 \
+  -e TBC_ADMIN_PASSWORD=<strong-password> -e TBC_SECRET_KEY=<long-random-string> \
+  -v tbc-data:/data -v tbc-recordings:/recordings \
+  ghcr.io/404gamernotfound/tbc-camera-manager:latest
+```
+
+Or point `docker-compose.yml` at it directly by replacing its `image:`/`build:` lines with `image: ghcr.io/404gamernotfound/tbc-camera-manager:latest` and removing `build: .`. Tags follow the release: `latest`, `<major>.<minor>`, and the exact `<version>` (e.g. `0.7.0`).
+
 ## Home Assistant OS
 
 This repository is also a Home Assistant app repository. In Home Assistant, open `Settings → Apps → App store`, open the repository menu, and add:
