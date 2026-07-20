@@ -9,7 +9,7 @@ itsdangerous==2.2.0
 cryptography>=48,<50
 onvif-zeep==0.2.12
 aiohttp>=3.9,<4
-boto3>=1.43.49,<2
+boto3>=1.43.51,<2
 paho-mqtt==2.1.0
 packaging>=23
 numpy>=2.5.1,<3
