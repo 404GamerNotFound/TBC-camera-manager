@@ -388,7 +388,9 @@
         const width = (xmax - xmin) * content.width;
         const height = (ymax - ymin) * content.height;
         ctx.strokeRect(x, y, width, height);
-        const label = item.label || item.key;
+        const i18nKey = `detection.trigger_${item.key}`;
+        const translated = t(i18nKey);
+        const label = translated !== i18nKey ? translated : item.label || item.key;
         const textWidth = ctx.measureText(label).width + 8;
         ctx.fillStyle = color;
         ctx.fillRect(x, Math.max(0, y - 16), textWidth, 16);

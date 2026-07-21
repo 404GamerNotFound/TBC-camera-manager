@@ -548,7 +548,7 @@
           {% for trigger in ai_triggers %}
           <label class="check-row">
             <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %} {% if not local_ai_enabled %}disabled{% endif %}>
-            <span>{{ trigger.label }}</span>
+            <span data-i18n="detection.trigger_{{ trigger.key }}">{{ trigger.label }}</span>
           </label>
           {% if not local_ai_enabled and trigger.key in active_trigger_keys %}
           <input name="trigger_keys" type="hidden" value="{{ trigger.key }}">
