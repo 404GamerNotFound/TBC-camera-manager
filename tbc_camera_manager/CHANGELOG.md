@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.4 - "Baseline"
+
+- Fixed the app crashing a few seconds after startup with `RuntimeError: NumPy was built with
+  baseline optimizations: (X86_V2) but your machine doesn't support` (issue #31). NumPy dropped
+  its x86-64-v1-baseline wheel in 2.3.0 in favor of one requiring at least SSE4.2/POPCNT
+  (x86-64-v2) - a requirement several real deployments don't meet, most commonly a Proxmox VM
+  left on the default "kvm64"/"qemu64" CPU type instead of "host". `numpy` is now capped at
+  `<2.3`, which still satisfies every other pinned package and ships the compatible wheel.
+
 ## 0.8.3 - "Play it back"
 
 - Fixed recorded clips failing to play in the browser (most noticeably in Safari) while still
