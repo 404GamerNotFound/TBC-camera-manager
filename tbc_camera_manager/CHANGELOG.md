@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.1 - "Ready when you are"
+
+- Fixed the plugin-selector forms (camera, cloud account, network account) and the live view's
+  empty-state message showing raw, untranslated `plugin.*`/`live.*` i18n keys instead of real
+  text. They read `window.tbcI18n` before its locale fetch had actually resolved and never
+  re-rendered once it did - more likely under Home Assistant Ingress's extra proxy hop. `i18n.js`
+  now fires a `tbc:i18n-ready` event once strings are actually loaded, and the affected scripts
+  redo their translated text when it fires.
+- Documented which environment variables actually need changing (issue #30): almost none of them
+  are required to start the container - every one has a working default - but `TBC_ADMIN_PASSWORD`
+  and `TBC_SECRET_KEY` should always be changed outside a quick local test. `docker-compose.yml`
+  now groups its variables the same way inline, and `docs/deployment.md` documents the previously
+  undocumented `TBC_PLUGIN_SITE_PACKAGES_PATH`.
+
 ## 0.8.0 - "Available"
 
 - Every tagged release now publishes a multi-arch (`amd64`/`aarch64`) prebuilt image to
