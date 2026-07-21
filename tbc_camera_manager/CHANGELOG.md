@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.2 - "Stored & streamlined"
+
+- Reworked **Admin → External sources** into compact, filterable lists. A sticky sidebar now
+  filters standard and registered sources by group and plugin type, with a search field; the layout
+  adapts to narrow screens.
+- Creating a backup now stores the encrypted archive persistently on the device instead of
+  immediately downloading it. The new backup list offers protected downloads, uses the filename
+  format `TBC_v<version>_<date>-<time>.tbcbackup`, and stores archives in `TBC_BACKUPS_PATH`
+  (default `/data/backups`).
+
 ## 0.8.1 - "Ready when you are"
 
 - Fixed the plugin-selector forms (camera, cloud account, network account) and the live view's
