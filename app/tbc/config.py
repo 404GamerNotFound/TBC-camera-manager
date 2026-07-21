@@ -11,6 +11,7 @@ class Settings:
     admin_password: str = "bitte-aendern"
     database_path: str = "/data/tbc.sqlite3"
     recordings_path: str = "/recordings"
+    backups_path: str = "/data/backups"
     live_path: str = "/tmp/tbc-live"
     dashboard_snapshots_path: str = "/data/dashboard-snapshots"
     dashboard_snapshot_interval_seconds: int = 600
@@ -38,6 +39,7 @@ def load_settings() -> Settings:
         admin_password=os.getenv("TBC_ADMIN_PASSWORD", "bitte-aendern"),
         database_path=os.getenv("TBC_DATABASE_PATH", "/data/tbc.sqlite3"),
         recordings_path=os.getenv("TBC_RECORDINGS_PATH", "/recordings"),
+        backups_path=os.getenv("TBC_BACKUPS_PATH", "/data/backups"),
         live_path=os.getenv("TBC_LIVE_PATH", "/tmp/tbc-live"),
         dashboard_snapshots_path=os.getenv("TBC_DASHBOARD_SNAPSHOTS_PATH", "/data/dashboard-snapshots"),
         dashboard_snapshot_interval_seconds=max(

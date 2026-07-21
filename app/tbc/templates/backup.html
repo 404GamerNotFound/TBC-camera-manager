@@ -13,12 +13,44 @@
     <div class="section-title">
       <h2 data-i18n="backup.create_title">Create backup</h2>
     </div>
-    <p class="hint-text" data-i18n="backup.create_hint">Downloads an encrypted archive of the database (cameras, users, settings, cloud accounts, API tokens). Stored credentials stay encrypted with this instance's TBC_SECRET_KEY - keep that key safe, it's required to restore.</p>
+    <p class="hint-text" data-i18n="backup.create_hint">Creates an encrypted archive of the database (cameras, users, settings, cloud accounts, API tokens) and saves it locally on this device. Stored credentials stay encrypted with this instance's TBC_SECRET_KEY - keep that key safe, it's required to restore.</p>
     <form method="post" action="{{ ingress_prefix }}/settings/backup/create">
       <div class="form-actions">
         <button class="primary-button" type="submit" data-i18n="backup.create_button">Create backup</button>
       </div>
     </form>
+  </section>
+
+  <section class="event-panel">
+    <div class="section-title">
+      <h2 data-i18n="backup.stored_backups">Stored backups</h2>
+      <span>{{ backups | length }}</span>
+    </div>
+    <p class="hint-text" data-i18n="backup.stored_backups_hint">Backups are kept locally on this device. Download an archive whenever you need to store it elsewhere.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="common.name">Name</th>
+            <th data-i18n="audit.column_time">Time</th>
+            <th data-i18n="backup.file_size">Size</th>
+            <th aria-label="Download" data-i18n-aria-label="common.download"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in backups %}
+          <tr>
+            <td><code>{{ item.filename }}</code></td>
+            <td>{{ item.created_at }}</td>
+            <td>{{ item.size_label }}</td>
+            <td class="table-action-cell"><a class="secondary-button" href="{{ ingress_prefix }}/settings/backup/download/{{ item.filename }}" data-i18n="common.download">Download</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" data-i18n="backup.no_stored_backups">No backups have been created on this device yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section class="event-panel">

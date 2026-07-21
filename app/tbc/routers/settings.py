@@ -6,10 +6,8 @@ despite looking circular.
 """
 from __future__ import annotations
 
-from datetime import datetime
-
-from fastapi import File, Form, Query, Request, UploadFile
-from fastapi.responses import HTMLResponse, Response
+from fastapi import File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse
 
 from .. import audit, backup, database
 from ..debug_log import clear_entries as clear_debug_log_entries
@@ -92,6 +90,7 @@ async def backup_page(request: Request):
             "app_name": SETTINGS.app_name,
             "username": request.session.get("username"),
             "role": "admin",
+            "backups": backup.list_backup_files(SETTINGS.backups_path),
             "flash": _pop_flash(request),
         },
     )
@@ -101,13 +100,45 @@ async def create_backup_route(request: Request):
     guard = _require_admin(request)
     if guard:
         return guard
-    archive = backup.create_backup(SETTINGS.database_path, SETTINGS.secret_key)
-    audit.log_event(request, SETTINGS.database_path, "backup.created")
-    filename = f"tbc-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.tbcbackup"
-    return Response(
-        archive,
+    try:
+        saved_backup = backup.create_backup_file(
+            SETTINGS.database_path,
+            SETTINGS.secret_key,
+            SETTINGS.backups_path,
+        )
+    except backup.BackupError as exc:
+        _set_flash(request, "backup.create_failed", {"error": exc}, "error")
+    else:
+        audit.log_event(
+            request,
+            SETTINGS.database_path,
+            "backup.created",
+            target_type="backup",
+            target_id=saved_backup.name,
+        )
+        _set_flash(request, "backup.created", {"filename": saved_backup.name})
+    return _redirect("/settings/backup")
+
+
+@router.get("/settings/backup/download/{filename}")
+async def download_backup_route(request: Request, filename: str):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    backup_file = backup.get_backup_file(SETTINGS.backups_path, filename)
+    if backup_file is None:
+        raise HTTPException(status_code=404, detail="Backup file not found")
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "backup.downloaded",
+        target_type="backup",
+        target_id=backup_file.name,
+    )
+    return FileResponse(
+        backup_file,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        filename=backup_file.name,
     )
 
 @router.post("/settings/backup/restore")

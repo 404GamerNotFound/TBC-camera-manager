@@ -52,76 +52,105 @@
   </form>
 </section>
 
-<section class="storage-list standard-source-grid">
-  <div class="section-title">
-    <h2 data-i18n="plugin_source.standard_repositories">Standard repositories</h2>
-    <span>{{ standard_sources | length }}</span>
-  </div>
-  <p class="standard-source-intro" data-i18n="plugin_source.preconfigured_public_repositories_can_be">Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.</p>
-  {% for entry in standard_sources %}
-  <article class="storage-item standard-source-card" id="standard-source-{{ entry.source.key }}">
-    <div class="standard-source-card-head">
-      <h3>{{ entry.source.label }}</h3>
-      <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}" data-i18n="{{ 'plugin_source.already_registered' if entry.registered_source else 'plugin_source.ready_to_install' }}">{{ 'already registered' if entry.registered_source else 'ready to install' }}</span>
-    </div>
-    <p class="standard-source-linkline"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a> · {{ entry.source.ref }}</p>
-    <p class="standard-source-description">{{ entry.source.description }}</p>
-    <div class="standard-source-card-footer">
-      <span class="status-pill status-idle" data-i18n="{{ plugin_kind_keys[entry.source.plugin_kind] }}">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
-      {% if entry.registered_source %}
-      <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ entry.registered_source.id }}/sync">
-        <button class="primary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
-      </form>
-      {% else %}
-      <form method="post" action="{{ ingress_prefix }}/plugin-sources/standard/{{ entry.source.key }}/install">
-        <button class="primary-button" type="submit" data-i18n="plugin_source.install_directly">Install directly</button>
-      </form>
-      {% endif %}
-    </div>
-  </article>
-  {% endfor %}
-</section>
+<div class="source-workspace" data-source-workspace>
+  <aside class="source-filter-panel" aria-label="Filter sources" data-i18n-aria-label="plugin_source.filter_sources">
+    <label class="source-filter-search">
+      <span data-i18n="plugin_source.search_sources">Search sources</span>
+      <input type="search" autocomplete="off" placeholder="Search sources" data-i18n-placeholder="plugin_source.search_sources" data-source-search>
+    </label>
+    <fieldset class="source-filter-group">
+      <legend data-i18n="plugin_source.source_group">Source group</legend>
+      <button class="source-filter-option is-active" type="button" data-source-filter-scope="all" aria-pressed="true" data-i18n="plugin_source.all_sources">All sources</button>
+      <button class="source-filter-option" type="button" data-source-filter-scope="standard" aria-pressed="false" data-i18n="plugin_source.standard_repositories">Standard repositories</button>
+      <button class="source-filter-option" type="button" data-source-filter-scope="registered" aria-pressed="false" data-i18n="plugin_source.registered_sources">Registered sources</button>
+    </fieldset>
+    <fieldset class="source-filter-group">
+      <legend data-i18n="plugin_source.plugin_type">Plugin type</legend>
+      <button class="source-filter-option is-active" type="button" data-source-filter-kind="all" aria-pressed="true" data-i18n="plugin_source.all_types">All types</button>
+      <button class="source-filter-option" type="button" data-source-filter-kind="camera" aria-pressed="false" data-i18n="plugin_source.camera_plugin">Camera plugin</button>
+      <button class="source-filter-option" type="button" data-source-filter-kind="cloud" aria-pressed="false" data-i18n="plugin.cloud_provider">Cloud provider</button>
+      <button class="source-filter-option" type="button" data-source-filter-kind="network" aria-pressed="false" data-i18n="plugin.network_provider">Network provider</button>
+      <button class="source-filter-option" type="button" data-source-filter-kind="design" aria-pressed="false" data-i18n="common.design">Design</button>
+    </fieldset>
+  </aside>
 
-<section class="storage-list source-registration-grid">
-  <div class="section-title">
-    <h2 data-i18n="plugin_source.registered_sources">Registered sources</h2>
-    <span>{{ sources | length }}</span>
+  <div class="source-results">
+    <section class="source-list-panel" data-source-section>
+      <div class="section-title">
+        <div>
+          <h2 data-i18n="plugin_source.standard_repositories">Standard repositories</h2>
+          <p class="standard-source-intro" data-i18n="plugin_source.preconfigured_public_repositories_can_be">Preconfigured public repositories can be registered with one click and installed through the regular plugin validation path.</p>
+        </div>
+        <span>{{ standard_sources | length }}</span>
+      </div>
+      <div class="source-list" role="list">
+        {% for entry in standard_sources %}
+        <article class="source-list-row" id="standard-source-{{ entry.source.key }}" role="listitem" data-source-row data-source-scope="standard" data-source-kind="{{ entry.source.plugin_kind }}" data-source-search="{{ entry.source.label | lower }} {{ entry.source.description | lower }} {{ entry.source.repo_url | lower }}">
+          <div class="source-list-primary">
+            <h3>{{ entry.source.label }}</h3>
+            <p>{{ entry.source.description }}</p>
+          </div>
+          <p class="source-list-repository"><a href="{{ entry.source.repo_url }}" target="_blank" rel="noopener noreferrer" title="{{ entry.source.repo_url }}">{{ entry.source.repo_url | replace('https://github.com/', '') }}</a><span>{{ entry.source.ref }}</span></p>
+          <span class="status-pill status-idle" data-i18n="{{ plugin_kind_keys[entry.source.plugin_kind] }}">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[entry.source.plugin_kind] }}</span>
+          <span class="status-pill status-{{ 'ok' if entry.registered_source else 'unknown' }}" data-i18n="{{ 'plugin_source.already_registered' if entry.registered_source else 'plugin_source.ready_to_install' }}">{{ 'already registered' if entry.registered_source else 'ready to install' }}</span>
+          <div class="source-list-actions">
+            {% if entry.registered_source %}
+            <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ entry.registered_source.id }}/sync">
+              <button class="primary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
+            </form>
+            {% else %}
+            <form method="post" action="{{ ingress_prefix }}/plugin-sources/standard/{{ entry.source.key }}/install">
+              <button class="primary-button" type="submit" data-i18n="plugin_source.install_directly">Install directly</button>
+            </form>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="source-list-panel" data-source-section>
+      <div class="section-title">
+        <h2 data-i18n="plugin_source.registered_sources">Registered sources</h2>
+        <span>{{ sources | length }}</span>
+      </div>
+      <div class="source-list" role="list">
+        {% for source in sources %}
+        <article class="source-list-row source-list-row-registered" id="source-{{ source.id }}" role="listitem" data-source-row data-source-scope="registered" data-source-kind="{{ source.plugin_kind }}" data-source-search="{{ source.label | lower }} {{ source.repo_url | lower }} {{ (source.installed_key or '') | lower }}">
+          <div class="source-list-primary">
+            <h3>{{ source.label }}</h3>
+            {% if source.installed_key %}<p><span data-i18n="plugin_source.installed_as">Installed as</span>: <strong>{{ source.installed_key }}</strong></p>{% endif %}
+          </div>
+          <p class="source-list-repository"><span>{{ source.repo_url }}</span><span>{{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</span></p>
+          <span class="status-pill status-idle" data-i18n="{{ plugin_kind_keys[source.plugin_kind] }}">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[source.plugin_kind] }}</span>
+          <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}"{% if not source.last_sync_status %} data-i18n="plugin_source.not_synchronized_yet"{% endif %}>{{ source.last_sync_message if source.last_sync_status else 'not synchronized yet' }}</span>
+          <div class="source-list-actions">
+            <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ source.id }}/sync">
+              <button class="secondary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
+            </form>
+            {% if source.plugin_kind == 'camera' %}
+            <a class="secondary-button" href="{{ ingress_prefix }}/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+            {% elif source.plugin_kind == 'cloud' %}
+            <a class="secondary-button" href="{{ ingress_prefix }}/cloud-modules" data-i18n="cloud_account.manage_cloud_providers">Manage cloud providers</a>
+            {% elif source.plugin_kind == 'network' %}
+            <a class="secondary-button" href="{{ ingress_prefix }}/network-modules" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+            {% else %}
+            <a class="secondary-button" href="{{ ingress_prefix }}/design" data-i18n="plugin_source.manage_designs">Manage designs</a>
+            {% endif %}
+            <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ source.id }}/delete">
+              <button class="danger-button" type="submit" data-i18n="plugin_source.remove_source">Remove source</button>
+            </form>
+          </div>
+        </article>
+        {% else %}
+        <p class="quiet-box" data-i18n="plugin_source.no_external_sources_have_been">No external sources have been registered yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <p class="quiet-box source-filter-empty" data-source-empty hidden data-i18n="plugin_source.no_matching_sources">No sources match the selected filters.</p>
   </div>
-  {% for source in sources %}
-  <article class="storage-item source-registration-card" id="source-{{ source.id }}">
-    <div class="source-registration-card-head">
-      <h3>{{ source.label }}</h3>
-      <span class="status-pill status-{{ source.last_sync_status or 'unknown' }}"{% if not source.last_sync_status %} data-i18n="plugin_source.not_synchronized_yet"{% endif %}>{{ source.last_sync_message if source.last_sync_status else 'not synchronized yet' }}</span>
-    </div>
-    <p class="standard-source-linkline">{{ source.repo_url }} · {{ source.ref }}{% if source.subdirectory %} · {{ source.subdirectory }}{% endif %}</p>
-    <dl class="metric-row source-registration-meta">
-      <div><dt data-i18n="plugin_source.plugin_type">Plugin type</dt><dd data-i18n="{{ plugin_kind_keys[source.plugin_kind] }}">{{ {'camera': 'Camera plugin', 'cloud': 'Cloud provider', 'network': 'Network provider', 'design': 'Design'}[source.plugin_kind] }}</dd></div>
-      {% if source.installed_key %}
-      <div><dt data-i18n="plugin_source.installed_as">Installed as</dt><dd>{{ source.installed_key }}</dd></div>
-      {% endif %}
-    </dl>
-    <div class="form-actions source-registration-actions">
-      <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ source.id }}/sync">
-        <button class="secondary-button" type="submit" data-i18n="plugin_source.synchronize">Synchronize</button>
-      </form>
-      {% if source.plugin_kind == 'camera' %}
-      <a class="secondary-button" href="{{ ingress_prefix }}/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
-      {% elif source.plugin_kind == 'cloud' %}
-      <a class="secondary-button" href="{{ ingress_prefix }}/cloud-modules" data-i18n="cloud_account.manage_cloud_providers">Manage cloud providers</a>
-      {% elif source.plugin_kind == 'network' %}
-      <a class="secondary-button" href="{{ ingress_prefix }}/network-modules" data-i18n="network_account.manage_network_providers">Manage network providers</a>
-      {% else %}
-      <a class="secondary-button" href="{{ ingress_prefix }}/design" data-i18n="plugin_source.manage_designs">Manage designs</a>
-      {% endif %}
-      <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ source.id }}/delete">
-        <button class="danger-button" type="submit" data-i18n="plugin_source.remove_source">Remove source</button>
-      </form>
-    </div>
-  </article>
-  {% else %}
-  <p class="quiet-box" data-i18n="plugin_source.no_external_sources_have_been">No external sources have been registered yet.</p>
-  {% endfor %}
-</section>
+</div>
 
 <details class="source-disclosure">
   <summary><strong data-i18n="plugin_source.required_plugin_structure">Required plugin structure</strong></summary>
@@ -142,4 +171,5 @@
     </div>
   </section>
 </details>
+<script src="{{ ingress_prefix }}/static/plugin-sources.js?v={{ asset_version }}" defer></script>
 {% endblock %}

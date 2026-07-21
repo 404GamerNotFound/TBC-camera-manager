@@ -2094,6 +2094,192 @@ code {
   margin: 0;
 }
 
+.source-workspace {
+  display: grid;
+  grid-template-columns: minmax(210px, 250px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.source-filter-panel,
+.source-list-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.source-filter-panel {
+  position: sticky;
+  top: 86px;
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.source-filter-search {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.source-filter-search input {
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.source-filter-group {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.source-filter-group legend {
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.source-filter-option {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 9px;
+  border-color: transparent;
+  border-radius: 6px;
+  color: var(--text);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.84rem;
+}
+
+.source-filter-option:hover,
+.source-filter-option:focus {
+  color: var(--brand-strong);
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.source-filter-option.is-active {
+  color: var(--brand-strong);
+  border-color: rgba(76, 123, 220, 0.24);
+  background: rgba(76, 123, 220, 0.14);
+}
+
+.source-results {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.source-list-panel {
+  padding: 16px;
+}
+
+.source-list-panel > .section-title {
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.source-list-panel > .section-title > div {
+  min-width: 0;
+}
+
+.source-list-panel .standard-source-intro {
+  margin: 3px 0 0;
+  font-size: 0.85rem;
+}
+
+.source-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.source-list-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.05fr) minmax(175px, 1.1fr) minmax(112px, 0.58fr) minmax(130px, 0.78fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.source-list-row:last-child {
+  border-bottom: 0;
+}
+
+.source-list-primary,
+.source-list-repository {
+  min-width: 0;
+}
+
+.source-list-primary h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.source-list-primary p,
+.source-list-repository {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.source-list-repository {
+  display: grid;
+  gap: 2px;
+}
+
+.source-list-repository a {
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+
+.source-list-row > .status-pill {
+  justify-self: start;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.source-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.source-list-actions form {
+  margin: 0;
+}
+
+.compact-app .source-list-actions .primary-button,
+.compact-app .source-list-actions .secondary-button,
+.compact-app .source-list-actions .danger-button {
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 0.76rem;
+}
+
+.source-filter-empty {
+  margin: 0;
+}
+
 .compact-app .source-registration-actions button,
 .compact-app .source-registration-actions .secondary-button {
   min-height: 34px;
@@ -3651,6 +3837,21 @@ tr:last-child td {
   }
 }
 
+@media (max-width: 1100px) {
+  .source-list-row {
+    grid-template-columns: minmax(170px, 1fr) minmax(180px, 1fr) auto;
+  }
+
+  .source-list-row > .status-pill {
+    grid-column: 3;
+  }
+
+  .source-list-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 760px) {
   .docs-layout {
     grid-template-columns: 1fr;
@@ -3736,6 +3937,30 @@ tr:last-child td {
 
   .storage-list.standard-source-grid {
     grid-template-columns: 1fr;
+  }
+
+  .source-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .source-filter-panel {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .source-filter-search {
+    grid-column: 1 / -1;
+  }
+
+  .source-list-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .source-list-row > .status-pill,
+  .source-list-actions {
+    grid-column: auto;
   }
 
   .source-registration-grid,

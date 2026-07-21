@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.tbc import backup, database
@@ -59,6 +60,23 @@ class BackupRestoreTests(unittest.TestCase):
         garbage = b"not a real backup archive"
         with self.assertRaises(backup.BackupError):
             backup.restore_backup(garbage, restore_path, self.secret_key)
+
+    def test_local_backup_is_saved_with_versioned_timestamp_name(self):
+        expected_name = f"TBC_v{backup.__version__}_2026-07-21-09-49-28.tbcbackup"
+        self.assertEqual(
+            backup.backup_filename(datetime(2026, 7, 21, 9, 49, 28, tzinfo=timezone.utc)),
+            expected_name,
+        )
+
+        backups_path = self.tmp_dir / "backups"
+        saved_backup = backup.create_backup_file(self.db_path, self.secret_key, str(backups_path))
+
+        self.assertTrue(saved_backup.is_file())
+        self.assertTrue(saved_backup.name.startswith(f"TBC_v{backup.__version__}_"))
+        self.assertEqual(saved_backup.suffix, ".tbcbackup")
+        self.assertEqual(backup.get_backup_file(str(backups_path), saved_backup.name), saved_backup)
+        self.assertIsNone(backup.get_backup_file(str(backups_path), "../tbc.sqlite3"))
+        self.assertEqual(backup.list_backup_files(str(backups_path))[0]["filename"], saved_backup.name)
 
 
 if __name__ == "__main__":

@@ -80,6 +80,7 @@ non-persistent place.
 | Variable | Default | Description |
 |---|---|---|
 | `TBC_DATABASE_PATH` | `/data/tbc.sqlite3` | SQLite database path |
+| `TBC_BACKUPS_PATH` | `/data/backups` | Persistent directory for locally created backup archives |
 | `TBC_RECORDINGS_PATH` | `/recordings` | Default recording directory |
 | `TBC_PLUGIN_SITE_PACKAGES_PATH` | `/data/plugin-site-packages` | Where plugin-declared pip requirements are installed, so they survive image/App updates |
 | `TBC_LIVE_PATH` | `/tmp/tbc-live` | Temporary HLS directory; safe to recreate after restart |

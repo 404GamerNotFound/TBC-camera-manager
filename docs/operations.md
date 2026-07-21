@@ -60,9 +60,12 @@ before sharing publicly.
 
 ## Backup and restore
 
-**Settings → Backup & restore** exports an encrypted archive of the SQLite database, including
-cameras, users, settings, cloud/network accounts, and API-token metadata. Stored credentials stay
-encrypted with the current `TBC_SECRET_KEY`.
+**Settings → Backup & restore** creates an encrypted archive of the SQLite database, including
+cameras, users, settings, cloud/network accounts, and API-token metadata. The archive is stored
+locally in `TBC_BACKUPS_PATH` (default `/data/backups`) and can be downloaded from the backup list.
+Its filename is `TBC_v<version>_<date>-<time>.tbcbackup`, for example
+`TBC_v0.8.1_2026-07-21-09-49-28.tbcbackup`. Stored credentials stay encrypted with the current
+`TBC_SECRET_KEY`.
 
 Restore requirements:
 
