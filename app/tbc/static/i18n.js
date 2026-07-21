@@ -49,8 +49,8 @@ window.tbcCsrfToken = () => {
   };
 
   const STORAGE_KEY = "tbc-language";
-  const SUPPORTED_LANGUAGES = ["de", "en", "es", "pt"];
-  const LANGUAGE_NAMES = { de: "Deutsch", en: "English", es: "Español", pt: "Português" };
+  const SUPPORTED_LANGUAGES = ["de", "en", "es", "fr", "pt"];
+  const LANGUAGE_NAMES = { de: "Deutsch", en: "English", es: "Español", fr: "Français", pt: "Português" };
 
   const selectedLanguage = () => {
     try {

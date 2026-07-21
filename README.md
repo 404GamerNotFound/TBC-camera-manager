@@ -4,7 +4,8 @@ TBC is a modular, Docker-based camera manager. Camera vendors are integrated thr
 
 The application includes authentication, camera management, RTSP stream discovery, dashboard snapshots, event-based and continuous recording, clip and SD-card browsers, user roles, MQTT and Home Assistant integration, live HLS with an optional sub-second WebRTC alternative (go2rtc), retention rules, notifications, health monitoring, AI detection, and NVR channel management.
 
-English is the default interface language. German and Spanish can be selected from the language menu.
+English is the default interface language. German, Spanish, French, and Portuguese can be selected
+from the language menu.
 
 ## Quick start
 
@@ -177,7 +178,7 @@ Supported controls include play, mute, fullscreen, recording scrubbing, and opti
 
 HLS has a 5-10 second glass-to-glass delay, which is fine for a quick check but too slow for "who's at the door right now". TBC bundles [go2rtc](https://github.com/AlexxIT/go2rtc) as an optional, self-managed alternative that delivers sub-second WebRTC live view.
 
-- **Enable it**: `Admin → Live → Layout` has an "Enable WebRTC (go2rtc)" checkbox. Toggling it starts or stops the bundled go2rtc process immediately, no restart required. An in-app, translated explanation of the HLS vs. WebRTC tradeoffs (available in English, German, Spanish, and Portuguese) sits right next to the checkbox.
+- **Enable it**: `Admin → Live → Layout` has an "Enable WebRTC (go2rtc)" checkbox. Toggling it starts or stops the bundled go2rtc process immediately, no restart required. An in-app, translated explanation of the HLS vs. WebRTC tradeoffs (available in English, German, Spanish, French, and Portuguese) sits right next to the checkbox.
 - **Choose it**: once enabled by an admin, every viewer gets a per-camera HLS/WebRTC switch on the live wall. The choice is remembered per browser (`localStorage`), so different viewers can make different tradeoffs on the same tile. A tile that fails to reach a connected WebRTC state within 5 seconds - or drops later - automatically falls back to HLS.
 - **Networking**: go2rtc's own HTTP API stays bound to `127.0.0.1` inside the container and is never exposed. Only its WebRTC media port, `8555/tcp+udp`, is published (see `docker-compose.yml` and the Home Assistant add-on manifest) and only needs to be reachable by clients actually using WebRTC.
 
