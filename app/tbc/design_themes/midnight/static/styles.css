@@ -254,22 +254,28 @@ a {
 }
 
 .mega-menu {
-  min-width: 720px;
-  max-width: min(860px, calc(100vw - 32px));
+  width: min(1080px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: calc(100vw - 32px);
   padding: 16px;
+}
+
+.mega-menu .dropdown-item {
+  align-items: start;
 }
 
 .mega-menu .dropdown-item span:not(.nav-shortcut) {
   white-space: normal;
-  overflow: visible;
+  overflow: hidden;
   text-overflow: clip;
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .mega-menu-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px 16px;
+  gap: 8px 20px;
 }
 
 .mega-menu-column {
