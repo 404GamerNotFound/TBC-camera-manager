@@ -262,15 +262,25 @@
     renderItems(data.items || []);
   };
 
+  let pollFailures = 0;
+
   const schedulePolling = () => {
     window.clearInterval(pollTimer);
     pollTimer = window.setInterval(() => {
-      refresh().catch((error) => {
-        if (summary) {
+      refresh()
+        .then(() => {
+          pollFailures = 0;
+        })
+        .catch((error) => {
+          // A single failed poll is usually a transient hiccup (mobile network,
+          // Ingress proxy blip) that the next 3s cycle heals on its own - only
+          // surface the error once it persists, so the summary doesn't flicker
+          // red while the streams themselves keep playing fine.
+          pollFailures += 1;
+          if (pollFailures < 2 || !summary) return;
           summary.className = "status-pill status-error";
           summary.textContent = error.message;
-        }
-      });
+        });
     }, 3000);
   };
 

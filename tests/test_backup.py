@@ -78,6 +78,45 @@ class BackupRestoreTests(unittest.TestCase):
         self.assertIsNone(backup.get_backup_file(str(backups_path), "../tbc.sqlite3"))
         self.assertEqual(backup.list_backup_files(str(backups_path))[0]["filename"], saved_backup.name)
 
+    def test_database_runs_in_wal_mode_with_busy_timeout(self):
+        import sqlite3
+
+        with database.connect(self.db_path) as db:
+            self.assertEqual(db.execute("PRAGMA journal_mode").fetchone()[0], "wal")
+            self.assertEqual(db.execute("PRAGMA busy_timeout").fetchone()[0], 5000)
+        # WAL survives as a database property for plain sqlite3 connections too
+        # (e.g. the backup API's own connections).
+        raw = sqlite3.connect(self.db_path)
+        try:
+            self.assertEqual(raw.execute("PRAGMA journal_mode").fetchone()[0], "wal")
+        finally:
+            raw.close()
+
+    def test_restore_over_wal_database_drops_stale_sidecar_files(self):
+        import sqlite3
+
+        archive = backup.create_backup(self.db_path, self.secret_key)
+        # SQLite deletes the -wal sidecar when the *last* connection closes, so
+        # keep one open for the whole scenario - exactly the state a live server
+        # is in when an admin restores a backup - and leave a write
+        # un-checkpointed in the WAL.
+        holder = sqlite3.connect(self.db_path)
+        self.addCleanup(holder.close)
+        holder.execute("SELECT COUNT(*) FROM users").fetchone()
+        with database.connect(self.db_path) as db:
+            db.execute("UPDATE users SET username = 'renamed-after-backup'")
+        self.assertTrue(Path(self.db_path + "-wal").exists())
+
+        backup.restore_backup(archive, self.db_path, self.secret_key)
+
+        self.assertFalse(Path(self.db_path + "-wal").exists())
+        self.assertFalse(Path(self.db_path + "-shm").exists())
+        # The restored database reflects the backup, not the leftover WAL...
+        self.assertEqual(database.list_users(self.db_path)[0]["username"], "admin")
+        # ...and the .bak safety copy includes the un-checkpointed rename, which
+        # a plain file copy of the main database file would have lost.
+        self.assertEqual(database.list_users(self.db_path + ".bak")[0]["username"], "renamed-after-backup")
+
 
 if __name__ == "__main__":
     unittest.main()

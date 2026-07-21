@@ -605,6 +605,16 @@ def connect(database_path: str):
     connection.row_factory = sqlite3.Row
     try:
         connection.execute("PRAGMA foreign_keys=ON")
+        # WAL lets the many concurrent short-lived connections here (web requests,
+        # pollers, detection workers) read while another one writes, instead of
+        # serializing every reader behind the single writer. journal_mode is a
+        # persistent database property (a no-op re-statement after the first call);
+        # busy_timeout and synchronous are per-connection and must be set each time.
+        # synchronous=NORMAL is the documented safe pairing with WAL: a power loss
+        # can only lose the last transactions, never corrupt the database.
+        connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute("PRAGMA busy_timeout=5000")
+        connection.execute("PRAGMA synchronous=NORMAL")
         yield connection
         connection.commit()
     finally:

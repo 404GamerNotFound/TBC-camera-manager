@@ -175,6 +175,9 @@ async def _security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "same-origin")
+    # TBC's own UI never calls getUserMedia/geolocation - live view only *plays*
+    # camera streams - so tell the browser these APIs are off-limits app-wide.
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     # Home Assistant Ingress legitimately embeds the whole app in an iframe
     # inside the HA frontend (see app/tbc/ingress.py) - request.state.ingress_prefix
     # is only ever non-empty for requests that actually came through that
@@ -185,6 +188,15 @@ async def _security_headers(request: Request, call_next):
         response.headers.setdefault("Content-Security-Policy", "frame-ancestors 'none'")
     if SETTINGS.cookie_secure:
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    # Every /static reference carries ?v=ASSET_VERSION (new value each process
+    # start), so browsers can cache aggressively without ever serving a stale file
+    # across app updates. Theme assets under /design can change at runtime via
+    # re-import *without* a restart or version bump, so they only get a short
+    # lifetime. setdefault keeps the explicit no-cache on HLS/media responses.
+    if request.url.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=604800, immutable")
+    elif request.url.path.startswith("/design/") and "/static/" in request.url.path:
+        response.headers.setdefault("Cache-Control", "public, max-age=300")
     return response
 
 

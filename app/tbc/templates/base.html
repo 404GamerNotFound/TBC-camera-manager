@@ -285,6 +285,7 @@
     <button class="debug-fab" type="button" data-debug-toggle data-i18n="common.log">Log</button>
     <script src="{{ ingress_prefix }}/static/debug-log.js?v={{ asset_version }}" defer></script>
     {% endif %}
+    <script src="{{ ingress_prefix }}/static/form-guard.js?v={{ asset_version }}" defer></script>
     {% if username %}
     <script src="{{ ingress_prefix }}/static/vendor/bootstrap.bundle.min.js?v={{ asset_version }}" defer></script>
     <script src="{{ ingress_prefix }}/static/main-menu.js?v={{ asset_version }}" defer></script>

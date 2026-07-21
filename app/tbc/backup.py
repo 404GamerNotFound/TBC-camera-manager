@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import json
 import os
-import shutil
 import sqlite3
 import zipfile
 from datetime import datetime, timezone
@@ -144,12 +143,20 @@ def restore_backup(data: bytes, database_path: str, secret_key: str) -> None:
     target = Path(database_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
-        shutil.copy2(target, target.with_suffix(target.suffix + ".bak"))
+        # Snapshot via the online backup API instead of copying the file: the live
+        # database runs in WAL mode, so a plain file copy would silently miss every
+        # transaction still sitting in the -wal file.
+        target.with_suffix(target.suffix + ".bak").write_bytes(_snapshot_database(str(target)))
 
     tmp_path = target.with_suffix(target.suffix + ".restore-tmp")
     tmp_path.write_bytes(snapshot)
     _validate_sqlite_file(tmp_path)
     os.replace(tmp_path, target)
+    # Drop the old database's WAL sidecar files. Left in place, SQLite would try to
+    # replay the previous database's write-ahead log into the freshly restored file
+    # on next open and corrupt it.
+    for suffix in ("-wal", "-shm"):
+        Path(str(target) + suffix).unlink(missing_ok=True)
 
 
 def _snapshot_database(database_path: str) -> bytes:
