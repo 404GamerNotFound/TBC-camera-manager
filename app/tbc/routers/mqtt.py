@@ -6,10 +6,12 @@ despite looking circular.
 """
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import Form, Request
 from fastapi.responses import HTMLResponse
 
-from .. import audit, database
+from .. import audit, database, mqtt
 from fastapi import APIRouter
 
 from ..main import (
@@ -70,4 +72,17 @@ async def update_mqtt_settings(
     )
     audit.log_event(request, SETTINGS.database_path, "mqtt.settings_updated", detail={"enabled": enabled == "on"})
     _set_flash(request, "mqtt.settings_saved")
+    return _redirect("/mqtt")
+
+@router.post("/mqtt/test")
+async def test_mqtt(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        await asyncio.to_thread(mqtt.send_test_message, SETTINGS.database_path)
+    except Exception as exc:
+        _set_flash(request, "notification.test_failed", {"error": str(exc) or exc.__class__.__name__}, "error")
+    else:
+        _set_flash(request, "mqtt.test_sent")
     return _redirect("/mqtt")

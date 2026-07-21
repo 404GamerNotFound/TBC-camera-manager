@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
 import logging
+import time
 from dataclasses import dataclass, field
-from typing import Any
+from datetime import timedelta
+from typing import Any, Callable
 
 from .detections import normalize_detection_key
 
@@ -226,3 +229,162 @@ def _friendly_error(exc: Exception) -> str:
     if "authority failure" in message.lower() or "notauthorized" in message.lower():
         return "ONVIF sign-in rejected: check the camera username, password, and camera time"
     return f"ONVIF connection failed: {message}"
+
+
+@dataclass(frozen=True)
+class OnvifEventNotification:
+    detection_key: str
+    active: bool
+
+
+def _find_state_value(node: Any) -> str | None:
+    """Best-effort search for the boolean SimpleItem ONVIF motion/analytics events
+    report their state as (Name="State", Value="true"/"false") - per the ONVIF
+    core spec's tt:Message/Data/SimpleItem convention almost every Profile S
+    event (cell motion, tamper, field detector, ...) follows."""
+    if isinstance(node, dict):
+        name = node.get("Name")
+        if isinstance(name, str) and name.strip().lower() == "state":
+            value = node.get("Value")
+            if value is not None:
+                return str(value)
+        for child in node.values():
+            found = _find_state_value(child)
+            if found is not None:
+                return found
+        return None
+    if isinstance(node, (list, tuple, set)):
+        for child in node:
+            found = _find_state_value(child)
+            if found is not None:
+                return found
+        return None
+    return None
+
+
+def parse_pullpoint_notification(message: Any) -> list[OnvifEventNotification]:
+    """Best-effort decode of one ONVIF wsnt:NotificationMessage into zero or more
+    detection state changes.
+
+    Tolerant by design, like detect_event_keys above: camera firmwares serialize
+    topics and message payloads slightly differently, so this walks the whole
+    structure collecting text tokens rather than assuming one exact shape. A
+    notification whose topic doesn't map to any canonical detection_key yields
+    nothing; one without an explicit State SimpleItem is treated as an active
+    pulse (matching one-shot event topics like tampering alerts that don't
+    carry a boolean state at all).
+    """
+    serialized = _serialize(message)
+    keys = detect_event_keys(serialized)
+    if not keys:
+        return []
+    state_text = _find_state_value(serialized)
+    active = state_text is None or state_text.strip().lower() in {"true", "1"}
+    return [OnvifEventNotification(detection_key=key, active=active) for key in keys]
+
+
+@dataclass
+class _PullPointStateTracker:
+    """Same active/inactive hysteresis as the local-AI ActiveObjectTracker
+    (detection/supervisor.py): a key stays "active" for active_timeout_seconds
+    after its last True sighting, so a single missed pull cycle - or a camera
+    that forgets to send the matching "State=false" notification - doesn't
+    flap the reported state forever, or leave it stuck active indefinitely.
+    """
+
+    active_timeout_seconds: float = 60.0
+    _last_active_at: dict[str, float] = field(default_factory=dict)
+    _known_keys: set[str] = field(default_factory=set)
+
+    def update(self, notifications: list[OnvifEventNotification], *, now: float | None = None) -> None:
+        now = now if now is not None else time.time()
+        for notification in notifications:
+            self._known_keys.add(notification.detection_key)
+            if notification.active:
+                self._last_active_at[notification.detection_key] = now
+            else:
+                self._last_active_at.pop(notification.detection_key, None)
+
+    def active_keys(self, *, now: float | None = None) -> set[str]:
+        now = now if now is not None else time.time()
+        return {
+            key
+            for key, last_active_at in self._last_active_at.items()
+            if now - last_active_at <= self.active_timeout_seconds
+        }
+
+
+def _build_onvif_camera(camera: dict[str, Any]) -> Any:
+    from onvif import ONVIFCamera
+
+    camera_options = {
+        "no_cache": True,
+        "encrypt": True,
+        "adjust_time": True,
+        "event_pullpoint": False,
+        "override_camera_address": True,
+    }
+    parameters = inspect.signature(ONVIFCamera).parameters
+    accepts_options = any(parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in parameters.values())
+    supported_options = {key: value for key, value in camera_options.items() if accepts_options or key in parameters}
+    return ONVIFCamera(
+        camera["host"],
+        int(camera.get("onvif_port") or 80),
+        camera["username"],
+        camera["password"],
+        **supported_options,
+    )
+
+
+async def monitor_events(
+    camera: dict[str, Any],
+    on_detections: Callable[[list[dict[str, Any]]], None],
+    *,
+    pull_timeout_seconds: int = 20,
+    active_timeout_seconds: float = 60.0,
+) -> None:
+    """Long-lived ONVIF WS-BaseNotification PullPoint subscription.
+
+    Reports detection state changes to on_detections as they arrive in
+    real time, instead of the camera only ever being re-probed periodically.
+    Raises if the camera/library doesn't support this at all - the caller
+    (main._monitor_camera_events) retries with its own backoff, and a camera
+    that simply has no events to report for a while is normal and keeps
+    looping rather than raising.
+    """
+    try:
+        from onvif import ONVIFCamera  # noqa: F401
+    except ImportError as exc:
+        raise RuntimeError(f"ONVIF library is not installed: {exc}") from exc
+
+    onvif_camera = await asyncio.to_thread(_build_onvif_camera, camera)
+    pullpoint = await asyncio.to_thread(onvif_camera.create_pullpoint_service)
+    tracker = _PullPointStateTracker(active_timeout_seconds=active_timeout_seconds)
+    try:
+        while True:
+            response = await asyncio.to_thread(
+                pullpoint.PullMessages,
+                {"Timeout": timedelta(seconds=pull_timeout_seconds), "MessageLimit": 100},
+            )
+            messages = getattr(response, "NotificationMessage", None) or []
+            notifications: list[OnvifEventNotification] = []
+            for message in messages:
+                try:
+                    notifications.extend(parse_pullpoint_notification(message))
+                except Exception:
+                    LOGGER.debug("Could not parse one ONVIF PullPoint notification", exc_info=True)
+            if notifications:
+                tracker.update(notifications)
+                active_keys = tracker.active_keys()
+                on_detections(
+                    [
+                        {"key": notification.detection_key, "active": notification.detection_key in active_keys}
+                        for notification in notifications
+                    ]
+                )
+    finally:
+        try:
+            events_service = getattr(onvif_camera, "event", None) or onvif_camera.create_events_service()
+            await asyncio.to_thread(events_service.Unsubscribe)
+        except Exception:
+            LOGGER.debug("ONVIF PullPoint unsubscribe failed (camera may already be offline)", exc_info=True)

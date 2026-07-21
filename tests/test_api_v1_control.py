@@ -929,6 +929,9 @@ class HomeAssistantIngressTests(unittest.TestCase):
             os.remove(db_path)
         database.initialize(db_path, main.SETTINGS.recordings_path)
         database.ensure_admin_user(db_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+        # Not what this class is testing - avoid the first-login onboarding
+        # redirect so these assertions stay focused on Ingress prefixing.
+        database.set_onboarding_dismissed(db_path, True)
 
     def test_redirect_location_is_prefixed_under_ingress(self):
         response = CLIENT.post(
@@ -1023,6 +1026,244 @@ class HomeAssistantIngressTests(unittest.TestCase):
             self.assertTrue(item["webrtc_offer_url"].startswith(self.INGRESS_PATH + "/"))
 
 
+class AutoThemeTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+
+    def test_auto_design_loads_light_plus_dark_media_stylesheets(self):
+        CLIENT.post("/design/activate", data={"theme_key": "auto"})
+        response = CLIENT.get("/cameras")
+        self.assertIn("/design/standard/static/", response.text)
+        self.assertIn('media="(prefers-color-scheme: dark)"', response.text)
+        self.assertIn("/design/midnight/static/", response.text)
+
+    def test_explicit_design_still_loads_a_single_stylesheet(self):
+        CLIENT.post("/design/activate", data={"theme_key": "standard"})
+        response = CLIENT.get("/cameras")
+        self.assertIn("/design/standard/static/", response.text)
+        self.assertNotIn('media="(prefers-color-scheme: dark)"', response.text)
+
+    def test_pwa_manifest_is_served_with_ingress_prefixed_urls(self):
+        plain = CLIENT.get("/manifest.webmanifest").json()
+        self.assertEqual(plain["start_url"], "/cameras")
+        prefixed = CLIENT.get(
+            "/manifest.webmanifest", headers={"X-Ingress-Path": "/api/hassio_ingress/token123"}
+        ).json()
+        self.assertEqual(prefixed["start_url"], "/api/hassio_ingress/token123/cameras")
+        self.assertTrue(
+            all(icon["src"].startswith("/api/hassio_ingress/token123/static/") for icon in prefixed["icons"])
+        )
+
+
+class CameraStorageQuotaTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = _create_camera()
+
+    def test_quota_form_creates_updates_and_removes_a_camera_scoped_rule(self):
+        db = main.SETTINGS.database_path
+
+        CLIENT.post(f"/cameras/{self.camera_id}/storage-quota", data={"quota_max_age_days": "14", "quota_max_size_gb": "25.5"})
+        rule = database.get_camera_quota_rule(db, self.camera_id)
+        self.assertIsNotNone(rule)
+        self.assertEqual(rule["max_age_days"], 14)
+        self.assertAlmostEqual(rule["max_size_gb"], 25.5)
+        self.assertEqual(rule["camera_id"], self.camera_id)
+
+        CLIENT.post(f"/cameras/{self.camera_id}/storage-quota", data={"quota_max_age_days": "7", "quota_max_size_gb": ""})
+        updated = database.get_camera_quota_rule(db, self.camera_id)
+        self.assertEqual(updated["id"], rule["id"])
+        self.assertEqual(updated["max_age_days"], 7)
+        self.assertIsNone(updated["max_size_gb"])
+
+        CLIENT.post(f"/cameras/{self.camera_id}/storage-quota", data={"quota_max_age_days": "", "quota_max_size_gb": ""})
+        self.assertIsNone(database.get_camera_quota_rule(db, self.camera_id))
+
+    def test_quota_rule_feeds_the_existing_retention_cleanup(self):
+        from app.tbc import maintenance
+
+        db = main.SETTINGS.database_path
+        CLIENT.post(f"/cameras/{self.camera_id}/storage-quota", data={"quota_max_age_days": "1", "quota_max_size_gb": ""})
+        recording_id = database.create_recording(
+            db,
+            camera_id=self.camera_id,
+            storage_id=None,
+            detection_key="motion",
+            event_label="Motion",
+            storage_kind="local",
+            started_at="2020-01-01 00:00:00",
+        )
+        database.update_recording_finished(
+            db,
+            recording_id,
+            status="ready",
+            file_name="old.mp4",
+            local_path="/nonexistent/old.mp4",
+            size_bytes=1024,
+            duration_seconds=10,
+        )
+        doomed = maintenance.cleanup_preview(db)
+        self.assertIn(recording_id, [int(item["id"]) for item in doomed])
+
+
+class TwoFactorAuthTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        database.set_onboarding_dismissed(main.SETTINGS.database_path, True)
+        _login()
+
+    def _enable_2fa(self) -> tuple[str, list[str]]:
+        from app.tbc import security
+
+        setup_page = CLIENT.get("/account/2fa")
+        secret = re.search(r"<code>([A-Z2-7]{16,})</code>", setup_page.text).group(1)
+        enable = CLIENT.post("/account/2fa/enable", data={"code": security.totp_code(secret)})
+        recovery_codes = re.findall(r"<code>([0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4})</code>", enable.text)
+        return secret, recovery_codes
+
+    def test_full_enable_login_and_recovery_flow(self):
+        from app.tbc import security
+
+        secret, recovery_codes = self._enable_2fa()
+        self.assertEqual(len(recovery_codes), 8)
+
+        # Password alone must no longer authenticate - it parks the login on the 2FA step.
+        CLIENT.post("/logout")
+        response = CLIENT.post(
+            "/login", data={"username": "admin", "password": "adminpass123"}, follow_redirects=False
+        )
+        self.assertEqual(response.headers["location"], "/login/2fa")
+        protected = CLIENT.get("/cameras", follow_redirects=False)
+        self.assertEqual(protected.status_code, 303, "session must not be authenticated before the code")
+
+        # A real browser loads the 2FA page (which mints the post-login-clear
+        # CSRF token into the meta tag) before submitting the code.
+        CLIENT.get("/login/2fa")
+
+        # Wrong code is rejected, correct TOTP code completes the login.
+        wrong = CLIENT.post("/login/2fa", data={"code": "000000"})
+        self.assertEqual(wrong.status_code, 401)
+        done = CLIENT.post("/login/2fa", data={"code": security.totp_code(secret)}, follow_redirects=False)
+        self.assertEqual(done.headers["location"], "/cameras")
+        self.assertEqual(CLIENT.get("/cameras").status_code, 200)
+
+        # A recovery code also completes the login - but only once.
+        CLIENT.post("/logout")
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+        CLIENT.get("/login/2fa")
+        used = CLIENT.post("/login/2fa", data={"code": recovery_codes[0]}, follow_redirects=False)
+        self.assertEqual(used.headers["location"], "/cameras")
+        CLIENT.post("/logout")
+        CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"})
+        CLIENT.get("/login/2fa")
+        reused = CLIENT.post("/login/2fa", data={"code": recovery_codes[0]})
+        self.assertEqual(reused.status_code, 401)
+
+    def test_admin_can_disable_2fa_for_a_locked_out_user(self):
+
+        secret, _codes = self._enable_2fa()
+        admin_id = next(
+            user["id"] for user in database.list_users(main.SETTINGS.database_path) if user["username"] == "admin"
+        )
+        CLIENT.post(f"/users/{admin_id}/totp-disable")
+        CLIENT.post("/logout")
+        response = CLIENT.post(
+            "/login", data={"username": "admin", "password": "adminpass123"}, follow_redirects=False
+        )
+        self.assertEqual(response.headers["location"], "/cameras")
+
+    def test_disable_requires_the_correct_password(self):
+
+        secret, _codes = self._enable_2fa()
+        rejected = CLIENT.post("/account/2fa/disable", data={"password": "wrong"}, follow_redirects=False)
+        self.assertEqual(rejected.status_code, 303)
+        user = database.authenticate_user(main.SETTINGS.database_path, "admin", "adminpass123")
+        self.assertEqual(int(user["totp_enabled"]), 1, "2FA must stay on after a wrong password")
+        CLIENT.post("/account/2fa/disable", data={"password": "adminpass123"})
+        user = database.authenticate_user(main.SETTINGS.database_path, "admin", "adminpass123")
+        self.assertEqual(int(user["totp_enabled"]), 0)
+
+
+class OnboardingTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+
+    def test_first_login_on_empty_install_lands_on_onboarding(self):
+        response = CLIENT.post(
+            "/login", data={"username": "admin", "password": "adminpass123"}, follow_redirects=False
+        )
+        self.assertEqual(response.headers["location"], "/onboarding")
+        page = CLIENT.get("/onboarding")
+        self.assertIn("data-i18n=\"onboarding.step_password\"", page.text)
+        # This test harness's admin account is created with a real custom
+        # password (TBC_ADMIN_PASSWORD=adminpass123, set at module import time),
+        # matching an operator who already configured one - so step 1 correctly
+        # reads "done" here. The still-default case is covered by
+        # test_still_default_admin_password_shows_the_step_as_open below.
+        self.assertIn("status-active", page.text)
+
+    def test_still_default_admin_password_shows_the_step_as_open(self):
+        from app.tbc.routers.auth import DEFAULT_ADMIN_PASSWORD
+
+        database.update_user(
+            main.SETTINGS.database_path,
+            next(user["id"] for user in database.list_users(main.SETTINGS.database_path) if user["username"] == "admin"),
+            username="admin",
+            role="admin",
+            password=DEFAULT_ADMIN_PASSWORD,
+        )
+        CLIENT.post("/login", data={"username": "admin", "password": DEFAULT_ADMIN_PASSWORD})
+        page = CLIENT.get("/onboarding")
+        self.assertIn("status-error", page.text)
+
+    def test_login_with_a_camera_already_configured_skips_onboarding(self):
+        _create_camera()
+        response = CLIENT.post(
+            "/login", data={"username": "admin", "password": "adminpass123"}, follow_redirects=False
+        )
+        self.assertEqual(response.headers["location"], "/cameras")
+
+    def test_changing_the_password_flips_the_step_to_done(self):
+        _login()
+        CLIENT.post("/onboarding/password", data={"new_password": "brandnewpass1", "confirm_password": "brandnewpass1"})
+        page = CLIENT.get("/onboarding")
+        self.assertIn("onboarding.password_done_hint", page.text)
+        self.assertIsNotNone(
+            database.authenticate_user(main.SETTINGS.database_path, "admin", "brandnewpass1"),
+            "new password must actually work",
+        )
+        self.assertIsNone(
+            database.authenticate_user(main.SETTINGS.database_path, "admin", "adminpass123"),
+            "old password must stop working",
+        )
+
+    def test_mismatched_or_weak_password_is_rejected(self):
+        _login()
+        CLIENT.post("/onboarding/password", data={"new_password": "aaaaaaaa", "confirm_password": "bbbbbbbb"})
+        self.assertIsNotNone(database.authenticate_user(main.SETTINGS.database_path, "admin", "adminpass123"))
+        CLIENT.post("/onboarding/password", data={"new_password": "short", "confirm_password": "short"})
+        self.assertIsNotNone(database.authenticate_user(main.SETTINGS.database_path, "admin", "adminpass123"))
+
+    def test_dismiss_skips_onboarding_permanently(self):
+        CLIENT.post("/onboarding/dismiss", data={})
+        _login()
+        response = CLIENT.post(
+            "/login", data={"username": "admin", "password": "adminpass123"}, follow_redirects=False
+        )
+        self.assertEqual(response.headers["location"], "/cameras")
+
+    def test_viewer_login_never_redirects_to_onboarding(self):
+        _login()
+        database.create_user(main.SETTINGS.database_path, username="viewer1", password="viewerpass123", role="viewer")
+        CLIENT.post("/logout")
+        response = CLIENT.post(
+            "/login", data={"username": "viewer1", "password": "viewerpass123"}, follow_redirects=False
+        )
+        self.assertEqual(response.headers["location"], "/cameras")
+
+
 class InvalidSessionRecoveryTests(unittest.TestCase):
     """A session cookie can outlive the account it points at - e.g. an admin
     deletes a user, or someone restores an older database backup, while that
@@ -1035,6 +1276,7 @@ class InvalidSessionRecoveryTests(unittest.TestCase):
 
     def setUp(self):
         _reset_database()
+        database.set_onboarding_dismissed(main.SETTINGS.database_path, True)
         _login()
         self.admin_id = next(
             user["id"] for user in database.list_users(main.SETTINGS.database_path) if user["username"] == "admin"

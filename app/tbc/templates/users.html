@@ -86,9 +86,16 @@
           <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
         </div>
       </form>
-      <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}/delete">
-        <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
-      </form>
+      <div class="button-row">
+        {% if user.totp_enabled %}
+        <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}/totp-disable">
+          <button class="secondary-button" type="submit" data-i18n="twofactor.admin_disable">Disable 2FA</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}/delete">
+          <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
+        </form>
+      </div>
     </article>
     {% endfor %}
   </section>

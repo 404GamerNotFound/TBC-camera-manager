@@ -226,6 +226,23 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 def _active_theme_context(request: Request) -> dict[str, Any]:
     theme_key = database.get_active_theme_key(SETTINGS.database_path)
+    if theme_key == "auto":
+        # Follow the OS/browser color scheme: standard for light, midnight for
+        # dark (rendered as two <link media="(prefers-color-scheme: ...)"> tags
+        # in base.html). get_theme_registration falls back to "standard" for any
+        # unknown key, so verify the dark theme actually resolved to midnight.
+        try:
+            light = get_theme_registration("standard").manifest
+        except UnknownThemeError:
+            return {"active_theme": None}
+        dark = None
+        try:
+            candidate = get_theme_registration("midnight").manifest
+            if candidate.key == "midnight":
+                dark = candidate
+        except UnknownThemeError:
+            pass
+        return {"active_theme": light, "active_theme_dark": dark}
     try:
         registration = get_theme_registration(theme_key)
     except UnknownThemeError:

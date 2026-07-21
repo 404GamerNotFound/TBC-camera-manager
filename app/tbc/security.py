@@ -5,6 +5,9 @@ import hashlib
 import hmac
 import os
 import secrets
+import struct
+import time
+import urllib.parse
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -72,6 +75,54 @@ def verify_password(password: str, stored_hash: str) -> bool:
         parsed.iterations,
     )
     return hmac.compare_digest(candidate, parsed.digest)
+
+
+TOTP_PERIOD_SECONDS = 30
+TOTP_DIGITS = 6
+
+
+def generate_totp_secret() -> str:
+    return base64.b32encode(os.urandom(20)).decode("ascii")
+
+
+def totp_code(secret: str, *, timestamp: float | None = None) -> str:
+    """RFC 6238 TOTP (SHA-1, 6 digits, 30s period - the authenticator-app default)."""
+    counter = int((time.time() if timestamp is None else timestamp) // TOTP_PERIOD_SECONDS)
+    key = base64.b32decode(secret + "=" * (-len(secret) % 8), casefold=True)
+    digest = hmac.new(key, struct.pack(">Q", counter), hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    value = (int.from_bytes(digest[offset : offset + 4], "big") & 0x7FFFFFFF) % (10**TOTP_DIGITS)
+    return str(value).zfill(TOTP_DIGITS)
+
+
+def verify_totp(secret: str, code: str, *, timestamp: float | None = None, window: int = 1) -> bool:
+    """Accepts the current period's code ±window periods, to tolerate clock skew
+    between the server and the phone running the authenticator app."""
+    candidate = code.strip().replace(" ", "")
+    if not candidate.isdigit() or len(candidate) != TOTP_DIGITS or not secret:
+        return False
+    now = time.time() if timestamp is None else timestamp
+    return any(
+        hmac.compare_digest(totp_code(secret, timestamp=now + step * TOTP_PERIOD_SECONDS), candidate)
+        for step in range(-window, window + 1)
+    )
+
+
+def totp_provisioning_uri(secret: str, *, username: str, issuer: str) -> str:
+    label = urllib.parse.quote(f"{issuer}:{username}")
+    query = urllib.parse.urlencode(
+        {"secret": secret, "issuer": issuer, "algorithm": "SHA1", "digits": TOTP_DIGITS, "period": TOTP_PERIOD_SECONDS}
+    )
+    return f"otpauth://totp/{label}?{query}"
+
+
+def generate_recovery_codes(count: int = 8) -> list[str]:
+    return ["-".join(secrets.token_hex(2) for _ in range(3)) for _ in range(count)]
+
+
+def hash_recovery_code(code: str) -> str:
+    normalized = code.strip().lower().replace(" ", "")
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def generate_api_key() -> str:

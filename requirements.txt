@@ -24,3 +24,7 @@ Pillow>=12.3.0,<13
 onnxruntime>=1.27.0,<2
 opencv-python-headless==5.0.0.93
 fast-alpr[onnx]==0.4.0
+# QR code rendering for the two-factor authentication setup page (pure Python,
+# no transitive dependencies). The page falls back to manual secret entry if
+# this is ever missing.
+segno>=1.6,<2

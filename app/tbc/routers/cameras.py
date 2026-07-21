@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 from fastapi import Form, Query, Request, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
-from .. import audit, database
+from .. import audit, database, discovery
 from ..camera_modules import (
     CameraCapability,
     get_camera_module,
@@ -102,6 +102,28 @@ async def new_camera_choice(request: Request):
             "flash": _pop_flash(request),
         },
     )
+
+@router.get("/cameras/discover")
+async def discover_cameras(request: Request):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    try:
+        cameras = await asyncio.to_thread(discovery.discover_onvif_cameras)
+    except OSError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=status.HTTP_502_BAD_GATEWAY)
+    return {
+        "ok": True,
+        "devices": [
+            {
+                "host": camera.host,
+                "onvif_port": camera.onvif_port,
+                "name": camera.name,
+                "hardware": camera.hardware,
+            }
+            for camera in cameras
+        ],
+    }
 
 @router.get("/cameras/new/local", response_class=HTMLResponse)
 async def new_camera(request: Request):
@@ -268,6 +290,8 @@ async def camera_detail(
     detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
     detection_zones = database.list_camera_detection_zones(SETTINGS.database_path, camera_id)
     audio_detection_settings = database.get_camera_audio_detection_settings(SETTINGS.database_path, camera_id)
+    camera_quota_rule = database.get_camera_quota_rule(SETTINGS.database_path, camera_id)
+    camera_usage_gb = round(database.camera_recording_usage_bytes(SETTINGS.database_path, camera_id) / 1024**3, 2)
     local_ai_enabled = bool(detection_settings and detection_settings.get("enabled"))
     if camera.get("stream_uri") or local_ai_enabled:
         existing_trigger_keys = {trigger.key for trigger in available_triggers}
@@ -365,6 +389,8 @@ async def camera_detail(
             "active_trigger_keys": active_trigger_keys,
             "detection_settings": detection_settings,
             "audio_detection_settings": audio_detection_settings,
+            "camera_quota_rule": camera_quota_rule,
+            "camera_usage_gb": camera_usage_gb,
             "local_ai_enabled": local_ai_enabled,
             "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
             "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
@@ -619,6 +645,54 @@ async def update_camera_recording(
         trigger_keys=trigger_keys or ["motion"],
     )
     _set_flash(request, "recording.event_settings_saved")
+    return _redirect(f"/cameras/{camera_id}")
+
+@router.post("/cameras/{camera_id}/storage-quota")
+async def update_camera_storage_quota(
+    request: Request,
+    camera_id: int,
+    quota_max_age_days: str = Form(""),
+    quota_max_size_gb: str = Form(""),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "camera.not_found", None, "error")
+        return _redirect("/cameras")
+    try:
+        max_age = max(1, int(quota_max_age_days)) if quota_max_age_days.strip() else None
+        max_gb = max(0.1, float(quota_max_size_gb)) if quota_max_size_gb.strip() else None
+    except ValueError:
+        _set_flash(request, "common.raw_message", {"message": "Invalid quota value"}, "error")
+        return _redirect(f"/cameras/{camera_id}")
+    existing = database.get_camera_quota_rule(SETTINGS.database_path, camera_id)
+    if max_age is None and max_gb is None:
+        if existing:
+            database.delete_retention_rule(SETTINGS.database_path, int(existing["id"]))
+    elif existing:
+        database.update_retention_rule(
+            SETTINGS.database_path,
+            int(existing["id"]),
+            name=str(existing.get("name") or f"Quota: {camera['name']}"),
+            enabled=True,
+            camera_id=camera_id,
+            detection_key=None,
+            max_age_days=max_age,
+            max_size_gb=max_gb,
+        )
+    else:
+        database.create_retention_rule(
+            SETTINGS.database_path,
+            name=f"Quota: {camera['name']}",
+            enabled=True,
+            camera_id=camera_id,
+            detection_key=None,
+            max_age_days=max_age,
+            max_size_gb=max_gb,
+        )
+    _set_flash(request, "camera.quota_saved")
     return _redirect(f"/cameras/{camera_id}")
 
 @router.post("/cameras/{camera_id}/detection")

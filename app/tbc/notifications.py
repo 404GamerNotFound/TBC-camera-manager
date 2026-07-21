@@ -31,6 +31,16 @@ def notify_event(database_path: str, *, event_type: str, title: str, message: st
             continue
 
 
+def send_test_message(channel: dict[str, Any], *, public_base_url: str = "") -> None:
+    """Send a test notification through one channel, raising on failure.
+
+    Unlike notify_event(), errors deliberately propagate - the whole point of a
+    test button is telling the admin *why* delivery failed, and it bypasses the
+    per-event enable flags so a channel can be tested before any event fires.
+    """
+    _send(channel, "TBC test notification", "This is a test message from TBC Camera Manager.", None, public_base_url)
+
+
 def _render_template(template: str | None, *, title: str, message: str, event_type: str) -> str:
     """Replace the deliberately small, documented notification placeholders."""
     rendered = template or ""

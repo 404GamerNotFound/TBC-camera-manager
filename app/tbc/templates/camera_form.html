@@ -8,6 +8,18 @@
   </div>
 </section>
 
+<section class="editor-form compact-form">
+  <div class="section-title">
+    <h2 data-i18n="camera_form.discover_title">Find cameras on the network</h2>
+  </div>
+  <p class="hint-text" data-i18n="camera_form.discover_hint">Scans the local network for ONVIF cameras (WS-Discovery). Selecting a result fills in the host and port below - credentials still need to be entered manually.</p>
+  <div class="form-actions">
+    <button class="secondary-button" type="button" data-discover-button data-i18n="camera_form.discover_button">Scan network</button>
+  </div>
+  <p class="hint-text" data-discover-status hidden></p>
+  <div class="button-row" data-discover-results></div>
+</section>
+
 <form class="editor-form" method="post" action="{{ ingress_prefix }}/cameras" data-plugin-selector-form>
   {% if error %}
   <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
@@ -80,4 +92,5 @@
   </div>
 </form>
 <script src="{{ ingress_prefix }}/static/camera-form.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/camera-discovery.js?v={{ asset_version }}" defer></script>
 {% endblock %}

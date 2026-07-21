@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="onboarding.eyebrow">First steps</p>
+    <h1 data-i18n="onboarding.title">Welcome to TBC</h1>
+  </div>
+  <form method="post" action="{{ ingress_prefix }}/onboarding/dismiss">
+    <button class="secondary-button" type="submit" data-i18n="onboarding.skip">Skip setup guide</button>
+  </form>
+</section>
+
+<section class="storage-grid">
+  <article class="editor-form compact-form">
+    <div class="section-title">
+      <h2 data-i18n="onboarding.step_password">1 · Secure the admin account</h2>
+      {% if password_is_default %}
+      <span class="status-pill status-error" data-i18n="onboarding.step_open">open</span>
+      {% else %}
+      <span class="status-pill status-active" data-i18n="onboarding.step_done">done</span>
+      {% endif %}
+    </div>
+    {% if password_is_default %}
+    <p class="hint-text" data-i18n="onboarding.password_hint">This installation still uses the default admin password. Set your own one before anything else.</p>
+    <form method="post" action="{{ ingress_prefix }}/onboarding/password">
+      <div class="form-grid">
+        <label>
+          <span data-i18n="camera.new_password">New password</span>
+          <input name="new_password" type="password" autocomplete="new-password" minlength="8" required>
+        </label>
+        <label>
+          <span data-i18n="onboarding.confirm_password">Repeat new password</span>
+          <input name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="primary-button" type="submit" data-i18n="onboarding.set_password">Set password</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="hint-text" data-i18n="onboarding.password_done_hint">The admin password has been changed from the default - nothing to do here.</p>
+    {% endif %}
+  </article>
+
+  <article class="editor-form compact-form">
+    <div class="section-title">
+      <h2 data-i18n="onboarding.step_camera">2 · Add your first camera</h2>
+      {% if camera_count > 0 %}
+      <span class="status-pill status-active" data-i18n="onboarding.step_done">done</span>
+      {% else %}
+      <span class="status-pill status-idle" data-i18n="onboarding.step_open">open</span>
+      {% endif %}
+    </div>
+    <p class="hint-text" data-i18n="onboarding.camera_hint">The add-camera page can scan your local network for ONVIF cameras, or you connect one manually via host and credentials - vendor plugins and cloud accounts are available there too.</p>
+    <div class="form-actions">
+      <a class="primary-button" href="{{ ingress_prefix }}/cameras/new" data-i18n="onboarding.add_camera">Add camera</a>
+    </div>
+  </article>
+
+  <article class="editor-form compact-form">
+    <div class="section-title">
+      <h2 data-i18n="onboarding.step_triggers">3 · Choose recording triggers</h2>
+      {% if triggers_configured %}
+      <span class="status-pill status-active" data-i18n="onboarding.step_done">done</span>
+      {% else %}
+      <span class="status-pill status-idle" data-i18n="onboarding.step_open">open</span>
+      {% endif %}
+    </div>
+    <p class="hint-text" data-i18n="onboarding.triggers_hint">On the camera's detail page, pick which events (motion, person, vehicle, …) start an event recording, and enable local AI detection if you want TBC's own image analysis.</p>
+    <div class="form-actions">
+      {% if first_camera_id %}
+      <a class="primary-button" href="{{ ingress_prefix }}/cameras/{{ first_camera_id }}" data-i18n="onboarding.open_camera">Open camera settings</a>
+      {% else %}
+      <span class="hint-text" data-i18n="onboarding.triggers_needs_camera">Available once the first camera has been added.</span>
+      {% endif %}
+    </div>
+  </article>
+</section>
+{% endblock %}

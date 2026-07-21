@@ -47,4 +47,9 @@
     <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
   </div>
 </form>
+<form method="post" action="{{ ingress_prefix }}/mqtt/test" class="editor-form">
+  <div class="form-actions">
+    <button class="secondary-button" type="submit" data-i18n="notification.test_button">Send test message</button>
+  </div>
+</form>
 {% endblock %}

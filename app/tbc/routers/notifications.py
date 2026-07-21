@@ -6,10 +6,12 @@ despite looking circular.
 """
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import Form, Request
 from fastapi.responses import HTMLResponse
 
-from .. import database
+from .. import database, notifications
 from fastapi import APIRouter
 
 from ..main import (
@@ -76,6 +78,28 @@ async def update_notification(request: Request, channel_id: int, name: str = For
     values["event_templates"] = event_templates
     database.update_notification_channel(SETTINGS.database_path, channel_id, **values)
     _set_flash(request, "notification.updated")
+    return _redirect("/notifications")
+
+@router.post("/notifications/{channel_id}/test")
+async def test_notification(request: Request, channel_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    channel = next(
+        (item for item in database.list_notification_channels(SETTINGS.database_path) if int(item["id"]) == channel_id),
+        None,
+    )
+    if channel is None:
+        _set_flash(request, "notification.not_found", None, "error")
+        return _redirect("/notifications")
+    try:
+        await asyncio.to_thread(
+            notifications.send_test_message, channel, public_base_url=SETTINGS.public_base_url
+        )
+    except Exception as exc:
+        _set_flash(request, "notification.test_failed", {"error": str(exc) or exc.__class__.__name__}, "error")
+    else:
+        _set_flash(request, "notification.test_sent", {"name": str(channel.get("name") or "")})
     return _redirect("/notifications")
 
 @router.post("/notifications/{channel_id}/delete")

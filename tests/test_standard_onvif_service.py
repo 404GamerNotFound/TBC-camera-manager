@@ -80,5 +80,51 @@ class StandardOnvifServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(snapshot.stream_uri, "rtsp://camera:secret@192.0.2.30:554/lens1")
 
 
+class MonitorEventsWrapperTests(unittest.IsolatedAsyncioTestCase):
+    """monitor_events wraps onvif.monitor_events' generic {key, active} pairs
+    into full detection rows, enriched with this plugin's own catalog labels -
+    see app/tbc/camera_plugins/standard_onvif/detections.json."""
+
+    async def test_known_keys_are_enriched_with_label_and_category(self):
+        captured = {}
+
+        async def fake_onvif_monitor_events(camera, on_states):
+            captured["camera"] = camera
+            on_states([{"key": "motion", "active": True}])
+
+        rows_seen = []
+        with patch.object(service._onvif, "monitor_events", side_effect=fake_onvif_monitor_events):
+            await service.monitor_events({"host": "192.0.2.9"}, rows_seen.append)
+
+        self.assertEqual(captured["camera"], {"host": "192.0.2.9"})
+        self.assertEqual(len(rows_seen), 1)
+        [row] = rows_seen[0]
+        self.assertEqual(row["key"], "motion")
+        self.assertEqual(row["label"], "Bewegung")
+        self.assertTrue(row["active"])
+        self.assertTrue(row["supported"])
+        self.assertEqual(row["source"], "onvif-events")
+
+    async def test_unrecognized_keys_are_dropped_silently(self):
+        async def fake_onvif_monitor_events(camera, on_states):
+            on_states([{"key": "some_unknown_topic", "active": True}])
+
+        rows_seen = []
+        with patch.object(service._onvif, "monitor_events", side_effect=fake_onvif_monitor_events):
+            await service.monitor_events({"host": "192.0.2.9"}, rows_seen.append)
+
+        self.assertEqual(rows_seen, [])
+
+    async def test_inactive_state_is_forwarded_as_inactive(self):
+        async def fake_onvif_monitor_events(camera, on_states):
+            on_states([{"key": "motion", "active": False}])
+
+        rows_seen = []
+        with patch.object(service._onvif, "monitor_events", side_effect=fake_onvif_monitor_events):
+            await service.monitor_events({"host": "192.0.2.9"}, rows_seen.append)
+
+        self.assertFalse(rows_seen[0][0]["active"])
+
+
 if __name__ == "__main__":
     unittest.main()

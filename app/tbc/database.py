@@ -95,6 +95,15 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS user_recovery_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    code_hash TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS cameras (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     module_key TEXT NOT NULL DEFAULT 'standard_onvif',
@@ -583,6 +592,9 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE api_tokens ADD COLUMN can_control INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE cameras ADD COLUMN network_account_id INTEGER",
     "ALTER TABLE cameras ADD COLUMN network_device_mac TEXT",
+    "ALTER TABLE users ADD COLUMN totp_secret TEXT",
+    "ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN onboarding_dismissed INTEGER NOT NULL DEFAULT 0",
 )
 
 
@@ -711,9 +723,49 @@ def authenticate_user(database_path: str, username: str, password: str) -> dict[
     return dict(row)
 
 
+def set_user_totp(database_path: str, user_id: int, *, secret: str | None, enabled: bool) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE users SET totp_secret = ?, totp_enabled = ? WHERE id = ?",
+            (secret, 1 if enabled else 0, user_id),
+        )
+        if not enabled:
+            db.execute("DELETE FROM user_recovery_codes WHERE user_id = ?", (user_id,))
+
+
+def replace_user_recovery_codes(database_path: str, user_id: int, code_hashes: list[str]) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM user_recovery_codes WHERE user_id = ?", (user_id,))
+        db.executemany(
+            "INSERT INTO user_recovery_codes (user_id, code_hash) VALUES (?, ?)",
+            [(user_id, code_hash) for code_hash in code_hashes],
+        )
+
+
+def consume_recovery_code(database_path: str, user_id: int, code_hash: str) -> bool:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            "UPDATE user_recovery_codes SET used = 1 WHERE user_id = ? AND code_hash = ? AND used = 0",
+            (user_id, code_hash),
+        )
+        return cursor.rowcount > 0
+
+
+def count_unused_recovery_codes(database_path: str, user_id: int) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM user_recovery_codes WHERE user_id = ? AND used = 0",
+            (user_id,),
+        ).fetchone()
+    return int(row["total"])
+
+
 def get_user(database_path: str, user_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
-        row = db.execute("SELECT id, username, role, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
+        row = db.execute(
+            "SELECT id, username, role, created_at, totp_secret, totp_enabled FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
     return dict(row) if row else None
 
 
@@ -721,7 +773,7 @@ def list_users(database_path: str) -> list[dict[str, Any]]:
     with connect(database_path) as db:
         rows = db.execute(
             """
-            SELECT u.id, u.username, u.role, u.created_at,
+            SELECT u.id, u.username, u.role, u.created_at, u.totp_enabled,
                    COUNT(a.camera_id) AS camera_count
               FROM users u
               LEFT JOIN user_camera_access a ON a.user_id = u.id
@@ -2403,6 +2455,49 @@ def update_retention_rule(
 def delete_retention_rule(database_path: str, rule_id: int) -> None:
     with connect(database_path) as db:
         db.execute("DELETE FROM retention_rules WHERE id = ?", (rule_id,))
+
+
+def any_recording_triggers_configured(database_path: str) -> bool:
+    with connect(database_path) as db:
+        row = db.execute("SELECT COUNT(*) AS total FROM camera_recording_triggers").fetchone()
+    return int(row["total"]) > 0
+
+
+def get_onboarding_dismissed(database_path: str) -> bool:
+    with connect(database_path) as db:
+        row = db.execute("SELECT onboarding_dismissed FROM ui_settings WHERE id = 1").fetchone()
+    return bool(row and row["onboarding_dismissed"])
+
+
+def set_onboarding_dismissed(database_path: str, dismissed: bool) -> None:
+    with connect(database_path) as db:
+        db.execute("INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')")
+        db.execute("UPDATE ui_settings SET onboarding_dismissed = ? WHERE id = 1", (1 if dismissed else 0,))
+
+
+def get_camera_quota_rule(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    """The camera-wide retention rule the camera detail page's quota form manages:
+    scoped to exactly this camera, no detection-key restriction. Event-scoped rules
+    for the same camera stay untouched by the quota form."""
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT * FROM retention_rules
+             WHERE camera_id = ? AND (detection_key IS NULL OR detection_key = '')
+             ORDER BY id ASC LIMIT 1
+            """,
+            (camera_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def camera_recording_usage_bytes(database_path: str, camera_id: int) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COALESCE(SUM(size_bytes), 0) AS total FROM recordings WHERE camera_id = ? AND status = 'ready'",
+            (camera_id,),
+        ).fetchone()
+    return int(row["total"] or 0)
 
 
 def list_notification_channels(database_path: str) -> list[dict[str, Any]]:

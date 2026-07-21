@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import types
 import unittest
@@ -145,6 +146,155 @@ class OnvifTests(unittest.TestCase):
         self.assertEqual(result.stream_uris, ["rtsp://cam/bare"])
         self.assertIsNone(result.stream_profiles[0].width)
         self.assertIsNone(result.stream_profiles[0].source_token)
+
+
+def _notification(topic: str, *, state: str | None = None) -> dict:
+    data: dict = {}
+    if state is not None:
+        data = {"Data": {"SimpleItem": {"Name": "State", "Value": state}}}
+    return {"Topic": {"_value_1": topic}, "Message": {"Message": data}}
+
+
+class ParsePullPointNotificationTests(unittest.TestCase):
+    def test_motion_true_is_decoded_as_active(self):
+        result = onvif.parse_pullpoint_notification(
+            _notification("tns1:VideoSource/MotionAlarm", state="true")
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].detection_key, "motion")
+        self.assertTrue(result[0].active)
+
+    def test_motion_false_is_decoded_as_inactive(self):
+        result = onvif.parse_pullpoint_notification(
+            _notification("tns1:VideoSource/MotionAlarm", state="false")
+        )
+        self.assertEqual(len(result), 1)
+        self.assertFalse(result[0].active)
+
+    def test_notification_without_a_state_field_defaults_to_active(self):
+        # One-shot topics (e.g. tampering alerts) often carry no boolean state -
+        # their mere presence is the signal.
+        result = onvif.parse_pullpoint_notification(_notification("tns1:RuleEngine/TamperDetector/Tamper"))
+        self.assertEqual(len(result), 1)
+        self.assertTrue(result[0].active)
+
+    def test_unrecognized_topic_yields_nothing(self):
+        result = onvif.parse_pullpoint_notification(_notification("tns1:Something/Unrelated", state="true"))
+        self.assertEqual(result, [])
+
+    def test_malformed_message_does_not_raise(self):
+        self.assertEqual(onvif.parse_pullpoint_notification(None), [])
+        self.assertEqual(onvif.parse_pullpoint_notification("not a dict"), [])
+
+
+class PullPointStateTrackerTests(unittest.TestCase):
+    def test_active_notification_is_reported_active(self):
+        tracker = onvif._PullPointStateTracker(active_timeout_seconds=60.0)
+        tracker.update([onvif.OnvifEventNotification("motion", True)], now=0.0)
+        self.assertEqual(tracker.active_keys(now=0.0), {"motion"})
+
+    def test_inactive_notification_clears_the_key_immediately(self):
+        tracker = onvif._PullPointStateTracker(active_timeout_seconds=60.0)
+        tracker.update([onvif.OnvifEventNotification("motion", True)], now=0.0)
+        tracker.update([onvif.OnvifEventNotification("motion", False)], now=1.0)
+        self.assertEqual(tracker.active_keys(now=1.0), set())
+
+    def test_active_state_decays_after_the_timeout_without_a_refresh(self):
+        tracker = onvif._PullPointStateTracker(active_timeout_seconds=10.0)
+        tracker.update([onvif.OnvifEventNotification("motion", True)], now=0.0)
+        self.assertEqual(tracker.active_keys(now=9.0), {"motion"})
+        self.assertEqual(tracker.active_keys(now=11.0), set())
+
+    def test_independent_keys_track_separately(self):
+        tracker = onvif._PullPointStateTracker(active_timeout_seconds=60.0)
+        tracker.update([onvif.OnvifEventNotification("motion", True)], now=0.0)
+        tracker.update([onvif.OnvifEventNotification("tamper", True)], now=5.0)
+        tracker.update([onvif.OnvifEventNotification("motion", False)], now=5.0)
+        self.assertEqual(tracker.active_keys(now=5.0), {"tamper"})
+
+
+class FakePullPointService:
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = []
+
+    def PullMessages(self, request):
+        self.calls.append(request)
+        if not self._responses:
+            raise asyncio.CancelledError()
+        return self._responses.pop(0)
+
+
+class FakeEventsServiceForUnsubscribe:
+    def __init__(self):
+        self.unsubscribed = False
+
+    def Unsubscribe(self):
+        self.unsubscribed = True
+
+
+class FakeOnvifCameraForEvents:
+    def __init__(self, pullpoint, events_service):
+        self._pullpoint = pullpoint
+        self.event = events_service
+
+    def create_pullpoint_service(self):
+        return self._pullpoint
+
+    def create_events_service(self):
+        return self.event
+
+
+class MonitorEventsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_reports_active_and_inactive_states_and_unsubscribes_on_exit(self):
+        response_1 = types.SimpleNamespace(
+            NotificationMessage=[_notification("tns1:VideoSource/MotionAlarm", state="true")]
+        )
+        response_2 = types.SimpleNamespace(
+            NotificationMessage=[_notification("tns1:VideoSource/MotionAlarm", state="false")]
+        )
+        events_service = FakeEventsServiceForUnsubscribe()
+        pullpoint = FakePullPointService([response_1, response_2])
+        camera = FakeOnvifCameraForEvents(pullpoint, events_service)
+        seen: list[list[dict]] = []
+
+        fake_module = types.SimpleNamespace(ONVIFCamera=lambda *a, **k: camera)
+        with patch.object(onvif, "_build_onvif_camera", return_value=camera):
+            with patch.dict(sys.modules, {"onvif": fake_module}):
+                with self.assertRaises(asyncio.CancelledError):
+                    await onvif.monitor_events(
+                        {"host": "192.0.2.9", "onvif_port": 80, "username": "u", "password": "p"},
+                        seen.append,
+                    )
+
+        self.assertEqual(len(seen), 2)
+        self.assertEqual(seen[0], [{"key": "motion", "active": True}])
+        self.assertEqual(seen[1], [{"key": "motion", "active": False}])
+        self.assertTrue(events_service.unsubscribed)
+
+    async def test_empty_pulls_do_not_invoke_the_callback(self):
+        empty_response = types.SimpleNamespace(NotificationMessage=[])
+        pullpoint = FakePullPointService([empty_response, empty_response])
+        camera = FakeOnvifCameraForEvents(pullpoint, FakeEventsServiceForUnsubscribe())
+        seen: list[list[dict]] = []
+
+        with patch.object(onvif, "_build_onvif_camera", return_value=camera):
+            with patch.dict(sys.modules, {"onvif": types.SimpleNamespace(ONVIFCamera=object)}):
+                with self.assertRaises(asyncio.CancelledError):
+                    await onvif.monitor_events(
+                        {"host": "192.0.2.9", "onvif_port": 80, "username": "u", "password": "p"},
+                        seen.append,
+                    )
+
+        self.assertEqual(seen, [])
+
+    async def test_missing_onvif_library_raises_immediately(self):
+        with patch.dict(sys.modules, {"onvif": None}):
+            with self.assertRaises(RuntimeError):
+                await onvif.monitor_events(
+                    {"host": "192.0.2.9", "onvif_port": 80, "username": "u", "password": "p"},
+                    lambda _rows: None,
+                )
 
 
 class OnvifPackageIsDeclaredAsADependencyTests(unittest.TestCase):

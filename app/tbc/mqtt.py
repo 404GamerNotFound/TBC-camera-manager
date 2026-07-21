@@ -240,6 +240,30 @@ def publish_event(
     )
 
 
+def send_test_message(database_path: str) -> None:
+    """Publish a test message to {prefix}/test, raising on failure.
+
+    Bypasses _publish_many, which deliberately swallows errors for the fire-and-
+    forget event path - a test button exists precisely to surface them.
+    """
+    config = database.get_mqtt_config(database_path)
+    if not config.get("host"):
+        raise RuntimeError("No MQTT broker host is configured")
+    import paho.mqtt.publish as publish
+
+    auth = None
+    if config.get("username"):
+        auth = {"username": config.get("username"), "password": config.get("password") or ""}
+    publish.single(
+        f"{_topic_prefix(config)}/test",
+        payload=json.dumps({"message": "This is a test message from TBC Camera Manager."}),
+        hostname=str(config["host"]),
+        port=int(config.get("port") or 1883),
+        auth=auth,
+        client_id="tbc-camera-manager-test",
+    )
+
+
 def _enabled(config: dict[str, Any]) -> bool:
     return int(config.get("enabled") or 0) == 1 and bool(config.get("host"))
 

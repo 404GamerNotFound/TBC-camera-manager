@@ -564,6 +564,28 @@
     </div>
   </form>
 
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/storage-quota">
+    <div class="section-title">
+      <h2 data-i18n="camera.storage_quota_title">Storage quota</h2>
+      <span data-i18n="camera.storage_quota_usage" data-i18n-params='{{ {"gb": camera_usage_gb} | tojson }}'>Current usage: {{ camera_usage_gb }} GB</span>
+    </div>
+    <p class="hint-text" data-i18n="camera.storage_quota_hint">Limits how much this camera's clips may occupy: by age, size, or both. The oldest unlocked clips are deleted first during the regular retention cleanup. Leave both fields empty for no per-camera limit.</p>
+    <div class="form-grid">
+      <label>
+        <span data-i18n="retention.maximum_age_days">Maximum age in days</span>
+        <input name="quota_max_age_days" type="number" min="1" value="{{ camera_quota_rule.max_age_days if camera_quota_rule and camera_quota_rule.max_age_days else '' }}">
+      </label>
+      <label>
+        <span data-i18n="retention.maximum_size_gb">Maximum size in GB</span>
+        <input name="quota_max_size_gb" type="number" min="0.1" step="0.1" value="{{ camera_quota_rule.max_size_gb if camera_quota_rule and camera_quota_rule.max_size_gb else '' }}">
+      </label>
+    </div>
+    <div class="form-actions">
+      <a class="secondary-button" href="{{ ingress_prefix }}/retention" data-i18n="common.retention">Retention</a>
+      <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+    </div>
+  </form>
+
   </div>
 
   <section class="event-panel">

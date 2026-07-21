@@ -431,12 +431,16 @@ async def activate_design_theme(request: Request, theme_key: str = Form(...)):
     guard = _require_admin(request)
     if guard:
         return guard
-    try:
-        get_theme_registration(theme_key)
-    except UnknownThemeError as exc:
-        _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
-        return _redirect("/design")
-    database.set_active_theme_key(SETTINGS.database_path, theme_key.strip().lower())
+    normalized = theme_key.strip().lower()
+    # "auto" is not an installed theme but a mode: standard by day, midnight by
+    # night, following the browser's prefers-color-scheme (see _active_theme_context).
+    if normalized != "auto":
+        try:
+            get_theme_registration(theme_key)
+        except UnknownThemeError as exc:
+            _set_flash(request, "common.raw_message", {"message": str(exc)}, "error")
+            return _redirect("/design")
+    database.set_active_theme_key(SETTINGS.database_path, normalized)
     _set_flash(request, "design.activated")
     return _redirect("/design")
 

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="base.settings">Settings</p>
+    <h1 data-i18n="twofactor.title">Two-factor authentication</h1>
+  </div>
+</section>
+
+{% if recovery_codes %}
+<section class="editor-form compact-form">
+  <div class="section-title"><h2 data-i18n="twofactor.recovery_title">Recovery codes</h2></div>
+  <div class="quiet-box">
+    <p data-i18n="twofactor.recovery_hint">Store these codes somewhere safe (password manager, printout). Each one signs you in exactly once if you lose access to your authenticator app - they are shown only now and cannot be displayed again.</p>
+    <ul class="metric-row">
+      {% for recovery_code in recovery_codes %}
+      <li><code>{{ recovery_code }}</code></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="form-actions">
+    <a class="primary-button" href="{{ ingress_prefix }}/account/2fa" data-i18n="twofactor.done">Done</a>
+  </div>
+</section>
+{% elif totp_enabled %}
+<section class="editor-form compact-form">
+  <div class="section-title">
+    <h2 data-i18n="twofactor.title">Two-factor authentication</h2>
+    <span class="status-pill status-active" data-i18n="camera.active">active</span>
+  </div>
+  <p class="hint-text" data-i18n="twofactor.enabled_hint" data-i18n-params='{{ {"count": unused_recovery_codes} | tojson }}'>Signing in requires a code from your authenticator app. Unused recovery codes: {{ unused_recovery_codes }}.</p>
+  <form method="post" action="{{ ingress_prefix }}/account/2fa/disable">
+    <div class="form-grid">
+      <label>
+        <span data-i18n="twofactor.confirm_password">Confirm with your password</span>
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="danger-button" type="submit" data-i18n="twofactor.disable">Disable two-factor authentication</button>
+    </div>
+  </form>
+</section>
+{% else %}
+<section class="editor-form compact-form">
+  <div class="section-title">
+    <h2 data-i18n="twofactor.setup_title">Set up two-factor authentication</h2>
+    <span class="status-pill status-idle" data-i18n="camera.off">off</span>
+  </div>
+  <p class="hint-text" data-i18n="twofactor.setup_hint">Scan the QR code with an authenticator app (Google Authenticator, Aegis, 1Password, …) or enter the secret manually, then confirm with the app's current 6-digit code.</p>
+  {% if qr_svg %}
+  <div class="quiet-box" aria-hidden="true">{{ qr_svg | safe }}</div>
+  {% endif %}
+  <dl class="metric-row">
+    <div><dt data-i18n="twofactor.secret_label">Secret (manual entry)</dt><dd><code>{{ setup_secret }}</code></dd></div>
+  </dl>
+  <form method="post" action="{{ ingress_prefix }}/account/2fa/enable">
+    <div class="form-grid">
+      <label>
+        <span data-i18n="twofactor.code_label">Verification code</span>
+        <input name="code" autocomplete="one-time-code" inputmode="numeric" required>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit" data-i18n="twofactor.enable">Enable two-factor authentication</button>
+    </div>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

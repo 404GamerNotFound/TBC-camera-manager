@@ -4,10 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="theme-color" content="#11615c">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ app_name }}">
+    <link rel="manifest" href="{{ ingress_prefix }}/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ ingress_prefix }}/static/icons/icon-192.png?v={{ asset_version }}">
+    <link rel="apple-touch-icon" href="{{ ingress_prefix }}/static/icons/apple-touch-icon.png?v={{ asset_version }}">
     <title data-i18n="nav.page_title" data-i18n-params='{{ {"app_name": app_name} | tojson }}'>{{ app_name }} - TB Camera</title>
     <link href="{{ ingress_prefix }}/static/vendor/bootstrap.min.css?v={{ asset_version }}" rel="stylesheet">
     {% if active_theme %}
     <link rel="stylesheet" href="{{ ingress_prefix }}/design/{{ active_theme.key }}/static/{{ active_theme.stylesheet }}?v={{ asset_version }}">
+    {% if active_theme_dark %}
+    <link rel="stylesheet" href="{{ ingress_prefix }}/design/{{ active_theme_dark.key }}/static/{{ active_theme_dark.stylesheet }}?v={{ asset_version }}" media="(prefers-color-scheme: dark)">
+    {% endif %}
     {% endif %}
     <script>
       // Empty outside Home Assistant Ingress - see app/tbc/ingress.py. Read
@@ -235,6 +246,9 @@
                 <li><button class="dropdown-item" type="button" data-language="pl" lang="pl" data-i18n="nav.language_pl">Polski</button></li>
                 <li><button class="dropdown-item" type="button" data-language="pt" lang="pt" data-i18n="nav.language_pt">Português</button></li>
               </ul>
+            </li>
+            <li class="nav-item">
+              <a class="icon-button" href="{{ ingress_prefix }}/account/2fa" title="Two-factor authentication" data-i18n-title="twofactor.title" aria-label="Two-factor authentication" data-i18n-aria-label="twofactor.title">🛡</a>
             </li>
             <li class="nav-item nav-logout">
               <form method="post" action="{{ ingress_prefix }}/logout">

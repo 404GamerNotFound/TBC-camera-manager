@@ -23,7 +23,10 @@
         {% include "partials/notification_fields.html" %}
         <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
       </form>
-      <form method="post" action="{{ ingress_prefix }}/notifications/{{ channel.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+      <div class="button-row">
+        <form method="post" action="{{ ingress_prefix }}/notifications/{{ channel.id }}/test"><button class="secondary-button" type="submit" data-i18n="notification.test_button">Send test message</button></form>
+        <form method="post" action="{{ ingress_prefix }}/notifications/{{ channel.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+      </div>
     </article>
     {% endfor %}
   </section>

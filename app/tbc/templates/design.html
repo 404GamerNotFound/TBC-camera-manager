@@ -41,6 +41,24 @@
       <h2 data-i18n="design.installed_designs">Installed designs</h2>
       <span>{{ registrations | length }}</span>
     </div>
+    <article class="storage-item plugin-card" data-plugin-search-item>
+      <div class="section-title">
+        <div>
+          <h3 data-i18n="design.auto_label">Auto (system)</h3>
+          <p data-i18n="design.auto_description">Follows your device's appearance setting: the standard design in light mode, Midnight in dark mode.</p>
+        </div>
+      </div>
+      <dl class="metric-row plugin-card-meta">
+        <div><dt data-i18n="plugin.key">Key</dt><dd>{{ 'auto' }}</dd></div>
+        <div><dt data-i18n="camera.status">Status</dt><dd data-i18n="{{ 'design.active_state' if active_theme_key == 'auto' else 'design.inactive_state' }}">{{ 'Active' if active_theme_key == 'auto' else 'Inactive' }}</dd></div>
+      </dl>
+      {% if active_theme_key != 'auto' %}
+      <form method="post" action="{{ ingress_prefix }}/design/activate">
+        <input type="hidden" name="theme_key" value="auto">
+        <button class="primary-button" type="submit" data-i18n="api.activate">Activate</button>
+      </form>
+      {% endif %}
+    </article>
     {% for registration in registrations %}
     {% set manifest = registration.manifest %}
     <article class="storage-item plugin-card" data-plugin-search-item>
