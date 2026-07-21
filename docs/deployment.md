@@ -44,28 +44,51 @@ Persist `/data` and recording paths. The live directory is transient and should 
 
 ## Environment variables
 
+Every variable below has a working built-in default (see `app/tbc/config.py`) - **none of them are
+required just to start the container.** They're grouped here by whether you should actually
+change them.
+
+### Change these before using TBC outside a quick local test
+
+Leaving these at their defaults means anyone who reaches the port can log in and read/decrypt
+stored credentials.
+
+| Variable | Default | Description |
+|---|---|---|
+| `TBC_ADMIN_PASSWORD` | `bitte-aendern` | Initial administrator password; does not overwrite an existing account |
+| `TBC_SECRET_KEY` | development fallback | Session signing and encryption key; keep stable and secret |
+
+### Situational - leave at the default unless you need the specific behavior
+
 | Variable | Default | Description |
 |---|---|---|
 | `TBC_ADMIN_USERNAME` | `admin` | Initial administrator name |
-| `TBC_ADMIN_PASSWORD` | `bitte-aendern` | Initial administrator password; does not overwrite an existing account |
-| `TBC_SECRET_KEY` | development fallback | Session signing and encryption key; keep stable and secret |
+| `TBC_PUBLIC_BASE_URL` | empty | Public base URL used in notification links |
+| `TBC_PORT` | `8732` | Web server port |
+| `TBC_COOKIE_SECURE` | `false` | Mark session cookies HTTPS-only (set this behind an HTTPS reverse proxy) |
+| `TBC_SESSION_MAX_AGE_SECONDS` | `1209600` (14 days) | Session cookie lifetime, minimum 300 seconds |
+| `TBC_POLL_INTERVAL_SECONDS` | `60` | Camera and network polling interval, minimum 15 seconds |
+| `TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS` | `600` | Preview refresh interval, minimum 60 seconds |
+| `TBC_DETECTION_SAMPLE_FPS` | `2.0` | Default local-AI sample rate |
+| `TBC_DETECTION_CONFIDENCE_THRESHOLD` | `0.5` | Default local-AI confidence threshold |
+
+### Storage paths - matched to the volume/bind mounts in `docker-compose.yml`
+
+Change one only together with its mount, otherwise the app just looks in a different, unmounted,
+non-persistent place.
+
+| Variable | Default | Description |
+|---|---|---|
 | `TBC_DATABASE_PATH` | `/data/tbc.sqlite3` | SQLite database path |
 | `TBC_RECORDINGS_PATH` | `/recordings` | Default recording directory |
-| `TBC_LIVE_PATH` | `/tmp/tbc-live` | Temporary HLS directory |
+| `TBC_PLUGIN_SITE_PACKAGES_PATH` | `/data/plugin-site-packages` | Where plugin-declared pip requirements are installed, so they survive image/App updates |
+| `TBC_LIVE_PATH` | `/tmp/tbc-live` | Temporary HLS directory; safe to recreate after restart |
 | `TBC_CAMERA_MODULES_PATH` | `/data/camera-modules` | External camera-plugin directory |
 | `TBC_CLOUD_MODULES_PATH` | `/data/cloud-modules` | External cloud-plugin directory |
 | `TBC_NETWORK_MODULES_PATH` | `/data/network-modules` | External network-plugin directory |
 | `TBC_THEME_MODULES_PATH` | `/data/design-themes` | External theme directory |
 | `TBC_DETECTION_MODELS_PATH` | `/data/detection-models` | Model cache directory |
 | `TBC_DASHBOARD_SNAPSHOTS_PATH` | `/data/dashboard-snapshots` | Dashboard preview directory |
-| `TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS` | `600` | Preview refresh interval, minimum 60 seconds |
-| `TBC_DETECTION_SAMPLE_FPS` | `2.0` | Default local-AI sample rate |
-| `TBC_DETECTION_CONFIDENCE_THRESHOLD` | `0.5` | Default local-AI confidence threshold |
-| `TBC_PUBLIC_BASE_URL` | empty | Public base URL used in notification links |
-| `TBC_POLL_INTERVAL_SECONDS` | `60` | Camera and network polling interval, minimum 15 seconds |
-| `TBC_PORT` | `8732` | Web server port |
-| `TBC_COOKIE_SECURE` | `false` | Mark session cookies HTTPS-only |
-| `TBC_SESSION_MAX_AGE_SECONDS` | `1209600` (14 days) | Session cookie lifetime, minimum 300 seconds |
 
 ## Ports and network access
 

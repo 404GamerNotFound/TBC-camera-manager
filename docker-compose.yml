@@ -10,22 +10,35 @@ services:
       - "8555:8555/tcp"
       - "8555:8555/udp"
     environment:
-      TBC_ADMIN_USERNAME: ${TBC_ADMIN_USERNAME:-admin}
+      # --- Change these before using TBC outside a quick local test. Every
+      # variable in this file has a working built-in default (see
+      # app/tbc/config.py) - nothing below is required just to start the
+      # container - but leaving these two at their defaults means anyone who
+      # reaches the port can log in and read/decrypt stored credentials. See
+      # docs/deployment.md#environment-variables for the full breakdown.
       TBC_ADMIN_PASSWORD: ${TBC_ADMIN_PASSWORD:-bitte-aendern}
       TBC_SECRET_KEY: ${TBC_SECRET_KEY:-lokaler-dev-schluessel-bitte-aendern}
-      TBC_DATABASE_PATH: /data/tbc.sqlite3
-      TBC_PLUGIN_SITE_PACKAGES_PATH: /data/plugin-site-packages
-      TBC_RECORDINGS_PATH: /recordings
-      TBC_LIVE_PATH: ${TBC_LIVE_PATH:-/tmp/tbc-live}
-      TBC_CAMERA_MODULES_PATH: ${TBC_CAMERA_MODULES_PATH:-/data/camera-modules}
-      TBC_DASHBOARD_SNAPSHOTS_PATH: ${TBC_DASHBOARD_SNAPSHOTS_PATH:-/data/dashboard-snapshots}
-      TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS: ${TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS:-600}
-      TBC_DETECTION_MODELS_PATH: ${TBC_DETECTION_MODELS_PATH:-/data/detection-models}
-      TBC_DETECTION_SAMPLE_FPS: ${TBC_DETECTION_SAMPLE_FPS:-2.0}
-      TBC_DETECTION_CONFIDENCE_THRESHOLD: ${TBC_DETECTION_CONFIDENCE_THRESHOLD:-0.5}
+
+      # --- Situational - safe to leave at their defaults; set only if you
+      # need the specific behavior.
+      TBC_ADMIN_USERNAME: ${TBC_ADMIN_USERNAME:-admin}
       TBC_PUBLIC_BASE_URL: ${TBC_PUBLIC_BASE_URL:-}
       TBC_PORT: ${TBC_PORT:-8732}
       TBC_POLL_INTERVAL_SECONDS: ${TBC_POLL_INTERVAL_SECONDS:-60}
+      TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS: ${TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS:-600}
+      TBC_DETECTION_SAMPLE_FPS: ${TBC_DETECTION_SAMPLE_FPS:-2.0}
+      TBC_DETECTION_CONFIDENCE_THRESHOLD: ${TBC_DETECTION_CONFIDENCE_THRESHOLD:-0.5}
+
+      # --- Storage paths - matched to the volumes below. Change one only
+      # together with its volume/bind mount, otherwise the app just looks in
+      # a different (unmounted, non-persistent) place.
+      TBC_DATABASE_PATH: /data/tbc.sqlite3
+      TBC_RECORDINGS_PATH: /recordings
+      TBC_PLUGIN_SITE_PACKAGES_PATH: /data/plugin-site-packages
+      TBC_LIVE_PATH: ${TBC_LIVE_PATH:-/tmp/tbc-live}
+      TBC_CAMERA_MODULES_PATH: ${TBC_CAMERA_MODULES_PATH:-/data/camera-modules}
+      TBC_DASHBOARD_SNAPSHOTS_PATH: ${TBC_DASHBOARD_SNAPSHOTS_PATH:-/data/dashboard-snapshots}
+      TBC_DETECTION_MODELS_PATH: ${TBC_DETECTION_MODELS_PATH:-/data/detection-models}
     volumes:
       - tbc-data:/data
       - tbc-recordings:/recordings
