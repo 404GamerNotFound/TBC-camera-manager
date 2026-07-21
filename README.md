@@ -4,8 +4,8 @@ TBC is a modular, Docker-based camera manager. Camera vendors are integrated thr
 
 The application includes authentication, camera management, RTSP stream discovery, dashboard snapshots, event-based and continuous recording, clip and SD-card browsers, user roles, MQTT and Home Assistant integration, live HLS with an optional sub-second WebRTC alternative (go2rtc), retention rules, notifications, health monitoring, AI detection, and NVR channel management.
 
-English is the default interface language. German, Spanish, French, and Portuguese can be selected
-from the language menu.
+English is the default interface language. Afrikaans, Bulgarian, German, Spanish, French, Dutch,
+Polish, and Portuguese can be selected from the language menu.
 
 ## Quick start
 

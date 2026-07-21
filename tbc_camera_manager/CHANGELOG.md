@@ -2,6 +2,8 @@
 
 ## 0.8.7 - "Back in session"
 
+- Added Afrikaans, Bulgarian, Dutch, and Polish as fully translated interface languages. Each is
+  selectable from the login and application language menus.
 - Fixed the Live view error **"Live API could not be loaded"** when a browser still held a
   session for a user that no longer exists - for example after restoring an older backup or
   deleting that account. The invalid session is now cleared: web pages redirect to the login page

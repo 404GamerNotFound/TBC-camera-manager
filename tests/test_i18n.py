@@ -33,7 +33,7 @@ DATA_I18N_JINJA_TERNARY = re.compile(r"data-i18n=\"\{\{ '([\w.]+)' if .*? else '
 def _locales() -> dict[str, dict[str, str]]:
     return {
         lang: json.loads((LOCALE_ROOT / f"{lang}.json").read_text(encoding="utf-8"))
-        for lang in ("en", "de", "es", "fr", "pt")
+        for lang in ("af", "bg", "de", "en", "es", "fr", "nl", "pl", "pt")
     }
 
 

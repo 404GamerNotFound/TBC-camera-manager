@@ -515,10 +515,14 @@
   "nav.footer": "Pied de page",
   "nav.footer_version": "{app_name} {version}",
   "nav.language": "Changer de langue",
+  "nav.language_af": "Afrikaans",
+  "nav.language_bg": "Bulgare",
   "nav.language_de": "Allemand",
   "nav.language_en": "Anglais",
   "nav.language_es": "espagnol",
   "nav.language_fr": "Français",
+  "nav.language_nl": "Néerlandais",
+  "nav.language_pl": "Polonais",
   "nav.language_pt": "Portugais",
   "nav.main": "Navigation principale",
   "nav.page_title": "{app_name} - Caméra TB",
@@ -934,4 +938,3 @@
   "zones.save_network_failed": "La zone n'a pas pu être enregistrée : erreur réseau",
   "zones.save_zone": "Enregistrer la zone"
 }
-

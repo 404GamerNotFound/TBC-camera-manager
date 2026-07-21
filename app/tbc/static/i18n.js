@@ -49,8 +49,18 @@ window.tbcCsrfToken = () => {
   };
 
   const STORAGE_KEY = "tbc-language";
-  const SUPPORTED_LANGUAGES = ["de", "en", "es", "fr", "pt"];
-  const LANGUAGE_NAMES = { de: "Deutsch", en: "English", es: "Español", fr: "Français", pt: "Português" };
+  const SUPPORTED_LANGUAGES = ["af", "bg", "de", "en", "es", "fr", "nl", "pl", "pt"];
+  const LANGUAGE_NAMES = {
+    af: "Afrikaans",
+    bg: "Български",
+    de: "Deutsch",
+    en: "English",
+    es: "Español",
+    fr: "Français",
+    nl: "Nederlands",
+    pl: "Polski",
+    pt: "Português",
+  };
 
   const selectedLanguage = () => {
     try {
