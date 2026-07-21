@@ -172,6 +172,13 @@ STANDARD_PLUGIN_SOURCES = (
         description="SONOFF devices via the official eWeLink/CoolKit Open Platform cloud account",
         repo_url="https://github.com/404GamerNotFound/TBC-ewelink",
     ),
+    StandardPluginSource(
+        key="google",
+        plugin_kind="cloud",
+        label="Google Nest",
+        description="Google Nest cameras and doorbells via the official Smart Device Management API",
+        repo_url="https://github.com/404GamerNotFound/TBC-google",
+    ),
 )
 
 

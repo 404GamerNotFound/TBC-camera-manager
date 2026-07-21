@@ -122,6 +122,7 @@ The standard repositories include:
 - `unifi_protect` for local controllers and the `ui.com` cloud console
 - `eufy` with email verification-code support
 - `ewelink` for the official CoolKit Open Platform API
+- `google` for Nest cameras/doorbells via the official Smart Device Management API (inventory only - no stream URL, see [docs/cloud-accounts.md](docs/cloud-accounts.md))
 
 See [docs/cloud-accounts.md](docs/cloud-accounts.md).
 

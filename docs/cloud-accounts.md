@@ -235,6 +235,32 @@ open the camera, enable RTSP, and copy the link. Enter that link manually in the
 camera import. Unlike UniFi Protect and, in part, Eufy, TBC does not display **Add as camera**
 for eWeLink devices.
 
+## Reference implementation: Google Nest
+
+[`TBC-google`](https://github.com/404GamerNotFound/TBC-google) talks directly to Google's
+official [Smart Device Management (SDM) API](https://developers.google.com/nest/device-access)
+with `aiohttp` - no vendor SDK exists for it. The manifest requests a Device Access **Project
+ID**, an OAuth **client ID/secret**, and a **refresh token**; obtaining all three is a one-time,
+outside-of-TBC setup (Device Access Console registration, an OAuth client in Google Cloud
+Console, and a manual authorization-code exchange) documented in the plugin's own README, since
+none of it fits a login form. Once obtained, the refresh token is a static, long-lived secret
+like an API key - `test_connection()`/`discover_devices()` exchange it for a short-lived access
+token on every call, the same as any other credential-based cloud plugin here.
+
+`discover_devices()` lists every device under the project and keeps only the ones carrying a
+camera- or doorbell-related trait (`CameraLiveStream`, `CameraImage`, `CameraEventImage`, or
+`DoorbellChime`) rather than trusting the device `type` string, since Google's own docs warn
+against inferring capability from `type` alone. Like eWeLink and X-Sense, it returns **no**
+`manual_stream_uri`: the SDM API's `CameraLiveStream` trait only ever produces a stream valid for
+about 5 minutes, and devices already migrated to the Google Home app support WebRTC only, not
+RTSP - neither fits a manual RTSP URL a camera module could reopen later. Discovery therefore
+provides inventory only; TBC does not display **Add as camera** for Google Nest devices.
+
+The refresh token itself has no documented in-app two-factor flow to hook into, so
+`verification_support` is `not_applicable`. Google requires the refresh token to be used at
+least once every 6 months or it stops working, which TBC's periodic connection checks satisfy on
+their own as long as the account stays configured.
+
 ## Reference implementation: X-Sense
 
 [`TBC-X-Sense`](https://github.com/404GamerNotFound/TBC-X-Sense) is a *cloud* plugin (its
