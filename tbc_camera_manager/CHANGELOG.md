@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.7 - "Back in session"
+
+- Fixed the Live view error **"Live API could not be loaded"** when a browser still held a
+  session for a user that no longer exists - for example after restoring an older backup or
+  deleting that account. The invalid session is now cleared: web pages redirect to the login page
+  and API clients receive a proper JSON `401 Unauthorized` response instead of an unhandled `500`.
+- Improved the **Admin** mega menu: it uses the available width more effectively, keeps long
+  localized labels inside their column, and wraps them without overlapping adjacent menu entries.
+
 ## 0.8.5 - "Tagged correctly"
 
 - Fixed recorded clips from HEVC/H.265 cameras still failing to play (`NETWORK_NO_SOURCE`) even
