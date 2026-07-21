@@ -12,7 +12,14 @@ aiohttp>=3.14.1,<4
 boto3>=1.43.51,<2
 paho-mqtt==2.1.0
 packaging>=26.2
-numpy>=2.5.1,<3
+# Capped below 2.3: numpy dropped the manylinux2014 (x86-64-v1 baseline) wheel
+# there in favor of manylinux_2_28 only, which requires x86-64-v2 (SSE4.2/POPCNT)
+# at minimum. That crashes on CPUs/VMs without it - e.g. Proxmox's default
+# "kvm64"/"qemu64" CPU type instead of "host" - with "RuntimeError: NumPy was
+# built with baseline optimizations: (X86_V2) but your machine doesn't support"
+# (GitHub issue #31). 2.2.x still ships the compatible wheel and satisfies
+# every other pinned package's numpy requirement here.
+numpy>=2.2.6,<2.3
 Pillow>=12.3.0,<13
 onnxruntime>=1.27.0,<2
 opencv-python-headless==5.0.0.93
