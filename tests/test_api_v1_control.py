@@ -1022,5 +1022,41 @@ class HomeAssistantIngressTests(unittest.TestCase):
             self.assertTrue(item["playlist_url"].startswith(self.INGRESS_PATH + "/"))
             self.assertTrue(item["webrtc_offer_url"].startswith(self.INGRESS_PATH + "/"))
 
+
+class InvalidSessionRecoveryTests(unittest.TestCase):
+    """A session cookie can outlive the account it points at - e.g. an admin
+    deletes a user, or someone restores an older database backup, while that
+    user's browser still holds a valid, unexpired session. Regression test for
+    the resulting bug: every route that reaches this state used to raise an
+    uncaught exception (a plain-text 500, not JSON), which is what surfaced in
+    the browser as e.g. the live view's generic "Live-API could not be loaded"
+    fallback instead of a clean re-login.
+    """
+
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.admin_id = next(
+            user["id"] for user in database.list_users(main.SETTINGS.database_path) if user["username"] == "admin"
+        )
+        database.delete_user(main.SETTINGS.database_path, self.admin_id)
+
+    def test_api_route_returns_json_401_instead_of_a_bare_500(self):
+        response = CLIENT.get("/api/live/status")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"error": "unauthorized"})
+
+    def test_page_route_redirects_to_login_instead_of_a_bare_500(self):
+        response = CLIENT.get("/cameras", follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/login")
+
+    def test_session_is_cleared_so_a_fresh_login_works_afterward(self):
+        CLIENT.get("/cameras", follow_redirects=False)
+        database.ensure_admin_user(main.SETTINGS.database_path, main.SETTINGS.admin_username, main.SETTINGS.admin_password)
+        response = CLIENT.post("/login", data={"username": "admin", "password": "adminpass123"}, follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/cameras")
+
 if __name__ == "__main__":
     unittest.main()

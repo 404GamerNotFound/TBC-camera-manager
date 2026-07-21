@@ -1577,6 +1577,17 @@ async def _continuous_recording_loop() -> None:
         await asyncio.sleep(20)
 
 
+class InvalidSessionError(Exception):
+    """The session cookie looks logged-in, but its user_id has no matching row.
+
+    Happens whenever a session outlives the account it points at - the account
+    was deleted, or the database was restored from a backup that predates it.
+    Every _current_user() caller assumes a valid dict comes back and does not
+    catch this itself, so the global handler below (registered on `app`) is
+    what actually turns this into a clean re-login instead of an unhandled 500.
+    """
+
+
 def _is_logged_in(request: Request) -> bool:
     return bool(request.session.get("user_id"))
 
@@ -1584,14 +1595,22 @@ def _is_logged_in(request: Request) -> bool:
 def _current_user(request: Request) -> dict[str, Any]:
     user_id = request.session.get("user_id")
     if not user_id:
-        raise ValueError("not logged in")
+        raise InvalidSessionError("not logged in")
     user = database.get_user(SETTINGS.database_path, int(user_id))
     if user is None:
         request.session.clear()
-        raise ValueError("session user does not exist")
+        raise InvalidSessionError("session user does not exist")
     request.session["username"] = user["username"]
     request.session["role"] = user["role"]
     return user
+
+
+@app.exception_handler(InvalidSessionError)
+async def _invalid_session_error_handler(request: Request, exc: InvalidSessionError):
+    request.session.clear()
+    if request.url.path.startswith(("/api/", "/mcp")):
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+    return _redirect("/login")
 
 
 def _require_login(request: Request):
