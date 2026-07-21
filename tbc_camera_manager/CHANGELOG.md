@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.5 - "Tagged correctly"
+
+- Fixed recorded clips from HEVC/H.265 cameras still failing to play (`NETWORK_NO_SOURCE`) even
+  after 0.8.3's `Content-Disposition` fix. Recording uses `-c copy` (no re-encoding), which passes
+  the camera's own codec tag through unchanged - and IP cameras overwhelmingly write HEVC as
+  `hev1`, which Safari and QuickTime silently refuse to play in an MP4 container at all, even
+  though the stream decodes fine elsewhere. Both event-clip and continuous recording now retag
+  HEVC output as `hvc1`; H.264 cameras are unaffected. Root-caused with the reporter down to the
+  exact codec via `ffprobe`.
+
 ## 0.8.4 - "Baseline"
 
 - Fixed the app crashing a few seconds after startup with `RuntimeError: NumPy was built with
