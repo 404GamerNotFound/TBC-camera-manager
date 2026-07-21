@@ -179,6 +179,16 @@ window.tbcCsrfToken = () => {
     });
     observer.observe(document.body, { childList: true, subtree: true });
     document.documentElement.classList.remove("i18n-pending");
+    // Other page scripts (camera-form.js, cloud-account-form.js,
+    // network-account-form.js, live.js, ...) run as separate <script defer>
+    // tags and can call window.tbcI18n.t() before the locale fetch behind
+    // `ready` above has resolved - window.tbcI18n itself already exists (see
+    // below), so that doesn't throw, but `strings`/`fallbackStrings` are
+    // still empty at that point, so t() just returns the raw key. This must
+    // fire only from here (after `ready` resolved, i.e. strings are
+    // actually populated) - firing it eagerly at module load time, before
+    // the fetch even starts, would make it useless as a signal.
+    document.dispatchEvent(new CustomEvent("tbc:i18n-ready"));
   };
 
   window.tbcI18n = { get language() { return language; }, setLanguage, t: translate };

@@ -15,7 +15,18 @@
   const soloCloseButton = document.querySelector("[data-live-solo-close]");
 
   if (!cards.length) {
-    if (summary) summary.textContent = t("live.no_streams");
+    // t() falls back to the raw key if this runs before i18n.js's own
+    // locale fetch resolves (see the comment next to `tbc:i18n-ready` in
+    // i18n.js) - redo it once ready instead of leaving "live.no_streams" on
+    // screen.
+    if (summary) {
+      summary.textContent = t("live.no_streams");
+      document.addEventListener(
+        "tbc:i18n-ready",
+        () => { summary.textContent = t("live.no_streams"); },
+        { once: true },
+      );
+    }
     return;
   }
 
