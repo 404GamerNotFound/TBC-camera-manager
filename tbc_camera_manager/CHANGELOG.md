@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.3 - "Play it back"
+
+- Fixed recorded clips failing to play in the browser (most noticeably in Safari) while still
+  downloading and streaming their bytes correctly (`206 Partial Content`). The `/recordings/{id}/media`
+  endpoint (and its `/api/v1/...` counterpart) sent `Content-Disposition: attachment`, telling the
+  browser to save the file instead of rendering it inline in the `<video>` element. Both now send
+  `inline`; the separate **Download** button is unaffected and still forces a save dialog.
+- Fixed the video player's control buttons (play/pause, mute, fullscreen, PTZ) showing raw,
+  untranslated `player.*` i18n keys as their accessible names under slow/Ingress loading - the
+  same underlying race condition fixed for other pages in 0.8.1, now also covering
+  `video-player.js`.
+
 ## 0.8.2 - "Stored & streamlined"
 
 - Reworked **Admin → External sources** into compact, filterable lists. A sticky sidebar now
