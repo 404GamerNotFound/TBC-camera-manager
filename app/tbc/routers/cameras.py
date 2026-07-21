@@ -267,6 +267,7 @@ async def camera_detail(
     available_triggers = camera_module.detection_definitions() if camera_module else ()
     detection_settings = database.get_camera_detection_settings(SETTINGS.database_path, camera_id)
     detection_zones = database.list_camera_detection_zones(SETTINGS.database_path, camera_id)
+    audio_detection_settings = database.get_camera_audio_detection_settings(SETTINGS.database_path, camera_id)
     local_ai_enabled = bool(detection_settings and detection_settings.get("enabled"))
     if camera.get("stream_uri") or local_ai_enabled:
         existing_trigger_keys = {trigger.key for trigger in available_triggers}
@@ -363,6 +364,7 @@ async def camera_detail(
             "trigger_labels": {trigger.key: trigger.label for trigger in available_triggers},
             "active_trigger_keys": active_trigger_keys,
             "detection_settings": detection_settings,
+            "audio_detection_settings": audio_detection_settings,
             "local_ai_enabled": local_ai_enabled,
             "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
             "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
@@ -643,6 +645,29 @@ async def update_camera_detection(
         backend=backend,
         confidence_threshold=min(1.0, max(0.05, detection_confidence_threshold)),
         sample_fps=min(10.0, max(0.2, detection_sample_fps)),
+    )
+    _set_flash(request, "detection.settings_saved")
+    return _redirect(f"/cameras/{camera_id}")
+
+@router.post("/cameras/{camera_id}/audio-detection")
+async def update_camera_audio_detection(
+    request: Request,
+    camera_id: int,
+    audio_detection_confidence_threshold: float = Form(0.5),
+    audio_detection_enabled: str | None = Form(None),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    camera = database.get_camera(SETTINGS.database_path, camera_id)
+    if not camera:
+        _set_flash(request, "camera.not_found", None, "error")
+        return _redirect("/cameras")
+    database.update_camera_audio_detection_settings(
+        SETTINGS.database_path,
+        camera_id,
+        enabled=audio_detection_enabled == "on",
+        confidence_threshold=min(1.0, max(0.05, audio_detection_confidence_threshold)),
     )
     _set_flash(request, "detection.settings_saved")
     return _redirect(f"/cameras/{camera_id}")

@@ -65,8 +65,10 @@ from .documentation import (
     resolve_documentation_file as _resolve_documentation_file,
 )
 from .detection import factory as detection_factory
-from .detection.classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
-from .detection.model_provisioning import ensure_default_coral_model, ensure_default_model
+from .detection.classes import AUDIO_KEY_LABELS, DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
+from .detection import audio_factory as audio_detection_factory
+from .detection.audio_supervisor import audio_detection_supervisor
+from .detection.model_provisioning import ensure_audio_model, ensure_default_coral_model, ensure_default_model
 from .detection.plugin_models import resolve_plugin_model
 from .detection.recognition import (
     FACE_TRIGGER_DETECTION_KEYS,
@@ -337,7 +339,7 @@ app.mount("/mcp", MCP_APP)
 
 LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
     DetectionDefinition(key=key, label=label, category="ai")
-    for key, label in {**DETECTION_KEY_LABELS, **LOITERING_KEY_LABELS}.items()
+    for key, label in {**DETECTION_KEY_LABELS, **LOITERING_KEY_LABELS, **AUDIO_KEY_LABELS}.items()
 )
 DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
@@ -345,6 +347,8 @@ DETECTION_CORAL_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default_edg
 DETECTION_CORAL_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.json"
 RECOGNITION_MODELS_DIR = Path(SETTINGS.detection_models_path)
 RECOGNITION_SNAPSHOT_DIR = Path(SETTINGS.recordings_path) / "recognition-events"
+AUDIO_MODEL_PATH = Path(SETTINGS.detection_models_path) / "audio_default.onnx"
+AUDIO_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "audio_default.json"
 
 
 def _detection_backend_factory(settings: dict[str, Any], module_key: str | None = None):
@@ -366,6 +370,14 @@ def _detection_backend_factory(settings: dict[str, Any], module_key: str | None 
         settings,
         model_path=str(DETECTION_MODEL_PATH),
         metadata_path=str(DETECTION_MODEL_METADATA_PATH),
+    )
+
+
+def _audio_detection_backend_factory(settings: dict[str, Any]):
+    return audio_detection_factory.build_backend(
+        settings,
+        model_path=str(AUDIO_MODEL_PATH),
+        metadata_path=str(AUDIO_MODEL_METADATA_PATH),
     )
 
 
@@ -415,6 +427,14 @@ async def _detection_supervisor_loop() -> None:
     )
 
 
+async def _audio_detection_supervisor_loop() -> None:
+    await audio_detection_supervisor(
+        SETTINGS.database_path,
+        on_detections=_process_detection_states,
+        backend_factory=_audio_detection_backend_factory,
+    )
+
+
 def _start_go2rtc() -> None:
     try:
         GO2RTC_MANAGER.start()
@@ -447,6 +467,11 @@ async def _lifespan(_app: FastAPI):
     asyncio.create_task(_app_update_check_loop())
     asyncio.create_task(mqtt.run_control_listener(SETTINGS.database_path))
     asyncio.create_task(asyncio.to_thread(ensure_default_model, DETECTION_MODEL_PATH, DETECTION_MODEL_METADATA_PATH))
+    asyncio.create_task(
+        asyncio.to_thread(
+            ensure_audio_model, AUDIO_MODEL_PATH, AUDIO_MODEL_METADATA_PATH, model_url=SETTINGS.audio_model_url
+        )
+    )
     # Face/plate recognition models are opt-in and otherwise download lazily on first use
     # (see detection.recognition.get_face_recognizer/get_plate_recognizer) - if a previous
     # session already enabled a feature, pre-warm it here so the first real detection after
@@ -470,6 +495,7 @@ async def _lifespan(_app: FastAPI):
             )
         )
     asyncio.create_task(_detection_supervisor_loop())
+    asyncio.create_task(_audio_detection_supervisor_loop())
     if database.get_live_wall_settings(SETTINGS.database_path).get("webrtc_enabled"):
         asyncio.create_task(asyncio.to_thread(_start_go2rtc))
 
@@ -787,10 +813,12 @@ def _process_detection_states(camera_id: int, detections: list[dict[str, Any]], 
     if camera is None:
         return
     asyncio.create_task(asyncio.to_thread(mqtt.publish_detection_states, SETTINGS.database_path, camera, detections))
-    # Local AI detections are TBC's own inference over the raw stream, not a vendor
-    # capability - recording for them uses plain ffmpeg against camera["stream_uri"]
-    # and works regardless of what the assigned camera module declares.
-    is_local_ai_source = any(detection.get("source") == "local_ai" for detection in detections)
+    # Local AI detections (video or audio) are TBC's own inference over the raw stream,
+    # not a vendor capability - recording for them uses plain ffmpeg against
+    # camera["stream_uri"] and works regardless of what the assigned camera module declares.
+    is_local_ai_source = any(
+        detection.get("source") in {"local_ai", "local_ai_audio"} for detection in detections
+    )
     camera_module = camera_module or get_camera_module(camera.get("module_key"))
     if is_local_ai_source or camera_module.supports(CameraCapability.RECORDING):
         RECORDING_MANAGER.maybe_start_event_recordings(camera, detections)

@@ -641,6 +641,31 @@
     </div>
   </form>
 
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/audio-detection">
+    <div class="section-title">
+      <h2 data-i18n="camera.local_audio_short">Local audio detection</h2>
+      {% if audio_detection_settings and audio_detection_settings.enabled %}
+      <span class="status-pill status-active" data-i18n="camera.active">active</span>
+      {% else %}
+      <span class="status-pill status-idle" data-i18n="camera.off">off</span>
+      {% endif %}
+    </div>
+    <p class="hint-text" data-i18n="camera.local_audio_description">Detects barking, breaking glass, and smoke/fire alarm sounds directly from the camera's audio stream, independently of the events reported by the camera. Requires a configured local audio model - see the deployment documentation.</p>
+    <label class="check-row">
+      <input name="audio_detection_enabled" type="checkbox" {% if audio_detection_settings and audio_detection_settings.enabled %}checked{% endif %}>
+      <span data-i18n="camera.enable_local_audio">Enable local audio detection for this camera</span>
+    </label>
+    <div class="form-grid">
+      <label>
+        <span data-i18n="camera.min_confidence">Minimum confidence</span>
+        <input name="audio_detection_confidence_threshold" type="number" min="0.05" max="1" step="0.05" value="{{ audio_detection_settings.confidence_threshold if audio_detection_settings else detection_default_confidence_threshold }}" required>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+    </div>
+  </form>
+
   <div class="zone-editor" data-zone-editor data-camera-id="{{ camera.id }}">
     <div class="section-title">
       <h2 data-i18n="camera.zones_masks">Zones &amp; masks</h2>

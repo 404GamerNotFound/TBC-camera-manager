@@ -28,6 +28,8 @@ services:
       TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS: ${TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS:-600}
       TBC_DETECTION_SAMPLE_FPS: ${TBC_DETECTION_SAMPLE_FPS:-2.0}
       TBC_DETECTION_CONFIDENCE_THRESHOLD: ${TBC_DETECTION_CONFIDENCE_THRESHOLD:-0.5}
+      TBC_AUDIO_MODEL_URL: ${TBC_AUDIO_MODEL_URL:-}
+      TBC_AUDIO_CONFIDENCE_THRESHOLD: ${TBC_AUDIO_CONFIDENCE_THRESHOLD:-0.5}
 
       # --- Storage paths - matched to the volumes below. Change one only
       # together with its volume/bind mount, otherwise the app just looks in

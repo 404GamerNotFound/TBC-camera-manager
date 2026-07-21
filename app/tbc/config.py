@@ -31,6 +31,11 @@ class Settings:
     detection_models_path: str = "/data/detection-models"
     detection_default_sample_fps: float = 2.0
     detection_default_confidence_threshold: float = 0.5
+    # No verified stable default exists for a raw-waveform AudioSet-style ONNX model -
+    # see detection/model_provisioning.py:ensure_audio_model. Unset by default; local
+    # audio detection stays off until an admin configures one.
+    audio_model_url: str = ""
+    audio_default_confidence_threshold: float = 0.5
 
 
 def load_settings() -> Settings:
@@ -60,5 +65,9 @@ def load_settings() -> Settings:
         detection_default_sample_fps=max(0.1, float(os.getenv("TBC_DETECTION_SAMPLE_FPS", "2.0"))),
         detection_default_confidence_threshold=min(
             1.0, max(0.05, float(os.getenv("TBC_DETECTION_CONFIDENCE_THRESHOLD", "0.5")))
+        ),
+        audio_model_url=os.getenv("TBC_AUDIO_MODEL_URL", ""),
+        audio_default_confidence_threshold=min(
+            1.0, max(0.05, float(os.getenv("TBC_AUDIO_CONFIDENCE_THRESHOLD", "0.5")))
         ),
     )

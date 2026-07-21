@@ -211,6 +211,15 @@ CREATE TABLE IF NOT EXISTS camera_detection_settings (
     FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS camera_audio_detection_settings (
+    camera_id INTEGER PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    confidence_threshold REAL NOT NULL DEFAULT 0.5,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS camera_detection_zones (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     camera_id INTEGER NOT NULL,
@@ -1780,6 +1789,56 @@ def update_camera_detection_settings(
             """,
             (camera_id, 1 if enabled else 0, backend, confidence_threshold, sample_fps),
         )
+
+
+def get_camera_audio_detection_settings(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM camera_audio_detection_settings WHERE camera_id = ?",
+            (camera_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    settings = dict(row)
+    settings["enabled"] = bool(settings["enabled"])
+    return settings
+
+
+def update_camera_audio_detection_settings(
+    database_path: str,
+    camera_id: int,
+    *,
+    enabled: bool,
+    confidence_threshold: float,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO camera_audio_detection_settings (camera_id, enabled, confidence_threshold, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(camera_id) DO UPDATE SET
+                enabled = excluded.enabled,
+                confidence_threshold = excluded.confidence_threshold,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (camera_id, 1 if enabled else 0, confidence_threshold),
+        )
+
+
+def list_enabled_camera_audio_detection_settings(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT c.id AS camera_id,
+                   c.name AS camera_name,
+                   s.confidence_threshold
+              FROM camera_audio_detection_settings s
+              JOIN cameras c ON c.id = s.camera_id
+             WHERE s.enabled = 1
+             ORDER BY c.name COLLATE NOCASE
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def list_enabled_camera_detection_settings(database_path: str) -> list[dict[str, Any]]:

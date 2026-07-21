@@ -71,6 +71,8 @@ stored credentials.
 | `TBC_DASHBOARD_SNAPSHOT_INTERVAL_SECONDS` | `600` | Preview refresh interval, minimum 60 seconds |
 | `TBC_DETECTION_SAMPLE_FPS` | `2.0` | Default local-AI sample rate |
 | `TBC_DETECTION_CONFIDENCE_THRESHOLD` | `0.5` | Default local-AI confidence threshold |
+| `TBC_AUDIO_MODEL_URL` | empty | Download URL for a local-audio-AI ONNX model (bark/glass-break/smoke-alarm detection). No default model ships - see [Local audio detection](#local-audio-detection) below |
+| `TBC_AUDIO_CONFIDENCE_THRESHOLD` | `0.5` | Default local-audio-AI confidence threshold |
 
 ### Storage paths - matched to the volume/bind mounts in `docker-compose.yml`
 
@@ -107,6 +109,37 @@ The standard image includes ONNX Runtime for CPU inference. `Dockerfile.gpu` rep
 `onnxruntime-gpu` and requires a compatible NVIDIA runtime. `Dockerfile.coral` installs the Coral
 runtime and expects a connected Edge TPU device. Hardware availability is reported on the AI
 detection page; verify optional backends on the target host before production use.
+
+## Local audio detection
+
+Local video AI ships with a bundled default model, downloaded automatically on first start. Local
+audio detection (barking, glass breaking, smoke/fire alarm sounds) does not: there is no
+raw-waveform-in, AudioSet-class-out ONNX model with a stable public URL that TBC can point to by
+default, so this feature stays off until you configure one yourself.
+
+To enable it:
+
+1. Obtain (or export) an ONNX audio classifier that takes one window of raw mono 16 kHz PCM
+   samples and returns a confidence score per class (a YAMNet-style AudioSet classifier is a good
+   fit).
+2. Place it at `<TBC_DETECTION_MODELS_PATH>/audio_default.onnx`, or set `TBC_AUDIO_MODEL_URL` to
+   have TBC download it on startup.
+3. Alongside it, place `audio_default.json` describing the model, for example:
+   ```json
+   {
+     "input_name": "waveform",
+     "output_name": "scores",
+     "sample_rate": 16000,
+     "window_samples": 15360,
+     "classes": { "0": "Speech", "1": "Dog", "2": "Glass", "3": "Smoke detector, smoke alarm" }
+   }
+   ```
+   `classes` maps each output index to its own label - the indices above are just placeholders;
+   fill in the exact index-to-label mapping your specific model uses. Only labels TBC recognizes
+   (see `AUDIOSET_LABEL_TO_DETECTION_KEY` in `app/tbc/detection/classes.py`, which also lists which
+   label spellings map to which trigger) produce a trigger - every other class in the model is
+   simply ignored.
+4. Enable **Local audio detection** on the camera's detail page, same as local video AI.
 
 ## Upgrades
 
