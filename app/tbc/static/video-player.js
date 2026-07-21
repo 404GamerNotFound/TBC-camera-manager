@@ -187,6 +187,7 @@
         muteButton.textContent = this.video.muted ? "🔇" : "🔊";
       });
       bar.appendChild(muteButton);
+      this.muteButton = muteButton;
 
       if (this.options.mode === "live") {
         const pill = document.createElement("span");
@@ -232,8 +233,33 @@
         if (request) request.call(this.shell);
       });
       bar.appendChild(fullscreenButton);
+      this.fullscreenButton = fullscreenButton;
 
       this.shell.appendChild(bar);
+
+      // t() falls back to the raw key ("player.play_pause" etc.) if this
+      // constructor runs before i18n.js's own locale fetch resolves (see
+      // the comment next to `tbc:i18n-ready` in i18n.js) - redo these
+      // aria-labels once it's ready instead of leaving raw keys on the
+      // controls permanently.
+      document.addEventListener("tbc:i18n-ready", () => this._retranslate(), { once: true });
+    }
+
+    _retranslate() {
+      this.playButton?.setAttribute("aria-label", t("player.play_pause"));
+      this.muteButton?.setAttribute("aria-label", t("player.mute"));
+      this.fullscreenButton?.setAttribute("aria-label", t("player.fullscreen"));
+      if (this.ptz) {
+        [
+          ["Up", "player.ptz_up"],
+          ["Left", "player.ptz_left"],
+          ["Stop", "player.ptz_stop"],
+          ["Right", "player.ptz_right"],
+          ["Down", "player.ptz_down"],
+          ["ZoomDec", "player.zoom_out"],
+          ["ZoomInc", "player.zoom_in"],
+        ].forEach(([command, key]) => this.shell.querySelector(`[data-ptz="${command}"]`)?.setAttribute("aria-label", t(key)));
+      }
     }
 
     _buildPtzOverlay(ptz) {

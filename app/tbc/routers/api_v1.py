@@ -340,7 +340,16 @@ async def api_v1_recording_media(request: Request, recording_id: int):
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     local_path = recording.get("local_path")
     if local_path and Path(local_path).exists():
-        return FileResponse(local_path, media_type="video/mp4", filename=recording.get("file_name") or "clip.mp4")
+        # inline, not attachment (the FileResponse default) - see the same
+        # note in routers/recordings.py's recording_media. Safari otherwise
+        # fetches the bytes fine (still 206 Partial Content) but refuses to
+        # play them in a <video> tag.
+        return FileResponse(
+            local_path,
+            media_type="video/mp4",
+            filename=recording.get("file_name") or "clip.mp4",
+            content_disposition_type="inline",
+        )
     url = presigned_url(recording)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)

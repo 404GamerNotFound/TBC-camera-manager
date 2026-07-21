@@ -356,7 +356,18 @@ async def recording_media(request: Request, recording_id: int):
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     local_path = recording.get("local_path")
     if local_path and Path(local_path).exists():
-        return FileResponse(local_path, media_type="video/mp4", filename=recording.get("file_name") or "clip.mp4")
+        # content_disposition_type="inline" is required here, not just cosmetic:
+        # FileResponse's default ("attachment") makes Safari in particular
+        # refuse to play the file in a <video> tag at all - it fetches the
+        # bytes (still 206 Partial Content) but never hands them to the
+        # decoder, since the header says "save this", not "render this".
+        # /download below is the one that should keep the attachment default.
+        return FileResponse(
+            local_path,
+            media_type="video/mp4",
+            filename=recording.get("file_name") or "clip.mp4",
+            content_disposition_type="inline",
+        )
     url = presigned_url(recording)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
