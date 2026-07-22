@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1 - "Live through Ingress"
+
+- Fixed the Home Assistant Ingress live wall. Status polling, automatic stream retries,
+  start/stop controls, and layout updates now use the ingress-aware URL helper.
+- Direct access through a self-built or prebuilt Docker container is unchanged.
+
 ## 0.9.0 - "Discover, secure & automate"
 
 - Added fully translated Afrikaans, Bulgarian, Dutch, and Polish interface languages.
@@ -12,26 +18,6 @@
 - Added test buttons for notification channels and MQTT. Failed deliveries now return the actual
   error instead of failing silently.
 - Added the "Auto (system)" design option. It follows `prefers-color-scheme` through CSS, without
-  requiring JavaScript.
-- Added RFC 6238-compatible TOTP two-factor authentication with QR setup, eight recovery codes,
-  and administrator emergency deactivation.
-- Added per-camera recording quotas for maximum retention age and storage size, integrated with
-  the existing cleanup logic.
-- Added ONVIF PullPoint event handling for the standard ONVIF plugin, providing real-time events
-  and live status instead of polling-only capability flags.
-
-## 0.9.0 - "Discover, secure & automate"
-
-- Added fully translated Afrikaans, Bulgarian, Dutch, and Polish interface languages.
-- Added an onboarding assistant for first-time administrators without cameras. It guides password,
-  camera, and trigger setup, can be skipped, and disappears automatically once complete.
-- Added WS-Discovery camera autodiscovery using standard-library UDP multicast. Discovered cameras
-  can be applied directly to the camera form; an empty scan now returns a clear message.
-- Added PWA support with ingress-aware manifest, generated application icons, maskable icon, and
-  Apple touch icon.
-- Added test buttons for notification channels and MQTT. Failed deliveries now return the actual
-  error instead of failing silently.
-- Added the **Auto (system)** design option. It follows `prefers-color-scheme` through CSS, without
   requiring JavaScript.
 - Added RFC 6238-compatible TOTP two-factor authentication with QR setup, eight recovery codes,
   and administrator emergency deactivation.
