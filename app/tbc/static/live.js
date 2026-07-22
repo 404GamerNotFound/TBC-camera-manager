@@ -238,8 +238,15 @@
     setSummary(items);
   };
 
+  // The Home Assistant Supervisor strips the ingress prefix before forwarding
+  // requests to TBC, but browser-side requests still need that prefix. Keep
+  // every live-wall API call behind this helper so the same code works through
+  // Home Assistant Ingress and at a direct Docker URL.
+  const withIngressPrefix = (path) =>
+    typeof window.tbcUrl === "function" ? window.tbcUrl(path) : path;
+
   const fetchJson = async (url, options = {}) => {
-    const response = await fetch(url, {
+    const response = await fetch(withIngressPrefix(url), {
       credentials: "same-origin",
       headers: {"Accept": "application/json"},
       ...options,

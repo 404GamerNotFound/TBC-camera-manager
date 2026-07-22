@@ -1025,6 +1025,18 @@ class HomeAssistantIngressTests(unittest.TestCase):
             self.assertTrue(item["playlist_url"].startswith(self.INGRESS_PATH + "/"))
             self.assertTrue(item["webrtc_offer_url"].startswith(self.INGRESS_PATH + "/"))
 
+    def test_live_wall_api_requests_use_the_ingress_aware_url_helper(self):
+        source = (Path(__file__).resolve().parents[1] / "app" / "tbc" / "static" / "live.js").read_text(
+            encoding="utf-8"
+        )
+
+        # The live page is rendered successfully through Ingress, then polls
+        # /api/live/status from the browser. A root-relative fetch reaches Home
+        # Assistant's API instead of TBC's unless it goes through tbcUrl().
+        self.assertIn('const withIngressPrefix = (path) =>', source)
+        self.assertIn('typeof window.tbcUrl === "function" ? window.tbcUrl(path) : path', source)
+        self.assertIn('fetch(withIngressPrefix(url), {', source)
+
 
 class AutoThemeTests(unittest.TestCase):
     def setUp(self):
