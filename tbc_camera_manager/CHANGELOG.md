@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.6 - "Camera diagnostics"
+
+- Expanded camera-detail diagnostics with additional connection, stream, and status information for faster troubleshooting.
+
 ## 0.9.5 - "Personalized & multilingual"
 
 - Added persistent display preferences for the whole installation: date format, 12/24-hour clock, optional seconds, timezone, compact layout, and configurable dashboard refresh interval.
