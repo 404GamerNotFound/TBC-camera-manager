@@ -56,7 +56,7 @@
     <div class="section-title"><h2 data-i18n="recognition.known_faces">Known faces</h2><span>{{ known_faces | length }}</span></div>
     {% for face in known_faces %}
     <article class="storage-item">
-      <div class="card-header"><strong>{{ face.name }}</strong><span>{{ face.created_at }}</span></div>
+      <div class="card-header"><strong>{{ face.name }}</strong><span>{{ face.created_at | format_timestamp(ui_preferences) }}</span></div>
       <form method="post" action="{{ ingress_prefix }}/recognition/faces/{{ face.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
     </article>
     {% else %}
@@ -112,7 +112,7 @@
       <tbody>
         {% for event in recent_events %}
         <tr>
-          <td>{{ event.created_at }}</td>
+          <td>{{ event.created_at | format_timestamp(ui_preferences) }}</td>
           <td>{{ event.camera_name }}</td>
           <td data-i18n="{{ 'recognition.face' if event.kind == 'face' else 'recognition.plate' }}">{{ 'Face' if event.kind == 'face' else 'Plate' }}</td>
           <td>{{ event.label }}</td>

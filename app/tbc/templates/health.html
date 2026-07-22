@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-heading">
+<section class="page-heading" data-time-format="{{ ui_preferences.time_format }}" data-date-format="{{ ui_preferences.date_format }}" data-timezone="{{ ui_preferences.timezone }}" data-show-seconds="{{ 'true' if ui_preferences.show_seconds else 'false' }}">
   <div>
     <p class="eyebrow" data-i18n="health.monitoring">Monitoring</p>
     <h1 data-i18n="base.performance">Performance</h1>
@@ -58,7 +58,7 @@
           <td>{{ item.component_id }}</td>
           <td><span class="status-pill status-{{ item.status }}" data-i18n="status.{{ item.status }}">{{ item.status }}</span></td>
           <td>{{ item.message }}</td>
-          <td>{{ item.checked_at }}</td>
+          <td>{{ item.checked_at | format_timestamp(ui_preferences) }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -85,7 +85,7 @@
       <tbody data-health-events-body>
         {% for event in events %}
         <tr>
-          <td>{{ event.created_at }}</td>
+          <td>{{ event.created_at | format_timestamp(ui_preferences) }}</td>
           <td>{{ event.component_type }} {{ event.component_id }}</td>
           <td>{{ event.previous_status or '-' }}</td>
           <td><span class="status-pill status-{{ event.status }}" data-i18n="status.{{ event.status }}">{{ event.status }}</span></td>

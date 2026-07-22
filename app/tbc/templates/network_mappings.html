@@ -57,7 +57,7 @@
                   <li>
                     <span class="status-pill {{ 'status-active' if event.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if event.online else 'network_account.offline' }}">{{ 'online' if event.online else 'offline' }}</span>
                     <span>{{ event.uplink_name or '–' }}</span>
-                    <span>{{ event.created_at }}</span>
+                    <span>{{ event.created_at | format_timestamp(ui_preferences) }}</span>
                   </li>
                   {% endfor %}
                 </ul>
@@ -111,7 +111,7 @@
           </td>
           <td>{{ entry.state.uplink_name or '–' }}</td>
           <td>{% if entry.state.signal_dbm is not none %}{{ entry.state.signal_dbm }} dBm{% else %}–{% endif %}</td>
-          <td>{% if entry.state.last_seen %}{{ entry.state.last_seen }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
+          <td>{% if entry.state.last_seen %}{{ entry.state.last_seen | format_timestamp(ui_preferences) }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
           {% else %}
           <td colspan="3" data-i18n="camera.device_status_being_retrieved_background">The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.</td>
           <td>–</td>

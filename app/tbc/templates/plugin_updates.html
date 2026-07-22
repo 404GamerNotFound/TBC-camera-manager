@@ -55,7 +55,7 @@
     <dl class="metric-row">
       <div><dt data-i18n="plugin_updates.installed">Installed</dt><dd>{{ source.installed_ref_sha[:7] if source.installed_ref_sha else 'unknown' }}</dd></div>
       <div><dt data-i18n="plugin_updates.available">Available</dt><dd>{{ source.latest_ref_sha[:7] if source.latest_ref_sha else 'unknown' }}</dd></div>
-      <div><dt data-i18n="plugin_updates.last_checked">Last checked</dt><dd>{{ source.last_checked_at or 'not checked yet' }}</dd></div>
+      <div><dt data-i18n="plugin_updates.last_checked">Last checked</dt><dd>{% if source.last_checked_at %}{{ source.last_checked_at | format_timestamp(ui_preferences) }}{% else %}<span data-i18n="plugin_updates.not_checked_yet">not checked yet</span>{% endif %}</dd></div>
     </dl>
     <div class="form-actions">
       <form method="post" action="{{ ingress_prefix }}/plugin-sources/{{ source.id }}/sync">

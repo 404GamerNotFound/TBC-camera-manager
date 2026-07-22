@@ -29,7 +29,7 @@
     <script src="{{ ingress_prefix }}/static/i18n.js?v={{ asset_version }}"></script>
   </head>
   {% set path = request.url.path %}
-  <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else 'compact-app' }}"{% endif %}>
+  <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else ('compact-app' if ui_preferences.compact_mode else '') }}"{% endif %}>
     <header class="topbar navbar navbar-expand-xl">
       <div class="container-fluid app-nav-container">
         <a class="brand navbar-brand" href="{{ ingress_prefix }}/cameras" aria-label="TBC Dashboard" data-i18n-aria-label="nav.dashboard_title">
@@ -237,14 +237,34 @@
               </button>
               <ul class="dropdown-menu dropdown-menu-end" data-menu-panel>
                 <li><button class="dropdown-item" type="button" data-language="af" lang="af" data-i18n="nav.language_af">Afrikaans</button></li>
+                <li><button class="dropdown-item" type="button" data-language="ar" lang="ar" dir="rtl" data-i18n="nav.language_ar">Arabic</button></li>
                 <li><button class="dropdown-item" type="button" data-language="bg" lang="bg" data-i18n="nav.language_bg">Български</button></li>
+                <li><button class="dropdown-item" type="button" data-language="bn" lang="bn" data-i18n="nav.language_bn">Bengali</button></li>
                 <li><button class="dropdown-item" type="button" data-language="de" lang="de" data-i18n="nav.language_de">Deutsch</button></li>
                 <li><button class="dropdown-item" type="button" data-language="en" lang="en" data-i18n="nav.language_en">English</button></li>
                 <li><button class="dropdown-item" type="button" data-language="es" lang="es" data-i18n="nav.language_es">Español</button></li>
+                <li><button class="dropdown-item" type="button" data-language="fa" lang="fa" dir="rtl" data-i18n="nav.language_fa">Persian</button></li>
                 <li><button class="dropdown-item" type="button" data-language="fr" lang="fr" data-i18n="nav.language_fr">Français</button></li>
+                <li><button class="dropdown-item" type="button" data-language="hi" lang="hi" data-i18n="nav.language_hi">Hindi</button></li>
+                <li><button class="dropdown-item" type="button" data-language="id" lang="id" data-i18n="nav.language_id">Indonesian</button></li>
+                <li><button class="dropdown-item" type="button" data-language="it" lang="it" data-i18n="nav.language_it">Italian</button></li>
+                <li><button class="dropdown-item" type="button" data-language="ja" lang="ja" data-i18n="nav.language_ja">Japanese</button></li>
+                <li><button class="dropdown-item" type="button" data-language="ko" lang="ko" data-i18n="nav.language_ko">Korean</button></li>
+                <li><button class="dropdown-item" type="button" data-language="mr" lang="mr" data-i18n="nav.language_mr">Marathi</button></li>
                 <li><button class="dropdown-item" type="button" data-language="nl" lang="nl" data-i18n="nav.language_nl">Nederlands</button></li>
+                <li><button class="dropdown-item" type="button" data-language="pa" lang="pa" data-i18n="nav.language_pa">Punjabi</button></li>
                 <li><button class="dropdown-item" type="button" data-language="pl" lang="pl" data-i18n="nav.language_pl">Polski</button></li>
                 <li><button class="dropdown-item" type="button" data-language="pt" lang="pt" data-i18n="nav.language_pt">Português</button></li>
+                <li><button class="dropdown-item" type="button" data-language="ru" lang="ru" data-i18n="nav.language_ru">Russian</button></li>
+                <li><button class="dropdown-item" type="button" data-language="ta" lang="ta" data-i18n="nav.language_ta">Tamil</button></li>
+                <li><button class="dropdown-item" type="button" data-language="te" lang="te" data-i18n="nav.language_te">Telugu</button></li>
+                <li><button class="dropdown-item" type="button" data-language="th" lang="th" data-i18n="nav.language_th">Thai</button></li>
+                <li><button class="dropdown-item" type="button" data-language="tl" lang="tl" data-i18n="nav.language_tl">Tagalog</button></li>
+                <li><button class="dropdown-item" type="button" data-language="tr" lang="tr" data-i18n="nav.language_tr">Turkish</button></li>
+                <li><button class="dropdown-item" type="button" data-language="ur" lang="ur" dir="rtl" data-i18n="nav.language_ur">Urdu</button></li>
+                <li><button class="dropdown-item" type="button" data-language="vi" lang="vi" data-i18n="nav.language_vi">Vietnamese</button></li>
+                <li><button class="dropdown-item" type="button" data-language="zh" lang="zh-CN" data-i18n="nav.language_zh">Chinese</button></li>
+                <li><button class="dropdown-item" type="button" data-language="zh-Hant" lang="zh-Hant" data-i18n="nav.language_zh_hant">Chinese (Traditional)</button></li>
               </ul>
             </li>
             <li class="nav-item">

@@ -45,7 +45,7 @@
       <tbody>
         {% for event in events %}
         <tr>
-          <td>{{ event.created_at }}</td>
+          <td>{{ event.created_at | format_timestamp(ui_preferences) }}</td>
           <td>{{ event.username or '-' }}</td>
           <td><code>{{ event.action }}</code></td>
           <td>{% if event.target_type %}{{ event.target_type }}#{{ event.target_id }}{% else %}-{% endif %}</td>

@@ -44,6 +44,7 @@ async def settings_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "debug_count": len(list_debug_log_entries(limit=600)),
+            "ui_preferences": database.get_ui_preferences(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
     )
@@ -233,4 +234,41 @@ async def clear_debug_log(request: Request):
         return guard
     clear_debug_log_entries()
     _set_flash(request, "debug.cleared")
+    return _redirect("/settings")
+
+
+@router.post("/settings/interface")
+async def update_interface_settings(
+    request: Request,
+    date_format: str = Form("de"),
+    time_format: str = Form("24h"),
+    timezone: str = Form("Europe/Berlin"),
+    show_seconds: str | None = Form(None),
+    compact_mode: str | None = Form(None),
+    dashboard_refresh_seconds: int = Form(0),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.update_ui_preferences(
+        SETTINGS.database_path,
+        date_format=date_format,
+        time_format=time_format,
+        timezone=timezone,
+        show_seconds=show_seconds == "on",
+        compact_mode=compact_mode == "on",
+        dashboard_refresh_seconds=dashboard_refresh_seconds,
+    )
+    audit.log_event(
+        request,
+        SETTINGS.database_path,
+        "settings.interface_updated",
+        detail={
+            "date_format": date_format,
+            "time_format": time_format,
+            "timezone": timezone,
+            "dashboard_refresh_seconds": dashboard_refresh_seconds,
+        },
+    )
+    _set_flash(request, "settings.interface_saved")
     return _redirect("/settings")

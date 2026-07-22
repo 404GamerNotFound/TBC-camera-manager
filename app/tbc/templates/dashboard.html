@@ -98,4 +98,7 @@
   {% endif %}
 </section>
 {% endif %}
+{% if ui_preferences.dashboard_refresh_seconds %}
+<script src="{{ ingress_prefix }}/static/dashboard-refresh.js?v={{ asset_version }}" defer data-dashboard-refresh-seconds="{{ ui_preferences.dashboard_refresh_seconds }}"></script>
+{% endif %}
 {% endblock %}

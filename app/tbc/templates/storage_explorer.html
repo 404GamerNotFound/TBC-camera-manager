@@ -73,7 +73,7 @@
       <thead><tr><th data-i18n="camera_new_choice.camera">Camera</th><th data-i18n="recordings.event">Event</th><th data-i18n="storage.date">Date</th><th data-i18n="storage.reason">Reason</th><th data-i18n="sd_card.size">Size</th></tr></thead>
       <tbody>
         {% for item in cleanup_items %}
-        <tr><td>{{ item.camera_name }}</td><td>{{ item.detection_key }}</td><td>{{ item.started_at }}</td><td>{{ item.cleanup_reason }}</td><td>{{ (item.size_bytes or 0) // (1024 * 1024) }} MB</td></tr>
+        <tr><td>{{ item.camera_name }}</td><td>{{ item.detection_key }}</td><td>{{ item.started_at | format_timestamp(ui_preferences) }}</td><td>{{ item.cleanup_reason }}</td><td>{{ (item.size_bytes or 0) // (1024 * 1024) }} MB</td></tr>
         {% endfor %}
       </tbody>
     </table>

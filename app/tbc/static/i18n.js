@@ -49,17 +49,40 @@ window.tbcCsrfToken = () => {
   };
 
   const STORAGE_KEY = "tbc-language";
-  const SUPPORTED_LANGUAGES = ["af", "bg", "de", "en", "es", "fr", "nl", "pl", "pt"];
+  const SUPPORTED_LANGUAGES = [
+    "af", "ar", "bg", "bn", "de", "en", "es", "fa", "fr", "hi", "id", "it", "ja", "ko",
+    "mr", "nl", "pa", "pl", "pt", "ru", "ta", "te", "th", "tl", "tr", "ur", "vi", "zh", "zh-Hant",
+  ];
   const LANGUAGE_NAMES = {
     af: "Afrikaans",
+    ar: "العربية",
     bg: "Български",
+    bn: "বাংলা",
     de: "Deutsch",
     en: "English",
     es: "Español",
+    fa: "فارسی",
     fr: "Français",
+    hi: "हिन्दी",
+    id: "Bahasa Indonesia",
+    it: "Italiano",
+    ja: "日本語",
+    ko: "한국어",
+    mr: "मराठी",
     nl: "Nederlands",
+    pa: "ਪੰਜਾਬੀ",
     pl: "Polski",
     pt: "Português",
+    ru: "Русский",
+    ta: "தமிழ்",
+    te: "తెలుగు",
+    th: "ไทย",
+    tl: "Tagalog",
+    tr: "Türkçe",
+    ur: "اردو",
+    vi: "Tiếng Việt",
+    zh: "简体中文",
+    "zh-Hant": "繁體中文",
   };
 
   const selectedLanguage = () => {
@@ -156,6 +179,9 @@ window.tbcCsrfToken = () => {
     document.querySelectorAll("[data-current-language]").forEach((label) => {
       label.textContent = LANGUAGE_NAMES[language];
     });
+    document.querySelectorAll("[data-language-select]").forEach((select) => {
+      select.value = language;
+    });
   };
 
   const setLanguage = (nextLanguage) => {
@@ -177,6 +203,10 @@ window.tbcCsrfToken = () => {
     document.addEventListener("click", (event) => {
       const control = event.target.closest("[data-language]");
       if (control) setLanguage(control.dataset.language);
+    });
+    document.addEventListener("change", (event) => {
+      const select = event.target.closest("[data-language-select]");
+      if (select) setLanguage(select.value);
     });
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {

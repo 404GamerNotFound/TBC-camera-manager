@@ -84,7 +84,7 @@
   </div>
   <div class="overview-metric">
     <span data-i18n="camera.last_check">Last check</span>
-    {% if camera.last_probe_at %}<strong class="overview-metric-time">{{ camera.last_probe_at }}</strong>{% else %}<strong class="overview-metric-time" data-i18n="camera.not_checked_yet">Not checked yet</strong>{% endif %}
+    {% if camera.last_probe_at %}<strong class="overview-metric-time">{{ camera.last_probe_at | format_timestamp(ui_preferences) }}</strong>{% else %}<strong class="overview-metric-time" data-i18n="camera.not_checked_yet">Not checked yet</strong>{% endif %}
     <small>{{ channels | length }} <span data-i18n="camera.channels">channels</span> · {{ detections | selectattr('supported') | list | length }} <span data-i18n="camera.detections_lower">detections</span></small>
   </div>
 </section>
@@ -173,7 +173,7 @@
         <div class="card-header">
           <div>
             <h2{% if clip.detection_key == 'continuous' %} data-i18n="timeline.continuous"{% endif %}>{{ 'Continuous' if clip.detection_key == 'continuous' else clip.event_label }}</h2>
-            <p>{{ clip.started_at }}</p>
+            <p>{{ clip.started_at | format_timestamp(ui_preferences) }}</p>
           </div>
           <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
         </div>
@@ -297,7 +297,7 @@
       </div>
       <div>
         <dt data-i18n="camera.last_seen">Last seen</dt>
-        <dd>{% if network_state.last_seen %}{{ network_state.last_seen }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</dd>
+        <dd>{% if network_state.last_seen %}{{ network_state.last_seen | format_timestamp(ui_preferences) }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</dd>
       </div>
     </dl>
     {% endif %}
@@ -604,7 +604,7 @@
           <span class="event-trigger">{{ trigger_labels.get(event_key, event_key | replace('_', ' ') | title) }}</span>
           {% endif %}
         </div>
-        <span>{{ event.created_at }}</span>
+        <span>{{ event.created_at | format_timestamp(ui_preferences) }}</span>
         {% if event.payload %}
         <p>{{ event.payload }}</p>
         {% endif %}
@@ -999,7 +999,7 @@
             <span class="status-pill status-idle" data-i18n="camera.inactive">inactive</span>
             {% endif %}
           </td>
-          <td>{% if detection.last_seen %}{{ detection.last_seen }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
+          <td>{% if detection.last_seen %}{{ detection.last_seen | format_timestamp(ui_preferences) }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

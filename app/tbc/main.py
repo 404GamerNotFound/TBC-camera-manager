@@ -106,7 +106,7 @@ from .notifications import notify_event
 from .recording import ContinuousRecordingManager, RecordingManager
 from .security import generate_csrf_token
 from .snapshots import DashboardSnapshotManager
-from .template_filters import tojson_html_safe
+from .template_filters import format_timestamp, tojson_html_safe
 from .themes import UnknownThemeError, get_theme_registration, reload_themes
 from .themes.packages import (
     install_theme_archive,
@@ -280,6 +280,10 @@ def _csrf_context(request: Request) -> dict[str, Any]:
     return {"csrf_token": _ensure_csrf_token(request)}
 
 
+def _ui_preferences_context(request: Request) -> dict[str, Any]:
+    return {"ui_preferences": database.get_ui_preferences(SETTINGS.database_path)}
+
+
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates",
     context_processors=[
@@ -288,10 +292,12 @@ templates = Jinja2Templates(
         _app_update_context,
         _ingress_context,
         _csrf_context,
+        _ui_preferences_context,
     ],
 )
 templates.env.filters["redact_rtsp_credentials"] = redact_rtsp_credentials
 templates.env.filters["tojson"] = tojson_html_safe
+templates.env.filters["format_timestamp"] = format_timestamp
 templates.env.globals["asset_version"] = ASSET_VERSION
 RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 CONTINUOUS_RECORDING_MANAGER = ContinuousRecordingManager(SETTINGS.database_path)
@@ -2293,4 +2299,3 @@ app.include_router(retention.router)
 app.include_router(settings.router)
 app.include_router(storage.router)
 app.include_router(users.router)
-

@@ -32,9 +32,15 @@ DATA_I18N_JINJA_TERNARY = re.compile(r"data-i18n=\"\{\{ '([\w.]+)' if .*? else '
 
 def _locales() -> dict[str, dict[str, str]]:
     return {
-        lang: json.loads((LOCALE_ROOT / f"{lang}.json").read_text(encoding="utf-8"))
-        for lang in ("af", "bg", "de", "en", "es", "fr", "nl", "pl", "pt")
+        path.stem: json.loads(path.read_text(encoding="utf-8"))
+        for path in sorted(LOCALE_ROOT.glob("*.json"))
     }
+
+
+EXPECTED_NEW_LOCALES = {
+    "ar", "bn", "fa", "hi", "id", "it", "ja", "ko", "mr", "pa",
+    "ru", "ta", "te", "th", "tl", "tr", "ur", "vi", "zh", "zh-Hant",
+}
 
 
 def _ui_sources() -> list[Path]:
@@ -186,6 +192,10 @@ def test_locale_json_key_parity() -> None:
         extra = keys - reference
         assert not missing, f"{lang}.json is missing keys present in en.json: {sorted(missing)[:10]}"
         assert not extra, f"{lang}.json has keys not present in en.json: {sorted(extra)[:10]}"
+
+
+def test_twenty_new_high_speaker_locale_files_are_present() -> None:
+    assert EXPECTED_NEW_LOCALES <= set(_locales())
 
 
 def test_all_data_i18n_keys_exist() -> None:

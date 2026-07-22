@@ -97,8 +97,8 @@
               <span data-i18n="api.token_scope_read">Read-only</span>
               {% endif %}
             </td>
-            <td>{{ token.created_at }}</td>
-            <td>{{ token.last_used_at or '-' }}</td>
+            <td>{{ token.created_at | format_timestamp(ui_preferences) }}</td>
+            <td>{% if token.last_used_at %}{{ token.last_used_at | format_timestamp(ui_preferences) }}{% else %}-{% endif %}</td>
             <td>
               {% if token.revoked_at %}
               <span data-i18n="api.token_revoked">Revoked</span>

@@ -9,6 +9,54 @@
 </section>
 
 <section class="settings-layout">
+  <form class="event-panel" method="post" action="{{ ingress_prefix }}/settings/interface">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="section-title">
+      <h2 data-i18n="settings.display_title">Display &amp; time</h2>
+    </div>
+    <p class="hint-text" data-i18n="settings.display_hint">Set one consistent format for timestamps across the application and tailor the dashboard to your workflow.</p>
+    <div class="form-grid">
+      <label>
+        <span data-i18n="settings.date_format">Date format</span>
+        <select name="date_format">
+          <option value="de" {% if ui_preferences.date_format == 'de' %}selected{% endif %} data-i18n="settings.date_format_de">22.07.2026</option>
+          <option value="iso" {% if ui_preferences.date_format == 'iso' %}selected{% endif %} data-i18n="settings.date_format_iso">2026-07-22 (ISO)</option>
+          <option value="us" {% if ui_preferences.date_format == 'us' %}selected{% endif %} data-i18n="settings.date_format_us">07/22/2026</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="settings.time_format">Time format</span>
+        <select name="time_format">
+          <option value="24h" {% if ui_preferences.time_format == '24h' %}selected{% endif %} data-i18n="settings.time_format_24">24-hour (16:54)</option>
+          <option value="12h" {% if ui_preferences.time_format == '12h' %}selected{% endif %} data-i18n="settings.time_format_12">12-hour (4:54 PM)</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="settings.timezone">Time zone</span>
+        <select name="timezone">
+          <option value="Europe/Berlin" {% if ui_preferences.timezone == 'Europe/Berlin' %}selected{% endif %} data-i18n="settings.timezone_berlin">Europe/Berlin (CET/CEST)</option>
+          <option value="UTC" {% if ui_preferences.timezone == 'UTC' %}selected{% endif %} data-i18n="settings.timezone_utc">UTC</option>
+          <option value="Europe/London" {% if ui_preferences.timezone == 'Europe/London' %}selected{% endif %} data-i18n="settings.timezone_london">Europe/London</option>
+          <option value="America/New_York" {% if ui_preferences.timezone == 'America/New_York' %}selected{% endif %} data-i18n="settings.timezone_new_york">America/New York</option>
+          <option value="America/Los_Angeles" {% if ui_preferences.timezone == 'America/Los_Angeles' %}selected{% endif %} data-i18n="settings.timezone_los_angeles">America/Los Angeles</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="settings.dashboard_refresh">Dashboard refresh</span>
+        <select name="dashboard_refresh_seconds">
+          <option value="0" {% if ui_preferences.dashboard_refresh_seconds == 0 %}selected{% endif %} data-i18n="settings.refresh_off">Off</option>
+          <option value="15" {% if ui_preferences.dashboard_refresh_seconds == 15 %}selected{% endif %} data-i18n="settings.refresh_15">Every 15 seconds</option>
+          <option value="30" {% if ui_preferences.dashboard_refresh_seconds == 30 %}selected{% endif %} data-i18n="settings.refresh_30">Every 30 seconds</option>
+          <option value="60" {% if ui_preferences.dashboard_refresh_seconds == 60 %}selected{% endif %} data-i18n="settings.refresh_60">Every minute</option>
+          <option value="300" {% if ui_preferences.dashboard_refresh_seconds == 300 %}selected{% endif %} data-i18n="settings.refresh_300">Every 5 minutes</option>
+        </select>
+      </label>
+      <label class="check-row"><input name="show_seconds" type="checkbox" {% if ui_preferences.show_seconds %}checked{% endif %}><span data-i18n="settings.show_seconds">Show seconds in timestamps</span></label>
+      <label class="check-row"><input name="compact_mode" type="checkbox" {% if ui_preferences.compact_mode %}checked{% endif %}><span data-i18n="settings.compact_mode">Use compact layout</span></label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="settings.save_display">Save display settings</button></div>
+  </form>
+
   <section class="event-panel">
     <div class="section-title">
       <h2 data-i18n="settings.api_ai_interface">API &amp; AI interface</h2>

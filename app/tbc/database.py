@@ -397,6 +397,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE TABLE IF NOT EXISTS ui_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_theme_key TEXT NOT NULL DEFAULT 'standard',
+    date_format TEXT NOT NULL DEFAULT 'de',
+    time_format TEXT NOT NULL DEFAULT '24h',
+    timezone TEXT NOT NULL DEFAULT 'Europe/Berlin',
+    show_seconds INTEGER NOT NULL DEFAULT 0,
+    compact_mode INTEGER NOT NULL DEFAULT 1,
+    dashboard_refresh_seconds INTEGER NOT NULL DEFAULT 0,
     live_grid_columns INTEGER NOT NULL DEFAULT 3,
     live_rotation_enabled INTEGER NOT NULL DEFAULT 0,
     live_rotation_seconds INTEGER NOT NULL DEFAULT 15,
@@ -595,6 +601,12 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE users ADD COLUMN totp_secret TEXT",
     "ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE ui_settings ADD COLUMN onboarding_dismissed INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN date_format TEXT NOT NULL DEFAULT 'de'",
+    "ALTER TABLE ui_settings ADD COLUMN time_format TEXT NOT NULL DEFAULT '24h'",
+    "ALTER TABLE ui_settings ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Europe/Berlin'",
+    "ALTER TABLE ui_settings ADD COLUMN show_seconds INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN compact_mode INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE ui_settings ADD COLUMN dashboard_refresh_seconds INTEGER NOT NULL DEFAULT 0",
 )
 
 
@@ -3065,6 +3077,97 @@ def set_active_theme_key(database_path: str, theme_key: str) -> None:
                 updated_at = CURRENT_TIMESTAMP
             """,
             (theme_key,),
+        )
+
+
+UI_DATE_FORMATS = {"de", "iso", "us"}
+UI_TIME_FORMATS = {"24h", "12h"}
+UI_TIMEZONES = {
+    "Europe/Berlin",
+    "UTC",
+    "Europe/London",
+    "America/New_York",
+    "America/Los_Angeles",
+}
+UI_DASHBOARD_REFRESH_INTERVALS = {0, 15, 30, 60, 300}
+
+
+def get_ui_preferences(database_path: str) -> dict[str, Any]:
+    """Return the instance-wide display preferences with safe defaults."""
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT date_format, time_format, timezone, show_seconds,
+                   compact_mode, dashboard_refresh_seconds
+            FROM ui_settings WHERE id = 1
+            """
+        ).fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+            row = {
+                "date_format": "de", "time_format": "24h", "timezone": "Europe/Berlin",
+                "show_seconds": 0, "compact_mode": 1, "dashboard_refresh_seconds": 0,
+            }
+    preferences = dict(row)
+    date_format = str(preferences.get("date_format") or "de")
+    time_format = str(preferences.get("time_format") or "24h")
+    timezone = str(preferences.get("timezone") or "Europe/Berlin")
+    refresh_seconds = int(preferences.get("dashboard_refresh_seconds") or 0)
+    return {
+        "date_format": date_format if date_format in UI_DATE_FORMATS else "de",
+        "time_format": time_format if time_format in UI_TIME_FORMATS else "24h",
+        "timezone": timezone if timezone in UI_TIMEZONES else "Europe/Berlin",
+        "show_seconds": bool(preferences.get("show_seconds")),
+        "compact_mode": bool(preferences.get("compact_mode", 1)),
+        "dashboard_refresh_seconds": (
+            refresh_seconds if refresh_seconds in UI_DASHBOARD_REFRESH_INTERVALS else 0
+        ),
+    }
+
+
+def update_ui_preferences(
+    database_path: str,
+    *,
+    date_format: str,
+    time_format: str,
+    timezone: str,
+    show_seconds: bool,
+    compact_mode: bool,
+    dashboard_refresh_seconds: int,
+) -> None:
+    """Persist validated preferences shared by all users of this instance."""
+    if date_format not in UI_DATE_FORMATS:
+        date_format = "de"
+    if time_format not in UI_TIME_FORMATS:
+        time_format = "24h"
+    if timezone not in UI_TIMEZONES:
+        timezone = "Europe/Berlin"
+    if dashboard_refresh_seconds not in UI_DASHBOARD_REFRESH_INTERVALS:
+        dashboard_refresh_seconds = 0
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO ui_settings (
+                id, date_format, time_format, timezone, show_seconds,
+                compact_mode, dashboard_refresh_seconds
+            ) VALUES (1, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                date_format = excluded.date_format,
+                time_format = excluded.time_format,
+                timezone = excluded.timezone,
+                show_seconds = excluded.show_seconds,
+                compact_mode = excluded.compact_mode,
+                dashboard_refresh_seconds = excluded.dashboard_refresh_seconds,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (
+                date_format,
+                time_format,
+                timezone,
+                1 if show_seconds else 0,
+                1 if compact_mode else 0,
+                dashboard_refresh_seconds,
+            ),
         )
 
 

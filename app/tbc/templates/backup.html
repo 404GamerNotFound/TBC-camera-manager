@@ -41,7 +41,7 @@
           {% for item in backups %}
           <tr>
             <td><code>{{ item.filename }}</code></td>
-            <td>{{ item.created_at }}</td>
+            <td>{{ item.created_at | format_timestamp(ui_preferences) }}</td>
             <td>{{ item.size_label }}</td>
             <td class="table-action-cell"><a class="secondary-button" href="{{ ingress_prefix }}/settings/backup/download/{{ item.filename }}" data-i18n="common.download">Download</a></td>
           </tr>
