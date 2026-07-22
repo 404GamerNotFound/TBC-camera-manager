@@ -372,6 +372,7 @@
   "dashboard.recording_active": "Opname is actief",
   "dashboard.recording_inactive": "Opnemen is uitgeschakeld",
   "debug.cleared": "Foutopsporingslogboek is gewist",
+  "debug.download_full": "Volledig logboek downloaden",
   "debug.empty": "Nog geen foutopsporingsberichten",
   "debug.entry_count": "{count} vermeldingen",
   "design.activated": "Ontwerp is geactiveerd",

@@ -372,6 +372,7 @@
   "dashboard.recording_active": "Nagrywanie jest aktywne",
   "dashboard.recording_inactive": "Nagrywanie jest wyłączone",
   "debug.cleared": "Dziennik debugowania został wyczyszczony",
+  "debug.download_full": "Pobierz pełny dziennik",
   "debug.empty": "Nie ma jeszcze żadnych komunikatów debugowania",
   "debug.entry_count": "Wpisy {count}",
   "design.activated": "Projekt został aktywowany",

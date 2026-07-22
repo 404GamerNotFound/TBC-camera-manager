@@ -372,6 +372,7 @@
   "dashboard.recording_active": "Aufnahme ist aktiviert",
   "dashboard.recording_inactive": "Aufnahme ist deaktiviert",
   "debug.cleared": "Debug Log wurde geleert",
+  "debug.download_full": "Vollständiges Log herunterladen",
   "debug.empty": "Noch keine Debug-Meldungen",
   "debug.entry_count": "{count} Einträge",
   "design.activated": "Design wurde aktiviert",

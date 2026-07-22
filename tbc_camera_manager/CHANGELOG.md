@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.3 - "Debuggable"
+
+- Added an administrator-only download for the complete retained debug log.
+- The UTF-8 text export includes every current ring-buffer entry, up to 600 messages since
+  application start or the last log clear, and uses a timestamped filename.
+- The download works through Home Assistant Ingress and direct Docker deployments.
+
 ## 0.9.2 - "Reliable live wall"
 
 - Reworked Live-wall stream startup to use the same individual camera endpoint as the working

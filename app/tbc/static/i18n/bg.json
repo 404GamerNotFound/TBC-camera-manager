@@ -372,6 +372,7 @@
   "dashboard.recording_active": "Записът е активен",
   "dashboard.recording_inactive": "Записването е деактивирано",
   "debug.cleared": "Регистърът за отстраняване на грешки беше изчистен",
+  "debug.download_full": "Изтегляне на пълния дневник",
   "debug.empty": "Все още няма съобщения за отстраняване на грешки",
   "debug.entry_count": "{count} записи",
   "design.activated": "Дизайнът беше активиран",

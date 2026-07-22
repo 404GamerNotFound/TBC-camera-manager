@@ -372,6 +372,7 @@
   "dashboard.recording_active": "L'enregistrement est actif",
   "dashboard.recording_inactive": "L'enregistrement est désactivé",
   "debug.cleared": "Le journal de débogage a été effacé",
+  "debug.download_full": "Télécharger le journal complet",
   "debug.empty": "Aucun message de débogage pour l'instant",
   "debug.entry_count": "{count} entrées",
   "design.activated": "Le design a été activé",

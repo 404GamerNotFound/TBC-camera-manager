@@ -339,6 +339,7 @@
   "dashboard.recording_active": "Recording is active",
   "dashboard.recording_inactive": "Recording is disabled",
   "debug.cleared": "Debug log was cleared",
+  "debug.download_full": "Download full log",
   "debug.empty": "No debug messages yet",
   "debug.entry_count": "{count} entries",
   "design.activated": "Design was activated",

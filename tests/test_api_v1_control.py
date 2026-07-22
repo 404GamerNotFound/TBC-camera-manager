@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
 import re
 import shutil
@@ -1053,6 +1054,24 @@ class HomeAssistantIngressTests(unittest.TestCase):
         self.assertIn('fetchJson(`/api/live/${encodeURIComponent(key)}/start`, {method: "POST"})', source)
         self.assertIn('const initializeStreams = async () => {', source)
         self.assertNotIn('fetchJson("/api/live/start-all", {method: "POST"})', source)
+
+
+class DebugLogExportTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+
+    def test_admin_can_download_the_complete_retained_debug_log(self):
+        marker = "debug-export-regression-marker"
+        logging.getLogger("tbc.tests.debug_export").warning(marker)
+
+        response = CLIENT.get("/api/debug-log/export")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/plain", response.headers["content-type"])
+        self.assertIn("attachment; filename=\"TBC_debug-log_", response.headers["content-disposition"])
+        self.assertIn("TBC Camera Manager debug log", response.text)
+        self.assertIn(marker, response.text)
 
 
 class AutoThemeTests(unittest.TestCase):

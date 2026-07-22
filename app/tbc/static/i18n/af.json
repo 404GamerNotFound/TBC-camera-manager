@@ -372,6 +372,7 @@
   "dashboard.recording_active": "Opname is aktief",
   "dashboard.recording_inactive": "Opname is gedeaktiveer",
   "debug.cleared": "Ontfoutlogboek is uitgevee",
+  "debug.download_full": "Laai volledige log af",
   "debug.empty": "Nog geen ontfoutingsboodskappe nie",
   "debug.entry_count": "{count}-inskrywings",
   "design.activated": "Ontwerp is geaktiveer",

@@ -372,6 +372,7 @@
   "dashboard.recording_active": "A gravação está ativa",
   "dashboard.recording_inactive": "A gravação está desativada",
   "debug.cleared": "O registo de depuração foi limpo",
+  "debug.download_full": "Descarregar registo completo",
   "debug.empty": "Ainda não há mensagens de depuração",
   "debug.entry_count": "{count} entradas",
   "design.activated": "O design foi ativado",

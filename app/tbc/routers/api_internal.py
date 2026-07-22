@@ -12,7 +12,7 @@ from datetime import date, datetime, time
 from typing import Any
 
 from fastapi import Query, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from .. import database
 from ..camera_modules import (
@@ -213,6 +213,33 @@ async def debug_log_api(request: Request, limit: int = Query(200)):
     if guard:
         return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
     return {"entries": list_debug_log_entries(limit=max(1, min(600, int(limit))))}
+
+
+@router.get("/api/debug-log/export")
+async def export_debug_log_api(request: Request):
+    """Download every entry retained in the in-memory debug-log ring buffer."""
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+
+    entries = list_debug_log_entries(limit=600)
+    exported_at = datetime.now().astimezone()
+    lines = [
+        "TBC Camera Manager debug log",
+        f"Exported: {exported_at.isoformat(timespec='seconds')}",
+        f"Entries: {len(entries)}",
+        "",
+    ]
+    for entry in entries:
+        lines.append(f"{entry['created_at']} | {entry['level'].upper()} | {entry['logger']}")
+        lines.append(str(entry["message"]))
+        lines.append("")
+    filename = f"TBC_debug-log_{exported_at.strftime('%Y-%m-%d-%H-%M-%S')}.txt"
+    return Response(
+        "\n".join(lines),
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 @router.post("/api/health/refresh")
 async def health_refresh_api(request: Request):
