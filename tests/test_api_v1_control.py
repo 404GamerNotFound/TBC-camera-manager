@@ -46,6 +46,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.tbc import database, main  # noqa: E402
 from app.tbc.cloud_modules import CloudAccountField, CloudAccountFieldType  # noqa: E402
 from app.tbc.plugin_requirements import PluginRequirementsInstallError  # noqa: E402
+from app.tbc.routers import live as live_router  # noqa: E402
 
 TOKEN_PATTERN = re.compile(r"tbc_[A-Za-z0-9_-]{20,}")
 
@@ -1042,18 +1043,54 @@ class HomeAssistantIngressTests(unittest.TestCase):
         self.assertIn('if (response.status === 401)', source)
         self.assertIn('window.location.assign(withIngressPrefix("/login"));', source)
 
-    def test_live_wall_starts_each_stream_through_the_camera_detail_endpoint(self):
+    def test_live_wall_keeps_the_server_rendered_state_when_a_browser_poll_fails(self):
         source = (Path(__file__).resolve().parents[1] / "app" / "tbc" / "static" / "live.js").read_text(
             encoding="utf-8"
         )
 
-        # A camera's detail page already uses the per-key start route
-        # successfully through Ingress. The wall must use that same route,
-        # not a separate start-all request that can fail as one opaque action.
+        # The first wall state comes from the successful server-side page
+        # request. A later Android WebView/Ingress polling failure must not
+        # replace it with the generic Live-API error banner.
         self.assertIn('const startLiveItem = async (key) => {', source)
         self.assertIn('fetchJson(`/api/live/${encodeURIComponent(key)}/start`, {method: "POST"})', source)
-        self.assertIn('const initializeStreams = async () => {', source)
+        self.assertIn('const initialItemsElement = document.querySelector("[data-live-initial-items]");', source)
+        self.assertIn('renderItems(initialItems);', source)
+        self.assertIn('if (pollFailures < 2 || !summary || latestItems.size) return;', source)
         self.assertNotIn('fetchJson("/api/live/start-all", {method: "POST"})', source)
+
+
+class LiveWallServerStartTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = database.create_camera(
+            main.SETTINGS.database_path,
+            name="Wall camera",
+            host="203.0.113.9",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+            manual_stream_uri="rtsp://203.0.113.9:554/live",
+        )
+        database.update_camera_probe(
+            main.SETTINGS.database_path,
+            self.camera_id,
+            status="ok",
+            message="ready",
+            stream_uri="rtsp://203.0.113.9:554/live",
+        )
+
+    def test_live_wall_starts_streams_server_side_and_embeds_the_initial_state(self):
+        with patch.object(live_router, "_start_live_item") as start_item, patch.object(
+            main.LIVE_MANAGER, "wait_until_ready", return_value=(True, "ready")
+        ) as wait_until_ready:
+            response = CLIENT.get("/live")
+
+        self.assertEqual(response.status_code, 200)
+        start_item.assert_called_once()
+        wait_until_ready.assert_called_once()
+        self.assertIn('data-live-initial-items', response.text)
 
 
 class DebugLogExportTests(unittest.TestCase):

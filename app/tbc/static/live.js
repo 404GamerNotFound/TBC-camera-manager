@@ -13,6 +13,16 @@
   const soloTitle = document.querySelector("[data-live-solo-title]");
   const soloPlayerContainer = document.querySelector("[data-live-solo-player]");
   const soloCloseButton = document.querySelector("[data-live-solo-close]");
+  const initialItemsElement = document.querySelector("[data-live-initial-items]");
+
+  const initialItems = (() => {
+    try {
+      const items = JSON.parse(initialItemsElement?.textContent || "[]");
+      return Array.isArray(items) ? items : [];
+    } catch (_) {
+      return [];
+    }
+  })();
 
   if (!cards.length) {
     // t() falls back to the raw key if this runs before i18n.js's own
@@ -211,6 +221,7 @@
     if (!card) return;
     const pill = card.querySelector("[data-live-status]");
     const message = card.querySelector("[data-live-message]");
+    const errorDetails = card.querySelector("[data-live-error-details]");
     const player = card.querySelector("[data-live-player]");
     if (pill) {
       pill.className = `status-pill ${statusClass(item.status)}`;
@@ -220,7 +231,14 @@
     }
     if (message) {
       message.textContent = item.message || "";
-      message.hidden = !item.message;
+    }
+    if (errorDetails) {
+      // The API already redacts RTSP credentials before placing this message
+      // in the item payload. Only show the expandable diagnostic on an actual
+      // failed/missing stream, not while a healthy stream is starting.
+      const hasErrorDetails = Boolean(item.message) && (item.status === "failed" || item.status === "missing");
+      errorDetails.hidden = !hasErrorDetails;
+      if (!hasErrorDetails) errorDetails.open = false;
     }
     if (player) {
       if (item.status === "running") {
@@ -283,25 +301,6 @@
     return data.item;
   };
 
-  // Start the wall through the same per-camera endpoint as camera-detail.js.
-  // Apart from avoiding a separate code path, this makes a bad stream affect
-  // only its own tile instead of making the complete live wall look broken.
-  const initializeStreams = async () => {
-    if (summary) summary.textContent = t("live.starting");
-    const items = await fetchJson("/api/live/status").then((data) => data.items || []);
-    const initialized = await Promise.all(
-      items.map(async (item) => {
-        if (item.status !== "stopped" && item.status !== "failed") return item;
-        try {
-          return (await startLiveItem(item.key)) || item;
-        } catch (error) {
-          return {...item, status: "failed", message: error.message};
-        }
-      })
-    );
-    renderItems(initialized);
-  };
-
   let pollFailures = 0;
 
   const schedulePolling = () => {
@@ -317,9 +316,13 @@
           // surface the error once it persists, so the summary doesn't flicker
           // red while the streams themselves keep playing fine.
           pollFailures += 1;
-          if (pollFailures < 2 || !summary) return;
-          summary.className = "status-pill status-error";
-          summary.textContent = error.message;
+          // The initial state is rendered by the server, so a browser-side
+          // polling outage must not replace a working wall with a misleading
+          // global "Live API could not be loaded" message. Keep showing the
+          // last known stream state and retry on the next cycle.
+          if (pollFailures < 2 || !summary || latestItems.size) return;
+          summary.className = "status-pill status-warning";
+          summary.textContent = t("live.starting");
         });
     }, 3000);
   };
@@ -579,19 +582,13 @@
 
   refreshButton?.addEventListener("click", () => {
     refresh().catch((error) => {
-      if (summary) {
-        summary.className = "status-pill status-error";
-        summary.textContent = error.message;
+      if (summary && !latestItems.size) {
+        summary.className = "status-pill status-warning";
+        summary.textContent = t("live.starting");
       }
     });
   });
 
-  initializeStreams()
-    .catch((error) => {
-      if (summary) {
-        summary.className = "status-pill status-error";
-        summary.textContent = error.message;
-      }
-    })
-    .finally(schedulePolling);
+  renderItems(initialItems);
+  refresh().catch(() => {}).finally(schedulePolling);
 })();

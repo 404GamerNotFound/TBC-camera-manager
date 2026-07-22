@@ -36,6 +36,7 @@ from ..main import (
     _require_live_key_access,
     _require_login,
     _set_flash,
+    _start_live_item,
     templates,
 )
 
@@ -49,6 +50,20 @@ async def live_view(request: Request):
         return guard
     user = _current_user(request)
     live_items = _live_items_for_user(user)
+    # Starting the streams here makes the wall independent of a follow-up
+    # browser POST. That POST can be lost by an Android WebView/PWA or an
+    # Ingress token transition even though the page request itself reached
+    # TBC successfully. The old browser-side start-all endpoint had exactly
+    # that failure mode. Starting is idempotent for an already-running item.
+    for item in live_items:
+        _start_live_item(item)
+    await asyncio.gather(
+        *(
+            asyncio.to_thread(LIVE_MANAGER.wait_until_ready, str(item["key"]), 5)
+            for item in live_items
+            if item.get("stream_uri")
+        )
+    )
     return templates.TemplateResponse(
         request,
         "live.html",

@@ -464,6 +464,7 @@
   "live.api_failed": "Die regstreekse API kon nie gelaai word nie",
   "live.columns": "{count} kolomme",
   "live.drag_resize_tile": "Sleep om die grootte van die teël te verander",
+  "live.error_details": "Tegniese foutbesonderhede",
   "live.error_count": " · {count} foute",
   "live.exit_full_screen_esc": "Verlaat volskerm (Esc)",
   "live.full_screen": "Volskerm",

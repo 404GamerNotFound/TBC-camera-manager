@@ -110,7 +110,10 @@
           {% endif %}
         </div>
       </div>
-      <p class="live-card-message" data-live-message {% if not item.message %}hidden{% endif %}>{{ item.message }}</p>
+      <details class="live-card-error-details" data-live-error-details {% if item.status not in ['failed', 'missing'] or not item.message %}hidden{% endif %}>
+        <summary data-i18n="live.error_details">Technical error details</summary>
+        <pre data-live-message>{{ item.message }}</pre>
+      </details>
     </div>
     <div
       class="live-player-shell"
@@ -131,6 +134,7 @@
 </section>
 {% endif %}
 
+<script type="application/json" data-live-initial-items>{{ live_items | tojson }}</script>
 <button class="secondary-button live-kiosk-exit" type="button" data-live-kiosk-exit hidden data-i18n="live.exit_full_screen_esc">Exit full screen (Esc)</button>
 
 <div class="live-solo-overlay" data-live-solo-overlay hidden>

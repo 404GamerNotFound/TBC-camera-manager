@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.4 - "Live diagnostics"
+
+- Live-wall streams are now started server-side when the page is loaded. This avoids a dependency on a separate browser API request that can fail in Home Assistant Ingress, Android WebViews, or installed PWAs.
+- A browser polling failure no longer replaces an already rendered live wall with the generic Live API error.
+- Failed or missing streams now expose an expandable technical error-details box on their individual live tile. RTSP credentials remain redacted.
+- Direct and self-built Docker deployments remain supported unchanged.
+
 ## 0.9.3 - "Debuggable"
 
 - Added an administrator-only download for the complete retained debug log.

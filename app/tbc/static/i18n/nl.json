@@ -464,6 +464,7 @@
   "live.api_failed": "De live API kan niet worden geladen",
   "live.columns": "{count} kolommen",
   "live.drag_resize_tile": "Sleep om het formaat van de tegel te wijzigen",
+  "live.error_details": "Technische foutdetails",
   "live.error_count": " · {count}-fouten",
   "live.exit_full_screen_esc": "Volledig scherm afsluiten (Esc)",
   "live.full_screen": "Volledig scherm",

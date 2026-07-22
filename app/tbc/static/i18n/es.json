@@ -464,6 +464,7 @@
   "live.api_failed": "No se pudo cargar la API en directo",
   "live.columns": "{count} columnas",
   "live.drag_resize_tile": "Arrastrar para cambiar el tamaño",
+  "live.error_details": "Detalles técnicos del error",
   "live.error_count": " · {count} errores",
   "live.exit_full_screen_esc": "Salir de pantalla completa (Esc)",
   "live.full_screen": "Pantalla completa",

@@ -464,6 +464,7 @@
   "live.api_failed": "Nie można załadować aktywnego interfejsu API",
   "live.columns": "Kolumny {count}",
   "live.drag_resize_tile": "Przeciągnij, aby zmienić rozmiar kafelka",
+  "live.error_details": "Szczegóły techniczne błędu",
   "live.error_count": " · Błędy {count}",
   "live.exit_full_screen_esc": "Wyjdź z pełnego ekranu (Esc)",
   "live.full_screen": "Pełny ekran",

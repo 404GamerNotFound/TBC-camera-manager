@@ -464,6 +464,7 @@
   "live.api_failed": "API на живо не можа да бъде зареден",
   "live.columns": "{count} колони",
   "live.drag_resize_tile": "Плъзнете, за да преоразмерите плочката",
+  "live.error_details": "Технически подробности за грешката",
   "live.error_count": " · Грешки {count}",
   "live.exit_full_screen_esc": "Изход от цял екран (Esc)",
   "live.full_screen": "Цял екран",

@@ -412,6 +412,7 @@
   "license.view_license_text": "View license text",
   "live.api_failed": "The live API could not be loaded",
   "live.drag_resize_tile": "Drag to resize tile",
+  "live.error_details": "Technical error details",
   "live.error_count": " · {count} errors",
   "live.exit_full_screen_esc": "Exit full screen (Esc)",
   "live.full_screen": "Full screen",

@@ -464,6 +464,7 @@
   "live.api_failed": "Live-API konnte nicht geladen werden",
   "live.columns": "{count} Spalten",
   "live.drag_resize_tile": "Kachelgröße ändern, ziehen",
+  "live.error_details": "Technische Fehlerdetails",
   "live.error_count": " · {count} Fehler",
   "live.exit_full_screen_esc": "Vollbild verlassen (Esc)",
   "live.full_screen": "Vollbild",

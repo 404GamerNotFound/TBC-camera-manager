@@ -464,6 +464,7 @@
   "live.api_failed": "L'API en direct n'a pas pu être chargée",
   "live.columns": "{count} colonnes",
   "live.drag_resize_tile": "Faites glisser pour redimensionner la vignette",
+  "live.error_details": "Détails techniques de l’erreur",
   "live.error_count": " · {count} erreurs",
   "live.exit_full_screen_esc": "Quitter le plein écran (Esc)",
   "live.full_screen": "Plein écran",
