@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.2 - "Reliable live wall"
+
+- Reworked Live-wall stream startup to use the same individual camera endpoint as the working
+  camera-detail preview, replacing the separate bulk start path.
+- A failed RTSP stream now affects only its own tile instead of the complete Live wall.
+- Hardened Home Assistant Ingress and Android/PWA handling: the Ingress prefix can also be
+  recovered directly from the current browser URL.
+- Expired sessions now return to the TBC login page instead of repeatedly showing a generic
+  Live-API error.
+
 ## 0.9.1 - "Live through Ingress"
 
 - Fixed the Home Assistant Ingress live wall. Status polling, automatic stream retries,

@@ -202,7 +202,7 @@
     const now = Date.now();
     if (now - last < AUTO_RETRY_COOLDOWN_MS) return;
     lastAutoRetry.set(item.key, now);
-    fetchJson(`/api/live/${encodeURIComponent(item.key)}/start`, {method: "POST"}).catch(() => {});
+    startLiveItem(item.key).catch(() => {});
   };
 
   const renderItem = (item) => {
@@ -239,11 +239,18 @@
   };
 
   // The Home Assistant Supervisor strips the ingress prefix before forwarding
-  // requests to TBC, but browser-side requests still need that prefix. Keep
-  // every live-wall API call behind this helper so the same code works through
-  // Home Assistant Ingress and at a direct Docker URL.
-  const withIngressPrefix = (path) =>
-    typeof window.tbcUrl === "function" ? window.tbcUrl(path) : path;
+  // requests to TBC, but browser-side requests still need that prefix. The
+  // template normally supplies it via TBC_INGRESS_PREFIX. Android WebViews
+  // and installed PWAs can retain a page while the Supervisor rotates an
+  // ingress token, however, so also recover it from the current URL instead
+  // of falling back to Home Assistant's own root-level /api endpoint.
+  const ingressPrefixFromLocation = () =>
+    window.location.pathname.match(/^\/api\/hassio_ingress\/[^/]+(?=\/|$)/)?.[0] || "";
+
+  const withIngressPrefix = (path) => {
+    const prefix = window.TBC_INGRESS_PREFIX || ingressPrefixFromLocation();
+    return prefix + path;
+  };
 
   const fetchJson = async (url, options = {}) => {
     const response = await fetch(withIngressPrefix(url), {
@@ -252,6 +259,13 @@
       ...options,
     });
     const data = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      // A session can expire while the live wall remains open in a mobile
+      // WebView. Reload through the app's own login route rather than keeping
+      // a stale page alive and repeatedly showing a generic API failure.
+      window.location.assign(withIngressPrefix("/login"));
+      throw new Error("unauthorized");
+    }
     if (!response.ok) {
       throw new Error(data.error || t("live.api_failed"));
     }
@@ -261,12 +275,31 @@
   const refresh = async () => {
     const data = await fetchJson("/api/live/status");
     renderItems(data.items || []);
+    return data.items || [];
   };
 
-  const startAll = async () => {
+  const startLiveItem = async (key) => {
+    const data = await fetchJson(`/api/live/${encodeURIComponent(key)}/start`, {method: "POST"});
+    return data.item;
+  };
+
+  // Start the wall through the same per-camera endpoint as camera-detail.js.
+  // Apart from avoiding a separate code path, this makes a bad stream affect
+  // only its own tile instead of making the complete live wall look broken.
+  const initializeStreams = async () => {
     if (summary) summary.textContent = t("live.starting");
-    const data = await fetchJson("/api/live/start-all", {method: "POST"});
-    renderItems(data.items || []);
+    const items = await fetchJson("/api/live/status").then((data) => data.items || []);
+    const initialized = await Promise.all(
+      items.map(async (item) => {
+        if (item.status !== "stopped" && item.status !== "failed") return item;
+        try {
+          return (await startLiveItem(item.key)) || item;
+        } catch (error) {
+          return {...item, status: "failed", message: error.message};
+        }
+      })
+    );
+    renderItems(initialized);
   };
 
   let pollFailures = 0;
@@ -553,7 +586,7 @@
     });
   });
 
-  startAll()
+  initializeStreams()
     .catch((error) => {
       if (summary) {
         summary.className = "status-pill status-error";

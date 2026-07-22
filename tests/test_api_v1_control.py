@@ -1034,8 +1034,25 @@ class HomeAssistantIngressTests(unittest.TestCase):
         # /api/live/status from the browser. A root-relative fetch reaches Home
         # Assistant's API instead of TBC's unless it goes through tbcUrl().
         self.assertIn('const withIngressPrefix = (path) =>', source)
-        self.assertIn('typeof window.tbcUrl === "function" ? window.tbcUrl(path) : path', source)
+        self.assertIn('const ingressPrefixFromLocation = () =>', source)
+        self.assertIn('window.location.pathname.match(/^\\/api\\/hassio_ingress\\/[^/]+(?=\\/|$)/)?.[0] || ""', source)
+        self.assertIn('const prefix = window.TBC_INGRESS_PREFIX || ingressPrefixFromLocation();', source)
         self.assertIn('fetch(withIngressPrefix(url), {', source)
+        self.assertIn('if (response.status === 401)', source)
+        self.assertIn('window.location.assign(withIngressPrefix("/login"));', source)
+
+    def test_live_wall_starts_each_stream_through_the_camera_detail_endpoint(self):
+        source = (Path(__file__).resolve().parents[1] / "app" / "tbc" / "static" / "live.js").read_text(
+            encoding="utf-8"
+        )
+
+        # A camera's detail page already uses the per-key start route
+        # successfully through Ingress. The wall must use that same route,
+        # not a separate start-all request that can fail as one opaque action.
+        self.assertIn('const startLiveItem = async (key) => {', source)
+        self.assertIn('fetchJson(`/api/live/${encodeURIComponent(key)}/start`, {method: "POST"})', source)
+        self.assertIn('const initializeStreams = async () => {', source)
+        self.assertNotIn('fetchJson("/api/live/start-all", {method: "POST"})', source)
 
 
 class AutoThemeTests(unittest.TestCase):
