@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.5 - "Personalized & multilingual"
+
+- Added persistent display preferences for the whole installation: date format, 12/24-hour clock, optional seconds, timezone, compact layout, and configurable dashboard refresh interval.
+- Timestamps in the archive, recordings, camera details, health monitoring, audit log, backups, and API-token view now use the selected date, time, and timezone format.
+- Added 20 fully translated high-speaker interface languages: Arabic, Bengali, Chinese (simplified and traditional), Hindi, Indonesian, Italian, Japanese, Korean, Marathi, Persian, Punjabi, Russian, Tagalog, Tamil, Telugu, Thai, Turkish, Urdu, and Vietnamese. TBC now provides 29 selectable interface languages.
+- Reworked the language picker on the login page into a scalable dropdown and expanded the authenticated navigation menu accordingly.
+- Added a reproducible Google Translate locale generator which validates key parity across every locale file.
+
 ## 0.9.4 - "Live diagnostics"
 
 - Live-wall streams are now started server-side when the page is loaded. This avoids a dependency on a separate browser API request that can fail in Home Assistant Ingress, Android WebViews, or installed PWAs.
