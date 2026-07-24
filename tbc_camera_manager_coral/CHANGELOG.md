@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.8 - "Automated backups"
+
+- Kept in version lockstep with the standard app's 0.9.8 release, including
+  automated encrypted database backups, configurable schedules and retention,
+  optional local or S3 replication, and backup execution status.
+
 ## 0.9.7 - "Diagnosis you can trust"
 
 - Kept in version lockstep with the standard app's 0.9.7 release: fixes a race condition (issue #34) where the live-stream diagnosis message could be lost on a fast crash-and-retry. No Coral-specific changes in this release.
