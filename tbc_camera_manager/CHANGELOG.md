@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.8 - "Automated backups"
+
+- Added automated, encrypted system backups with selectable schedules (6, 12, 24 hours or weekly).
+- Added configurable retention of 1–365 backups, applied to local and optional external copies.
+- Added optional replication to existing local or S3 storage targets, isolated under `tbc-backups`.
+- Added backup execution status and error visibility in the administration interface.
+
+
+## 0.9.8 - "Automated backups"
+
+- Added automated, encrypted system backups with selectable schedules (6, 12, 24 hours or weekly).
+- Added configurable retention of 1–365 backups, applied to local and optional external copies.
+- Added optional replication to existing local or S3 storage targets, isolated under `tbc-backups`.
+- Added backup execution status and error visibility in the administration interface.
+
+
 ## 0.9.7 - "Diagnosis you can trust"
 
 - Fixed a race condition (issue #34) where the live-stream diagnosis message could be lost when a stream crashed and was retried within the same few seconds: a still-running background diagnosis for a superseded attempt could no longer overwrite or hide a newer attempt's own status. Each start attempt now carries its own generation, and only the current generation's messages are ever recorded.
