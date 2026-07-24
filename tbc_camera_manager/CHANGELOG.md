@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0 - "Automated backups"
+
+- Added automated encrypted system backups with selectable schedules, retention, and optional local or S3 storage replication.
+- Added backup status reporting in the administration interface.
+
+
 ## 0.9.8 - "Automated backups"
 
 - Added automated, encrypted system backups with selectable schedules (6, 12, 24 hours or weekly).

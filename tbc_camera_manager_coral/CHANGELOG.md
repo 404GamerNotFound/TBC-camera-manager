@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0 - "Automated backups"
+
+- Kept the Coral Home Assistant app in version lockstep with the standard 0.10.0 release, including automated encrypted backups, retention, optional external replication, and backup status reporting.
+
+
 ## 0.9.8 - "Automated backups"
 
 - Kept in version lockstep with the standard app's 0.9.8 release, including

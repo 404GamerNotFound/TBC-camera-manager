@@ -1,5 +1,5 @@
 name: TBC Camera Manager (Coral)
-version: "0.9.8"
+version: "0.10.0"
 slug: tbc_camera_manager_coral
 description: TBC Camera Manager with Coral Edge TPU-accelerated local AI detection
 url: "https://github.com/404GamerNotFound/TBC-camera-manager"
