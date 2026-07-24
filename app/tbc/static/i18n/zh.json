@@ -1039,5 +1039,6 @@
   "nav.language_ko": "韩语",
   "nav.language_fa": "波斯语",
   "nav.language_it": "意大利语",
-  "nav.language_th": "泰语"
+  "nav.language_th": "泰语",
+  "camera.live_diagnostic_title": "直播诊断"
 }

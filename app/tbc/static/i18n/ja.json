@@ -1039,5 +1039,6 @@
   "nav.language_ko": "韓国人",
   "nav.language_fa": "ペルシア語",
   "nav.language_it": "イタリア語",
-  "nav.language_th": "タイ語"
+  "nav.language_th": "タイ語",
+  "camera.live_diagnostic_title": "ライブストリーム診断"
 }

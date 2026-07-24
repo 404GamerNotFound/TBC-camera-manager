@@ -101,6 +101,12 @@
   <a class="secondary-button" href="{{ ingress_prefix }}/sd-card?camera_id={{ camera.id }}" data-i18n="base.sd_card">SD card</a>
   {% endif %}
 </section>
+{% if live_diagnostic %}
+<section class="diagnostic-note diagnostic-{{ 'warning' if live_status == 'starting' else 'error' }}">
+  <strong data-i18n="camera.live_diagnostic_title">Live stream diagnosis</strong>
+  <p>{{ live_diagnostic | redact_rtsp_credentials }}</p>
+</section>
+{% endif %}
 {% endif %}
 
 {% if channels and 'channels' in module_capabilities %}

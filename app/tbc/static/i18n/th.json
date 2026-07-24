@@ -1039,5 +1039,6 @@
   "nav.language_ko": "เกาหลี",
   "nav.language_fa": "เปอร์เซีย",
   "nav.language_it": "ภาษาอิตาลี",
-  "nav.language_th": "ไทย"
+  "nav.language_th": "ไทย",
+  "camera.live_diagnostic_title": "การวินิจฉัยสตรีมสด"
 }

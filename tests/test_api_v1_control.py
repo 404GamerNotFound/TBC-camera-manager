@@ -23,6 +23,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import unittest
 import zipfile
 from pathlib import Path
@@ -336,6 +337,69 @@ class _FakeRunningProcess:
 
     def poll(self):
         return None
+
+
+class _FakeCrashedProcess:
+    """Stands in for a subprocess.Popen handle whose ffmpeg process already
+    exited on its own (unlike LiveManager.stop(), which is never called for a
+    stream that crashes by itself - e.g. an undecodable source stream)."""
+
+    def poll(self):
+        return 255
+
+
+class LiveStatusAutoRetryTests(unittest.TestCase):
+    """Regression coverage for a live stream that crashed on its own never
+    recovering: previously nothing ever called LiveManager.start() again once
+    ffmpeg exited, so a camera tile stayed on 'failed'/'Waiting for stream'
+    until an admin reopened the live page or clicked refresh. /api/live/status
+    (polled every ~3s by the frontend) must now retry it itself, rate-limited
+    by LiveManager.should_retry's cooldown.
+    """
+
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = database.create_camera(
+            main.SETTINGS.database_path,
+            name="Front",
+            host="203.0.113.5",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+            manual_stream_uri="rtsp://fake/stream",
+        )
+        self.live_key = f"camera-{self.camera_id}"
+
+    def tearDown(self):
+        main.LIVE_MANAGER._processes.pop(self.live_key, None)
+        main.LIVE_MANAGER._last_start_attempt.pop(self.live_key, None)
+
+    def test_crashed_stream_past_cooldown_is_restarted_by_a_status_poll(self):
+        main.LIVE_MANAGER._processes[self.live_key] = _FakeCrashedProcess()
+        main.LIVE_MANAGER._last_start_attempt[self.live_key] = (
+            time.monotonic() - (main.LIVE_MANAGER.RETRY_COOLDOWN_SECONDS + 1)
+        )
+        with (
+            patch("app.tbc.main.stream_uri_for", return_value="rtsp://fake/stream"),
+            patch.object(main.LIVE_MANAGER, "start") as start_mock,
+        ):
+            response = CLIENT.get("/api/live/status")
+        self.assertEqual(response.status_code, 200)
+        start_mock.assert_called_once()
+        self.assertEqual(start_mock.call_args.args[0], self.live_key)
+
+    def test_crashed_stream_within_cooldown_is_left_alone(self):
+        main.LIVE_MANAGER._processes[self.live_key] = _FakeCrashedProcess()
+        main.LIVE_MANAGER._last_start_attempt[self.live_key] = time.monotonic()
+        with (
+            patch("app.tbc.main.stream_uri_for", return_value="rtsp://fake/stream"),
+            patch.object(main.LIVE_MANAGER, "start") as start_mock,
+        ):
+            response = CLIENT.get("/api/live/status")
+        self.assertEqual(response.status_code, 200)
+        start_mock.assert_not_called()
 
 
 class ApiStreamPlaylistRewriteTests(unittest.TestCase):

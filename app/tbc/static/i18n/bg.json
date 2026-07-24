@@ -1039,5 +1039,6 @@
   "nav.language_ko": "корейски",
   "nav.language_fa": "персийски",
   "nav.language_it": "италиански",
-  "nav.language_th": "тайландски"
+  "nav.language_th": "тайландски",
+  "camera.live_diagnostic_title": "Диагностика на поток на живо"
 }

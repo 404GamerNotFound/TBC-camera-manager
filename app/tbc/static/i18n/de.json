@@ -1039,5 +1039,6 @@
   "nav.language_ko": "Koreanisch",
   "nav.language_fa": "Persisch",
   "nav.language_it": "Italienisch",
-  "nav.language_th": "Thailändisch"
+  "nav.language_th": "Thailändisch",
+  "camera.live_diagnostic_title": "Live-Stream-Diagnose"
 }

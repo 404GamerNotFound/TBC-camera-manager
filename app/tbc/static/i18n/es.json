@@ -1039,5 +1039,6 @@
   "nav.language_ko": "coreano",
   "nav.language_fa": "persa",
   "nav.language_it": "italiano",
-  "nav.language_th": "tailandés"
+  "nav.language_th": "tailandés",
+  "camera.live_diagnostic_title": "Diagnóstico de transmisión en vivo"
 }

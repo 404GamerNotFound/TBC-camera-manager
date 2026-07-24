@@ -164,6 +164,7 @@
   "camera.leave_blank_unchanged": "leave blank = unchanged",
   "camera.left": "◄ Left",
   "camera.live": "Live",
+  "camera.live_diagnostic_title": "Live stream diagnosis",
   "camera.live_not_supported": "The camera module does not support live view",
   "camera.live_preview": "Live preview",
   "camera.local_ai_hint": "Detections produced by the TBC server's image model, independently of the events reported by the camera.",

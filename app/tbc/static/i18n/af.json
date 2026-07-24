@@ -1039,5 +1039,6 @@
   "nav.language_ko": "Koreaans",
   "nav.language_fa": "Persies",
   "nav.language_it": "Italiaans",
-  "nav.language_th": "Thai"
+  "nav.language_th": "Thai",
+  "camera.live_diagnostic_title": "Regstreekse stroomdiagnose"
 }

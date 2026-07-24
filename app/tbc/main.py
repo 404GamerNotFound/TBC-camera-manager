@@ -1885,6 +1885,14 @@ def _start_live_item(item: dict[str, Any]) -> None:
 def _live_item_payload(request: Request, item: dict[str, Any]) -> dict[str, Any]:
     live_key = str(item["key"])
     has_stream = bool(item.get("stream_uri"))
+    # A stream whose ffmpeg process crashed on its own (bad/unstable source,
+    # camera reboot, network blip) previously stayed dead until an admin
+    # reopened the live page or clicked refresh - every ~3s status poll called
+    # status()/message() but nothing ever called start() again. Retrying here,
+    # rate-limited by LiveManager.should_retry's cooldown, means a stream that
+    # can recover does so on its own within one cooldown window.
+    if has_stream and LIVE_MANAGER.should_retry(live_key):
+        _start_live_item(item)
     live_status = LIVE_MANAGER.status(live_key) if has_stream else "missing"
     message = LIVE_MANAGER.message(live_key)
     if live_status == "running" and message.startswith("Starting live stream"):

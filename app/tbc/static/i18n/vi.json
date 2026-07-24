@@ -1039,5 +1039,6 @@
   "nav.language_ko": "Tiếng Hàn",
   "nav.language_fa": "tiếng Ba Tư",
   "nav.language_it": "người Ý",
-  "nav.language_th": "Thái"
+  "nav.language_th": "Thái",
+  "camera.live_diagnostic_title": "Chẩn đoán phát trực tiếp"
 }

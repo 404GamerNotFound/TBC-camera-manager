@@ -1039,5 +1039,6 @@
   "nav.language_ko": "Korea",
   "nav.language_fa": "Persia",
   "nav.language_it": "Italia",
-  "nav.language_th": "Thailand"
+  "nav.language_th": "Thailand",
+  "camera.live_diagnostic_title": "Diagnosis streaming langsung"
 }

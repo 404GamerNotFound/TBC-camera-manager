@@ -1039,5 +1039,6 @@
   "nav.language_ko": "Coréen",
   "nav.language_fa": "persan",
   "nav.language_it": "Italien",
-  "nav.language_th": "Thaï"
+  "nav.language_th": "Thaï",
+  "camera.live_diagnostic_title": "Diagnostic en direct"
 }

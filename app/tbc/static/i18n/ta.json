@@ -1039,5 +1039,6 @@
   "nav.language_ko": "கொரியன்",
   "nav.language_fa": "பாரசீக",
   "nav.language_it": "இத்தாலியன்",
-  "nav.language_th": "தாய்"
+  "nav.language_th": "தாய்",
+  "camera.live_diagnostic_title": "நேரடி ஸ்ட்ரீம் கண்டறிதல்"
 }

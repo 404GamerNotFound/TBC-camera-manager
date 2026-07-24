@@ -36,6 +36,7 @@ from ..main import (
     CONTROL_STATE_PROBE_RETRY_AFTER,
     CONTROL_TIMEOUT_SECONDS,
     FIRMWARE_UPDATE_STATE,
+    LIVE_MANAGER,
     LOCAL_AI_TRIGGER_DEFINITIONS,
     LOGGER,
     NETWORK_STATE_CACHE,
@@ -271,6 +272,14 @@ async def camera_detail(
     if not camera:
         _set_flash(request, "camera.not_found", None, "error")
         return _redirect("/cameras")
+    # Single-channel cameras (the overwhelming majority, and the only case this
+    # diagnostic currently covers) are addressed as "camera-{id}" in LIVE_MANAGER -
+    # see main._live_items_for_user. A multi-channel NVR's per-channel tiles use a
+    # different key this page doesn't have enough context to pick between, so no
+    # diagnostic is shown there rather than guessing the wrong channel's status.
+    live_key = f"camera-{camera_id}"
+    live_status = LIVE_MANAGER.status(live_key)
+    live_diagnostic = LIVE_MANAGER.message(live_key) if live_status in ("failed", "starting") else ""
     detections = database.list_detections(SETTINGS.database_path, camera_id)
     storage_targets = database.list_storage_targets(SETTINGS.database_path)
     events = database.list_recent_events(SETTINGS.database_path, camera_id)
@@ -391,6 +400,8 @@ async def camera_detail(
             "audio_detection_settings": audio_detection_settings,
             "camera_quota_rule": camera_quota_rule,
             "camera_usage_gb": camera_usage_gb,
+            "live_status": live_status,
+            "live_diagnostic": live_diagnostic,
             "local_ai_enabled": local_ai_enabled,
             "detection_default_sample_fps": SETTINGS.detection_default_sample_fps,
             "detection_default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,

@@ -1039,5 +1039,6 @@
   "nav.language_ko": "Корейский",
   "nav.language_fa": "персидский",
   "nav.language_it": "итальянский",
-  "nav.language_th": "тайский"
+  "nav.language_th": "тайский",
+  "camera.live_diagnostic_title": "Диагностика в прямом эфире"
 }
