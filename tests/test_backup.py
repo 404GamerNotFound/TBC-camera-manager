@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from app.tbc import backup, database
@@ -116,6 +116,60 @@ class BackupRestoreTests(unittest.TestCase):
         # ...and the .bak safety copy includes the un-checkpointed rename, which
         # a plain file copy of the main database file would have lost.
         self.assertEqual(database.list_users(self.db_path + ".bak")[0]["username"], "renamed-after-backup")
+
+    def test_schedule_configuration_and_due_calculation(self):
+        database.update_backup_schedule(
+            self.db_path,
+            enabled=True,
+            interval_hours=12,
+            retain_count=10,
+            storage_id=None,
+        )
+        schedule = database.get_backup_schedule(self.db_path)
+        self.assertTrue(schedule["enabled"])
+        self.assertEqual(schedule["interval_hours"], 12)
+        self.assertEqual(schedule["retain_count"], 10)
+        self.assertTrue(backup.schedule_is_due(schedule))
+
+        database.record_backup_schedule_run(self.db_path, status="success", message="done")
+        schedule = database.get_backup_schedule(self.db_path)
+        self.assertFalse(backup.schedule_is_due(schedule))
+        self.assertTrue(
+            backup.schedule_is_due(
+                schedule,
+                now=datetime.now(timezone.utc) + timedelta(hours=13),
+            )
+        )
+
+    def test_scheduled_backup_copies_to_local_target_and_applies_retention(self):
+        backups_path = self.tmp_dir / "backups"
+        external_path = self.tmp_dir / "external"
+        result = backup.run_scheduled_backup(
+            self.db_path,
+            self.secret_key,
+            str(backups_path),
+            retain_count=1,
+            storage_target={"kind": "local", "local_path": str(external_path)},
+        )
+
+        self.assertTrue((backups_path / result["filename"]).is_file())
+        self.assertTrue((external_path / "tbc-backups" / result["filename"]).is_file())
+        self.assertEqual(result["external_removed"], 0)
+
+    def test_prune_backup_files_keeps_the_newest_archives(self):
+        backups_path = self.tmp_dir / "backups"
+        backups_path.mkdir()
+        for index in range(3):
+            archive = backups_path / f"TBC_vtest_2026-07-2{index}-09-00-00.tbcbackup"
+            archive.write_bytes(b"encrypted backup")
+            archive.touch()
+            # Avoid filesystem timestamp granularity affecting the order.
+            import os
+
+            os.utime(archive, (1_000 + index, 1_000 + index))
+
+        self.assertEqual(backup.prune_backup_files(str(backups_path), 2), 1)
+        self.assertEqual(len(backup.list_backup_files(str(backups_path))), 2)
 
 
 if __name__ == "__main__":
