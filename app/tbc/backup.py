@@ -3,9 +3,10 @@ from __future__ import annotations
 import io
 import json
 import os
+import shutil
 import sqlite3
 import zipfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,10 @@ __all__ = [
     "create_backup_file",
     "get_backup_file",
     "list_backup_files",
+    "prune_backup_files",
     "restore_backup",
+    "run_scheduled_backup",
+    "schedule_is_due",
 ]
 
 
@@ -115,6 +119,177 @@ def get_backup_file(backups_path: str, filename: str) -> Path | None:
     if path.is_symlink() or not path.is_file():
         return None
     return path if path.resolve().parent == directory.resolve() else None
+
+
+def schedule_is_due(schedule: dict[str, Any], now: datetime | None = None) -> bool:
+    """Return whether an enabled backup schedule needs to run.
+
+    The timestamp is persisted only after a completed attempt. This prevents a
+    broken external target from causing a backup attempt on every loop tick.
+    """
+    if not schedule.get("enabled"):
+        return False
+    interval_hours = int(schedule.get("interval_hours") or 24)
+    last_run_at = schedule.get("last_run_at")
+    if not last_run_at:
+        return True
+    try:
+        last_run = datetime.fromisoformat(str(last_run_at).replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    if last_run.tzinfo is None:
+        last_run = last_run.replace(tzinfo=timezone.utc)
+    current_time = now or datetime.now(timezone.utc)
+    return current_time >= last_run + timedelta(hours=interval_hours)
+
+
+def prune_backup_files(backups_path: str, retain_count: int) -> int:
+    """Keep the newest encrypted backup files and return how many were removed."""
+    keep = _validated_retain_count(retain_count)
+    directory = Path(backups_path)
+    if not directory.is_dir():
+        return 0
+    files = sorted(
+        (
+            path
+            for path in directory.iterdir()
+            if path.is_file() and not path.is_symlink() and path.suffix == BACKUP_EXTENSION
+        ),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    removed = 0
+    for path in files[keep:]:
+        path.unlink()
+        removed += 1
+    return removed
+
+
+def run_scheduled_backup(
+    database_path: str,
+    secret_key: str,
+    backups_path: str,
+    *,
+    retain_count: int,
+    storage_target: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Create, retain and optionally replicate one encrypted backup.
+
+    A local archive is deliberately retained even when an external target is
+    selected. This makes a restore possible when S3 or a network mount is
+    temporarily unavailable. External copies are isolated below
+    ``tbc-backups`` so recordings can never be included in retention cleanup.
+    """
+    saved_backup = create_backup_file(database_path, secret_key, backups_path)
+    local_removed = prune_backup_files(backups_path, retain_count)
+    result: dict[str, Any] = {
+        "filename": saved_backup.name,
+        "local_path": str(saved_backup),
+        "local_removed": local_removed,
+        "external_location": None,
+        "external_removed": 0,
+    }
+    if storage_target is None:
+        return result
+
+    try:
+        external_location = _copy_to_external_target(saved_backup, storage_target)
+        external_removed = _prune_external_target(storage_target, retain_count)
+    except (OSError, RuntimeError) as exc:
+        raise BackupError(f"The local backup was created, but the external copy failed: {exc}") from exc
+    result["external_location"] = external_location
+    result["external_removed"] = external_removed
+    return result
+
+
+def _copy_to_external_target(local_file: Path, target: dict[str, Any]) -> str:
+    kind = target.get("kind")
+    if kind == "local":
+        base_path = target.get("local_path")
+        if not base_path:
+            raise RuntimeError("The selected local storage target has no path.")
+        directory = Path(str(base_path)) / "tbc-backups"
+        directory.mkdir(parents=True, exist_ok=True)
+        destination = directory / local_file.name
+        if destination.resolve() != local_file.resolve():
+            shutil.copyfile(local_file, destination)
+            os.chmod(destination, 0o600)
+        return str(destination)
+    if kind == "s3":
+        bucket = target.get("s3_bucket")
+        if not bucket:
+            raise RuntimeError("The selected S3 storage target has no bucket.")
+        key = _s3_backup_prefix(target) + "/" + local_file.name
+        _s3_client(target).upload_file(str(local_file), bucket, key)
+        return f"s3://{bucket}/{key}"
+    raise RuntimeError("The selected storage target is not supported for backups.")
+
+
+def _prune_external_target(target: dict[str, Any], retain_count: int) -> int:
+    keep = _validated_retain_count(retain_count)
+    kind = target.get("kind")
+    if kind == "local":
+        base_path = target.get("local_path")
+        if not base_path:
+            raise RuntimeError("The selected local storage target has no path.")
+        return prune_backup_files(str(Path(str(base_path)) / "tbc-backups"), keep)
+    if kind != "s3":
+        raise RuntimeError("The selected storage target is not supported for backups.")
+    bucket = target.get("s3_bucket")
+    if not bucket:
+        raise RuntimeError("The selected S3 storage target has no bucket.")
+    client = _s3_client(target)
+    prefix = _s3_backup_prefix(target) + "/"
+    objects: list[dict[str, Any]] = []
+    continuation_token: str | None = None
+    while True:
+        params: dict[str, Any] = {"Bucket": bucket, "Prefix": prefix}
+        if continuation_token:
+            params["ContinuationToken"] = continuation_token
+        page = client.list_objects_v2(**params)
+        objects.extend(
+            item
+            for item in page.get("Contents", [])
+            if str(item.get("Key", "")).endswith(BACKUP_EXTENSION)
+        )
+        if not page.get("IsTruncated"):
+            break
+        continuation_token = page.get("NextContinuationToken")
+        if not continuation_token:
+            break
+    objects.sort(key=lambda item: item.get("LastModified", datetime.min.replace(tzinfo=timezone.utc)), reverse=True)
+    for item in objects[keep:]:
+        client.delete_object(Bucket=bucket, Key=item["Key"])
+    return max(0, len(objects) - keep)
+
+
+def _s3_backup_prefix(target: dict[str, Any]) -> str:
+    prefix = str(target.get("s3_prefix") or "").strip("/")
+    return f"{prefix}/tbc-backups" if prefix else "tbc-backups"
+
+
+def _s3_client(target: dict[str, Any]):
+    try:
+        import boto3
+    except ImportError as exc:
+        raise RuntimeError("boto3 is not installed for S3 storage destinations") from exc
+    return boto3.client(
+        "s3",
+        endpoint_url=target.get("s3_endpoint_url") or None,
+        region_name=target.get("s3_region") or None,
+        aws_access_key_id=target.get("s3_access_key_id") or None,
+        aws_secret_access_key=target.get("s3_secret_access_key") or None,
+    )
+
+
+def _validated_retain_count(retain_count: int) -> int:
+    try:
+        value = int(retain_count)
+    except (TypeError, ValueError) as exc:
+        raise BackupError("The number of retained backups must be a whole number.") from exc
+    if not 1 <= value <= 365:
+        raise BackupError("The number of retained backups must be between 1 and 365.")
+    return value
 
 
 def restore_backup(data: bytes, database_path: str, secret_key: str) -> None:

@@ -11,6 +11,57 @@
 <section class="api-access-layout">
   <section class="event-panel">
     <div class="section-title">
+      <h2 data-i18n="backup.automatic_title">Automatic backups</h2>
+    </div>
+    <p class="hint-text" data-i18n="backup.automatic_hint">TBC creates an encrypted database backup on this schedule. Every backup remains available locally; an optional copy can also be stored in one of your configured storage targets.</p>
+    <form method="post" action="{{ ingress_prefix }}/settings/backup/schedule">
+      <div class="form-grid">
+        <label class="check-row span-2">
+          <input type="checkbox" name="enabled" {% if backup_schedule.enabled %}checked{% endif %}>
+          <span data-i18n="backup.enable_automatic">Enable automatic backups</span>
+        </label>
+        <label>
+          <span data-i18n="backup.interval">Schedule</span>
+          <select name="interval_hours">
+            <option value="6" {% if backup_schedule.interval_hours == 6 %}selected{% endif %} data-i18n="backup.interval_6_hours">Every 6 hours</option>
+            <option value="12" {% if backup_schedule.interval_hours == 12 %}selected{% endif %} data-i18n="backup.interval_12_hours">Every 12 hours</option>
+            <option value="24" {% if backup_schedule.interval_hours == 24 %}selected{% endif %} data-i18n="backup.interval_daily">Daily</option>
+            <option value="168" {% if backup_schedule.interval_hours == 168 %}selected{% endif %} data-i18n="backup.interval_weekly">Weekly</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="backup.retain_count">Backups to keep</span>
+          <input name="retain_count" type="number" min="1" max="365" value="{{ backup_schedule.retain_count }}" required>
+        </label>
+        <label class="span-2">
+          <span data-i18n="backup.external_target">External storage target</span>
+          <select name="storage_id">
+            <option value="" data-i18n="backup.local_only">Local backups only</option>
+            {% for target in storage_targets %}
+            <option value="{{ target.id }}" {% if backup_schedule.storage_id == target.id %}selected{% endif %}>{{ target.name }} ({{ target.kind }})</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <p class="hint-text" data-i18n="backup.external_target_hint">External copies are stored separately under tbc-backups and use the same retention limit. Credentials remain in the configured storage target.</p>
+      <p class="hint-text">
+        <strong data-i18n="backup.last_run">Last automatic run:</strong>
+        {% if backup_schedule.last_run_at %}
+          {{ backup_schedule.last_run_at | format_timestamp(ui_preferences) }}
+          {% if backup_schedule.last_status == 'success' %}<span data-i18n="backup.status_success">Successful</span>{% elif backup_schedule.last_status == 'error' %}<span data-i18n="backup.status_error">Failed</span>{% endif %}
+          {% if backup_schedule.last_message %} — {{ backup_schedule.last_message }}{% endif %}
+        {% else %}
+          <span data-i18n="backup.never_run">Not run yet</span>
+        {% endif %}
+      </p>
+      <div class="form-actions">
+        <button class="primary-button" type="submit" data-i18n="backup.schedule_save">Save automatic backup settings</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="event-panel">
+    <div class="section-title">
       <h2 data-i18n="backup.create_title">Create backup</h2>
     </div>
     <p class="hint-text" data-i18n="backup.create_hint">Creates an encrypted archive of the database (cameras, users, settings, cloud accounts, API tokens) and saves it locally on this device. Stored credentials stay encrypted with this instance's TBC_SECRET_KEY - keep that key safe, it's required to restore.</p>

@@ -92,6 +92,8 @@ async def backup_page(request: Request):
             "username": request.session.get("username"),
             "role": "admin",
             "backups": backup.list_backup_files(SETTINGS.backups_path),
+            "backup_schedule": database.get_backup_schedule(SETTINGS.database_path),
+            "storage_targets": database.list_storage_targets(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
     )
@@ -118,6 +120,43 @@ async def create_backup_route(request: Request):
             target_id=saved_backup.name,
         )
         _set_flash(request, "backup.created", {"filename": saved_backup.name})
+    return _redirect("/settings/backup")
+
+
+@router.post("/settings/backup/schedule")
+async def update_backup_schedule_route(
+    request: Request,
+    enabled: str | None = Form(None),
+    interval_hours: int = Form(24),
+    retain_count: int = Form(7),
+    storage_id: str = Form(""),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    try:
+        selected_storage_id = int(storage_id) if storage_id.strip() else None
+        if selected_storage_id is not None and database.get_storage_target(
+            SETTINGS.database_path, selected_storage_id
+        ) is None:
+            raise ValueError("The selected external storage target does not exist.")
+        database.update_backup_schedule(
+            SETTINGS.database_path,
+            enabled=enabled is not None,
+            interval_hours=interval_hours,
+            retain_count=retain_count,
+            storage_id=selected_storage_id,
+        )
+    except (TypeError, ValueError) as exc:
+        _set_flash(request, "backup.schedule_failed", {"error": str(exc)}, "error")
+    else:
+        audit.log_event(
+            request,
+            SETTINGS.database_path,
+            "backup.schedule_updated",
+            target_type="backup_schedule",
+        )
+        _set_flash(request, "backup.schedule_saved")
     return _redirect("/settings/backup")
 
 

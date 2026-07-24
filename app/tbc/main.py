@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import __version__, database, mqtt
+from . import __version__, backup, database, mqtt
 from .ingress import IngressPathMiddleware
 from .api_common import (
     api_auth_error,
@@ -496,6 +496,7 @@ async def _lifespan(_app: FastAPI):
     asyncio.create_task(_camera_event_supervisor())
     asyncio.create_task(_health_loop())
     asyncio.create_task(_cleanup_loop())
+    asyncio.create_task(_backup_schedule_loop())
     asyncio.create_task(_snapshot_loop())
     asyncio.create_task(_continuous_recording_loop())
     asyncio.create_task(_plugin_source_update_check_loop())
@@ -1599,6 +1600,52 @@ async def _cleanup_loop() -> None:
         except Exception:
             LOGGER.exception("Retention cleanup failed")
         await asyncio.sleep(3600)
+
+
+async def _backup_schedule_loop() -> None:
+    """Run due encrypted database backups without delaying web requests."""
+    await asyncio.sleep(30)
+    while True:
+        try:
+            schedule = database.get_backup_schedule(SETTINGS.database_path)
+            if schedule["enabled"] and backup.schedule_is_due(schedule):
+                storage_target = None
+                if schedule.get("storage_id") is not None:
+                    storage_target = database.get_storage_target(
+                        SETTINGS.database_path, int(schedule["storage_id"])
+                    )
+                    if storage_target is None:
+                        raise backup.BackupError("The selected external storage target no longer exists.")
+                result = await asyncio.to_thread(
+                    backup.run_scheduled_backup,
+                    SETTINGS.database_path,
+                    SETTINGS.secret_key,
+                    SETTINGS.backups_path,
+                    retain_count=int(schedule["retain_count"]),
+                    storage_target=storage_target,
+                )
+                message = f"Created {result['filename']}"
+                if result["external_location"]:
+                    message += f" and copied it to {result['external_location']}"
+                database.record_backup_schedule_run(
+                    SETTINGS.database_path,
+                    status="success",
+                    message=message,
+                )
+                LOGGER.info("Scheduled backup completed: %s", message)
+        except Exception as exc:
+            # A failed attempt is recorded too, so an unavailable external target
+            # does not trigger a new attempt every minute.
+            LOGGER.exception("Scheduled backup failed")
+            try:
+                database.record_backup_schedule_run(
+                    SETTINGS.database_path,
+                    status="error",
+                    message=str(exc),
+                )
+            except Exception:
+                LOGGER.exception("Could not record scheduled backup failure")
+        await asyncio.sleep(60)
 
 
 async def _continuous_recording_loop() -> None:

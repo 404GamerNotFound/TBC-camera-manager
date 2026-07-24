@@ -168,6 +168,19 @@ CREATE TABLE IF NOT EXISTS storage_targets (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS backup_schedule (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled INTEGER NOT NULL DEFAULT 0,
+    interval_hours INTEGER NOT NULL DEFAULT 24,
+    retain_count INTEGER NOT NULL DEFAULT 7,
+    storage_id INTEGER,
+    last_run_at TEXT,
+    last_status TEXT,
+    last_message TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(storage_id) REFERENCES storage_targets(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS camera_channels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     camera_id INTEGER NOT NULL,
@@ -671,6 +684,12 @@ def initialize(database_path: str, default_recordings_path: str = "/recordings")
         )
         db.execute(
             "INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')"
+        )
+        db.execute(
+            """
+            INSERT OR IGNORE INTO backup_schedule (id, enabled, interval_hours, retain_count)
+            VALUES (1, 0, 24, 7)
+            """
         )
     _encrypt_plaintext_secrets_in_place(database_path)
 
@@ -1495,6 +1514,72 @@ def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
     return [_decrypt_row(dict(row), ("s3_secret_access_key",)) for row in rows]
 
 
+def get_backup_schedule(database_path: str) -> dict[str, Any]:
+    """Return the singleton automated-backup configuration with safe defaults."""
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT OR IGNORE INTO backup_schedule (id, enabled, interval_hours, retain_count)
+            VALUES (1, 0, 24, 7)
+            """
+        )
+        row = db.execute("SELECT * FROM backup_schedule WHERE id = 1").fetchone()
+    assert row is not None
+    schedule = dict(row)
+    schedule["enabled"] = bool(schedule["enabled"])
+    return schedule
+
+
+def update_backup_schedule(
+    database_path: str,
+    *,
+    enabled: bool,
+    interval_hours: int,
+    retain_count: int,
+    storage_id: int | None,
+) -> None:
+    if interval_hours not in {6, 12, 24, 168}:
+        raise ValueError("Unsupported backup interval")
+    if not 1 <= retain_count <= 365:
+        raise ValueError("Backup retention must be between 1 and 365")
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO backup_schedule (id, enabled, interval_hours, retain_count, storage_id)
+            VALUES (1, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                enabled = excluded.enabled,
+                interval_hours = excluded.interval_hours,
+                retain_count = excluded.retain_count,
+                storage_id = excluded.storage_id,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if enabled else 0, interval_hours, retain_count, storage_id),
+        )
+
+
+def record_backup_schedule_run(
+    database_path: str,
+    *,
+    status: str,
+    message: str | None = None,
+) -> None:
+    if status not in {"success", "error"}:
+        raise ValueError("Unsupported backup schedule status")
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE backup_schedule
+               SET last_run_at = CURRENT_TIMESTAMP,
+                   last_status = ?,
+                   last_message = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = 1
+            """,
+            (status, (message or None)[:1000]),
+        )
+
+
 def create_storage_target(
     database_path: str,
     *,
@@ -1589,6 +1674,7 @@ def delete_storage_target(database_path: str, storage_id: int) -> None:
             "UPDATE cameras SET recording_storage_id = NULL WHERE recording_storage_id = ?",
             (storage_id,),
         )
+        db.execute("UPDATE backup_schedule SET storage_id = NULL WHERE storage_id = ?", (storage_id,))
         db.execute("DELETE FROM storage_targets WHERE id = ?", (storage_id,))
 
 

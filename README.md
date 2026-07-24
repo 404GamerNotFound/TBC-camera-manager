@@ -1,5 +1,7 @@
 # TBC - TB Camera
 
+[![GHCR pulls](https://ghcr-badge.elias.eu.org/shield/404gamernotfound/TBC-camera-manager/tbc-camera-manager)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager)
+
 TBC is a modular, Docker-based camera manager. Camera vendors are integrated through installable camera modules. Reolink, Aqara, TP-Link/Tapo, Axis, Foscam, Hikvision, Dahua (including Amcrest/Annke OEM devices), Ubiquiti/UniFi Protect, and SONOFF are available as directly installable standard repositories. A generic ONVIF fallback and a vendor-neutral RTSP-only profile remain built in.
 
 The application includes authentication, camera management, RTSP stream discovery, dashboard snapshots, event-based and continuous recording, clip and SD-card browsers, user roles, MQTT and Home Assistant integration, live HLS with an optional sub-second WebRTC alternative (go2rtc), retention rules, notifications, health monitoring, AI detection, and NVR channel management.
@@ -44,6 +46,8 @@ docker run -d --name tbc-camera-manager -p 8732:8732 \
 ```
 
 Or point `docker-compose.yml` at it directly by replacing its `image:`/`build:` lines with `image: ghcr.io/404gamernotfound/tbc-camera-manager:latest` and removing `build: .`. Tags follow the release: `latest`, `<major>.<minor>`, and the exact `<version>` (e.g. `0.7.0`).
+
+The pull-count badge above (via the third-party [ghcr-badge](https://github.com/eliasbenb/ghcr-badge) service) counts image pulls, not unique installs - CI runs, image updates, and re-pulls all add up, and it only covers this plain Docker image, not the separate Home Assistant app images.
 
 ## Home Assistant OS
 
