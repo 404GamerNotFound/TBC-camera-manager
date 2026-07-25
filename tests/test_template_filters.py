@@ -1,4 +1,5 @@
 import json
+import re
 import tempfile
 import unittest
 from html.parser import HTMLParser
@@ -111,6 +112,20 @@ class UiPreferencesDatabaseTests(unittest.TestCase):
             self.assertFalse(preferences["compact_mode"])
             self.assertEqual(preferences["dashboard_refresh_seconds"], 30)
 
+            # Guards against the settings.html <select> offering a timezone that
+            # UI_TIMEZONES doesn't also whitelist - that mismatch previously made
+            # a valid choice (e.g. Asia/Tokyo) silently revert to Europe/Berlin.
+            database.update_ui_preferences(
+                database_path,
+                date_format="de",
+                time_format="24h",
+                timezone="Asia/Tokyo",
+                show_seconds=False,
+                compact_mode=False,
+                dashboard_refresh_seconds=0,
+            )
+            self.assertEqual(database.get_ui_preferences(database_path)["timezone"], "Asia/Tokyo")
+
             database.update_ui_preferences(
                 database_path,
                 date_format="invalid",
@@ -125,6 +140,18 @@ class UiPreferencesDatabaseTests(unittest.TestCase):
             self.assertEqual(preferences["time_format"], "24h")
             self.assertEqual(preferences["timezone"], "Europe/Berlin")
             self.assertEqual(preferences["dashboard_refresh_seconds"], 0)
+
+    def test_settings_timezone_select_matches_ui_timezones_whitelist(self):
+        """Every <option> the settings page offers must also be accepted by
+        update_ui_preferences's UI_TIMEZONES whitelist - otherwise a selection
+        silently reverts to Europe/Berlin on save (see database.py)."""
+        template = (
+            Path(__file__).resolve().parents[1] / "app" / "tbc" / "templates" / "settings.html"
+        ).read_text(encoding="utf-8")
+        select_match = re.search(r'<select name="timezone">(.*?)</select>', template, re.DOTALL)
+        self.assertIsNotNone(select_match)
+        offered = set(re.findall(r'<option value="([^"]+)"', select_match.group(1)))
+        self.assertEqual(offered, database.UI_TIMEZONES)
 
 
 if __name__ == "__main__":

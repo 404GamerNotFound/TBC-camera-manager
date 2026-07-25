@@ -62,6 +62,7 @@
            alt="Current preview image from {{ camera.name }}"
            data-i18n-alt="dashboard.current_preview_from"
            data-i18n-params='{{ {"camera": camera.name} | tojson }}'
+           data-camera-snapshot
            loading="lazy"
            decoding="async">
       <figcaption data-i18n="dashboard.preview_refresh_interval" data-i18n-params='{{ {"minutes": snapshot_interval_minutes} | tojson }}'>Preview image · refresh every {{ snapshot_interval_minutes }} minutes</figcaption>
@@ -100,5 +101,8 @@
 {% endif %}
 {% if ui_preferences.dashboard_refresh_seconds %}
 <script src="{{ ingress_prefix }}/static/dashboard-refresh.js?v={{ asset_version }}" defer data-dashboard-refresh-seconds="{{ ui_preferences.dashboard_refresh_seconds }}"></script>
+{% endif %}
+{% if cameras %}
+<script src="{{ ingress_prefix }}/static/camera-snapshot-refresh.js?v={{ asset_version }}" defer></script>
 {% endif %}
 {% endblock %}

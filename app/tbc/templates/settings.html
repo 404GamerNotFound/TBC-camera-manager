@@ -34,11 +34,66 @@
       <label>
         <span data-i18n="settings.timezone">Time zone</span>
         <select name="timezone">
-          <option value="Europe/Berlin" {% if ui_preferences.timezone == 'Europe/Berlin' %}selected{% endif %} data-i18n="settings.timezone_berlin">Europe/Berlin (CET/CEST)</option>
+          <option value="Pacific/Pago_Pago" {% if ui_preferences.timezone == 'Pacific/Pago_Pago' %}selected{% endif %} data-i18n="settings.timezone_pago_pago">Pacific/Pago Pago</option>
+          <option value="Pacific/Honolulu" {% if ui_preferences.timezone == 'Pacific/Honolulu' %}selected{% endif %} data-i18n="settings.timezone_honolulu">Pacific/Honolulu</option>
+          <option value="America/Anchorage" {% if ui_preferences.timezone == 'America/Anchorage' %}selected{% endif %} data-i18n="settings.timezone_anchorage">America/Anchorage</option>
+          <option value="America/Los_Angeles" {% if ui_preferences.timezone == 'America/Los_Angeles' %}selected{% endif %} data-i18n="settings.timezone_los_angeles">America/Los Angeles</option>
+          <option value="America/Denver" {% if ui_preferences.timezone == 'America/Denver' %}selected{% endif %} data-i18n="settings.timezone_denver">America/Denver</option>
+          <option value="America/Chicago" {% if ui_preferences.timezone == 'America/Chicago' %}selected{% endif %} data-i18n="settings.timezone_chicago">America/Chicago</option>
+          <option value="America/Mexico_City" {% if ui_preferences.timezone == 'America/Mexico_City' %}selected{% endif %} data-i18n="settings.timezone_mexico_city">America/Mexico City</option>
+          <option value="America/Bogota" {% if ui_preferences.timezone == 'America/Bogota' %}selected{% endif %} data-i18n="settings.timezone_bogota">America/Bogota</option>
+          <option value="America/Lima" {% if ui_preferences.timezone == 'America/Lima' %}selected{% endif %} data-i18n="settings.timezone_lima">America/Lima</option>
+          <option value="America/New_York" {% if ui_preferences.timezone == 'America/New_York' %}selected{% endif %} data-i18n="settings.timezone_new_york">America/New York</option>
+          <option value="America/Toronto" {% if ui_preferences.timezone == 'America/Toronto' %}selected{% endif %} data-i18n="settings.timezone_toronto">America/Toronto</option>
+          <option value="America/Caracas" {% if ui_preferences.timezone == 'America/Caracas' %}selected{% endif %} data-i18n="settings.timezone_caracas">America/Caracas</option>
+          <option value="America/Halifax" {% if ui_preferences.timezone == 'America/Halifax' %}selected{% endif %} data-i18n="settings.timezone_halifax">America/Halifax</option>
+          <option value="America/Santiago" {% if ui_preferences.timezone == 'America/Santiago' %}selected{% endif %} data-i18n="settings.timezone_santiago">America/Santiago</option>
+          <option value="America/Sao_Paulo" {% if ui_preferences.timezone == 'America/Sao_Paulo' %}selected{% endif %} data-i18n="settings.timezone_sao_paulo">America/Sao Paulo</option>
+          <option value="America/Argentina/Buenos_Aires" {% if ui_preferences.timezone == 'America/Argentina/Buenos_Aires' %}selected{% endif %} data-i18n="settings.timezone_buenos_aires">America/Buenos Aires</option>
+          <option value="Atlantic/Azores" {% if ui_preferences.timezone == 'Atlantic/Azores' %}selected{% endif %} data-i18n="settings.timezone_azores">Atlantic/Azores</option>
           <option value="UTC" {% if ui_preferences.timezone == 'UTC' %}selected{% endif %} data-i18n="settings.timezone_utc">UTC</option>
           <option value="Europe/London" {% if ui_preferences.timezone == 'Europe/London' %}selected{% endif %} data-i18n="settings.timezone_london">Europe/London</option>
-          <option value="America/New_York" {% if ui_preferences.timezone == 'America/New_York' %}selected{% endif %} data-i18n="settings.timezone_new_york">America/New York</option>
-          <option value="America/Los_Angeles" {% if ui_preferences.timezone == 'America/Los_Angeles' %}selected{% endif %} data-i18n="settings.timezone_los_angeles">America/Los Angeles</option>
+          <option value="Africa/Accra" {% if ui_preferences.timezone == 'Africa/Accra' %}selected{% endif %} data-i18n="settings.timezone_accra">Africa/Accra</option>
+          <option value="Africa/Casablanca" {% if ui_preferences.timezone == 'Africa/Casablanca' %}selected{% endif %} data-i18n="settings.timezone_casablanca">Africa/Casablanca</option>
+          <option value="Europe/Berlin" {% if ui_preferences.timezone == 'Europe/Berlin' %}selected{% endif %} data-i18n="settings.timezone_berlin">Europe/Berlin (CET/CEST)</option>
+          <option value="Europe/Paris" {% if ui_preferences.timezone == 'Europe/Paris' %}selected{% endif %} data-i18n="settings.timezone_paris">Europe/Paris</option>
+          <option value="Africa/Lagos" {% if ui_preferences.timezone == 'Africa/Lagos' %}selected{% endif %} data-i18n="settings.timezone_lagos">Africa/Lagos</option>
+          <option value="Europe/Athens" {% if ui_preferences.timezone == 'Europe/Athens' %}selected{% endif %} data-i18n="settings.timezone_athens">Europe/Athens</option>
+          <option value="Africa/Cairo" {% if ui_preferences.timezone == 'Africa/Cairo' %}selected{% endif %} data-i18n="settings.timezone_cairo">Africa/Cairo</option>
+          <option value="Africa/Johannesburg" {% if ui_preferences.timezone == 'Africa/Johannesburg' %}selected{% endif %} data-i18n="settings.timezone_johannesburg">Africa/Johannesburg</option>
+          <option value="Asia/Jerusalem" {% if ui_preferences.timezone == 'Asia/Jerusalem' %}selected{% endif %} data-i18n="settings.timezone_jerusalem">Asia/Jerusalem</option>
+          <option value="Europe/Moscow" {% if ui_preferences.timezone == 'Europe/Moscow' %}selected{% endif %} data-i18n="settings.timezone_moscow">Europe/Moscow</option>
+          <option value="Europe/Istanbul" {% if ui_preferences.timezone == 'Europe/Istanbul' %}selected{% endif %} data-i18n="settings.timezone_istanbul">Europe/Istanbul</option>
+          <option value="Africa/Nairobi" {% if ui_preferences.timezone == 'Africa/Nairobi' %}selected{% endif %} data-i18n="settings.timezone_nairobi">Africa/Nairobi</option>
+          <option value="Asia/Riyadh" {% if ui_preferences.timezone == 'Asia/Riyadh' %}selected{% endif %} data-i18n="settings.timezone_riyadh">Asia/Riyadh</option>
+          <option value="Asia/Baghdad" {% if ui_preferences.timezone == 'Asia/Baghdad' %}selected{% endif %} data-i18n="settings.timezone_baghdad">Asia/Baghdad</option>
+          <option value="Asia/Tehran" {% if ui_preferences.timezone == 'Asia/Tehran' %}selected{% endif %} data-i18n="settings.timezone_tehran">Asia/Tehran</option>
+          <option value="Asia/Dubai" {% if ui_preferences.timezone == 'Asia/Dubai' %}selected{% endif %} data-i18n="settings.timezone_dubai">Asia/Dubai</option>
+          <option value="Asia/Kabul" {% if ui_preferences.timezone == 'Asia/Kabul' %}selected{% endif %} data-i18n="settings.timezone_kabul">Asia/Kabul</option>
+          <option value="Asia/Karachi" {% if ui_preferences.timezone == 'Asia/Karachi' %}selected{% endif %} data-i18n="settings.timezone_karachi">Asia/Karachi</option>
+          <option value="Asia/Kolkata" {% if ui_preferences.timezone == 'Asia/Kolkata' %}selected{% endif %} data-i18n="settings.timezone_kolkata">Asia/Kolkata</option>
+          <option value="Asia/Kathmandu" {% if ui_preferences.timezone == 'Asia/Kathmandu' %}selected{% endif %} data-i18n="settings.timezone_kathmandu">Asia/Kathmandu</option>
+          <option value="Asia/Dhaka" {% if ui_preferences.timezone == 'Asia/Dhaka' %}selected{% endif %} data-i18n="settings.timezone_dhaka">Asia/Dhaka</option>
+          <option value="Asia/Almaty" {% if ui_preferences.timezone == 'Asia/Almaty' %}selected{% endif %} data-i18n="settings.timezone_almaty">Asia/Almaty</option>
+          <option value="Asia/Yangon" {% if ui_preferences.timezone == 'Asia/Yangon' %}selected{% endif %} data-i18n="settings.timezone_yangon">Asia/Yangon</option>
+          <option value="Asia/Bangkok" {% if ui_preferences.timezone == 'Asia/Bangkok' %}selected{% endif %} data-i18n="settings.timezone_bangkok">Asia/Bangkok</option>
+          <option value="Asia/Jakarta" {% if ui_preferences.timezone == 'Asia/Jakarta' %}selected{% endif %} data-i18n="settings.timezone_jakarta">Asia/Jakarta</option>
+          <option value="Asia/Shanghai" {% if ui_preferences.timezone == 'Asia/Shanghai' %}selected{% endif %} data-i18n="settings.timezone_shanghai">Asia/Shanghai</option>
+          <option value="Asia/Singapore" {% if ui_preferences.timezone == 'Asia/Singapore' %}selected{% endif %} data-i18n="settings.timezone_singapore">Asia/Singapore</option>
+          <option value="Asia/Hong_Kong" {% if ui_preferences.timezone == 'Asia/Hong_Kong' %}selected{% endif %} data-i18n="settings.timezone_hong_kong">Asia/Hong Kong</option>
+          <option value="Asia/Kuala_Lumpur" {% if ui_preferences.timezone == 'Asia/Kuala_Lumpur' %}selected{% endif %} data-i18n="settings.timezone_kuala_lumpur">Asia/Kuala Lumpur</option>
+          <option value="Asia/Manila" {% if ui_preferences.timezone == 'Asia/Manila' %}selected{% endif %} data-i18n="settings.timezone_manila">Asia/Manila</option>
+          <option value="Australia/Perth" {% if ui_preferences.timezone == 'Australia/Perth' %}selected{% endif %} data-i18n="settings.timezone_perth">Australia/Perth</option>
+          <option value="Asia/Tokyo" {% if ui_preferences.timezone == 'Asia/Tokyo' %}selected{% endif %} data-i18n="settings.timezone_tokyo">Asia/Tokyo</option>
+          <option value="Asia/Seoul" {% if ui_preferences.timezone == 'Asia/Seoul' %}selected{% endif %} data-i18n="settings.timezone_seoul">Asia/Seoul</option>
+          <option value="Australia/Adelaide" {% if ui_preferences.timezone == 'Australia/Adelaide' %}selected{% endif %} data-i18n="settings.timezone_adelaide">Australia/Adelaide</option>
+          <option value="Australia/Sydney" {% if ui_preferences.timezone == 'Australia/Sydney' %}selected{% endif %} data-i18n="settings.timezone_sydney">Australia/Sydney</option>
+          <option value="Australia/Brisbane" {% if ui_preferences.timezone == 'Australia/Brisbane' %}selected{% endif %} data-i18n="settings.timezone_brisbane">Australia/Brisbane</option>
+          <option value="Pacific/Guam" {% if ui_preferences.timezone == 'Pacific/Guam' %}selected{% endif %} data-i18n="settings.timezone_guam">Pacific/Guam</option>
+          <option value="Pacific/Noumea" {% if ui_preferences.timezone == 'Pacific/Noumea' %}selected{% endif %} data-i18n="settings.timezone_noumea">Pacific/Noumea</option>
+          <option value="Pacific/Auckland" {% if ui_preferences.timezone == 'Pacific/Auckland' %}selected{% endif %} data-i18n="settings.timezone_auckland">Pacific/Auckland</option>
+          <option value="Pacific/Fiji" {% if ui_preferences.timezone == 'Pacific/Fiji' %}selected{% endif %} data-i18n="settings.timezone_fiji">Pacific/Fiji</option>
+          <option value="Pacific/Tongatapu" {% if ui_preferences.timezone == 'Pacific/Tongatapu' %}selected{% endif %} data-i18n="settings.timezone_tongatapu">Pacific/Tongatapu</option>
         </select>
       </label>
       <label>
