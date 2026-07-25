@@ -1,6 +1,7 @@
 # TBC - TB Camera
 
 [![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2F404gamernotfound%2Ftbc-camera-manager%2Ftbc-camera-manager&query=downloadCount&style=for-the-badge&logo=docker&logoColor=white&label=Docker%20Pulls&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager)
+[![HA Installs](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2F404gamernotfound%2Ftbc-camera-manager%2Ftbc-camera-manager-ha&query=downloadCount&style=for-the-badge&logo=homeassistant&logoColor=white&label=HA%20Installs&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager-ha)
 [![Stars](https://img.shields.io/github/stars/404GamerNotFound/TBC-camera-manager?style=for-the-badge&logo=github&logoColor=white&label=Stars&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/stargazers)
 [![Sponsors](https://img.shields.io/github/sponsors/404GamerNotFound?style=for-the-badge&logo=github&logoColor=white&label=Sponsors&color=blue)](https://github.com/sponsors/404GamerNotFound)
 [![PayPal](https://img.shields.io/badge/PayPal-ME-blue?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/TonyBrueser)
