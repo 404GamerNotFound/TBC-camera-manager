@@ -96,35 +96,89 @@
 <section class="table-section">
   <div class="section-title">
     <h2 data-i18n="recognition.recent_recognition_events">Recent recognition events</h2>
-    <span>{{ recent_events | length }}</span>
+    <span>{{ total }}</span>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th data-i18n="recognition.when">When</th>
-          <th data-i18n="camera_new_choice.camera">Camera</th>
-          <th data-i18n="notification.type">Type</th>
-          <th data-i18n="recognition.result">Result</th>
-          <th data-i18n="recognition.confidence">Confidence</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for event in recent_events %}
-        <tr>
-          <td>{{ event.created_at | format_timestamp(ui_preferences) }}</td>
-          <td>{{ event.camera_name }}</td>
-          <td data-i18n="{{ 'recognition.face' if event.kind == 'face' else 'recognition.plate' }}">{{ 'Face' if event.kind == 'face' else 'Plate' }}</td>
-          <td>{{ event.label }}</td>
-          <td>{{ (event.confidence * 100) | round(1) if event.confidence is not none else '' }}{% if event.confidence is not none %}%{% endif %}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5" data-i18n="recognition.no_recognition_events_yet">No recognition events yet</td>
-        </tr>
+
+  <form class="filter-bar" method="get" action="{{ ingress_prefix }}/recognition">
+    <label>
+      <span data-i18n="camera_new_choice.camera">Camera</span>
+      <select name="camera_id">
+        <option value="" data-i18n="recordings.all">All</option>
+        {% for camera in cameras %}
+        <option value="{{ camera.id }}" {% if filters.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
         {% endfor %}
-      </tbody>
-    </table>
+      </select>
+    </label>
+    <label>
+      <span data-i18n="notification.type">Type</span>
+      <select name="kind">
+        <option value="" data-i18n="recordings.all">All</option>
+        <option value="face" {% if filters.kind == 'face' %}selected{% endif %} data-i18n="recognition.face">Face</option>
+        <option value="plate" {% if filters.kind == 'plate' %}selected{% endif %} data-i18n="recognition.plate">Plate</option>
+      </select>
+    </label>
+    <label>
+      <span data-i18n="recognition.identity">Identity</span>
+      <select name="identity">
+        <option value="" data-i18n="recordings.all">All</option>
+        <option value="unknown" {% if filters.identity == 'unknown' %}selected{% endif %} data-i18n="recognition.identity_unknown">Unknown match</option>
+        {% for face in known_faces %}
+        <option value="face:{{ face.id }}" {% if filters.identity == 'face:' ~ face.id %}selected{% endif %}>{{ face.name }}</option>
+        {% endfor %}
+        {% for plate in known_plates %}
+        <option value="plate:{{ plate.id }}" {% if filters.identity == 'plate:' ~ plate.id %}selected{% endif %}>{{ plate.label or plate.plate_text }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span data-i18n="recordings.from">From</span>
+      <input name="date_from" type="date" value="{{ filters.date_from }}">
+    </label>
+    <label>
+      <span data-i18n="recordings.to">To</span>
+      <input name="date_to" type="date" value="{{ filters.date_to }}">
+    </label>
+    <button class="primary-button" type="submit" data-i18n="recordings.filter">Filter</button>
+  </form>
+
+  {% if recent_events %}
+  <p class="hint-text" data-i18n="recognition.count_page" data-i18n-params='{{ {"total": total, "page": page, "total_pages": total_pages} | tojson }}'>{{ total }} events found · page {{ page }} of {{ total_pages }}</p>
+  <section class="clip-grid">
+    {% for event in recent_events %}
+    <article class="clip-card">
+      {% if event.snapshot_path %}
+      <img class="clip-media-still" src="{{ ingress_prefix }}/recognition/events/{{ event.id }}/snapshot" alt="{{ event.label }}" loading="lazy" decoding="async">
+      {% else %}
+      <div class="clip-placeholder" data-i18n="{{ 'recognition.face' if event.kind == 'face' else 'recognition.plate' }}">{{ 'Face' if event.kind == 'face' else 'Plate' }}</div>
+      {% endif %}
+      <div class="clip-body">
+        <div class="card-header">
+          <div>
+            <h2>{{ event.label }}</h2>
+            <p>{{ event.camera_name }} · {{ event.created_at | format_timestamp(ui_preferences) }}</p>
+          </div>
+          <span class="status-pill status-idle" data-i18n="{{ 'recognition.face' if event.kind == 'face' else 'recognition.plate' }}">{{ 'Face' if event.kind == 'face' else 'Plate' }}</span>
+        </div>
+        {% if event.confidence is not none %}
+        <p class="clip-message">{{ (event.confidence * 100) | round(1) }}%</p>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% set qs_parts = [] %}
+  {% if filters.camera_id %}{% set _ = qs_parts.append('camera_id=' ~ filters.camera_id) %}{% endif %}
+  {% if filters.kind %}{% set _ = qs_parts.append('kind=' ~ filters.kind) %}{% endif %}
+  {% if filters.identity %}{% set _ = qs_parts.append('identity=' ~ (filters.identity | urlencode)) %}{% endif %}
+  {% if filters.date_from %}{% set _ = qs_parts.append('date_from=' ~ filters.date_from) %}{% endif %}
+  {% if filters.date_to %}{% set _ = qs_parts.append('date_to=' ~ filters.date_to) %}{% endif %}
+  <div class="button-row timeline-day-nav">
+    <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="{{ ingress_prefix }}/recognition?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}" data-i18n="recordings.previous_page">‹ Previous page</a>
+    <span data-i18n="recordings.page_indicator" data-i18n-params='{{ {"page": page, "total_pages": total_pages} | tojson }}'>Page {{ page }} / {{ total_pages }}</span>
+    <a class="secondary-button{% if page >= total_pages %} is-disabled{% endif %}" href="{{ ingress_prefix }}/recognition?{{ (qs_parts + ['page=' ~ (page + 1)]) | join('&') }}" data-i18n="recordings.next_page">Next page ›</a>
   </div>
+  {% else %}
+  <p class="hint-text" data-i18n="recognition.no_recognition_events_yet">No recognition events yet</p>
+  {% endif %}
 </section>
 {% endblock %}

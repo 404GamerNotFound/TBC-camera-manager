@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from . import database, mqtt
+from . import automation, database, mqtt
 from .config import load_settings
 from .notifications import notify_event
 
@@ -98,6 +98,15 @@ class RecordingManager:
                     detection_key,
                     "No storage destination is configured",
                 )
+                automation.evaluate_and_fire(
+                    self.database_path,
+                    source="recording_event",
+                    camera_id=camera_id,
+                    event_type="recording_skipped",
+                    title=f"TBC: {event_label}",
+                    message=f"{camera['name']}: No storage destination is configured",
+                    public_base_url=load_settings().public_base_url,
+                )
                 continue
 
             duration_seconds = max(5, min(3600, int(camera.get("recording_duration_seconds") or 30)))
@@ -139,6 +148,15 @@ class RecordingManager:
                 detection_key,
                 f"{event_label}: Vorlauf {pre_seconds}s, Nachlauf {post_seconds}s",
             )
+            automation.evaluate_and_fire(
+                self.database_path,
+                source="recording_event",
+                camera_id=camera_id,
+                event_type="recording_started",
+                title=f"TBC: {event_label}",
+                message=f"{camera['name']}: Vorlauf {pre_seconds}s, Nachlauf {post_seconds}s",
+                public_base_url=load_settings().public_base_url,
+            )
             asyncio.create_task(self._run_job(job, active))
             started_any = True
         return started_any
@@ -171,6 +189,16 @@ class RecordingManager:
                 recording=recording,
                 public_base_url=load_settings().public_base_url,
             )
+            automation.evaluate_and_fire(
+                self.database_path,
+                source="recording_event",
+                camera_id=job.camera_id,
+                event_type="recording_finished",
+                title=f"TBC: {job.event_label}",
+                message=f"{job.camera_name}: Clip wurde gespeichert",
+                recording=recording,
+                public_base_url=load_settings().public_base_url,
+            )
             _record_and_publish_event(
                 self.database_path,
                 job.camera_id,
@@ -189,6 +217,15 @@ class RecordingManager:
             )
             notify_event(
                 self.database_path,
+                event_type="recording_failed",
+                title="TBC: Recording failed",
+                message=f"{job.camera_name}: {exc}",
+                public_base_url=load_settings().public_base_url,
+            )
+            automation.evaluate_and_fire(
+                self.database_path,
+                source="recording_event",
+                camera_id=job.camera_id,
                 event_type="recording_failed",
                 title="TBC: Recording failed",
                 message=f"{job.camera_name}: {exc}",

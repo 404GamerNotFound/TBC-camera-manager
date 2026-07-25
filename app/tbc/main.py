@@ -817,6 +817,7 @@ def _network_device_to_dict(device: Any) -> dict[str, Any]:
 
 
 RECORDINGS_PAGE_SIZE = 60
+RECOGNITION_EVENTS_PAGE_SIZE = 60
 
 
 async def _refresh_camera(camera_id: int):
@@ -2341,6 +2342,7 @@ from .routers import (  # noqa: E402 - deliberately last, see comment above
     api_internal,
     api_v1,
     auth,
+    automation as automation_router,
     cameras,
     cloud_accounts,
     detection_recognition,
@@ -2360,6 +2362,7 @@ from .routers import (  # noqa: E402 - deliberately last, see comment above
 app.include_router(api_internal.router)
 app.include_router(api_v1.router)
 app.include_router(auth.router)
+app.include_router(automation_router.router)
 app.include_router(cameras.router)
 app.include_router(cloud_accounts.router)
 app.include_router(detection_recognition.router)

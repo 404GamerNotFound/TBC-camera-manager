@@ -529,6 +529,30 @@ CREATE TABLE IF NOT EXISTS recognition_events (
     FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS automation_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    source TEXT NOT NULL,
+    camera_id INTEGER,
+    event_type TEXT,
+    kind TEXT,
+    matched_face_id INTEGER,
+    matched_plate_id INTEGER,
+    unknown_only INTEGER NOT NULL DEFAULT 0,
+    cooldown_seconds INTEGER NOT NULL DEFAULT 0,
+    last_fired_at TEXT,
+    notification_channel_id INTEGER NOT NULL,
+    title_template TEXT NOT NULL DEFAULT '{{ title }}',
+    message_template TEXT NOT NULL DEFAULT '{{ message }}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE,
+    FOREIGN KEY(matched_face_id) REFERENCES known_faces(id) ON DELETE SET NULL,
+    FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL,
+    FOREIGN KEY(notification_channel_id) REFERENCES notification_channels(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS network_device_status (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     camera_id INTEGER NOT NULL,
@@ -567,9 +591,12 @@ CREATE INDEX IF NOT EXISTS idx_camera_events_camera_id ON camera_events(camera_i
 CREATE INDEX IF NOT EXISTS idx_camera_detections_camera_id ON camera_detections(camera_id);
 CREATE INDEX IF NOT EXISTS idx_recognition_events_camera_id ON recognition_events(camera_id);
 CREATE INDEX IF NOT EXISTS idx_recognition_events_created_at ON recognition_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_matched_face_id ON recognition_events(matched_face_id);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_matched_plate_id ON recognition_events(matched_plate_id);
 CREATE INDEX IF NOT EXISTS idx_network_device_events_camera_id ON network_device_events(camera_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
 CREATE INDEX IF NOT EXISTS idx_audit_log_username ON audit_log(username);
+CREATE INDEX IF NOT EXISTS idx_automation_rules_source ON automation_rules(source);
 CREATE INDEX IF NOT EXISTS idx_camera_channels_camera_id ON camera_channels(camera_id);
 """
 
@@ -2632,6 +2659,12 @@ def list_notification_channels(database_path: str) -> list[dict[str, Any]]:
     return [_decrypt_row(dict(row), ("token", "smtp_password")) for row in rows]
 
 
+def get_notification_channel(database_path: str, channel_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM notification_channels WHERE id = ?", (channel_id,)).fetchone()
+    return _decrypt_row(dict(row), ("token", "smtp_password")) if row else None
+
+
 def notification_event_defaults() -> list[dict[str, Any]]:
     """Return a fresh set of selectable notification event presets."""
     return [
@@ -3545,14 +3578,65 @@ def create_recognition_event(
         return int(cursor.lastrowid)
 
 
-def list_recognition_events(database_path: str, *, kind: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+def _recognition_event_filters(
+    *,
+    camera_id: int | None,
+    kind: str | None,
+    matched_face_id: int | None,
+    matched_plate_id: int | None,
+    unknown_only: bool,
+    date_from: str | None,
+    date_to: str | None,
+) -> tuple[str, list[Any]]:
     filters = []
     params: list[Any] = []
+    if camera_id:
+        filters.append("re.camera_id = ?")
+        params.append(camera_id)
     if kind:
         filters.append("re.kind = ?")
         params.append(kind)
+    if matched_face_id:
+        filters.append("re.matched_face_id = ?")
+        params.append(matched_face_id)
+    if matched_plate_id:
+        filters.append("re.matched_plate_id = ?")
+        params.append(matched_plate_id)
+    if unknown_only:
+        filters.append("re.matched_face_id IS NULL AND re.matched_plate_id IS NULL")
+    if date_from:
+        filters.append("re.created_at >= ?")
+        params.append(date_from)
+    if date_to:
+        filters.append("re.created_at <= ?")
+        params.append(date_to)
     where = f"WHERE {' AND '.join(filters)}" if filters else ""
-    params.append(limit)
+    return where, params
+
+
+def list_recognition_events(
+    database_path: str,
+    *,
+    camera_id: int | None = None,
+    kind: str | None = None,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+    unknown_only: bool = False,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    where, params = _recognition_event_filters(
+        camera_id=camera_id,
+        kind=kind,
+        matched_face_id=matched_face_id,
+        matched_plate_id=matched_plate_id,
+        unknown_only=unknown_only,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    params = [*params, limit, offset]
     with connect(database_path) as db:
         rows = db.execute(
             f"""
@@ -3561,8 +3645,251 @@ def list_recognition_events(database_path: str, *, kind: str | None = None, limi
               JOIN cameras c ON c.id = re.camera_id
               {where}
              ORDER BY re.created_at DESC, re.id DESC
-             LIMIT ?
+             LIMIT ? OFFSET ?
             """,
             params,
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def count_recognition_events(
+    database_path: str,
+    *,
+    camera_id: int | None = None,
+    kind: str | None = None,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+    unknown_only: bool = False,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> int:
+    where, params = _recognition_event_filters(
+        camera_id=camera_id,
+        kind=kind,
+        matched_face_id=matched_face_id,
+        matched_plate_id=matched_plate_id,
+        unknown_only=unknown_only,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    with connect(database_path) as db:
+        row = db.execute(
+            f"""
+            SELECT COUNT(*) AS total
+              FROM recognition_events re
+              JOIN cameras c ON c.id = re.camera_id
+              {where}
+            """,
+            params,
+        ).fetchone()
+    return int(row["total"]) if row else 0
+
+
+def get_recognition_event(database_path: str, event_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT re.*, c.name AS camera_name
+              FROM recognition_events re
+              JOIN cameras c ON c.id = re.camera_id
+             WHERE re.id = ?
+            """,
+            (event_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_automation_rules(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT ar.*, c.name AS camera_name,
+                   nc.name AS channel_name,
+                   kf.name AS matched_face_name,
+                   kp.plate_text AS matched_plate_text, kp.label AS matched_plate_label
+              FROM automation_rules ar
+              LEFT JOIN cameras c ON c.id = ar.camera_id
+              LEFT JOIN notification_channels nc ON nc.id = ar.notification_channel_id
+              LEFT JOIN known_faces kf ON kf.id = ar.matched_face_id
+              LEFT JOIN known_plates kp ON kp.id = ar.matched_plate_id
+             ORDER BY ar.enabled DESC, ar.name COLLATE NOCASE
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_automation_rule(database_path: str, rule_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM automation_rules WHERE id = ?", (rule_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_automation_rule(
+    database_path: str,
+    *,
+    name: str,
+    enabled: bool,
+    source: str,
+    camera_id: int | None,
+    event_type: str | None,
+    kind: str | None,
+    matched_face_id: int | None,
+    matched_plate_id: int | None,
+    unknown_only: bool,
+    cooldown_seconds: int,
+    notification_channel_id: int,
+    title_template: str,
+    message_template: str,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO automation_rules (
+                name, enabled, source, camera_id, event_type, kind,
+                matched_face_id, matched_plate_id, unknown_only, cooldown_seconds,
+                notification_channel_id, title_template, message_template
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                1 if enabled else 0,
+                source,
+                camera_id,
+                event_type,
+                kind,
+                matched_face_id,
+                matched_plate_id,
+                1 if unknown_only else 0,
+                cooldown_seconds,
+                notification_channel_id,
+                title_template,
+                message_template,
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
+def update_automation_rule(
+    database_path: str,
+    rule_id: int,
+    *,
+    name: str,
+    enabled: bool,
+    source: str,
+    camera_id: int | None,
+    event_type: str | None,
+    kind: str | None,
+    matched_face_id: int | None,
+    matched_plate_id: int | None,
+    unknown_only: bool,
+    cooldown_seconds: int,
+    notification_channel_id: int,
+    title_template: str,
+    message_template: str,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE automation_rules
+               SET name = ?,
+                   enabled = ?,
+                   source = ?,
+                   camera_id = ?,
+                   event_type = ?,
+                   kind = ?,
+                   matched_face_id = ?,
+                   matched_plate_id = ?,
+                   unknown_only = ?,
+                   cooldown_seconds = ?,
+                   notification_channel_id = ?,
+                   title_template = ?,
+                   message_template = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (
+                name,
+                1 if enabled else 0,
+                source,
+                camera_id,
+                event_type,
+                kind,
+                matched_face_id,
+                matched_plate_id,
+                1 if unknown_only else 0,
+                cooldown_seconds,
+                notification_channel_id,
+                title_template,
+                message_template,
+                rule_id,
+            ),
+        )
+
+
+def delete_automation_rule(database_path: str, rule_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM automation_rules WHERE id = ?", (rule_id,))
+
+
+def list_matching_automation_rules(
+    database_path: str,
+    *,
+    source: str,
+    camera_id: int,
+    event_type: str | None = None,
+    kind: str | None = None,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+) -> list[dict[str, Any]]:
+    """Enabled rules whose scoping matches this event. camera_id/event_type/kind on the rule
+    are NULL-or-equal; identity scoping requires exact agreement - a rule scoped to a specific
+    known face/plate only matches that same id, unknown_only only matches an event with no
+    match at all, and an unscoped rule (no identity, unknown_only=0) matches any identity.
+    """
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT * FROM automation_rules
+             WHERE enabled = 1
+               AND source = ?
+               AND (camera_id IS NULL OR camera_id = ?)
+               AND (event_type IS NULL OR event_type = ?)
+               AND (kind IS NULL OR kind = ?)
+               AND (
+                     (unknown_only = 0 AND matched_face_id IS NULL AND matched_plate_id IS NULL)
+                  OR (unknown_only = 1 AND ? IS NULL AND ? IS NULL)
+                  OR (matched_face_id IS NOT NULL AND matched_face_id = ?)
+                  OR (matched_plate_id IS NOT NULL AND matched_plate_id = ?)
+                   )
+            """,
+            (
+                source,
+                camera_id,
+                event_type,
+                kind,
+                matched_face_id,
+                matched_plate_id,
+                matched_face_id,
+                matched_plate_id,
+            ),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def try_fire_automation_rule(database_path: str, rule_id: int, *, cooldown_seconds: int) -> bool:
+    """Atomically claims this firing with a single conditional UPDATE (not read-then-write),
+    so two concurrent evaluations of the same rule - recognition workers run on separate
+    threads via asyncio.to_thread - can't both pass the cooldown check and double-fire.
+    """
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            UPDATE automation_rules
+               SET last_fired_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+               AND (last_fired_at IS NULL OR last_fired_at <= datetime(CURRENT_TIMESTAMP, '-' || ? || ' seconds'))
+            """,
+            (rule_id, cooldown_seconds),
+        )
+        return cursor.rowcount == 1

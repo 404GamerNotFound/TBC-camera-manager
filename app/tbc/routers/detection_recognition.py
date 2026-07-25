@@ -7,11 +7,13 @@ despite looking circular.
 from __future__ import annotations
 
 import json
+import math
+from pathlib import Path
 
-from fastapi import File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi import File, Form, Query, Request, UploadFile, status
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
-from .. import database
+from .. import automation, database
 from ..detection import factory as detection_factory
 from ..detection.recognition import (
     get_face_recognizer,
@@ -21,6 +23,7 @@ from fastapi import APIRouter
 from ..main import (
     DETECTION_CORAL_MODEL_PATH,
     DETECTION_MODEL_PATH,
+    RECOGNITION_EVENTS_PAGE_SIZE,
     RECOGNITION_MODELS_DIR,
     SETTINGS,
     _pop_flash,
@@ -63,10 +66,37 @@ async def detection_overview_page(request: Request):
     )
 
 @router.get("/recognition", response_class=HTMLResponse)
-async def recognition_page(request: Request):
+async def recognition_page(
+    request: Request,
+    camera_id: int | None = Query(None),
+    kind: str | None = Query(None),
+    identity: str | None = Query(None),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
+    page: int = Query(1),
+):
     guard = _require_admin(request)
     if guard:
         return guard
+    matched_face_id, matched_plate_id, unknown_only = automation.parse_identity_filter(identity)
+    common_filters = {
+        "camera_id": camera_id,
+        "kind": kind or None,
+        "matched_face_id": matched_face_id,
+        "matched_plate_id": matched_plate_id,
+        "unknown_only": unknown_only,
+        "date_from": date_from or None,
+        "date_to": date_to or None,
+    }
+    total = database.count_recognition_events(SETTINGS.database_path, **common_filters)
+    total_pages = max(1, math.ceil(total / RECOGNITION_EVENTS_PAGE_SIZE))
+    current_page = min(max(1, page), total_pages)
+    events = database.list_recognition_events(
+        SETTINGS.database_path,
+        **common_filters,
+        limit=RECOGNITION_EVENTS_PAGE_SIZE,
+        offset=(current_page - 1) * RECOGNITION_EVENTS_PAGE_SIZE,
+    )
     return templates.TemplateResponse(
         request,
         "recognition.html",
@@ -77,10 +107,35 @@ async def recognition_page(request: Request):
             "settings": database.get_recognition_settings(SETTINGS.database_path),
             "known_faces": database.list_known_faces(SETTINGS.database_path),
             "known_plates": database.list_known_plates(SETTINGS.database_path),
-            "recent_events": database.list_recognition_events(SETTINGS.database_path, limit=25),
+            "cameras": database.list_cameras(SETTINGS.database_path),
+            "recent_events": events,
+            "filters": {
+                "camera_id": camera_id,
+                "kind": kind or "",
+                "identity": identity or "",
+                "date_from": date_from or "",
+                "date_to": date_to or "",
+            },
+            "total": total,
+            "page": current_page,
+            "total_pages": total_pages,
             "flash": _pop_flash(request),
         },
     )
+
+
+@router.get("/recognition/events/{event_id}/snapshot")
+async def recognition_event_snapshot(request: Request, event_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    event = database.get_recognition_event(SETTINGS.database_path, event_id)
+    if not event:
+        return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    snapshot_path = event.get("snapshot_path")
+    if not snapshot_path or not Path(snapshot_path).exists():
+        return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
+    return FileResponse(snapshot_path, media_type="image/jpeg")
 
 @router.post("/recognition/settings")
 async def update_recognition_settings_route(

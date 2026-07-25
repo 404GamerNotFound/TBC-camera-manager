@@ -21,8 +21,8 @@ def notify_event(database_path: str, *, event_type: str, title: str, message: st
         try:
             _send(
                 channel,
-                _render_template(event_template.get("title_template"), title=title, message=message, event_type=event_type),
-                _render_template(event_template.get("message_template"), title=title, message=message, event_type=event_type),
+                render_template(event_template.get("title_template"), title=title, message=message, event_type=event_type),
+                render_template(event_template.get("message_template"), title=title, message=message, event_type=event_type),
                 recording,
                 public_base_url,
             )
@@ -41,10 +41,18 @@ def send_test_message(channel: dict[str, Any], *, public_base_url: str = "") -> 
     _send(channel, "TBC test notification", "This is a test message from TBC Camera Manager.", None, public_base_url)
 
 
-def _render_template(template: str | None, *, title: str, message: str, event_type: str) -> str:
+def send_via_channel(channel: dict[str, Any], title: str, message: str, recording: dict[str, Any] | None = None, public_base_url: str = "") -> None:
+    """Public entry point for callers outside this module (e.g. automation.py) that already
+    resolved which channel to use and just need to dispatch - notify_event's per-event-type
+    channel/template lookup doesn't apply to them.
+    """
+    _send(channel, title, message, recording, public_base_url)
+
+
+def render_template(template: str | None, *, title: str, message: str, event_type: str, label: str = "") -> str:
     """Replace the deliberately small, documented notification placeholders."""
     rendered = template or ""
-    for key, value in {"title": title, "message": message, "event_type": event_type}.items():
+    for key, value in {"title": title, "message": message, "event_type": event_type, "label": label}.items():
         rendered = rendered.replace("{{ " + key + " }}", value).replace("{{" + key + "}}", value)
     return rendered
 

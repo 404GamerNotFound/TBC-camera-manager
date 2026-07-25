@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from .. import database
+from .. import automation, database
 from ..notifications import notify_event
 from .model_provisioning import download_model_if_missing
 
@@ -301,6 +301,18 @@ def _process_face(
         recording=recording,
         public_base_url=public_base_url,
     )
+    automation.evaluate_and_fire(
+        database_path,
+        source="recognition_event",
+        camera_id=camera_id,
+        kind="face",
+        matched_face_id=match[0] if match else None,
+        label=label,
+        title=f"TBC: {'Bekanntes' if match else 'Unbekanntes'} Gesicht",
+        message=f"{camera_name}: {label}",
+        recording=recording,
+        public_base_url=public_base_url,
+    )
 
 
 def _process_plate(
@@ -346,6 +358,18 @@ def _process_plate(
     notify_event(
         database_path,
         event_type="known_plate_detected" if match else "unknown_plate_detected",
+        title=f"TBC: {'Bekanntes' if match else 'Unbekanntes'} Kennzeichen",
+        message=f"{camera_name}: {plate['text']}",
+        recording=recording,
+        public_base_url=public_base_url,
+    )
+    automation.evaluate_and_fire(
+        database_path,
+        source="recognition_event",
+        camera_id=camera_id,
+        kind="plate",
+        matched_plate_id=match["id"] if match else None,
+        label=label,
         title=f"TBC: {'Bekanntes' if match else 'Unbekanntes'} Kennzeichen",
         message=f"{camera_name}: {plate['text']}",
         recording=recording,

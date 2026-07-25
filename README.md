@@ -1,6 +1,10 @@
 # TBC - TB Camera
 
-[![GHCR pulls](https://ghcr-badge.elias.eu.org/shield/404gamernotfound/TBC-camera-manager/tbc-camera-manager)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager)
+[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2F404gamernotfound%2Ftbc-camera-manager%2Ftbc-camera-manager&query=downloadCount&style=for-the-badge&logo=docker&logoColor=white&label=Docker%20Pulls&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager)
+[![Stars](https://img.shields.io/github/stars/404GamerNotFound/TBC-camera-manager?style=for-the-badge&logo=github&logoColor=white&label=Stars&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/stargazers)
+[![Sponsors](https://img.shields.io/github/sponsors/404GamerNotFound?style=for-the-badge&logo=github&logoColor=white&label=Sponsors&color=blue)](https://github.com/sponsors/404GamerNotFound)
+[![PayPal](https://img.shields.io/badge/PayPal-ME-blue?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/TonyBrueser)
+[![Revolut](https://img.shields.io/badge/Revolut-ME-blue?style=for-the-badge&logo=revolut&logoColor=white)](https://revolut.me/tony1995)
 
 TBC is a modular, Docker-based camera manager. Camera vendors are integrated through installable camera modules. Reolink, Aqara, TP-Link/Tapo, Axis, Foscam, Hikvision, Dahua (including Amcrest/Annke OEM devices), Ubiquiti/UniFi Protect, and SONOFF are available as directly installable standard repositories. A generic ONVIF fallback and a vendor-neutral RTSP-only profile remain built in.
 
