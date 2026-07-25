@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1 - "BugFix, new Timezones"
+- Timezones added
+- BugFix image generation
+
 ## 0.10.0 - "Automated backups"
 
 - Added automated encrypted system backups with selectable schedules, retention, and optional local or S3 storage replication.
