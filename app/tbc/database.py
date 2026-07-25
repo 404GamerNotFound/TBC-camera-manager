@@ -570,6 +570,7 @@ CREATE INDEX IF NOT EXISTS idx_recognition_events_created_at ON recognition_even
 CREATE INDEX IF NOT EXISTS idx_network_device_events_camera_id ON network_device_events(camera_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
 CREATE INDEX IF NOT EXISTS idx_audit_log_username ON audit_log(username);
+CREATE INDEX IF NOT EXISTS idx_camera_channels_camera_id ON camera_channels(camera_id);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -1795,6 +1796,31 @@ def list_camera_channels(database_path: str, camera_id: int) -> list[dict[str, A
             (camera_id,),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_camera_channels_for_cameras(
+    database_path: str, camera_ids: list[int]
+) -> dict[int, list[dict[str, Any]]]:
+    """Channels for several cameras in one query - used by the live wall, which
+    otherwise re-queries per camera on every ~3s status poll (see live.js).
+    """
+    if not camera_ids:
+        return {}
+    with connect(database_path) as db:
+        placeholders = ",".join("?" for _ in camera_ids)
+        rows = db.execute(
+            f"""
+            SELECT *
+              FROM camera_channels
+             WHERE camera_id IN ({placeholders})
+             ORDER BY camera_id, channel_index
+            """,
+            camera_ids,
+        ).fetchall()
+    channels_by_camera: dict[int, list[dict[str, Any]]] = {camera_id: [] for camera_id in camera_ids}
+    for row in rows:
+        channels_by_camera[row["camera_id"]].append(dict(row))
+    return channels_by_camera
 
 
 def get_camera_channel(database_path: str, channel_id: int) -> dict[str, Any] | None:

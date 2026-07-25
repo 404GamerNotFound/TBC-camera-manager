@@ -36,7 +36,7 @@ from ..main import (
     _require_live_key_access,
     _require_login,
     _set_flash,
-    _start_live_item,
+    _start_live_items_limited,
     templates,
 )
 
@@ -55,8 +55,7 @@ async def live_view(request: Request):
     # Ingress token transition even though the page request itself reached
     # TBC successfully. The old browser-side start-all endpoint had exactly
     # that failure mode. Starting is idempotent for an already-running item.
-    for item in live_items:
-        _start_live_item(item)
+    await _start_live_items_limited(live_items)
     await asyncio.gather(
         *(
             asyncio.to_thread(LIVE_MANAGER.wait_until_ready, str(item["key"]), 5)

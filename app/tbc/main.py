@@ -308,6 +308,10 @@ SNAPSHOT_MANAGER = DashboardSnapshotManager(
     interval_seconds=SETTINGS.dashboard_snapshot_interval_seconds,
 )
 SNAPSHOT_SEMAPHORE = asyncio.Semaphore(2)
+# Without this, opening /live with a large fleet spawns one ffmpeg process per
+# camera all at once (CPU/network spike); this caps how many stream starts run
+# concurrently, mirroring SNAPSHOT_SEMAPHORE above.
+LIVE_START_SEMAPHORE = asyncio.Semaphore(4)
 CONTROL_STATE_CACHE: dict[int, dict[str, Any]] = {}
 # Tracks (camera_id, channel) probes currently in flight and, after a failed
 # attempt, the earliest time a new one may start. Without this, every page that
@@ -1852,14 +1856,19 @@ def _control_ptz_supported(camera: dict[str, Any], camera_id: int, *, channel: i
 
 def _live_items_for_user(user: dict[str, Any]) -> list[dict[str, Any]]:
     cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    live_cameras = [camera for camera in cameras if _camera_supports(camera, CameraCapability.LIVE)]
+    # One batched query for all cameras' channels instead of one query per camera -
+    # this function is rebuilt on every ~3s live-status poll (see live.js), so the
+    # per-camera version meant a fresh sqlite connection per camera every cycle.
+    channels_by_camera = database.list_camera_channels_for_cameras(
+        SETTINGS.database_path, [int(camera["id"]) for camera in live_cameras]
+    )
     items: list[dict[str, Any]] = []
-    for camera in cameras:
-        if not _camera_supports(camera, CameraCapability.LIVE):
-            continue
+    for camera in live_cameras:
         camera_id = int(camera["id"])
         enabled_channels = [
             channel
-            for channel in database.list_camera_channels(SETTINGS.database_path, camera_id)
+            for channel in channels_by_camera.get(camera_id, [])
             if int(channel.get("enabled") or 0) == 1
         ]
         if not enabled_channels:
@@ -1915,6 +1924,17 @@ def _live_item_for_key(user: dict[str, Any], live_key: str) -> dict[str, Any] | 
         if item["key"] == live_key:
             return item
     return None
+
+
+async def _start_live_items_limited(items: list[dict[str, Any]]) -> None:
+    """Start several live items at once, capped by LIVE_START_SEMAPHORE so a
+    large fleet doesn't spawn one ffmpeg process per camera in a single burst.
+    """
+    async def _start_one(item: dict[str, Any]) -> None:
+        async with LIVE_START_SEMAPHORE:
+            await asyncio.to_thread(_start_live_item, item)
+
+    await asyncio.gather(*(_start_one(item) for item in items))
 
 
 def _start_live_item(item: dict[str, Any]) -> None:

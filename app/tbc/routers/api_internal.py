@@ -38,6 +38,7 @@ from ..main import (
     _require_live_key_access,
     _sd_card_recording_payload,
     _start_live_item,
+    _start_live_items_limited,
 )
 
 router = APIRouter()
@@ -181,8 +182,7 @@ async def start_all_live_api(request: Request):
         return JSONResponse({"error": "unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
     user = _current_user(request)
     items = _live_items_for_user(user)
-    for item in items:
-        _start_live_item(item)
+    await _start_live_items_limited(items)
     return {"items": [_live_item_payload(request, item) for item in items]}
 
 @router.post("/api/live/{live_key}/start")

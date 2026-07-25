@@ -47,7 +47,6 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.tbc import database, main  # noqa: E402
 from app.tbc.cloud_modules import CloudAccountField, CloudAccountFieldType  # noqa: E402
 from app.tbc.plugin_requirements import PluginRequirementsInstallError  # noqa: E402
-from app.tbc.routers import live as live_router  # noqa: E402
 
 TOKEN_PATTERN = re.compile(r"tbc_[A-Za-z0-9_-]{20,}")
 
@@ -1146,7 +1145,7 @@ class LiveWallServerStartTests(unittest.TestCase):
         )
 
     def test_live_wall_starts_streams_server_side_and_embeds_the_initial_state(self):
-        with patch.object(live_router, "_start_live_item") as start_item, patch.object(
+        with patch.object(main, "_start_live_item") as start_item, patch.object(
             main.LIVE_MANAGER, "wait_until_ready", return_value=(True, "ready")
         ) as wait_until_ready:
             response = CLIENT.get("/live")

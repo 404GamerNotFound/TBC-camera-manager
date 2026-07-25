@@ -1016,7 +1016,5 @@
 {% if 'control' in module_capabilities %}
 <script src="{{ ingress_prefix }}/static/vendor/hls.min.js?v={{ asset_version }}" defer></script>
 <script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
-{% endif %}
-<script src="{{ ingress_prefix }}/static/plugin-search.js?v={{ asset_version }}" defer></script>
-<script src="{{ ingress_prefix }}/static/camera-detail.js?v={{ asset_version }}" defer></script>
+{% endif %}<script src="{{ ingress_prefix }}/static/camera-detail.js?v={{ asset_version }}" defer></script>
 {% endblock %}
