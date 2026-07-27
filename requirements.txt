@@ -8,8 +8,8 @@ python-multipart==0.0.32
 itsdangerous==2.2.0
 cryptography>=49.0.0,<50
 onvif-zeep==0.2.12
-aiohttp>=3.14.1,<4
-boto3>=1.43.51,<2
+aiohttp>=3.14.3,<4
+boto3>=1.43.56,<2
 paho-mqtt==2.1.0
 packaging>=26.2
 # Capped below 2.3: numpy dropped the manylinux2014 (x86-64-v1 baseline) wheel
@@ -21,10 +21,10 @@ packaging>=26.2
 # every other pinned package's numpy requirement here.
 numpy>=2.2.6,<2.3
 Pillow>=12.3.0,<13
-onnxruntime>=1.27.0,<2
+onnxruntime>=1.28.0,<2
 opencv-python-headless==5.0.0.93
 fast-alpr[onnx]==0.4.0
 # QR code rendering for the two-factor authentication setup page (pure Python,
 # no transitive dependencies). The page falls back to manual secret entry if
 # this is ever missing.
-segno>=1.6,<2
+segno>=1.6.6,<2
