@@ -27,4 +27,4 @@ fast-alpr[onnx]==0.4.0
 # QR code rendering for the two-factor authentication setup page (pure Python,
 # no transitive dependencies). The page falls back to manual secret entry if
 # this is ever missing.
-segno>=1.6,<2
+segno>=1.6.6,<2
