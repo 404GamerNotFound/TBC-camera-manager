@@ -556,6 +556,111 @@ async def control_camera_quick_reply(request: Request, camera_id: int, file_id: 
         request, camera_id, action="quick_reply", params={"file_id": file_id}, channel=channel
     )
 
+@router.post("/cameras/{camera_id}/control/image")
+async def control_camera_image(
+    request: Request,
+    camera_id: int,
+    bright: str = Form(""),
+    contrast: str = Form(""),
+    saturation: str = Form(""),
+    hue: str = Form(""),
+    sharpness: str = Form(""),
+    channel: int = Form(0),
+):
+    params: dict[str, Any] = {}
+    for field, value in (
+        ("bright", bright),
+        ("contrast", contrast),
+        ("saturation", saturation),
+        ("hue", hue),
+        ("sharpness", sharpness),
+    ):
+        if value.strip():
+            params[field] = value.strip()
+    return await _execute_control(request, camera_id, action="image", params=params, channel=channel)
+
+@router.post("/cameras/{camera_id}/control/daynight")
+async def control_camera_daynight(request: Request, camera_id: int, mode: str = Form(...), channel: int = Form(0)):
+    return await _execute_control(request, camera_id, action="daynight", params={"mode": mode}, channel=channel)
+
+@router.post("/cameras/{camera_id}/control/daynight-threshold")
+async def control_camera_daynight_threshold(
+    request: Request, camera_id: int, value: int = Form(...), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="daynight_threshold", params={"value": value}, channel=channel
+    )
+
+@router.post("/cameras/{camera_id}/control/hdr")
+async def control_camera_hdr(request: Request, camera_id: int, state: str | None = Form(None), channel: int = Form(0)):
+    return await _execute_control(request, camera_id, action="hdr", params={"state": state == "on"}, channel=channel)
+
+@router.post("/cameras/{camera_id}/control/ir-lights")
+async def control_camera_ir_lights(
+    request: Request, camera_id: int, enable: str | None = Form(None), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="ir_lights", params={"enable": enable == "on"}, channel=channel
+    )
+
+@router.post("/cameras/{camera_id}/control/md-sensitivity")
+async def control_camera_md_sensitivity(request: Request, camera_id: int, value: int = Form(...), channel: int = Form(0)):
+    return await _execute_control(
+        request, camera_id, action="md_sensitivity", params={"value": value}, channel=channel
+    )
+
+@router.post("/cameras/{camera_id}/control/ai-sensitivity")
+async def control_camera_ai_sensitivity(
+    request: Request, camera_id: int, ai_type: str = Form(...), value: int = Form(...), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="ai_sensitivity", params={"ai_type": ai_type, "value": value}, channel=channel
+    )
+
+@router.post("/cameras/{camera_id}/control/osd")
+async def control_camera_osd(
+    request: Request,
+    camera_id: int,
+    name_pos: str = Form(""),
+    date_pos: str = Form(""),
+    watermark: str = Form(""),
+    channel: int = Form(0),
+):
+    params: dict[str, Any] = {}
+    if name_pos.strip():
+        params["name_pos"] = name_pos.strip()
+    if date_pos.strip():
+        params["date_pos"] = date_pos.strip()
+    if watermark.strip():
+        params["watermark"] = watermark == "on"
+    return await _execute_control(request, camera_id, action="osd", params=params, channel=channel)
+
+@router.post("/cameras/{camera_id}/control/volume")
+async def control_camera_volume(
+    request: Request,
+    camera_id: int,
+    volume: str = Form(""),
+    volume_speak: str = Form(""),
+    volume_doorbell: str = Form(""),
+    doorbell_button_sound: str = Form(""),
+    channel: int = Form(0),
+):
+    params: dict[str, Any] = {}
+    for field, value in (("volume", volume), ("volume_speak", volume_speak), ("volume_doorbell", volume_doorbell)):
+        if value.strip():
+            params[field] = value.strip()
+    if doorbell_button_sound.strip():
+        params["doorbell_button_sound"] = doorbell_button_sound == "on"
+    return await _execute_control(request, camera_id, action="volume", params=params, channel=channel)
+
+@router.post("/cameras/{camera_id}/control/video-codec")
+async def control_camera_video_codec(
+    request: Request, camera_id: int, value: str = Form(...), stream: str = Form("main"), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="video_codec", params={"value": value, "stream": stream}, channel=channel
+    )
+
 @router.post("/cameras/{camera_id}/firmware/check")
 async def check_camera_firmware(request: Request, camera_id: int, channel: int = Form(0)):
     guard = _require_admin(request)

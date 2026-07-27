@@ -864,6 +864,193 @@
   </section>
   {% endif %}
 
+  {% if control_state and (control_state.image_bright_supported or control_state.image_contrast_supported or control_state.image_saturation_supported or control_state.image_hue_supported or control_state.image_sharpness_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.image_adjustments">Image adjustments</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/image" data-control-form>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      {% if control_state.image_bright_supported %}
+      <label><span data-i18n="camera.brightness">Brightness</span><input name="bright" type="range" min="0" max="255" value="{{ control_state.image_brightness or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_contrast_supported %}
+      <label><span data-i18n="camera.contrast">Contrast</span><input name="contrast" type="range" min="0" max="255" value="{{ control_state.image_contrast or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_saturation_supported %}
+      <label><span data-i18n="camera.saturation">Saturation</span><input name="saturation" type="range" min="0" max="255" value="{{ control_state.image_saturation or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_hue_supported %}
+      <label><span data-i18n="camera.hue">Hue</span><input name="hue" type="range" min="0" max="255" value="{{ control_state.image_hue or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_sharpness_supported %}
+      <label><span data-i18n="camera.sharpness">Sharpness</span><input name="sharpness" type="range" min="0" max="255" value="{{ control_state.image_sharpness or 0 }}"></label>
+      {% endif %}
+      <button class="secondary-button" type="submit" data-i18n="camera.apply_image_adjustments">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.daynight_mode is not none or control_state.hdr_supported or control_state.ir_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.day_night_ir">Day/Night &amp; IR</h2></div>
+    {% if control_state.daynight_mode is not none %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/daynight" data-control-form>
+      <label><span data-i18n="camera.day_night_mode">Day/Night mode</span>
+        <select name="mode">
+          <option value="Auto" {% if control_state.daynight_mode == "Auto" %}selected{% endif %} data-i18n="camera.mode_auto">Auto</option>
+          <option value="Color" {% if control_state.daynight_mode == "Color" %}selected{% endif %} data-i18n="camera.mode_color">Color</option>
+          <option value="Black&amp;White" {% if control_state.daynight_mode == "Black&White" %}selected{% endif %} data-i18n="camera.mode_black_white">Black &amp; White</option>
+        </select>
+      </label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% if control_state.daynight_threshold is not none %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/daynight-threshold" data-control-form>
+      <label><span data-i18n="camera.day_night_threshold">Day/Night threshold</span><input name="value" type="range" min="0" max="100" value="{{ control_state.daynight_threshold }}"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% if control_state.hdr_supported %}
+    <div class="button-row">
+      <span data-i18n="camera.hdr">HDR</span>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/hdr" data-control-form><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="camera.turn">Turn on</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/hdr" data-control-form><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.turn_off">Turn off</button></form>
+    </div>
+    {% endif %}
+    {% if control_state.ir_supported %}
+    <div class="button-row">
+      <span data-i18n="camera.ir_lights">IR lights</span>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ir-lights" data-control-form><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="api.activate">Activate</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ir-lights" data-control-form><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.deactivate">Deactivate</button></form>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.md_sensitivity_supported or control_state.ai_sensitivity_rows) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.detection_sensitivity">Detection sensitivity</h2></div>
+    {% if control_state.md_sensitivity_supported %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/md-sensitivity" data-control-form>
+      <label><span data-i18n="camera.motion_sensitivity">Motion sensitivity</span><input name="value" type="range" min="1" max="50" value="{{ control_state.md_sensitivity or 25 }}"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% for row in control_state.ai_sensitivity_rows %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ai-sensitivity" data-control-form>
+      <label><span>{{ row.label }}</span><input name="value" type="range" min="0" max="100" value="{{ row.value or 50 }}"></label>
+      <input type="hidden" name="ai_type" value="{{ row.ai_type }}">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if control_state and control_state.osd_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.osd">On-screen display</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/osd" data-control-form>
+      <label><span data-i18n="camera.osd_name_position">Camera name position</span>
+        <select name="name_pos">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="Off" data-i18n="camera.osd_off">Off</option>
+          <option value="Upper Left" data-i18n="camera.osd_upper_left">Upper left</option>
+          <option value="Upper Right" data-i18n="camera.osd_upper_right">Upper right</option>
+          <option value="Top Center" data-i18n="camera.osd_top_center">Top center</option>
+          <option value="Bottom Center" data-i18n="camera.osd_bottom_center">Bottom center</option>
+          <option value="Lower Left" data-i18n="camera.osd_lower_left">Lower left</option>
+          <option value="Lower Right" data-i18n="camera.osd_lower_right">Lower right</option>
+        </select>
+      </label>
+      <label><span data-i18n="camera.osd_date_position">Date position</span>
+        <select name="date_pos">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="Off" data-i18n="camera.osd_off">Off</option>
+          <option value="Upper Left" data-i18n="camera.osd_upper_left">Upper left</option>
+          <option value="Upper Right" data-i18n="camera.osd_upper_right">Upper right</option>
+          <option value="Top Center" data-i18n="camera.osd_top_center">Top center</option>
+          <option value="Bottom Center" data-i18n="camera.osd_bottom_center">Bottom center</option>
+          <option value="Lower Left" data-i18n="camera.osd_lower_left">Lower left</option>
+          <option value="Lower Right" data-i18n="camera.osd_lower_right">Lower right</option>
+        </select>
+      </label>
+      <label><span data-i18n="camera.osd_watermark">Logo watermark</span>
+        <select name="watermark">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="on" data-i18n="camera.on">On</option>
+          <option value="off" data-i18n="camera.off">Off</option>
+        </select>
+      </label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.volume_supported or control_state.volume_speak_supported or control_state.volume_doorbell_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.volume">Volume</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/volume" data-control-form>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      {% if control_state.volume_supported %}
+      <label><span data-i18n="camera.volume_system">System volume</span><input name="volume" type="range" min="0" max="100" value="{{ control_state.volume or 0 }}"></label>
+      {% endif %}
+      {% if control_state.volume_speak_supported %}
+      <label><span data-i18n="camera.volume_speak">Two-way audio volume</span><input name="volume_speak" type="range" min="0" max="100" value="{{ control_state.volume_speak or 0 }}"></label>
+      {% endif %}
+      {% if control_state.volume_doorbell_supported %}
+      <label><span data-i18n="camera.volume_doorbell">Doorbell ringtone volume</span><input name="volume_doorbell" type="range" min="0" max="100" value="{{ control_state.volume_doorbell or 0 }}"></label>
+      {% endif %}
+      {% if control_state.doorbell_button_sound_supported %}
+      <label><span data-i18n="camera.doorbell_button_sound">Doorbell button confirmation sound</span>
+        <select name="doorbell_button_sound">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="on" data-i18n="camera.on">On</option>
+          <option value="off" data-i18n="camera.off">Off</option>
+        </select>
+      </label>
+      {% endif %}
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.video_codec_main or control_state.video_codec_sub) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.video_codec">Video codec</h2></div>
+    {% if control_state.video_codec_main %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/video-codec" data-control-form>
+      <label><span data-i18n="camera.video_codec_main">Main stream</span>
+        <select name="value">
+          <option value="h264" {% if control_state.video_codec_main == "h264" %}selected{% endif %} data-i18n="camera.codec_h264">H.264</option>
+          <option value="h265" {% if control_state.video_codec_main == "h265" %}selected{% endif %} data-i18n="camera.codec_h265">H.265</option>
+        </select>
+      </label>
+      <input type="hidden" name="stream" value="main">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% if control_state.video_codec_sub %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/video-codec" data-control-form>
+      <label><span data-i18n="camera.video_codec_sub">Substream</span>
+        <select name="value">
+          <option value="h264" {% if control_state.video_codec_sub == "h264" %}selected{% endif %} data-i18n="camera.codec_h264">H.264</option>
+          <option value="h265" {% if control_state.video_codec_sub == "h265" %}selected{% endif %} data-i18n="camera.codec_h265">H.265</option>
+        </select>
+      </label>
+      <input type="hidden" name="stream" value="sub">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if not control_state or control_state.floodlight_supported %}
   <section class="table-section">
     <div class="section-title">
