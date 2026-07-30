@@ -1197,5 +1197,9 @@
   "camera.codec_h264": "H.264",
   "camera.codec_h265": "H.265",
   "camera.battery_asleep": "В сън",
-  "camera.battery_awake": "Будна"
+  "camera.battery_awake": "Будна",
+  "camera.sdcard_status": "SD карта",
+  "camera.sdcard_usage": "{free} / {capacity} MB",
+  "camera.wifi_signal": "WiFi сигнал",
+  "camera.ntp_status": "NTP"
 }

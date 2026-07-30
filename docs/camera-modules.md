@@ -225,6 +225,16 @@ action="privacy_mask_delete", token=...)` removes one. Kept in its own module ra
 `onvif_control.py`, deliberately: this is meaningfully less-trodden ground than PTZ/imaging/
 motion zones, so a failure here shouldn't be able to affect them.
 
+Beyond the fields above, `get_control_state()` has an established convention (see the
+docstring in `app/tbc/camera_modules/base.py`) for read-only device status the core template
+renders generically whenever present, for modules with their own way to report it (typically
+an external plugin using a vendor SDK - none of TBC's built-in modules populate these today):
+`sdcard_supported`/`sdcard_status`/`sdcard_capacity_mb`/`sdcard_free_mb` for SD card
+capacity, `wifi_supported`/`wifi_signal_percent` for Wi-Fi signal strength, and
+`ntp_supported`/`ntp_enabled`/`ntp_server` for NTP time sync. These are display-only fields
+with no corresponding `send_control()` action - formatting an SD card or changing NTP settings
+is not implemented anywhere in TBC.
+
 For models with optical zoom, such as the RLC-823A and TrackMix series,
 `get_control_state()` also reports `zoom_supported` and `focus_supported` with current
 positions and value ranges through `reolink-aio`'s `zoom_range()`, `get_zoom()`, and

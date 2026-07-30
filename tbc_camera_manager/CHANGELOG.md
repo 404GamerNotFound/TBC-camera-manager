@@ -21,6 +21,12 @@
   otherwise supported by this project's ONVIF library - ships its own bundled, offline-verified
   WSDL/schema closure and SOAP client construction, isolated in its own module so it can't
   affect the well-established PTZ/imaging/motion-zone ONVIF support.
+- Documented and added generic template rendering for a new convention of read-only device
+  status fields any camera module can report through the existing get_control_state() dict
+  contract (SD card capacity, Wi-Fi signal strength, NTP sync) - no code changes were needed to
+  "support" this, since the contract was already an untyped dict; this fills in the display
+  side and the documented field names so an external plugin (e.g. Reolink) can start
+  populating them.
 
 ## 0.10.1 - "BugFix, new Timezones"
 - Timezones added

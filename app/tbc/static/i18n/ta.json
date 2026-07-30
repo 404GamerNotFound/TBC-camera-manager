@@ -1197,5 +1197,9 @@
   "camera.codec_h264": "H.264",
   "camera.codec_h265": "H.265",
   "camera.battery_asleep": "உறக்கத்தில்",
-  "camera.battery_awake": "விழிப்பில்"
+  "camera.battery_awake": "விழிப்பில்",
+  "camera.sdcard_status": "SD கார்டு",
+  "camera.sdcard_usage": "{free} / {capacity} MB",
+  "camera.wifi_signal": "வைஃபை சிக்னல்",
+  "camera.ntp_status": "NTP"
 }

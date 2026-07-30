@@ -1214,6 +1214,39 @@
   </section>
   {% endif %}
 
+  {% if control_state and (control_state.sdcard_supported or control_state.wifi_supported or control_state.ntp_supported) %}
+  <section class="overview-metrics">
+    {% if control_state.sdcard_supported %}
+    <div class="overview-metric">
+      <span data-i18n="camera.sdcard_status">SD card</span>
+      {% if control_state.sdcard_capacity_mb is not none %}
+      <strong data-i18n="camera.sdcard_usage" data-i18n-params='{{ {"free": control_state.sdcard_free_mb, "capacity": control_state.sdcard_capacity_mb} | tojson }}'>{{ control_state.sdcard_free_mb }} / {{ control_state.sdcard_capacity_mb }} MB</strong>
+      <small>{{ control_state.sdcard_status or '' }}</small>
+      {% else %}
+      <strong>{{ control_state.sdcard_status or '–' }}</strong>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if control_state.wifi_supported %}
+    <div class="overview-metric">
+      <span data-i18n="camera.wifi_signal">WiFi signal</span>
+      {% if control_state.wifi_signal_percent is not none %}
+      <strong>{{ control_state.wifi_signal_percent }} %</strong>
+      {% else %}
+      <strong class="metric-unavailable">–</strong><small data-i18n="camera.not_available">Not available</small>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if control_state.ntp_supported %}
+    <div class="overview-metric">
+      <span data-i18n="camera.ntp_status">NTP</span>
+      <strong>{{ control_state.ntp_server or '–' }}</strong>
+      <small>{% if control_state.ntp_enabled %}<span data-i18n="camera.on">On</span>{% else %}<span data-i18n="camera.off">Off</span>{% endif %}</small>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if not control_state or control_state.reboot_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.restart">Restart</h2></div>
