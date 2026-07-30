@@ -832,8 +832,48 @@
         <input type="hidden" name="channel" value="{{ selected_control_channel }}">
         <button class="secondary-button" type="submit">{{ preset_name }}</button>
       </form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-preset-delete" data-control-form>
+        <input type="hidden" name="preset" value="{{ preset_id }}">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="text-button" type="submit" data-i18n="camera.ptz_preset_delete_named" data-i18n-params='{{ {"name": preset_name} | tojson }}'>Delete {{ preset_name }}</button>
+      </form>
       {% endfor %}
     </div>
+  </section>
+  {% endif %}
+  {% if control_state and 'ptz_presets' in control_state %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.ptz_preset_save">Save preset</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-preset-save" data-control-form>
+      <label><span data-i18n="camera.ptz_preset_name">Preset name</span><input name="name" type="text" required maxlength="64"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.ptz_preset_save">Save preset</button>
+    </form>
+  </section>
+  {% endif %}
+  {% if control_state and control_state.ptz_patrol_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.ptz_patrol">Patrol</h2></div>
+    {% if control_state.ptz_patrol_tours %}
+    <div class="button-row ptz-controls">
+      {% for tour_name, tour_id in control_state.ptz_patrol_tours.items() %}
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-patrol" data-control-form>
+        <input type="hidden" name="tour" value="{{ tour_id }}">
+        <input type="hidden" name="command" value="start">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="primary-button" type="submit">{{ tour_name }}</button>
+      </form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-patrol" data-control-form>
+        <input type="hidden" name="tour" value="{{ tour_id }}">
+        <input type="hidden" name="command" value="stop">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="text-button" type="submit" data-i18n="camera.stop">■ Stop</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="diagnostic-note" data-i18n="camera.ptz_patrol_no_tours">This camera supports patrol but has no tours configured yet. Configure tours in the camera's own admin interface.</div>
+    {% endif %}
   </section>
   {% endif %}
   {% endif %}

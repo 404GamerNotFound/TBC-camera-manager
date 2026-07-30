@@ -48,6 +48,8 @@ def test_publish_control_state_covers_new_entities(monkeypatch):
         "is_doorbell": True,
         "quick_reply_supported": True,
         "quick_reply_options": {42: "I'll be right there"},
+        "ptz_patrol_supported": True,
+        "ptz_patrol_tours": {"Night round": "tour-1"},
     }
 
     mqtt.publish_control_state("db", _camera(), control_state)
@@ -66,6 +68,7 @@ def test_publish_control_state_covers_new_entities(monkeypatch):
     discovery_topics = {m["topic"] for m in captured if "/config" in m["topic"]}
     assert "homeassistant/switch/tbc_7_control_hdr/config" in discovery_topics
     assert "homeassistant/button/tbc_7_control_quick_reply_42/config" in discovery_topics
+    assert "homeassistant/switch/tbc_7_control_ptz_patrol_tour-1/config" in discovery_topics
 
 
 def test_publish_control_state_skips_unsupported_fields(monkeypatch):
@@ -102,5 +105,13 @@ def test_control_command_params_maps_new_entities():
         {"file_id": 42},
     )
     assert mqtt._control_command_params("quick_reply_notanumber", "PRESS") == (None, {})
+    assert mqtt._control_command_params("ptz_patrol_tour-1", "ON") == (
+        "ptz_patrol",
+        {"tour": "tour-1", "command": "start"},
+    )
+    assert mqtt._control_command_params("ptz_patrol_tour-1", "OFF") == (
+        "ptz_patrol",
+        {"tour": "tour-1", "command": "stop"},
+    )
     assert mqtt._control_command_params("daynight_threshold", "abc") == (None, {})
     assert mqtt._control_command_params("unknown_entity", "x") == (None, {})

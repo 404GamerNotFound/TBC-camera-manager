@@ -516,6 +516,28 @@ async def control_camera_ptz(
             pass
     return await _execute_control(request, camera_id, action="ptz", params=params, channel=channel)
 
+@router.post("/cameras/{camera_id}/control/ptz-preset-save")
+async def control_camera_ptz_preset_save(request: Request, camera_id: int, name: str = Form(...), channel: int = Form(0)):
+    return await _execute_control(
+        request, camera_id, action="ptz_preset_save", params={"name": name.strip()}, channel=channel
+    )
+
+@router.post("/cameras/{camera_id}/control/ptz-preset-delete")
+async def control_camera_ptz_preset_delete(
+    request: Request, camera_id: int, preset: str = Form(...), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="ptz_preset_delete", params={"preset": preset}, channel=channel
+    )
+
+@router.post("/cameras/{camera_id}/control/ptz-patrol")
+async def control_camera_ptz_patrol(
+    request: Request, camera_id: int, tour: str = Form(...), command: str = Form(...), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="ptz_patrol", params={"tour": tour, "command": command}, channel=channel
+    )
+
 @router.post("/cameras/{camera_id}/control/floodlight")
 async def control_camera_floodlight(
     request: Request, camera_id: int, state: str | None = Form(None), channel: int = Form(0)

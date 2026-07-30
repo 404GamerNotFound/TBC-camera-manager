@@ -373,6 +373,23 @@ def _dynamic_control_entities(control_state: dict[str, Any]) -> tuple[list[dict[
                     "extra": {"payload_press": "PRESS"},
                 }
             )
+    if control_state.get("ptz_patrol_supported"):
+        for tour_name, tour_token in (control_state.get("ptz_patrol_tours") or {}).items():
+            key = _topic_key(f"ptz_patrol_{tour_token}")
+            state_key = f"_dyn_{key}"
+            state[state_key] = True
+            entities.append(
+                {
+                    "key": key,
+                    "component": "switch",
+                    "label": f"Patrol: {tour_name}",
+                    "state_field": None,
+                    "supported_field": state_key,
+                    "presence_check": True,
+                    "command": True,
+                    "extra": {"payload_on": "ON", "payload_off": "OFF", "optimistic": True},
+                }
+            )
     return entities, state
 
 
@@ -692,6 +709,12 @@ def _control_command_params(entity_key: str, payload: str) -> tuple[str | None, 
         if file_id.isdigit():
             return "quick_reply", {"file_id": int(file_id)}
         return None, {}
+    if entity_key.startswith("ptz_patrol_"):
+        # The tour token was lowercased/sanitized by _topic_key() when the entity
+        # was created; this only round-trips correctly for tokens that are
+        # already lowercase-safe, same trade-off as the ai_sensitivity_* keys.
+        tour_token = entity_key[len("ptz_patrol_") :]
+        return "ptz_patrol", {"tour": tour_token, "command": "start" if payload_upper == "ON" else "stop"}
     return None, {}
 
 

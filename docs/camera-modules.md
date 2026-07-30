@@ -173,9 +173,15 @@ pan and tilt commands, including positions stored on the camera through `reolink
 `ptz_presets()` and `set_ptz_command(preset=...)`, as well as floodlight, PIR sensor, siren,
 restart, and battery status. `tplink`, `aqara`, `axis`, `dahua`, `foscam`, and `hikvision`
 provide PTZ through the manufacturer-neutral ONVIF PTZ service
-(`app/tbc/camera_modules/onvif_control.py`). When a camera has the `CONTROL` capability, the
-web interface adds a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC
-also publishes the same actions as Home Assistant entities (lights, switches, buttons, and
+(`app/tbc/camera_modules/onvif_control.py`), including camera-side presets (ONVIF
+`GetPresets`/`GotoPreset`/`SetPreset`/`RemovePreset`, reported as `ptz_presets` and applied
+through `send_control(action="ptz", preset=...)`, `"ptz_preset_save"`, and
+`"ptz_preset_delete"`) and patrol/preset tours where the camera's ONVIF implementation
+supports them (`GetPresetTours`/`OperatePresetTour`, reported as `ptz_patrol_supported` and
+`ptz_patrol_tours`, started/stopped through `send_control(action="ptz_patrol", tour=...,
+command="start"|"stop")`). When a camera has the `CONTROL` capability, the web interface adds
+a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC also publishes the
+same actions as Home Assistant entities (lights, switches, buttons, numbers, selects, and
 sensors) and accepts remote control through MQTT command topics (`app/tbc/mqtt.py`).
 
 For models with optical zoom, such as the RLC-823A and TrackMix series,

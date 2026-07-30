@@ -19,10 +19,25 @@ class FakeMediaService:
         return self._profiles
 
 
+class FakeNamed:
+    def __init__(self, token, name=None):
+        self.token = token
+        if name is not None:
+            self.Name = name
+
+
 class FakePtzService:
-    def __init__(self, configurations=("cfg",), stop_error: Exception | None = None):
+    def __init__(
+        self,
+        configurations=("cfg",),
+        stop_error: Exception | None = None,
+        presets=(),
+        tours=(),
+    ):
         self.configurations = configurations
         self.stop_error = stop_error
+        self.presets = presets
+        self.tours = tours
         self.calls: list[tuple[str, dict]] = []
 
     def GetConfigurations(self):
@@ -36,18 +51,43 @@ class FakePtzService:
         if self.stop_error:
             raise self.stop_error
 
+    def GetPresets(self, request):
+        self.calls.append(("GetPresets", request))
+        return self.presets
+
+    def GotoPreset(self, request):
+        self.calls.append(("GotoPreset", request))
+
+    def SetPreset(self, request):
+        self.calls.append(("SetPreset", request))
+        return "new-preset-token"
+
+    def RemovePreset(self, request):
+        self.calls.append(("RemovePreset", request))
+
+    def GetPresetTours(self, request):
+        self.calls.append(("GetPresetTours", request))
+        return self.tours
+
+    def OperatePresetTour(self, request):
+        self.calls.append(("OperatePresetTour", request))
+
 
 class FakeOnvifCamera:
     last_instance = None
     profiles = [FakeProfile("profile-1")]
     ptz_configurations: tuple = ("cfg",)
     stop_error: Exception | None = None
+    presets: tuple = ()
+    tours: tuple = ()
 
     def __init__(self, host, port, username, password, **kwargs):
         self.host = host
         self.port = port
         self.media_service = FakeMediaService(type(self).profiles)
-        self.ptz_service = FakePtzService(type(self).ptz_configurations, type(self).stop_error)
+        self.ptz_service = FakePtzService(
+            type(self).ptz_configurations, type(self).stop_error, type(self).presets, type(self).tours
+        )
         type(self).last_instance = self
 
     def create_media_service(self):
@@ -67,6 +107,8 @@ class OnvifControlTests(unittest.TestCase):
         FakeOnvifCamera.profiles = [FakeProfile("profile-1")]
         FakeOnvifCamera.ptz_configurations = ("cfg",)
         FakeOnvifCamera.stop_error = None
+        FakeOnvifCamera.presets = ()
+        FakeOnvifCamera.tours = ()
         FakeOnvifCamera.last_instance = None
         fake_module = types.SimpleNamespace(ONVIFCamera=FakeOnvifCamera)
         self._patcher = patch.dict(sys.modules, {"onvif": fake_module})
@@ -138,6 +180,68 @@ class OnvifControlTests(unittest.TestCase):
         )
 
         self.assertEqual(len(FakeOnvifCamera.last_instance.ptz_service.calls), 2)
+
+    def test_ptz_presets_returns_name_to_token_mapping(self):
+        FakeOnvifCamera.presets = [FakeNamed("tok-1", "Garden"), FakeNamed("tok-2")]
+
+        result = onvif_control.ptz_presets(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertEqual(result, {"Garden": "tok-1", "Preset 2": "tok-2"})
+
+    def test_ptz_presets_returns_empty_on_failure(self):
+        FakeOnvifCamera.profiles = []
+
+        result = onvif_control.ptz_presets(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertEqual(result, {})
+
+    def test_ptz_goto_preset_sends_preset_token(self):
+        onvif_control.ptz_goto_preset(
+            host="192.0.2.1", port=2020, username="u", password="p", preset_token="tok-1"
+        )
+
+        calls = FakeOnvifCamera.last_instance.ptz_service.calls
+        self.assertEqual(calls, [("GotoPreset", {"ProfileToken": "profile-1", "PresetToken": "tok-1"})])
+
+    def test_ptz_save_preset_sends_preset_name(self):
+        onvif_control.ptz_save_preset(host="192.0.2.1", port=2020, username="u", password="p", name="Garden")
+
+        calls = FakeOnvifCamera.last_instance.ptz_service.calls
+        self.assertEqual(calls, [("SetPreset", {"ProfileToken": "profile-1", "PresetName": "Garden"})])
+
+    def test_ptz_remove_preset_sends_preset_token(self):
+        onvif_control.ptz_remove_preset(
+            host="192.0.2.1", port=2020, username="u", password="p", preset_token="tok-1"
+        )
+
+        calls = FakeOnvifCamera.last_instance.ptz_service.calls
+        self.assertEqual(calls, [("RemovePreset", {"ProfileToken": "profile-1", "PresetToken": "tok-1"})])
+
+    def test_ptz_patrol_tours_returns_supported_with_tours(self):
+        FakeOnvifCamera.tours = [FakeNamed("tour-1", "Night round")]
+
+        result = onvif_control.ptz_patrol_tours(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertTrue(result["ptz_patrol_supported"])
+        self.assertEqual(result["ptz_patrol_tours"], {"Night round": "tour-1"})
+
+    def test_ptz_patrol_tours_unsupported_on_failure(self):
+        FakeOnvifCamera.profiles = []
+
+        result = onvif_control.ptz_patrol_tours(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertFalse(result["ptz_patrol_supported"])
+        self.assertEqual(result["ptz_patrol_tours"], {})
+
+    def test_ptz_operate_tour_sends_operation(self):
+        onvif_control.ptz_operate_tour(
+            host="192.0.2.1", port=2020, username="u", password="p", tour_token="tour-1", operation="Start"
+        )
+
+        calls = FakeOnvifCamera.last_instance.ptz_service.calls
+        self.assertEqual(
+            calls, [("OperatePresetTour", {"ProfileToken": "profile-1", "PresetTourToken": "tour-1", "Operation": "Start"})]
+        )
 
 
 if __name__ == "__main__":

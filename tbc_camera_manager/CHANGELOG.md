@@ -4,6 +4,9 @@
 - Exposed the image, day/night, HDR, IR lights, motion/AI sensitivity, volume, and video codec
   camera controls as Home Assistant MQTT entities (previously only floodlight, PIR, siren,
   reboot, battery, and PTZ were published).
+- Added camera-side PTZ presets (save/go to/delete) and patrol/tour start-stop for cameras
+  controlled through the built-in ONVIF PTZ service (previously only supported via the
+  external Reolink plugin), plus matching Home Assistant MQTT entities.
 
 ## 0.10.1 - "BugFix, new Timezones"
 - Timezones added

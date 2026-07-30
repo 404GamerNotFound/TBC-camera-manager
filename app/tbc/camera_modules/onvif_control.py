@@ -54,6 +54,94 @@ def ptz_capability(*, host: str, port: int, username: str, password: str) -> dic
         return {"ptz_supported": False}
 
 
+def _preset_name(preset: Any, index: int) -> str:
+    return getattr(preset, "Name", None) or f"Preset {index + 1}"
+
+
+def ptz_presets(*, host: str, port: int, username: str, password: str) -> dict[str, str]:
+    """Return {preset name: preset token} for cameras that support ONVIF PTZ presets.
+
+    Camera-side presets (GetPresets) are distinct from the fixed pan/tilt/zoom
+    directions in PTZ_COMMANDS; not every ONVIF PTZ camera supports them, so
+    failures degrade to "no presets" rather than surfacing an error.
+    """
+    try:
+        camera = _camera(host, port, username, password)
+        token = _profile_token(camera)
+        if token is None:
+            return {}
+        presets = camera.create_ptz_service().GetPresets({"ProfileToken": token}) or []
+        return {_preset_name(preset, index): preset.token for index, preset in enumerate(presets)}
+    except Exception as exc:
+        LOGGER.info("ONVIF PTZ preset probe failed for %s:%s: %s", host, port, exc)
+        return {}
+
+
+def ptz_goto_preset(
+    *, host: str, port: int, username: str, password: str, preset_token: str, speed: int | None = None
+) -> None:
+    camera = _camera(host, port, username, password)
+    token = _profile_token(camera)
+    if token is None:
+        raise RuntimeError("ONVIF: no media profile found for PTZ")
+    request: dict[str, Any] = {"ProfileToken": token, "PresetToken": preset_token}
+    if speed is not None:
+        factor = max(0.1, min(1.0, speed / 100))
+        request["Speed"] = {"PanTilt": {"x": factor, "y": factor}, "Zoom": {"x": factor}}
+    camera.create_ptz_service().GotoPreset(request)
+
+
+def ptz_save_preset(*, host: str, port: int, username: str, password: str, name: str) -> str | None:
+    camera = _camera(host, port, username, password)
+    token = _profile_token(camera)
+    if token is None:
+        raise RuntimeError("ONVIF: no media profile found for PTZ")
+    result = camera.create_ptz_service().SetPreset({"ProfileToken": token, "PresetName": name})
+    return result if isinstance(result, str) else getattr(result, "PresetToken", None)
+
+
+def ptz_remove_preset(*, host: str, port: int, username: str, password: str, preset_token: str) -> None:
+    camera = _camera(host, port, username, password)
+    token = _profile_token(camera)
+    if token is None:
+        raise RuntimeError("ONVIF: no media profile found for PTZ")
+    camera.create_ptz_service().RemovePreset({"ProfileToken": token, "PresetToken": preset_token})
+
+
+def ptz_patrol_tours(*, host: str, port: int, username: str, password: str) -> dict[str, Any]:
+    """Return patrol/tour support and {tour name: tour token} via ONVIF preset tours.
+
+    Preset tours ("patrol") are a separate, less commonly implemented ONVIF PTZ
+    feature from plain presets, so this is probed independently and degrades
+    to "not supported" on any failure (missing service, fault response, etc.).
+    """
+    try:
+        camera = _camera(host, port, username, password)
+        token = _profile_token(camera)
+        if token is None:
+            return {"ptz_patrol_supported": False, "ptz_patrol_tours": {}}
+        tours = camera.create_ptz_service().GetPresetTours({"ProfileToken": token}) or []
+        return {
+            "ptz_patrol_supported": True,
+            "ptz_patrol_tours": {_preset_name(tour, index): tour.token for index, tour in enumerate(tours)},
+        }
+    except Exception as exc:
+        LOGGER.info("ONVIF PTZ preset-tour probe failed for %s:%s: %s", host, port, exc)
+        return {"ptz_patrol_supported": False, "ptz_patrol_tours": {}}
+
+
+def ptz_operate_tour(
+    *, host: str, port: int, username: str, password: str, tour_token: str, operation: str
+) -> None:
+    camera = _camera(host, port, username, password)
+    token = _profile_token(camera)
+    if token is None:
+        raise RuntimeError("ONVIF: no media profile found for PTZ")
+    camera.create_ptz_service().OperatePresetTour(
+        {"ProfileToken": token, "PresetTourToken": tour_token, "Operation": operation}
+    )
+
+
 def ptz_move(
     *,
     host: str,
@@ -99,15 +187,24 @@ async def get_ptz_control_state(camera: dict[str, Any], *, default_port: int = 8
     none of them expose floodlight/PIR/siren/reboot/battery over plain ONVIF,
     so those fields are always reported as unsupported.
     """
-    result = await asyncio.to_thread(
-        ptz_capability,
-        host=camera["host"],
-        port=int(camera.get("onvif_port") or default_port),
-        username=camera["username"],
-        password=camera["password"],
-    )
+    host = camera["host"]
+    port = int(camera.get("onvif_port") or default_port)
+    username = camera["username"]
+    password = camera["password"]
+    result = await asyncio.to_thread(ptz_capability, host=host, port=port, username=username, password=password)
+    ptz_supported = bool(result.get("ptz_supported"))
+    presets: dict[str, str] = {}
+    patrol: dict[str, Any] = {"ptz_patrol_supported": False, "ptz_patrol_tours": {}}
+    if ptz_supported:
+        presets = await asyncio.to_thread(ptz_presets, host=host, port=port, username=username, password=password)
+        patrol = await asyncio.to_thread(
+            ptz_patrol_tours, host=host, port=port, username=username, password=password
+        )
     return {
-        "ptz_supported": bool(result.get("ptz_supported")),
+        "ptz_supported": ptz_supported,
+        "ptz_presets": presets,
+        "ptz_patrol_supported": patrol["ptz_patrol_supported"],
+        "ptz_patrol_tours": patrol["ptz_patrol_tours"],
         "floodlight_supported": False,
         "floodlight_state": None,
         "pir_supported": False,
@@ -122,19 +219,69 @@ async def get_ptz_control_state(camera: dict[str, Any], *, default_port: int = 8
 
 
 async def send_ptz_control(camera: dict[str, Any], *, action: str, default_port: int = 80, **params: Any) -> dict[str, Any]:
-    if action != "ptz":
-        raise ValueError(f"This module does not support the action '{action}' via ONVIF")
-    command = str(params.get("command") or "").strip()
-    if command not in PTZ_COMMANDS:
-        raise ValueError(f"Unbekannter PTZ-Befehl: {command}")
-    await asyncio.to_thread(
-        ptz_move,
-        host=camera["host"],
-        port=int(camera.get("onvif_port") or default_port),
-        username=camera["username"],
-        password=camera["password"],
-        command=command,
-        speed=params.get("speed"),
-        pulse_seconds=float(params.get("pulse_seconds") or 0.5),
-    )
-    return {"status": "ok", "action": action}
+    host = camera["host"]
+    port = int(camera.get("onvif_port") or default_port)
+    username = camera["username"]
+    password = camera["password"]
+
+    if action == "ptz":
+        preset_token = str(params.get("preset") or "").strip()
+        if preset_token:
+            await asyncio.to_thread(
+                ptz_goto_preset,
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                preset_token=preset_token,
+                speed=params.get("speed"),
+            )
+            return {"status": "ok", "action": action}
+        command = str(params.get("command") or "").strip()
+        if command not in PTZ_COMMANDS:
+            raise ValueError(f"Unbekannter PTZ-Befehl: {command}")
+        await asyncio.to_thread(
+            ptz_move,
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            command=command,
+            speed=params.get("speed"),
+            pulse_seconds=float(params.get("pulse_seconds") or 0.5),
+        )
+        return {"status": "ok", "action": action}
+
+    if action == "ptz_preset_save":
+        name = str(params.get("name") or "").strip()
+        if not name:
+            raise ValueError("A preset name is required")
+        await asyncio.to_thread(ptz_save_preset, host=host, port=port, username=username, password=password, name=name)
+        return {"status": "ok", "action": action}
+
+    if action == "ptz_preset_delete":
+        preset_token = str(params.get("preset") or "").strip()
+        if not preset_token:
+            raise ValueError("A preset is required")
+        await asyncio.to_thread(
+            ptz_remove_preset, host=host, port=port, username=username, password=password, preset_token=preset_token
+        )
+        return {"status": "ok", "action": action}
+
+    if action == "ptz_patrol":
+        tour_token = str(params.get("tour") or "").strip()
+        command = str(params.get("command") or "").strip().lower()
+        if not tour_token or command not in ("start", "stop"):
+            raise ValueError("A patrol tour and start/stop command are required")
+        await asyncio.to_thread(
+            ptz_operate_tour,
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            tour_token=tour_token,
+            operation="Start" if command == "start" else "Stop",
+        )
+        return {"status": "ok", "action": action}
+
+    raise ValueError(f"This module does not support the action '{action}' via ONVIF")
