@@ -501,6 +501,30 @@ section.diagnostic-note {
   background: #edf8f1;
 }
 
+.md-zone-grid {
+  display: grid;
+  gap: 2px;
+  margin: 12px 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.md-zone-cell {
+  aspect-ratio: 1;
+  min-width: 10px;
+  border-radius: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.md-zone-cell-active {
+  background: var(--brand);
+  border-color: var(--brand-strong);
+}
+
 .progress-track {
   height: 8px;
   overflow: hidden;

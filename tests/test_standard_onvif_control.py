@@ -101,6 +101,47 @@ class StandardOnvifControlTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await control.send_control(self.camera, action="reboot")
 
+    async def test_get_control_state_merges_motion_zone_capability(self):
+        with patch.object(control.onvif_control, "ptz_capability", return_value={"ptz_supported": False}), \
+            patch.object(
+                control.onvif_control,
+                "motion_zone_capability",
+                return_value={
+                    "md_zone_supported": True,
+                    "md_zone_config_token": "analytics-1",
+                    "md_zone_columns": 8,
+                    "md_zone_rows": 6,
+                },
+            ):
+            state = await control.get_control_state(self.camera)
+
+        self.assertTrue(state["md_zone_supported"])
+        self.assertEqual(state["md_zone_config_token"], "analytics-1")
+        self.assertEqual(state["md_zone_columns"], 8)
+        self.assertEqual(state["md_zone_rows"], 6)
+
+    async def test_send_control_md_zone_forwards_to_onvif(self):
+        with patch.object(control.onvif_control, "set_motion_zone") as set_zone:
+            result = await control.send_control(
+                self.camera, action="md_zone", config_token="analytics-1", columns=4, rows=3, cells="111000111000"
+            )
+
+        set_zone.assert_called_once_with(
+            host="192.0.2.30",
+            port=80,
+            username="camera",
+            password="secret",
+            config_token="analytics-1",
+            columns=4,
+            rows=3,
+            cells="111000111000",
+        )
+        self.assertEqual(result, {"status": "ok", "action": "md_zone"})
+
+    async def test_send_control_md_zone_requires_config_and_cells(self):
+        with self.assertRaises(ValueError):
+            await control.send_control(self.camera, action="md_zone", config_token="", columns=4, rows=3, cells="")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -285,3 +285,156 @@ async def send_ptz_control(camera: dict[str, Any], *, action: str, default_port:
         return {"status": "ok", "action": action}
 
     raise ValueError(f"This module does not support the action '{action}' via ONVIF")
+
+
+# --- Onboard motion-detection zones (EXPERIMENTAL) -------------------------------
+#
+# The ONVIF Rule Engine's CellMotionDetector analytics module exposes a grid
+# ("Layout": Columns x Rows) as a standard, typed XML attribute pair, but the
+# active-cell bitmap itself is an `xs:any` extension point with no defined wire
+# format - vendors are free to encode it however they like. Reading back which
+# cells are currently active is not attempted here for that reason. Writing a
+# new bitmap uses a row-major "0"/"1" string as the Layout element's content,
+# a convention several ONVIF stacks follow in practice, but this is a best
+# effort: it may silently have no effect, or raise, on cameras that use a
+# different encoding or don't support cell-grid analytics at all. Grid
+# discovery (module presence + Columns/Rows) is spec-defined and reliable.
+DEFAULT_MOTION_ZONE_COLUMNS = 10
+DEFAULT_MOTION_ZONE_ROWS = 10
+
+_CELL_MOTION_DETECTOR_TYPE = "CellMotionDetector"
+_LAYOUT_PARAMETER_NAME = "Layout"
+
+
+def _find_cell_motion_module(analytics_config: Any) -> Any | None:
+    engine = getattr(analytics_config, "AnalyticsEngineConfiguration", None)
+    for module in getattr(engine, "AnalyticsModule", None) or []:
+        if _CELL_MOTION_DETECTOR_TYPE in str(getattr(module, "Type", "")):
+            return module
+    return None
+
+
+def _read_cell_layout_size(module: Any) -> tuple[int | None, int | None]:
+    parameters = getattr(module, "Parameters", None)
+    for item in getattr(parameters, "ElementItem", None) or []:
+        if str(getattr(item, "Name", "")) != _LAYOUT_PARAMETER_NAME:
+            continue
+        layout = getattr(item, "_value_1", item)
+        columns = getattr(layout, "Columns", None)
+        rows = getattr(layout, "Rows", None)
+        try:
+            return (
+                int(columns) if columns is not None else None,
+                int(rows) if rows is not None else None,
+            )
+        except (TypeError, ValueError):
+            return None, None
+    return None, None
+
+
+def motion_zone_capability(*, host: str, port: int, username: str, password: str) -> dict[str, Any]:
+    """Probe for an ONVIF CellMotionDetector analytics module and its grid size."""
+    try:
+        camera = _camera(host, port, username, password)
+        media_service = camera.create_media_service()
+        for config in media_service.GetVideoAnalyticsConfigurations() or []:
+            module = _find_cell_motion_module(config)
+            if module is None:
+                continue
+            columns, rows = _read_cell_layout_size(module)
+            return {
+                "md_zone_supported": True,
+                "md_zone_config_token": config.token,
+                "md_zone_columns": columns or DEFAULT_MOTION_ZONE_COLUMNS,
+                "md_zone_rows": rows or DEFAULT_MOTION_ZONE_ROWS,
+            }
+        return {"md_zone_supported": False}
+    except Exception as exc:
+        LOGGER.info("ONVIF motion-zone capability probe failed for %s:%s: %s", host, port, exc)
+        return {"md_zone_supported": False}
+
+
+def set_motion_zone(
+    *, host: str, port: int, username: str, password: str, config_token: str, columns: int, rows: int, cells: str
+) -> None:
+    """Best-effort write of a new active-cell bitmap to an ONVIF CellMotionDetector.
+
+    Re-fetches and mutates the device's existing analytics configuration in
+    place (rather than constructing a fresh one) so any other analytics
+    modules or rules already configured on the camera are preserved.
+    """
+    camera = _camera(host, port, username, password)
+    media_service = camera.create_media_service()
+    target_config = None
+    for config in media_service.GetVideoAnalyticsConfigurations() or []:
+        if str(getattr(config, "token", "")) == config_token:
+            target_config = config
+            break
+    if target_config is None:
+        raise RuntimeError("This camera no longer reports the expected motion-zone configuration")
+    module = _find_cell_motion_module(target_config)
+    if module is None:
+        raise RuntimeError("This camera no longer reports a cell motion detector module")
+
+    parameters = getattr(module, "Parameters", None)
+    layout_item = None
+    for item in getattr(parameters, "ElementItem", None) or []:
+        if str(getattr(item, "Name", "")) == _LAYOUT_PARAMETER_NAME:
+            layout_item = item
+            break
+    if layout_item is None:
+        raise RuntimeError("This camera's cell motion detector does not expose a Layout parameter")
+
+    layout = getattr(layout_item, "_value_1", layout_item)
+    try:
+        layout.Columns = columns
+        layout.Rows = rows
+    except Exception as exc:
+        raise RuntimeError("This camera's ONVIF stack rejected the motion-zone grid size") from exc
+    try:
+        layout.Extension = cells
+    except Exception:
+        LOGGER.info(
+            "ONVIF motion-zone bitmap write not supported by this camera's ONVIF stack for %s:%s", host, port
+        )
+
+    media_service.SetVideoAnalyticsConfiguration({"Configuration": target_config, "ForcePersistence": True})
+
+
+async def get_motion_zone_control_state(camera: dict[str, Any], *, default_port: int = 80) -> dict[str, Any]:
+    result = await asyncio.to_thread(
+        motion_zone_capability,
+        host=camera["host"],
+        port=int(camera.get("onvif_port") or default_port),
+        username=camera["username"],
+        password=camera["password"],
+    )
+    if not result.get("md_zone_supported"):
+        return {"md_zone_supported": False}
+    return result
+
+
+async def send_motion_zone_control(camera: dict[str, Any], *, default_port: int = 80, **params: Any) -> dict[str, Any]:
+    config_token = str(params.get("config_token") or "").strip()
+    cells = str(params.get("cells") or "").strip()
+    if not config_token or not cells:
+        raise ValueError("A motion-zone configuration and cell grid are required")
+    try:
+        columns = int(params.get("columns") or 0)
+        rows = int(params.get("rows") or 0)
+    except (TypeError, ValueError):
+        raise ValueError("Invalid motion-zone grid size") from None
+    if columns <= 0 or rows <= 0:
+        raise ValueError("Invalid motion-zone grid size")
+    await asyncio.to_thread(
+        set_motion_zone,
+        host=camera["host"],
+        port=int(camera.get("onvif_port") or default_port),
+        username=camera["username"],
+        password=camera["password"],
+        config_token=config_token,
+        columns=columns,
+        rows=rows,
+        cells=cells,
+    )
+    return {"status": "ok", "action": "md_zone"}

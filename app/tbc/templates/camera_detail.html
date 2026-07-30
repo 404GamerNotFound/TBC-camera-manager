@@ -990,6 +990,24 @@
   </section>
   {% endif %}
 
+  {% if control_state and control_state.md_zone_supported %}
+  <section class="table-section" data-md-zone-editor data-camera-id="{{ camera.id }}" data-control-channel="{{ selected_control_channel }}">
+    <div class="section-title"><h2 data-i18n="camera.md_zone_title">Onboard motion zones</h2></div>
+    <div class="diagnostic-note diagnostic-warning" data-i18n="camera.md_zone_experimental_note">Experimental: this uses the camera's ONVIF motion-detection grid, which is not standardized in the same way across vendors. It may not work on every camera. The grid does not reflect the camera's current zone configuration; it starts fully selected and only writes what you set here.</div>
+    <div class="md-zone-grid" data-md-zone-grid style="--md-zone-columns: {{ control_state.md_zone_columns }};" data-columns="{{ control_state.md_zone_columns }}" data-rows="{{ control_state.md_zone_rows }}"></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/md-zone" data-control-form data-md-zone-form>
+      <input type="hidden" name="config_token" value="{{ control_state.md_zone_config_token }}">
+      <input type="hidden" name="columns" value="{{ control_state.md_zone_columns }}">
+      <input type="hidden" name="rows" value="{{ control_state.md_zone_rows }}">
+      <input type="hidden" name="cells" data-md-zone-cells value="">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="button" data-md-zone-select-all data-i18n="camera.md_zone_select_all">Select all</button>
+      <button class="secondary-button" type="button" data-md-zone-clear data-i18n="camera.md_zone_clear">Clear all</button>
+      <button class="primary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
   {% if control_state and control_state.osd_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.osd">On-screen display</h2></div>

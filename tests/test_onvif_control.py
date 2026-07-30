@@ -12,11 +12,19 @@ class FakeProfile:
 
 
 class FakeMediaService:
-    def __init__(self, profiles):
+    def __init__(self, profiles, analytics_configs=()):
         self._profiles = profiles
+        self.analytics_configs = list(analytics_configs)
+        self.set_analytics_calls: list[dict] = []
 
     def GetProfiles(self):
         return self._profiles
+
+    def GetVideoAnalyticsConfigurations(self):
+        return self.analytics_configs
+
+    def SetVideoAnalyticsConfiguration(self, request):
+        self.set_analytics_calls.append(request)
 
 
 class FakeNamed:
@@ -24,6 +32,31 @@ class FakeNamed:
         self.token = token
         if name is not None:
             self.Name = name
+
+
+class FakeLayout:
+    def __init__(self, columns=None, rows=None):
+        self.Columns = columns
+        self.Rows = rows
+        self.Extension = None
+
+
+class FakeElementItem:
+    def __init__(self, name, value):
+        self.Name = name
+        self._value_1 = value
+
+
+class FakeAnalyticsModule:
+    def __init__(self, module_type, element_items=()):
+        self.Type = module_type
+        self.Parameters = types.SimpleNamespace(ElementItem=list(element_items))
+
+
+class FakeAnalyticsConfig:
+    def __init__(self, token, modules=()):
+        self.token = token
+        self.AnalyticsEngineConfiguration = types.SimpleNamespace(AnalyticsModule=list(modules))
 
 
 class FakePtzService:
@@ -80,11 +113,12 @@ class FakeOnvifCamera:
     stop_error: Exception | None = None
     presets: tuple = ()
     tours: tuple = ()
+    analytics_configs: tuple = ()
 
     def __init__(self, host, port, username, password, **kwargs):
         self.host = host
         self.port = port
-        self.media_service = FakeMediaService(type(self).profiles)
+        self.media_service = FakeMediaService(type(self).profiles, type(self).analytics_configs)
         self.ptz_service = FakePtzService(
             type(self).ptz_configurations, type(self).stop_error, type(self).presets, type(self).tours
         )
@@ -109,6 +143,7 @@ class OnvifControlTests(unittest.TestCase):
         FakeOnvifCamera.stop_error = None
         FakeOnvifCamera.presets = ()
         FakeOnvifCamera.tours = ()
+        FakeOnvifCamera.analytics_configs = ()
         FakeOnvifCamera.last_instance = None
         fake_module = types.SimpleNamespace(ONVIFCamera=FakeOnvifCamera)
         self._patcher = patch.dict(sys.modules, {"onvif": fake_module})
@@ -242,6 +277,119 @@ class OnvifControlTests(unittest.TestCase):
         self.assertEqual(
             calls, [("OperatePresetTour", {"ProfileToken": "profile-1", "PresetTourToken": "tour-1", "Operation": "Start"})]
         )
+
+    def test_motion_zone_capability_reports_grid_size(self):
+        layout = FakeLayout(columns=8, rows=6)
+        module = FakeAnalyticsModule("tt:CellMotionDetector", [FakeElementItem("Layout", layout)])
+        FakeOnvifCamera.analytics_configs = [FakeAnalyticsConfig("analytics-1", [module])]
+
+        result = onvif_control.motion_zone_capability(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertEqual(
+            result,
+            {
+                "md_zone_supported": True,
+                "md_zone_config_token": "analytics-1",
+                "md_zone_columns": 8,
+                "md_zone_rows": 6,
+            },
+        )
+
+    def test_motion_zone_capability_falls_back_to_defaults_without_layout_size(self):
+        module = FakeAnalyticsModule("tt:CellMotionDetector", [])
+        FakeOnvifCamera.analytics_configs = [FakeAnalyticsConfig("analytics-1", [module])]
+
+        result = onvif_control.motion_zone_capability(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertTrue(result["md_zone_supported"])
+        self.assertEqual(result["md_zone_columns"], onvif_control.DEFAULT_MOTION_ZONE_COLUMNS)
+        self.assertEqual(result["md_zone_rows"], onvif_control.DEFAULT_MOTION_ZONE_ROWS)
+
+    def test_motion_zone_capability_unsupported_without_cell_motion_module(self):
+        module = FakeAnalyticsModule("tt:SomeOtherAnalytics", [])
+        FakeOnvifCamera.analytics_configs = [FakeAnalyticsConfig("analytics-1", [module])]
+
+        result = onvif_control.motion_zone_capability(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertEqual(result, {"md_zone_supported": False})
+
+    def test_motion_zone_capability_unsupported_on_failure(self):
+        FakeOnvifCamera.profiles = []
+
+        result = onvif_control.motion_zone_capability(host="192.0.2.1", port=2020, username="u", password="p")
+
+        self.assertEqual(result, {"md_zone_supported": False})
+
+    def test_set_motion_zone_writes_layout_and_persists(self):
+        layout = FakeLayout()
+        module = FakeAnalyticsModule("tt:CellMotionDetector", [FakeElementItem("Layout", layout)])
+        config = FakeAnalyticsConfig("analytics-1", [module])
+        FakeOnvifCamera.analytics_configs = [config]
+
+        onvif_control.set_motion_zone(
+            host="192.0.2.1",
+            port=2020,
+            username="u",
+            password="p",
+            config_token="analytics-1",
+            columns=4,
+            rows=3,
+            cells="111000111000",
+        )
+
+        self.assertEqual(layout.Columns, 4)
+        self.assertEqual(layout.Rows, 3)
+        self.assertEqual(layout.Extension, "111000111000")
+        set_calls = FakeOnvifCamera.last_instance.media_service.set_analytics_calls
+        self.assertEqual(set_calls, [{"Configuration": config, "ForcePersistence": True}])
+
+    def test_set_motion_zone_raises_for_unknown_config_token(self):
+        FakeOnvifCamera.analytics_configs = []
+
+        with self.assertRaises(RuntimeError):
+            onvif_control.set_motion_zone(
+                host="192.0.2.1",
+                port=2020,
+                username="u",
+                password="p",
+                config_token="missing",
+                columns=4,
+                rows=3,
+                cells="1111",
+            )
+
+    def test_set_motion_zone_raises_without_cell_motion_module(self):
+        config = FakeAnalyticsConfig("analytics-1", [])
+        FakeOnvifCamera.analytics_configs = [config]
+
+        with self.assertRaises(RuntimeError):
+            onvif_control.set_motion_zone(
+                host="192.0.2.1",
+                port=2020,
+                username="u",
+                password="p",
+                config_token="analytics-1",
+                columns=4,
+                rows=3,
+                cells="1111",
+            )
+
+    def test_set_motion_zone_raises_without_layout_parameter(self):
+        module = FakeAnalyticsModule("tt:CellMotionDetector", [])
+        config = FakeAnalyticsConfig("analytics-1", [module])
+        FakeOnvifCamera.analytics_configs = [config]
+
+        with self.assertRaises(RuntimeError):
+            onvif_control.set_motion_zone(
+                host="192.0.2.1",
+                port=2020,
+                username="u",
+                password="p",
+                config_token="analytics-1",
+                columns=4,
+                rows=3,
+                cells="1111",
+            )
 
 
 if __name__ == "__main__":

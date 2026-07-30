@@ -184,6 +184,16 @@ a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC also pu
 same actions as Home Assistant entities (lights, switches, buttons, numbers, selects, and
 sensors) and accepts remote control through MQTT command topics (`app/tbc/mqtt.py`).
 
+ONVIF-based modules also expose **experimental** onboard motion-detection zones through the
+ONVIF Rule Engine's `CellMotionDetector` analytics module: `md_zone_supported`,
+`md_zone_config_token`, `md_zone_columns`, and `md_zone_rows` describe a grid, applied through
+`send_control(action="md_zone", config_token=..., columns=..., rows=..., cells=...)` where
+`cells` is a row-major `"0"`/`"1"` string. Unlike PTZ, the ONVIF spec leaves the active-cell
+bitmap itself as an unstandardized extension point, so this is best-effort: grid discovery is
+reliable, but the write may be a no-op or fail outright depending on the camera's own ONVIF
+stack, and the current on-camera zone configuration is never read back (the grid editor always
+starts fully selected).
+
 For models with optical zoom, such as the RLC-823A and TrackMix series,
 `get_control_state()` also reports `zoom_supported` and `focus_supported` with current
 positions and value ranges through `reolink-aio`'s `zoom_range()`, `get_zoom()`, and

@@ -639,6 +639,24 @@ async def control_camera_ai_sensitivity(
         request, camera_id, action="ai_sensitivity", params={"ai_type": ai_type, "value": value}, channel=channel
     )
 
+@router.post("/cameras/{camera_id}/control/md-zone")
+async def control_camera_md_zone(
+    request: Request,
+    camera_id: int,
+    config_token: str = Form(...),
+    columns: int = Form(...),
+    rows: int = Form(...),
+    cells: str = Form(...),
+    channel: int = Form(0),
+):
+    return await _execute_control(
+        request,
+        camera_id,
+        action="md_zone",
+        params={"config_token": config_token, "columns": columns, "rows": rows, "cells": cells},
+        channel=channel,
+    )
+
 @router.post("/cameras/{camera_id}/control/osd")
 async def control_camera_osd(
     request: Request,

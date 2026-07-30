@@ -571,3 +571,51 @@
   }
   window.addEventListener("resize", resizeCanvas);
 })();
+
+(() => {
+  const editor = document.querySelector("[data-md-zone-editor]");
+  if (!editor) return;
+
+  const grid = editor.querySelector("[data-md-zone-grid]");
+  const cellsInput = editor.querySelector("[data-md-zone-cells]");
+  const selectAllButton = editor.querySelector("[data-md-zone-select-all]");
+  const clearButton = editor.querySelector("[data-md-zone-clear]");
+  if (!grid || !cellsInput) return;
+
+  const columns = Math.max(1, parseInt(grid.dataset.columns, 10) || 1);
+  const rows = Math.max(1, parseInt(grid.dataset.rows, 10) || 1);
+  const total = columns * rows;
+  grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+  const cells = [];
+  for (let index = 0; index < total; index += 1) {
+    const cell = document.createElement("div");
+    cell.className = "md-zone-cell md-zone-cell-active";
+    cell.dataset.active = "1";
+    cell.addEventListener("click", () => {
+      const active = cell.dataset.active === "1";
+      cell.dataset.active = active ? "0" : "1";
+      cell.classList.toggle("md-zone-cell-active", !active);
+      syncCellsInput();
+    });
+    grid.appendChild(cell);
+    cells.push(cell);
+  }
+
+  function syncCellsInput() {
+    cellsInput.value = cells.map((cell) => cell.dataset.active).join("");
+  }
+
+  function setAll(active) {
+    cells.forEach((cell) => {
+      cell.dataset.active = active ? "1" : "0";
+      cell.classList.toggle("md-zone-cell-active", active);
+    });
+    syncCellsInput();
+  }
+
+  selectAllButton?.addEventListener("click", () => setAll(true));
+  clearButton?.addEventListener("click", () => setAll(false));
+
+  syncCellsInput();
+})();

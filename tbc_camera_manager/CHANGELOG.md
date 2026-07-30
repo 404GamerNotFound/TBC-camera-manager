@@ -7,6 +7,10 @@
 - Added camera-side PTZ presets (save/go to/delete) and patrol/tour start-stop for cameras
   controlled through the built-in ONVIF PTZ service (previously only supported via the
   external Reolink plugin), plus matching Home Assistant MQTT entities.
+- Added an experimental onboard motion-detection zone editor for ONVIF-based cameras (a
+  clickable grid, using the camera's own ONVIF Rule Engine analytics rather than TBC's
+  server-side Local AI zones). Marked experimental because the ONVIF spec does not standardize
+  how the active-cell grid is written, so support varies by camera.
 
 ## 0.10.1 - "BugFix, new Timezones"
 - Timezones added
