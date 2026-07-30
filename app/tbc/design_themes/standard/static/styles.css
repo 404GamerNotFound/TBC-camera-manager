@@ -525,6 +525,42 @@ section.diagnostic-note {
   border-color: var(--brand-strong);
 }
 
+.privacy-mask-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.privacy-mask-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.privacy-mask-draw {
+  margin-top: 12px;
+}
+
+.privacy-mask-point {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 2px solid var(--surface);
+  pointer-events: none;
+}
+
 .progress-track {
   height: 8px;
   overflow: hidden;

@@ -7,6 +7,7 @@ despite looking circular.
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -655,6 +656,41 @@ async def control_camera_md_zone(
         action="md_zone",
         params={"config_token": config_token, "columns": columns, "rows": rows, "cells": cells},
         channel=channel,
+    )
+
+@router.post("/cameras/{camera_id}/control/privacy-mask-create")
+async def control_camera_privacy_mask_create(
+    request: Request,
+    camera_id: int,
+    config_token: str = Form(...),
+    points: str = Form(...),
+    channel: int = Form(0),
+):
+    try:
+        raw_points = json.loads(points)
+    except (TypeError, ValueError):
+        raw_points = []
+    parsed_points: list[dict[str, float]] = []
+    if isinstance(raw_points, list):
+        for point in raw_points:
+            try:
+                parsed_points.append({"x": float(point[0]), "y": float(point[1])})
+            except (TypeError, ValueError, IndexError, KeyError):
+                continue
+    return await _execute_control(
+        request,
+        camera_id,
+        action="privacy_mask_create",
+        params={"config_token": config_token, "points": parsed_points},
+        channel=channel,
+    )
+
+@router.post("/cameras/{camera_id}/control/privacy-mask-delete")
+async def control_camera_privacy_mask_delete(
+    request: Request, camera_id: int, token: str = Form(...), channel: int = Form(0)
+):
+    return await _execute_control(
+        request, camera_id, action="privacy_mask_delete", params={"token": token}, channel=channel
     )
 
 @router.post("/cameras/{camera_id}/control/osd")

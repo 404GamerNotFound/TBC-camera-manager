@@ -205,6 +205,26 @@ reliable, but the write may be a no-op or fail outright depending on the camera'
 stack, and the current on-camera zone configuration is never read back (the grid editor always
 starts fully selected).
 
+ONVIF-based modules also expose **experimental** privacy masks through the ONVIF **Media2**
+service (`app/tbc/camera_modules/onvif_privacy_mask.py`), which is a materially bigger
+departure from the rest of ONVIF support than the two features above: Media2 (`CreateMask`/
+`GetMasks`/`SetMask`/`DeleteMask`) is a separate service from the classic ver10 Media service
+this project's `onvif-zeep` dependency implements, and that dependency has no Media2 support
+at all - no service factory, no bundled WSDL. `onvif_privacy_mask.py` builds its own Media2
+SOAP client at runtime from a WSDL/schema closure bundled under
+`app/tbc/camera_modules/onvif_media2_schema/` (hand-assembled from the ONVIF Foundation's own
+published `media2.wsdl` and `onvif.xsd`, which do not fully agree with each other as published
+- notably `onvif.xsd` doesn't define the `tt:Polygon`/`tt:Vector` types `media2.wsdl` requires;
+this bundle fixes that and has been verified to parse and build real SOAP requests without any
+network access), reusing `onvif-zeep`'s `ONVIFService` for the actual SOAP/WS-Security
+plumbing. `privacy_mask_supported`, `privacy_mask_config_token`, and `privacy_masks` (a list of
+`{token, enabled, type, points}`) report existing masks; `send_control(action=
+"privacy_mask_create", config_token=..., points=[{"x":..., "y":...}, ...])` creates a solid
+black polygon mask (ONVIF normalized device coordinates, -1.0 to 1.0) and `send_control(
+action="privacy_mask_delete", token=...)` removes one. Kept in its own module rather than
+`onvif_control.py`, deliberately: this is meaningfully less-trodden ground than PTZ/imaging/
+motion zones, so a failure here shouldn't be able to affect them.
+
 For models with optical zoom, such as the RLC-823A and TrackMix series,
 `get_control_state()` also reports `zoom_supported` and `focus_supported` with current
 positions and value ranges through `reolink-aio`'s `zoom_range()`, `get_zoom()`, and

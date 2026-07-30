@@ -7,6 +7,21 @@ from app.tbc.camera_plugins.standard_onvif import control
 class StandardOnvifControlTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.camera = {"id": 1, "host": "192.0.2.30", "username": "camera", "password": "secret", "onvif_port": 80}
+        # get_control_state() fans out to four independent ONVIF capability probes
+        # (PTZ, motion zones, imaging, privacy masks). Default all of them to fast,
+        # network-free fakes here so tests that only care about one probe don't
+        # leave the other three to hit a real (non-routable) connect timeout -
+        # individual tests still override whichever probe(s) they're testing via
+        # their own nested patch.object(...).
+        for target, name, default in (
+            (control.onvif_control, "ptz_capability", {"ptz_supported": False}),
+            (control.onvif_control, "motion_zone_capability", {"md_zone_supported": False}),
+            (control.onvif_control, "imaging_capability", {}),
+            (control.onvif_privacy_mask, "privacy_mask_capability", {"privacy_mask_supported": False}),
+        ):
+            patcher = patch.object(target, name, return_value=default)
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     async def test_get_control_state_reports_ptz_support(self):
         with patch.object(control.onvif_control, "ptz_capability", return_value={"ptz_supported": True}) as probe, \
@@ -176,6 +191,36 @@ class StandardOnvifControlTests(unittest.IsolatedAsyncioTestCase):
 
         set_hdr.assert_called_once_with(host="192.0.2.30", port=80, username="camera", password="secret", state=True)
         self.assertEqual(result, {"status": "ok", "action": "hdr"})
+
+    async def test_get_control_state_merges_privacy_mask_capability(self):
+        with patch.object(control.onvif_control, "ptz_capability", return_value={"ptz_supported": False}), patch.object(
+            control.onvif_privacy_mask,
+            "privacy_mask_capability",
+            return_value={"privacy_mask_supported": True, "privacy_mask_config_token": "vsc-1", "privacy_masks": []},
+        ):
+            state = await control.get_control_state(self.camera)
+
+        self.assertTrue(state["privacy_mask_supported"])
+        self.assertEqual(state["privacy_mask_config_token"], "vsc-1")
+
+    async def test_send_control_privacy_mask_create_forwards_to_media2(self):
+        points = [{"x": -0.5, "y": -0.5}, {"x": 0.5, "y": -0.5}, {"x": 0.5, "y": 0.5}]
+        with patch.object(control.onvif_privacy_mask, "create_privacy_mask", return_value="mask-1") as create:
+            result = await control.send_control(
+                self.camera, action="privacy_mask_create", config_token="vsc-1", points=points
+            )
+
+        create.assert_called_once_with(
+            host="192.0.2.30", port=80, username="camera", password="secret", config_token="vsc-1", points=points
+        )
+        self.assertEqual(result, {"status": "ok", "action": "privacy_mask_create", "token": "mask-1"})
+
+    async def test_send_control_privacy_mask_delete_forwards_to_media2(self):
+        with patch.object(control.onvif_privacy_mask, "delete_privacy_mask") as delete:
+            result = await control.send_control(self.camera, action="privacy_mask_delete", token="mask-1")
+
+        delete.assert_called_once_with(host="192.0.2.30", port=80, username="camera", password="secret", token="mask-1")
+        self.assertEqual(result, {"status": "ok", "action": "privacy_mask_delete"})
 
 
 if __name__ == "__main__":

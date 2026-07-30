@@ -17,6 +17,10 @@
   supported these controls, so the existing UI silently did nothing on ONVIF cameras. Image
   flip/mirror and an "anti-flicker" toggle were considered but dropped: neither has a
   standardized ONVIF equivalent.
+- Added experimental privacy masks for ONVIF-based cameras via ONVIF Media2, a service not
+  otherwise supported by this project's ONVIF library - ships its own bundled, offline-verified
+  WSDL/schema closure and SOAP client construction, isolated in its own module so it can't
+  affect the well-established PTZ/imaging/motion-zone ONVIF support.
 
 ## 0.10.1 - "BugFix, new Timezones"
 - Timezones added

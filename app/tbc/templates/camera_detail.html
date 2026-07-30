@@ -1008,6 +1008,42 @@
   </section>
   {% endif %}
 
+  {% if control_state and control_state.privacy_mask_supported %}
+  <section class="table-section" data-privacy-mask-editor data-camera-id="{{ camera.id }}" data-control-channel="{{ selected_control_channel }}">
+    <div class="section-title"><h2 data-i18n="camera.privacy_mask_title">Privacy masks</h2></div>
+    <div class="diagnostic-note diagnostic-warning" data-i18n="camera.privacy_mask_experimental_note">Experimental: this uses the camera's ONVIF Media2 service, which is not implemented by every ONVIF camera. Masks are always solid black rectangles/polygons and cannot be edited after creation - delete and recreate to change one.</div>
+    {% if control_state.privacy_masks %}
+    <ul class="privacy-mask-list">
+      {% for mask in control_state.privacy_masks %}
+      <li>
+        <span data-i18n="camera.privacy_mask_point_count" data-i18n-params='{{ {"count": mask.points | length} | tojson }}'>{{ mask.points | length }} points</span>
+        <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/privacy-mask-delete" data-control-form>
+          <input type="hidden" name="token" value="{{ mask.token }}">
+          <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+          <button class="text-button" type="submit" data-i18n="common.delete">Delete</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="privacy-mask-draw">
+      <div class="zone-editor-canvas-wrap" data-privacy-mask-image-wrap>
+        <img class="zone-editor-image" data-privacy-mask-image src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
+      </div>
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-privacy-mask-undo data-i18n="camera.privacy_mask_undo_point">Remove last point</button>
+        <button class="secondary-button" type="button" data-privacy-mask-clear data-i18n="camera.privacy_mask_clear_points">Clear points</button>
+      </div>
+      <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/privacy-mask-create" data-control-form data-privacy-mask-form>
+        <input type="hidden" name="config_token" value="{{ control_state.privacy_mask_config_token }}">
+        <input type="hidden" name="points" data-privacy-mask-points value="[]">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="primary-button" type="submit" data-i18n="camera.privacy_mask_save">Save mask</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+
   {% if control_state and control_state.osd_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.osd">On-screen display</h2></div>

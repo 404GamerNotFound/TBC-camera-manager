@@ -189,6 +189,7 @@ def _install_plugin_api() -> None:
     # the host's package tree - see docs/camera-modules.md.
     api.onvif = importlib.import_module(f"{tbc_package}.camera_modules.onvif")
     api.onvif_control = importlib.import_module(f"{tbc_package}.camera_modules.onvif_control")
+    api.onvif_privacy_mask = importlib.import_module(f"{tbc_package}.camera_modules.onvif_privacy_mask")
     api.streams = importlib.import_module(f"{tbc_package}.camera_modules.streams")
     api.detections = importlib.import_module(f"{tbc_package}.camera_modules.detections")
     api.ManualRtspCameraModule = importlib.import_module(f"{tbc_package}.manual_rtsp.module").ManualRtspCameraModule

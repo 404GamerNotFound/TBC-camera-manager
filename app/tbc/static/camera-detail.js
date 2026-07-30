@@ -619,3 +619,61 @@
 
   syncCellsInput();
 })();
+
+(() => {
+  const editor = document.querySelector("[data-privacy-mask-editor]");
+  if (!editor) return;
+
+  const imageWrap = editor.querySelector("[data-privacy-mask-image-wrap]");
+  const image = editor.querySelector("[data-privacy-mask-image]");
+  const pointsInput = editor.querySelector("[data-privacy-mask-points]");
+  const undoButton = editor.querySelector("[data-privacy-mask-undo]");
+  const clearButton = editor.querySelector("[data-privacy-mask-clear]");
+  if (!imageWrap || !image || !pointsInput) return;
+
+  let points = [];
+  const markers = [];
+
+  function syncPointsInput() {
+    // ONVIF normalized device coordinates: -1..1 on both axes, (0,0) at center.
+    pointsInput.value = JSON.stringify(points.map(([nx, ny]) => [nx, ny]));
+  }
+
+  function renderMarkers() {
+    markers.forEach((marker) => marker.remove());
+    markers.length = 0;
+    const rect = image.getBoundingClientRect();
+    points.forEach(([nx, ny]) => {
+      const marker = document.createElement("div");
+      marker.className = "privacy-mask-point";
+      marker.style.left = `${((nx + 1) / 2) * rect.width}px`;
+      marker.style.top = `${((ny + 1) / 2) * rect.height}px`;
+      imageWrap.appendChild(marker);
+      markers.push(marker);
+    });
+  }
+
+  image.addEventListener("click", (event) => {
+    const rect = image.getBoundingClientRect();
+    const fracX = (event.clientX - rect.left) / rect.width;
+    const fracY = (event.clientY - rect.top) / rect.height;
+    points.push([fracX * 2 - 1, fracY * 2 - 1]);
+    syncPointsInput();
+    renderMarkers();
+  });
+
+  undoButton?.addEventListener("click", () => {
+    points.pop();
+    syncPointsInput();
+    renderMarkers();
+  });
+
+  clearButton?.addEventListener("click", () => {
+    points = [];
+    syncPointsInput();
+    renderMarkers();
+  });
+
+  window.addEventListener("resize", renderMarkers);
+  syncPointsInput();
+})();
