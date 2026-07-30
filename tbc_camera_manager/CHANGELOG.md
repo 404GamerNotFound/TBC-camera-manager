@@ -11,6 +11,12 @@
   clickable grid, using the camera's own ONVIF Rule Engine analytics rather than TBC's
   server-side Local AI zones). Marked experimental because the ONVIF spec does not standardize
   how the active-cell grid is written, so support varies by camera.
+- Implemented image adjustments (brightness/contrast/saturation/sharpness), day/night mode,
+  and HDR for ONVIF-based camera modules (tplink, aqara, axis, dahua, foscam, hikvision,
+  standard_onvif) via the ONVIF Imaging service - previously only the external Reolink plugin
+  supported these controls, so the existing UI silently did nothing on ONVIF cameras. Image
+  flip/mirror and an "anti-flicker" toggle were considered but dropped: neither has a
+  standardized ONVIF equivalent.
 
 ## 0.10.1 - "BugFix, new Timezones"
 - Timezones added

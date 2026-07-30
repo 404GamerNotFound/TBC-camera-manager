@@ -438,3 +438,176 @@ async def send_motion_zone_control(camera: dict[str, Any], *, default_port: int 
         cells=cells,
     )
     return {"status": "ok", "action": "md_zone"}
+
+
+# --- ONVIF Imaging service (image adjustments, day/night, HDR) -------------------
+#
+# Brightness/ColorSaturation/Contrast/Sharpness/IrCutFilter/WideDynamicRange are
+# all part of the core ONVIF Imaging Settings schema (tt:ImagingSettings20), as
+# stable and well-supported as the PTZ service. There is no ONVIF equivalent of
+# the Reolink-plugin's "hue" slider, so that field is simply never reported
+# here. Brightness/ColorSaturation/Contrast/Sharpness are assumed to use the
+# ONVIF spec's common 0-100 float range and are rescaled to this app's 0-255 UI
+# range; a camera advertising a different range via GetOptions would be
+# rescaled incorrectly, which is a known simplification (the same kind of
+# vendor-range trade-off already accepted for camera-side motion zones).
+_ONVIF_IMAGING_MIN = 0.0
+_ONVIF_IMAGING_MAX = 100.0
+_UI_IMAGING_MAX = 255
+
+_IMAGING_FIELDS = {
+    "bright": "Brightness",
+    "contrast": "Contrast",
+    "saturation": "ColorSaturation",
+    "sharpness": "Sharpness",
+}
+
+_DAYNIGHT_TO_IR_CUT_FILTER = {"Auto": "AUTO", "Color": "ON", "Black&White": "OFF"}
+_IR_CUT_FILTER_TO_DAYNIGHT = {value: key for key, value in _DAYNIGHT_TO_IR_CUT_FILTER.items()}
+
+
+def _onvif_value_to_ui(value: float) -> int:
+    span = _ONVIF_IMAGING_MAX - _ONVIF_IMAGING_MIN
+    fraction = (value - _ONVIF_IMAGING_MIN) / span if span else 0.0
+    return round(max(0.0, min(1.0, fraction)) * _UI_IMAGING_MAX)
+
+
+def _ui_value_to_onvif(value: float) -> float:
+    fraction = max(0.0, min(1.0, value / _UI_IMAGING_MAX))
+    return _ONVIF_IMAGING_MIN + fraction * (_ONVIF_IMAGING_MAX - _ONVIF_IMAGING_MIN)
+
+
+def _video_source_token(camera: Any) -> str | None:
+    sources = camera.create_media_service().GetVideoSources()
+    return str(sources[0].token) if sources else None
+
+
+def imaging_capability(*, host: str, port: int, username: str, password: str) -> dict[str, Any]:
+    """Probe ONVIF Imaging Settings: image adjustments, day/night (IrCutFilter), HDR (WDR)."""
+    try:
+        camera = _camera(host, port, username, password)
+        source_token = _video_source_token(camera)
+        if source_token is None:
+            return {}
+        settings = camera.create_imaging_service().GetImagingSettings({"VideoSourceToken": source_token})
+    except Exception as exc:
+        LOGGER.info("ONVIF imaging capability probe failed for %s:%s: %s", host, port, exc)
+        return {}
+
+    result: dict[str, Any] = {"image_video_source_token": source_token}
+    for field, onvif_name in _IMAGING_FIELDS.items():
+        value = getattr(settings, onvif_name, None)
+        if value is None:
+            continue
+        result[f"image_{field}_supported"] = True
+        result[f"image_{'brightness' if field == 'bright' else field}"] = _onvif_value_to_ui(float(value))
+
+    ir_cut = getattr(settings, "IrCutFilter", None)
+    if ir_cut is not None and str(ir_cut) in _IR_CUT_FILTER_TO_DAYNIGHT:
+        result["daynight_mode"] = _IR_CUT_FILTER_TO_DAYNIGHT[str(ir_cut)]
+
+    wdr = getattr(settings, "WideDynamicRange", None)
+    wdr_mode = getattr(wdr, "Mode", None) if wdr is not None else None
+    if wdr_mode is not None:
+        result["hdr_supported"] = True
+
+    return result
+
+
+def _fetch_imaging_settings(camera: Any, source_token: str) -> Any:
+    return camera.create_imaging_service().GetImagingSettings({"VideoSourceToken": source_token})
+
+
+def _apply_imaging_settings(camera: Any, source_token: str, settings: Any) -> None:
+    camera.create_imaging_service().SetImagingSettings(
+        {"VideoSourceToken": source_token, "ImagingSettings": settings, "ForcePersistence": True}
+    )
+
+
+def set_image_adjustments(
+    *, host: str, port: int, username: str, password: str, values: dict[str, float]
+) -> None:
+    camera = _camera(host, port, username, password)
+    source_token = _video_source_token(camera)
+    if source_token is None:
+        raise RuntimeError("ONVIF: no video source found for imaging settings")
+    settings = _fetch_imaging_settings(camera, source_token)
+    for field, ui_value in values.items():
+        onvif_name = _IMAGING_FIELDS.get(field)
+        if onvif_name is None:
+            continue
+        setattr(settings, onvif_name, _ui_value_to_onvif(ui_value))
+    _apply_imaging_settings(camera, source_token, settings)
+
+
+def set_daynight_mode(*, host: str, port: int, username: str, password: str, mode: str) -> None:
+    ir_cut_value = _DAYNIGHT_TO_IR_CUT_FILTER.get(mode)
+    if ir_cut_value is None:
+        raise ValueError(f"Unknown day/night mode: {mode}")
+    camera = _camera(host, port, username, password)
+    source_token = _video_source_token(camera)
+    if source_token is None:
+        raise RuntimeError("ONVIF: no video source found for imaging settings")
+    settings = _fetch_imaging_settings(camera, source_token)
+    settings.IrCutFilter = ir_cut_value
+    _apply_imaging_settings(camera, source_token, settings)
+
+
+def set_hdr_state(*, host: str, port: int, username: str, password: str, state: bool) -> None:
+    camera = _camera(host, port, username, password)
+    source_token = _video_source_token(camera)
+    if source_token is None:
+        raise RuntimeError("ONVIF: no video source found for imaging settings")
+    settings = _fetch_imaging_settings(camera, source_token)
+    wdr = getattr(settings, "WideDynamicRange", None)
+    if wdr is None:
+        raise RuntimeError("This camera does not report wide dynamic range support")
+    wdr.Mode = "ON" if state else "OFF"
+    _apply_imaging_settings(camera, source_token, settings)
+
+
+async def get_imaging_control_state(camera: dict[str, Any], *, default_port: int = 80) -> dict[str, Any]:
+    return await asyncio.to_thread(
+        imaging_capability,
+        host=camera["host"],
+        port=int(camera.get("onvif_port") or default_port),
+        username=camera["username"],
+        password=camera["password"],
+    )
+
+
+async def send_imaging_control(
+    camera: dict[str, Any], *, action: str, default_port: int = 80, **params: Any
+) -> dict[str, Any]:
+    host = camera["host"]
+    port = int(camera.get("onvif_port") or default_port)
+    username = camera["username"]
+    password = camera["password"]
+
+    if action == "image":
+        values: dict[str, float] = {}
+        for field in _IMAGING_FIELDS:
+            raw = params.get(field)
+            if raw is None or str(raw).strip() == "":
+                continue
+            try:
+                values[field] = float(raw)
+            except (TypeError, ValueError):
+                continue
+        if not values:
+            raise ValueError("No image adjustment values were provided")
+        await asyncio.to_thread(set_image_adjustments, host=host, port=port, username=username, password=password, values=values)
+        return {"status": "ok", "action": action}
+
+    if action == "daynight":
+        mode = str(params.get("mode") or "").strip()
+        await asyncio.to_thread(set_daynight_mode, host=host, port=port, username=username, password=password, mode=mode)
+        return {"status": "ok", "action": action}
+
+    if action == "hdr":
+        await asyncio.to_thread(
+            set_hdr_state, host=host, port=port, username=username, password=password, state=bool(params.get("state"))
+        )
+        return {"status": "ok", "action": action}
+
+    raise ValueError(f"This module does not support the action '{action}' via ONVIF imaging")

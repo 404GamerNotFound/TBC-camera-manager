@@ -142,6 +142,41 @@ class StandardOnvifControlTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await control.send_control(self.camera, action="md_zone", config_token="", columns=4, rows=3, cells="")
 
+    async def test_get_control_state_merges_imaging_capability(self):
+        with patch.object(control.onvif_control, "ptz_capability", return_value={"ptz_supported": False}), \
+            patch.object(
+                control.onvif_control,
+                "imaging_capability",
+                return_value={"image_bright_supported": True, "image_brightness": 128},
+            ):
+            state = await control.get_control_state(self.camera)
+
+        self.assertTrue(state["image_bright_supported"])
+        self.assertEqual(state["image_brightness"], 128)
+
+    async def test_send_control_image_forwards_to_onvif_imaging(self):
+        with patch.object(control.onvif_control, "set_image_adjustments") as set_adjustments:
+            result = await control.send_control(self.camera, action="image", bright="128")
+
+        set_adjustments.assert_called_once_with(
+            host="192.0.2.30", port=80, username="camera", password="secret", values={"bright": 128.0}
+        )
+        self.assertEqual(result, {"status": "ok", "action": "image"})
+
+    async def test_send_control_daynight_forwards_to_onvif_imaging(self):
+        with patch.object(control.onvif_control, "set_daynight_mode") as set_mode:
+            result = await control.send_control(self.camera, action="daynight", mode="Auto")
+
+        set_mode.assert_called_once_with(host="192.0.2.30", port=80, username="camera", password="secret", mode="Auto")
+        self.assertEqual(result, {"status": "ok", "action": "daynight"})
+
+    async def test_send_control_hdr_forwards_to_onvif_imaging(self):
+        with patch.object(control.onvif_control, "set_hdr_state") as set_hdr:
+            result = await control.send_control(self.camera, action="hdr", state=True)
+
+        set_hdr.assert_called_once_with(host="192.0.2.30", port=80, username="camera", password="secret", state=True)
+        self.assertEqual(result, {"status": "ok", "action": "hdr"})
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -184,6 +184,17 @@ a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC also pu
 same actions as Home Assistant entities (lights, switches, buttons, numbers, selects, and
 sensors) and accepts remote control through MQTT command topics (`app/tbc/mqtt.py`).
 
+ONVIF-based modules also implement the `image`, `daynight`, and `hdr` actions through the
+ONVIF Imaging service (`GetImagingSettings`/`SetImagingSettings`), which were previously only
+implemented by the external Reolink plugin: `image_bright_supported`/`image_brightness` and
+the equivalent contrast/saturation/sharpness pairs map to `tt:ImagingSettings20`'s
+`Brightness`/`Contrast`/`ColorSaturation`/`Sharpness` (rescaled from the ONVIF 0-100 range to
+this app's 0-255 UI range - a camera whose real range differs would be rescaled incorrectly,
+a known simplification); `daynight_mode` maps to `IrCutFilter` (`AUTO`/`ON`/`OFF` for
+Auto/Color/Black&White); `hdr_supported` maps to `WideDynamicRange.Mode`. There is no ONVIF
+equivalent of the Reolink plugin's "hue" slider, image flip/mirror, or an "anti-flicker"
+setting, so those are not implemented for ONVIF-based modules.
+
 ONVIF-based modules also expose **experimental** onboard motion-detection zones through the
 ONVIF Rule Engine's `CellMotionDetector` analytics module: `md_zone_supported`,
 `md_zone_config_token`, `md_zone_columns`, and `md_zone_rows` describe a grid, applied through
