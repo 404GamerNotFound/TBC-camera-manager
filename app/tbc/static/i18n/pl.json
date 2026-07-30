@@ -1180,5 +1180,7 @@
   "camera.volume_speak": "Głośność komunikacji dwukierunkowej",
   "camera.volume_system": "Głośność systemu",
   "camera.codec_h264": "H.264",
-  "camera.codec_h265": "H.265"
+  "camera.codec_h265": "H.265",
+  "camera.battery_asleep": "Uśpiona",
+  "camera.battery_awake": "Aktywna"
 }

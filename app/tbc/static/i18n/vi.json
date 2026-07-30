@@ -1180,5 +1180,7 @@
   "camera.volume_speak": "Âm lượng đàm thoại hai chiều",
   "camera.volume_system": "Âm lượng hệ thống",
   "camera.codec_h264": "H.264",
-  "camera.codec_h265": "H.265"
+  "camera.codec_h265": "H.265",
+  "camera.battery_asleep": "Đang ngủ",
+  "camera.battery_awake": "Đang hoạt động"
 }

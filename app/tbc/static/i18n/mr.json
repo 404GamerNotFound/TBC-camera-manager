@@ -1180,5 +1180,7 @@
   "camera.volume_speak": "द्वि-मार्गी ऑडिओ आवाज",
   "camera.volume_system": "प्रणाली आवाज",
   "camera.codec_h264": "H.264",
-  "camera.codec_h265": "H.265"
+  "camera.codec_h265": "H.265",
+  "camera.battery_asleep": "निद्रिस्त",
+  "camera.battery_awake": "जागृत"
 }

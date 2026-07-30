@@ -1180,5 +1180,7 @@
   "camera.volume_speak": "Gegensprech-Lautstärke",
   "camera.volume_system": "Systemlautstärke",
   "camera.codec_h264": "H.264",
-  "camera.codec_h265": "H.265"
+  "camera.codec_h265": "H.265",
+  "camera.battery_asleep": "Schlafmodus",
+  "camera.battery_awake": "Wach"
 }

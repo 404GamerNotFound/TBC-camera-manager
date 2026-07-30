@@ -1180,5 +1180,7 @@
   "camera.volume_speak": "双方向音声の音量",
   "camera.volume_system": "システム音量",
   "camera.codec_h264": "H.264",
-  "camera.codec_h265": "H.265"
+  "camera.codec_h265": "H.265",
+  "camera.battery_asleep": "スリープ中",
+  "camera.battery_awake": "起動中"
 }

@@ -1113,6 +1113,9 @@
       {% else %}
       <strong class="metric-unavailable">–</strong><small data-i18n="camera.not_available">Not available</small>
       {% endif %}
+      {% if control_state and control_state.battery_asleep is not none %}
+      <span class="status-pill {{ 'status-idle' if control_state.battery_asleep else 'status-active' }}" data-i18n="{{ 'camera.battery_asleep' if control_state.battery_asleep else 'camera.battery_awake' }}">{{ 'asleep' if control_state.battery_asleep else 'awake' }}</span>
+      {% endif %}
     </div>
   </section>
   {% endif %}
