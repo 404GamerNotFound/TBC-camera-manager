@@ -96,6 +96,153 @@ CONTROL_ENTITIES: tuple[dict[str, Any], ...] = (
         "command": True,
         "extra": {"payload_press": "PRESS"},
     },
+    {
+        "key": "battery_asleep",
+        "component": "binary_sensor",
+        "label": "Battery asleep",
+        "state_field": "battery_asleep",
+        "supported_field": "battery_asleep",
+        "presence_check": True,
+        "command": False,
+        "extra": {"payload_on": "ON", "payload_off": "OFF"},
+    },
+    {
+        "key": "hdr",
+        "component": "switch",
+        "label": "HDR",
+        "state_field": None,
+        "supported_field": "hdr_supported",
+        "command": True,
+        "extra": {"payload_on": "ON", "payload_off": "OFF", "optimistic": True},
+    },
+    {
+        "key": "ir_lights",
+        "component": "switch",
+        "label": "IR lights",
+        "state_field": None,
+        "supported_field": "ir_supported",
+        "command": True,
+        "extra": {"payload_on": "ON", "payload_off": "OFF", "optimistic": True},
+    },
+    {
+        "key": "daynight",
+        "component": "select",
+        "label": "Day/Night mode",
+        "state_field": "daynight_mode",
+        "supported_field": "daynight_mode",
+        "presence_check": True,
+        "command": True,
+        "extra": {"options": ["Auto", "Color", "Black&White"]},
+    },
+    {
+        "key": "daynight_threshold",
+        "component": "number",
+        "label": "Day/Night threshold",
+        "state_field": "daynight_threshold",
+        "supported_field": "daynight_threshold",
+        "presence_check": True,
+        "command": True,
+        "extra": {"min": 0, "max": 100},
+    },
+    {
+        "key": "md_sensitivity",
+        "component": "number",
+        "label": "Motion sensitivity",
+        "state_field": "md_sensitivity",
+        "supported_field": "md_sensitivity_supported",
+        "command": True,
+        "extra": {"min": 1, "max": 50},
+    },
+    {
+        "key": "volume",
+        "component": "number",
+        "label": "System volume",
+        "state_field": "volume",
+        "supported_field": "volume_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 100},
+    },
+    {
+        "key": "volume_speak",
+        "component": "number",
+        "label": "Two-way audio volume",
+        "state_field": "volume_speak",
+        "supported_field": "volume_speak_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 100},
+    },
+    {
+        "key": "volume_doorbell",
+        "component": "number",
+        "label": "Doorbell ringtone volume",
+        "state_field": "volume_doorbell",
+        "supported_field": "volume_doorbell_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 100},
+    },
+    {
+        "key": "video_codec_main",
+        "component": "select",
+        "label": "Main stream codec",
+        "state_field": "video_codec_main",
+        "supported_field": "video_codec_main",
+        "command": True,
+        "extra": {"options": ["h264", "h265"]},
+    },
+    {
+        "key": "video_codec_sub",
+        "component": "select",
+        "label": "Substream codec",
+        "state_field": "video_codec_sub",
+        "supported_field": "video_codec_sub",
+        "command": True,
+        "extra": {"options": ["h264", "h265"]},
+    },
+    {
+        "key": "image_bright",
+        "component": "number",
+        "label": "Brightness",
+        "state_field": "image_brightness",
+        "supported_field": "image_bright_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 255},
+    },
+    {
+        "key": "image_contrast",
+        "component": "number",
+        "label": "Contrast",
+        "state_field": "image_contrast",
+        "supported_field": "image_contrast_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 255},
+    },
+    {
+        "key": "image_saturation",
+        "component": "number",
+        "label": "Saturation",
+        "state_field": "image_saturation",
+        "supported_field": "image_saturation_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 255},
+    },
+    {
+        "key": "image_hue",
+        "component": "number",
+        "label": "Hue",
+        "state_field": "image_hue",
+        "supported_field": "image_hue_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 255},
+    },
+    {
+        "key": "image_sharpness",
+        "component": "number",
+        "label": "Sharpness",
+        "state_field": "image_sharpness",
+        "supported_field": "image_sharpness_supported",
+        "command": True,
+        "extra": {"min": 0, "max": 255},
+    },
 )
 
 PTZ_ENTITY_COMMANDS = {
@@ -103,6 +250,16 @@ PTZ_ENTITY_COMMANDS = {
     "ptz_down": "Down",
     "ptz_left": "Left",
     "ptz_right": "Right",
+}
+
+# Router action + form field for each single-value "image" control entity, used
+# to translate an incoming MQTT command back into a control/image POST body.
+IMAGE_ENTITY_FIELDS = {
+    "image_bright": "bright",
+    "image_contrast": "contrast",
+    "image_saturation": "saturation",
+    "image_hue": "hue",
+    "image_sharpness": "sharpness",
 }
 
 
@@ -141,18 +298,25 @@ def publish_control_state(database_path: str, camera: dict[str, Any], control_st
     if not _enabled(config):
         return
 
+    dynamic_entities, dynamic_state = _dynamic_control_entities(control_state)
+    lookup: dict[str, Any] = {**control_state, **dynamic_state}
+
     messages: list[dict[str, Any]] = []
     prefix = _topic_prefix(config)
     discovery_enabled = int(config.get("discovery_enabled") or 0) == 1
-    for entity in CONTROL_ENTITIES:
-        if not control_state.get(entity["supported_field"]):
+    for entity in (*CONTROL_ENTITIES, *dynamic_entities):
+        supported_value = lookup.get(entity["supported_field"])
+        if entity.get("presence_check"):
+            if supported_value is None:
+                continue
+        elif not supported_value:
             continue
         state_topic = f"{prefix}/camera/{camera['id']}/control/{entity['key']}/state"
         if entity["state_field"] is not None:
             messages.append(
                 {
                     "topic": state_topic,
-                    "payload": _control_state_payload(entity, control_state.get(entity["state_field"])),
+                    "payload": _control_state_payload(entity, lookup.get(entity["state_field"])),
                     "retain": True,
                 }
             )
@@ -167,8 +331,53 @@ def publish_control_state(database_path: str, camera: dict[str, Any], control_st
     _publish_many(config, messages)
 
 
+def _dynamic_control_entities(control_state: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Build per-camera MQTT entities for fields whose count varies (AI sensitivity
+    rows, doorbell quick replies), plus a side dict of synthetic state values for
+    them so publish_control_state() can treat them like any static entity."""
+    entities: list[dict[str, Any]] = []
+    state: dict[str, Any] = {}
+    for row in control_state.get("ai_sensitivity_rows") or []:
+        ai_type = str(row.get("ai_type") or "").strip()
+        if not ai_type:
+            continue
+        key = _topic_key(f"ai_sensitivity_{ai_type}")
+        state_key = f"_dyn_{key}"
+        state[state_key] = row.get("value")
+        entities.append(
+            {
+                "key": key,
+                "component": "number",
+                "label": f"AI sensitivity: {row.get('label') or ai_type}",
+                "state_field": state_key,
+                "supported_field": state_key,
+                "presence_check": True,
+                "command": True,
+                "extra": {"min": 0, "max": 100},
+            }
+        )
+    if control_state.get("is_doorbell") and control_state.get("quick_reply_supported"):
+        for file_id, name in (control_state.get("quick_reply_options") or {}).items():
+            key = _topic_key(f"quick_reply_{file_id}")
+            state_key = f"_dyn_{key}"
+            state[state_key] = True
+            entities.append(
+                {
+                    "key": key,
+                    "component": "button",
+                    "label": f"Quick reply: {name}",
+                    "state_field": None,
+                    "supported_field": state_key,
+                    "presence_check": True,
+                    "command": True,
+                    "extra": {"payload_press": "PRESS"},
+                }
+            )
+    return entities, state
+
+
 def _control_state_payload(entity: dict[str, Any], value: Any) -> str:
-    if entity["component"] == "sensor":
+    if entity["component"] in ("sensor", "select", "number"):
         return "" if value is None else str(value)
     return "ON" if value else "OFF"
 
@@ -331,7 +540,7 @@ def _topic_key(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9_/-]+", "_", value).strip("_").lower()
 
 
-_COMMAND_TOPIC_RE = re.compile(r"^(?P<prefix>.+)/camera/(?P<camera_id>\d+)/control/(?P<entity_key>[a-z_]+)/set$")
+_COMMAND_TOPIC_RE = re.compile(r"^(?P<prefix>.+)/camera/(?P<camera_id>\d+)/control/(?P<entity_key>[a-z0-9_]+)/set$")
 
 
 async def run_control_listener(database_path: str) -> None:
@@ -456,4 +665,44 @@ def _control_command_params(entity_key: str, payload: str) -> tuple[str | None, 
         return "siren", {"duration": 5}
     if entity_key in PTZ_ENTITY_COMMANDS:
         return "ptz", {"command": PTZ_ENTITY_COMMANDS[entity_key]}
+    if entity_key == "hdr":
+        return "hdr", {"state": payload_upper == "ON"}
+    if entity_key == "ir_lights":
+        return "ir_lights", {"enable": payload_upper == "ON"}
+    if entity_key == "daynight":
+        return "daynight", {"mode": payload.strip()}
+    if entity_key == "daynight_threshold":
+        return _int_command("daynight_threshold", "value", payload)
+    if entity_key == "md_sensitivity":
+        return _int_command("md_sensitivity", "value", payload)
+    if entity_key in ("volume", "volume_speak", "volume_doorbell"):
+        return "volume", {entity_key: payload.strip()}
+    if entity_key in ("video_codec_main", "video_codec_sub"):
+        return "video_codec", {
+            "value": payload.strip(),
+            "stream": "main" if entity_key == "video_codec_main" else "sub",
+        }
+    if entity_key in IMAGE_ENTITY_FIELDS:
+        return "image", {IMAGE_ENTITY_FIELDS[entity_key]: payload.strip()}
+    if entity_key.startswith("ai_sensitivity_"):
+        ai_type = entity_key[len("ai_sensitivity_") :]
+        return _int_command("ai_sensitivity", "value", payload, extra={"ai_type": ai_type})
+    if entity_key.startswith("quick_reply_"):
+        file_id = entity_key[len("quick_reply_") :]
+        if file_id.isdigit():
+            return "quick_reply", {"file_id": int(file_id)}
+        return None, {}
     return None, {}
+
+
+def _int_command(
+    action: str, field: str, payload: str, *, extra: dict[str, Any] | None = None
+) -> tuple[str | None, dict[str, Any]]:
+    try:
+        value = int(float(payload.strip()))
+    except ValueError:
+        return None, {}
+    params: dict[str, Any] = {field: value}
+    if extra:
+        params.update(extra)
+    return action, params

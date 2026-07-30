@@ -190,6 +190,23 @@ stored on the camera through `quick_reply_dict()`. Calling
 `play_quick_reply()`. Both features continue to depend only on `CONTROL`, not on separate
 manifest capabilities.
 
+`get_control_state()` may also report image adjustments (`image_bright_supported` /
+`image_brightness`, and the equivalent contrast/saturation/hue/sharpness pairs), day/night
+mode and threshold (`daynight_mode`, `daynight_threshold`), HDR and IR lights
+(`hdr_supported`, `ir_supported`), motion and per-class AI detection sensitivity
+(`md_sensitivity_supported` / `md_sensitivity`, `ai_sensitivity_rows`), on-screen display
+options (`osd_supported`), speaker/doorbell volume (`volume_supported` and the
+`volume_speak`/`volume_doorbell` variants), and the main/sub stream video codec
+(`video_codec_main`, `video_codec_sub`). Each is applied through the matching
+`send_control(action=...)` (`image`, `daynight`, `daynight_threshold`, `hdr`, `ir_lights`,
+`md_sensitivity`, `ai_sensitivity`, `osd`, `volume`, `video_codec`). All of these, plus PTZ
+presets, battery sleep state, and doorbell quick replies, are also exposed as Home Assistant
+MQTT entities (`app/tbc/mqtt.py`) — `number` entities for adjustable values, `select` for
+day/night mode and video codec, `switch` for HDR/IR (optimistic, since no readback exists for
+them), and dynamically generated `number`/`button` entities per AI-sensitivity class and quick
+reply. The on-screen display form is not published to MQTT: it applies three fields in one
+submit and has no single-value Home Assistant equivalent.
+
 ## Firmware updates (`FIRMWARE`)
 
 Modules with the `FIRMWARE` capability implement two additional methods:

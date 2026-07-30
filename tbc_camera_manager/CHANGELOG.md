@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- Exposed the image, day/night, HDR, IR lights, motion/AI sensitivity, volume, and video codec
+  camera controls as Home Assistant MQTT entities (previously only floodlight, PIR, siren,
+  reboot, battery, and PTZ were published).
+
 ## 0.10.1 - "BugFix, new Timezones"
 - Timezones added
 - BugFix image generation
