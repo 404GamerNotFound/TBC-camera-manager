@@ -1343,6 +1343,10 @@ dd {
   margin: 0;
 }
 
+.detail-tab-panel > .table-section {
+  margin-top: 0;
+}
+
 .recording-tab-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
@@ -1783,7 +1787,16 @@ code {
 
 
 .table-section {
-  margin-top: 22px;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.table-section > .section-title {
+  margin-bottom: 14px;
 }
 
 .settings-layout,
@@ -3721,7 +3734,8 @@ tr:last-child td {
 }
 
 .compact-app .table-section {
-  margin-top: 16px;
+  margin-top: 14px;
+  padding: 14px;
 }
 
 .compact-app th,

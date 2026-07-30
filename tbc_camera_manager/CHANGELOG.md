@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- Restyled the shared `.table-section` grouping used across the camera detail tabs (Controls,
+  Recording, AI detection) and the Performance, License, AI detection, Network mappings,
+  Recognition, SD card, and Storage explorer pages: each grouped section now renders as a
+  bordered/shadowed card matching the rest of the design system, instead of a bare heading with
+  no visual separation from the controls below it.
 - Exposed the image, day/night, HDR, IR lights, motion/AI sensitivity, volume, and video codec
   camera controls as Home Assistant MQTT entities (previously only floodlight, PIR, siren,
   reboot, battery, and PTZ were published).
