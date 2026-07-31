@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tbc-dev",
+      "runtimeExecutable": ".venv/bin/uvicorn",
+      "runtimeArgs": ["app.tbc.main:app", "--host", "127.0.0.1", "--port", "8732"],
+      "port": 8732
+    }
+  ]
+}
