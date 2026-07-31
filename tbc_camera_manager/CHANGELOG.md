@@ -1,6 +1,22 @@
 # Changelog
 
 ## 0.11.0 - "Redesigned & connected"
+- Fixed three redesign follow-up issues on the camera dashboard: the fleet-summary "Warnings"
+  count now matches statuses tolerantly (`warn`/`warning`) instead of only one exact string some
+  camera-vendor plugins don't use; camera-card glyph tooltips near the card's right edge (e.g. a
+  long connection-error message) no longer get clipped, since every glyph now anchors its tooltip
+  from its own right edge instead of only the last one; and snapshot images now load after the
+  page's own load event instead of blocking it, so a slow or offline camera's on-demand capture no
+  longer holds up the whole dashboard's perceived load time.
+- Carried the redesigned dashboard's `color-mix()`-tinted, hover-lift visual language onto the
+  camera detail page and the live/Birdseye tiles: `.danger-button`/`.danger-icon-button` now match
+  the already-modernized primary/secondary buttons (hover tint + lift instead of a flat hardcoded
+  color), the probe-status/live-diagnostic banners' border tints and the active-tab shadow are now
+  theme-derived instead of hardcoded literals, the overview stat numbers use tabular figures, and
+  `live.html`/`birdseye.html`'s camera tiles get the same hover lift/shadow/border treatment as the
+  dashboard cards (deliberately not the image-zoom effect, since these show live video, not a
+  static snapshot). CSS-only changes in both theme files; `storage_explorer.html`'s plain camera
+  tiles are untouched since they don't use the `.live-card` modifier this targets.
 - Gave `.clip-card` (the recording/snapshot tile used by both the camera detail page's "Recent
   clips" strip and the main Recordings gallery) the same hover lift and subtle media zoom as the
   redesigned dashboard camera card, instead of leaving it static while every card around it picked
