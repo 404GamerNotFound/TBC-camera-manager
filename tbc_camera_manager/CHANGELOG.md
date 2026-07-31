@@ -1,6 +1,18 @@
 # Changelog
 
 ## Unreleased
+- Fixed 478 mistranslated or dropped `{placeholder}` tokens (e.g. `{error}`, `{count}`,
+  `{min}`/`{max}`) across 22 of the 27 non-English locale files, spanning 82 distinct
+  translation keys. The auto-translation pipeline (`scripts/translate_locales.py`) did not
+  protect these tokens, so Google Translate sometimes translated the placeholder name itself
+  (English `{error}` becoming French `{erreur}`, Arabic `{خطأ}`, ...) or dropped it entirely,
+  which silently broke the runtime value substitution in `app/tbc/static/i18n.js` and showed
+  garbled or missing dynamic values (error messages, countdowns, min/max ranges, version
+  numbers, ...) to users of the affected locale. `scripts/translate_locales.py` now protects
+  placeholders by swapping them for translation-proof numeric tokens before calling the
+  translation API and restoring the real names by index afterwards, so newly translated or
+  re-translated strings won't reintroduce this bug. Added `test_locale_placeholder_tokens_are_not_translated`
+  to `tests/test_i18n.py` to catch any regression.
 - Added optional Apple HomeKit integration (live view only, no HomeKit Secure Video/encrypted
   event recording), via the HAP-python library rather than a hand-rolled HAP protocol
   implementation. Exposed cameras get a stable accessory ID across restarts, streams start on

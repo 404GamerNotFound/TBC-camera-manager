@@ -1145,7 +1145,7 @@
   "backup.status_error": "Misluk",
   "backup.schedule_save": "Stoor outomatiese rugsteuninstellings",
   "backup.schedule_saved": "Outomatiese rugsteuninstellings is gestoor.",
-  "backup.schedule_failed": "Outomatiese rugsteuninstellings kon nie gestoor word nie: {fout}",
+  "backup.schedule_failed": "Outomatiese rugsteuninstellings kon nie gestoor word nie: {error}",
   "camera.apply": "Toepas",
   "camera.apply_image_adjustments": "Toepas",
   "camera.brightness": "Helderheid",

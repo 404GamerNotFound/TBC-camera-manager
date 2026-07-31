@@ -194,6 +194,36 @@ def test_locale_json_key_parity() -> None:
         assert not extra, f"{lang}.json has keys not present in en.json: {sorted(extra)[:10]}"
 
 
+def test_locale_placeholder_tokens_are_not_translated() -> None:
+    """Guards against the translation pipeline mistranslating (or dropping)
+    the `{placeholder}` tokens inside a translated string, e.g. English
+    "{error}" becoming French "{erreur}". A mismatched or missing token
+    breaks the app/tbc/static/i18n.js runtime substitution for that string,
+    either leaving the literal "{erreur}" on screen or silently dropping the
+    real value. Locale brace content is matched permissively (not just
+    \\w+) because some scripts (Hindi, Bengali, ...) use combining marks
+    that \\w does not always match, which would otherwise hide a mismatch.
+    """
+    en = _locales()["en"]
+    en_placeholder_re = re.compile(r"\{(\w+)\}")
+    loc_placeholder_re = re.compile(r"\{([^{}]+)\}")
+    expected_by_key = {
+        key: set(en_placeholder_re.findall(value))
+        for key, value in en.items()
+        if en_placeholder_re.search(value)
+    }
+
+    findings: list[str] = []
+    for lang, strings in _locales().items():
+        if lang == "en":
+            continue
+        for key, expected in expected_by_key.items():
+            found = set(loc_placeholder_re.findall(strings.get(key, "")))
+            if found != expected:
+                findings.append(f"{lang}.json {key}: found {sorted(found)} != expected {sorted(expected)}")
+    assert not findings, "Locale placeholder tokens do not match en.json:\n" + "\n".join(findings)
+
+
 def test_twenty_new_high_speaker_locale_files_are_present() -> None:
     assert EXPECTED_NEW_LOCALES <= set(_locales())
 
