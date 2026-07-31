@@ -840,7 +840,6 @@ button:focus-visible {
 .cam-card {
   padding: 0;
   gap: 0;
-  overflow: hidden;
   opacity: 0;
   transform: translateY(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -877,7 +876,18 @@ button:focus-visible {
   background: var(--surface-soft);
 }
 
-.cam-media img,
+/* Clipping (for the rounded top corners and the hover zoom below) lives here,
+   scoped to just the image - not on .cam-card itself - so the glyph tooltips
+   in .cam-badges-top (a sibling, not a descendant, of this frame) can still
+   render past the card's edge instead of being cut off with it. */
+.cam-media-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+}
+
+.cam-media-frame img,
 .cam-media-empty {
   position: absolute;
   inset: 0;
@@ -885,13 +895,13 @@ button:focus-visible {
   height: 100%;
 }
 
-.cam-media img {
+.cam-media-frame img {
   display: block;
   object-fit: cover;
   transition: transform 0.5s ease;
 }
 
-.cam-card:hover .cam-media img {
+.cam-card:hover .cam-media-frame img {
   transform: scale(1.035);
 }
 
@@ -908,6 +918,7 @@ button:focus-visible {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: 8px 8px 0 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.62) 100%);
   pointer-events: none;
 }
@@ -959,12 +970,19 @@ button:focus-visible {
   color: #ff8a8a;
 }
 
+/* Anchored from the right, not left: the whole .cam-glyphs cluster sits at
+   the card's right edge (.cam-badges-top's justify-content: space-between),
+   so every glyph - not just the last one - is close enough to that edge that
+   a left-anchored tooltip would grow off the card/viewport. Anchoring every
+   glyph's tooltip from its own right edge makes it grow back over the image
+   instead, regardless of position in the cluster. */
 .cam-glyph::after {
   content: attr(data-tooltip);
   position: absolute;
   z-index: 20;
   top: calc(100% + 8px);
-  left: 0;
+  right: 0;
+  left: auto;
   width: max-content;
   max-width: min(260px, calc(100vw - 48px));
   padding: 8px 10px;

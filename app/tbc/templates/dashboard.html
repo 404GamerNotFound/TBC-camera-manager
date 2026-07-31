@@ -23,8 +23,13 @@
 </section>
 
 {% if cameras %}
-{% set ok_count = cameras | selectattr('last_probe_status', 'equalto', 'ok') | list | length %}
-{% set warn_count = cameras | selectattr('last_probe_status', 'equalto', 'warning') | list | length %}
+{# Mirrors the exact synonym groups the .status-pill CSS itself already
+   tolerates (".status-ok, .status-active" / ".status-warn, .status-warning") -
+   camera modules aren't all in this repo (several are external plugins) and
+   don't all spell these the same way, so matching only one exact string
+   silently dropped cameras from every count. #}
+{% set ok_count = cameras | selectattr('last_probe_status', 'in', ['ok', 'active']) | list | length %}
+{% set warn_count = cameras | selectattr('last_probe_status', 'in', ['warn', 'warning']) | list | length %}
 {% set error_count = cameras | selectattr('last_probe_status', 'equalto', 'error') | list | length %}
 {% set recording_count = cameras | selectattr('recording_enabled') | list | length %}
 <div class="fleet-summary">
@@ -50,17 +55,23 @@
   {% for camera in cameras %}
   <article class="camera-card cam-card" style="animation-delay: {{ (loop.index0 * 0.04) | round(3) }}s">
     <div class="cam-media">
-      {% if camera.stream_uri %}
-      <img src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
-           alt="Current preview image from {{ camera.name }}"
-           data-i18n-alt="dashboard.current_preview_from"
-           data-i18n-params='{{ {"camera": camera.name} | tojson }}'
-           data-camera-snapshot
-           loading="lazy"
-           decoding="async">
-      {% else %}
-      <div class="cam-media-empty" data-i18n="dashboard.no_stream_available_preview_image">No stream is available for a preview image yet</div>
-      {% endif %}
+      <div class="cam-media-frame">
+        {% if camera.stream_uri %}
+        {# data-src, not src: assigned by camera-snapshot-refresh.js only
+           after the page's own load event, so a slow/offline camera's
+           on-demand ffmpeg capture (see snapshots.py) never holds up the
+           browser's page-load completion - see that script for why. #}
+        <img data-src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg?v={{ camera.dashboard_snapshot_version or 0 }}"
+             alt="Current preview image from {{ camera.name }}"
+             data-i18n-alt="dashboard.current_preview_from"
+             data-i18n-params='{{ {"camera": camera.name} | tojson }}'
+             data-camera-snapshot
+             loading="lazy"
+             decoding="async">
+        {% else %}
+        <div class="cam-media-empty" data-i18n="dashboard.no_stream_available_preview_image">No stream is available for a preview image yet</div>
+        {% endif %}
+      </div>
       <div class="cam-badges-top">
         <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'new' }}</span>
         <div class="cam-glyphs">
