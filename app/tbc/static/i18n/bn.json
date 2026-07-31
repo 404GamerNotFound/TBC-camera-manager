@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "HomeKit সেটিংস সংরক্ষণ করা হয়েছে।",
   "homekit.start_failed": "HomeKit শুরু করা যায়নি: {error}",
   "homekit.starting": "শুরু হচ্ছে...",
-  "homekit.title": "হোমকিট"
+  "homekit.title": "হোমকিট",
+  "homekit.network_detected_address": "আউটবাউন্ড ঠিকানা সনাক্ত করা হয়েছে: {address}। যদি এটি আপনার হোস্টের প্রকৃত LAN IP না হয়, তাহলে জোড়া লাগানো ব্যর্থ হবে।",
+  "homekit.network_warning_detected": "TBC নেটওয়ার্ক_মোড ছাড়াই চলছে বলে মনে হচ্ছে: হোস্ট (ডকারের ডিফল্ট ব্রিজ রেঞ্জের মধ্যে সনাক্ত করা ঠিকানা {address}) - HomeKit পেয়ারিং সম্ভবত \"ডিভাইস পাওয়া যায়নি\" এর সাথে ব্যর্থ হবে। হোস্ট নেটওয়ার্কিং এ স্যুইচ করতে স্থাপনার ডকুমেন্টেশন দেখুন।"
 }

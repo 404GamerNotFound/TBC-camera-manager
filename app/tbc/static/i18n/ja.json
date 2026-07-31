@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "HomeKitの設定が保存されました。",
   "homekit.start_failed": "HomeKit を開始できませんでした: {error}",
   "homekit.starting": "開始中…",
-  "homekit.title": "ホームキット"
+  "homekit.title": "ホームキット",
+  "homekit.network_detected_address": "検出された送信アドレス: {address}。これがホストの実際の LAN IP ではない場合、ペアリングは失敗する可能性があります。",
+  "homekit.network_warning_detected": "TBC は network_mode: host (検出されたアドレス {address}、Docker のデフォルトのブリッジ範囲内) なしで実行されているようです - HomeKit のペアリングは「デバイスが見つかりません」で失敗する可能性があります。ホスト ネットワーキングに切り替えるには、展開ドキュメントを参照してください。"
 }

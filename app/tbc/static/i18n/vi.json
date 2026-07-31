@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "Cài đặt HomeKit đã được lưu.",
   "homekit.start_failed": "Không thể khởi động HomeKit: {error}",
   "homekit.starting": "Bắt đầu…",
-  "homekit.title": "HomeKit"
+  "homekit.title": "HomeKit",
+  "homekit.network_detected_address": "Đã phát hiện địa chỉ gửi đi: {address}. Nếu đây không phải là IP LAN thực tế của máy chủ thì việc ghép nối có thể sẽ không thành công.",
+  "homekit.network_warning_detected": "TBC dường như đang chạy mà không có network_mode: máy chủ (địa chỉ được phát hiện {address}, bên trong phạm vi cầu nối mặc định của Docker) - Việc ghép nối HomeKit có thể sẽ không thành công với thông báo \"Không tìm thấy thiết bị\". Xem tài liệu triển khai để chuyển sang mạng máy chủ."
 }

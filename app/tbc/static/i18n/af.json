@@ -1203,7 +1203,7 @@
   "camera.wifi_signal": "WiFi-sein",
   "camera.ntp_status": "NTP",
   "birdseye.camera_selection": "Cameras included",
-  "birdseye.camera_selection_hint": "Birdseye dekodeer en herkodeer deurlopend elke geselekteerde kamera, so hou die lys by wat 'n muurskerm of ingebedde legstuk eintlik nodig het. Beperk tot {maks} kameras.",
+  "birdseye.camera_selection_hint": "Birdseye dekodeer en herkodeer deurlopend elke geselekteerde kamera, so hou die lys by wat 'n muurskerm of ingebedde legstuk eintlik nodig het. Beperk tot {max} kameras.",
   "birdseye.disabled": "Birdseye is afgeskakel.",
   "birdseye.enabled": "Aktiveer Birdseye",
   "birdseye.explanation": "'n Enkele gekombineerde videostroom wat elke geselekteerde kamera in een mosaïekbeeld teël, vir inbedding as 'n enkele video-legstuk ('n Home Assistant-paneelbordkaart, 'n TV, 'n NVR-muurtoevoer) - anders as die Regstreekse bladsy, wat elke kamera as sy eie afsonderlik speelbare teël wys.",
@@ -1216,7 +1216,7 @@
   "birdseye.title": "Birdseye",
   "homekit.already_paired": "Reeds met 'n Home-toepassing gepaar.",
   "homekit.camera_selection": "Kameras blootgestel aan HomeKit",
-  "homekit.camera_selection_hint": "Elke blootgestelde kamera begin slegs sy eie ffmpeg-proses terwyl 'n Home-toepassing dit eintlik bekyk. Beperk tot {maks} kameras.",
+  "homekit.camera_selection_hint": "Elke blootgestelde kamera begin slegs sy eie ffmpeg-proses terwyl 'n Home-toepassing dit eintlik bekyk. Beperk tot {max} kameras.",
   "homekit.disabled": "HomeKit is afgeskakel.",
   "homekit.enabled": "Aktiveer HomeKit",
   "homekit.explanation": "Stel geselekteerde kameras bloot aan die Apple Home-toepassing as slegs lewendige kyk HomeKit-bykomstighede (geen HomeKit Secure Video / geënkripteerde gebeurtenisopname nie). Strooms word op aanvraag deur die Home-toepassing begin, op dieselfde manier waarop Regstreekse aansig 'n kamera se stroom begin wanneer sy teël oopgemaak word.",
@@ -1230,7 +1230,9 @@
   "homekit.reset_pairing_hint": "Vergeet elke gepaarde Home-toepassing en genereer 'n vars bykomstige identiteit. Gebruik dit as paring vas is of gebreek is; elke Home-toepassing wat hierdie brug bygevoeg het, sal dit weer moet byvoeg.",
   "homekit.settings": "Instellings",
   "homekit.settings_saved": "HomeKit-instellings is gestoor.",
-  "homekit.start_failed": "HomeKit kon nie begin word nie: {fout}",
+  "homekit.start_failed": "HomeKit kon nie begin word nie: {error}",
   "homekit.starting": "Begin tans …",
-  "homekit.title": "HomeKit"
+  "homekit.title": "HomeKit",
+  "homekit.network_detected_address": "Bespeur uitgaande adres: {address}. As dit nie jou gasheer se werklike LAN-IP is nie, sal paring waarskynlik misluk.",
+  "homekit.network_warning_detected": "Dit lyk asof TBC sonder netwerk_modus: gasheer loop (bespeur adres {address}, binne Docker se verstekbrugreeks) - HomeKit-paring sal waarskynlik misluk met \"Toestel nie gevind nie\". Sien die ontplooiingsdokumentasie om na gasheernetwerk oor te skakel."
 }

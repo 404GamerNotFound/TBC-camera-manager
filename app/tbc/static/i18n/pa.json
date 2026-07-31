@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "HomeKit ਸੈਟਿੰਗਾਂ ਨੂੰ ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ ਸੀ।",
   "homekit.start_failed": "HomeKit ਸ਼ੁਰੂ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ: {error}",
   "homekit.starting": "ਸ਼ੁਰੂ ਹੋ ਰਿਹਾ ਹੈ...",
-  "homekit.title": "ਹੋਮਕਿੱਟ"
+  "homekit.title": "ਹੋਮਕਿੱਟ",
+  "homekit.network_detected_address": "ਖੋਜਿਆ ਗਿਆ ਆਊਟਬਾਉਂਡ ਪਤਾ: {address}। ਜੇਕਰ ਇਹ ਤੁਹਾਡੇ ਹੋਸਟ ਦਾ ਅਸਲ LAN IP ਨਹੀਂ ਹੈ, ਤਾਂ ਜੋੜਾ ਬਣਾਉਣਾ ਅਸਫਲ ਹੋ ਜਾਵੇਗਾ।",
+  "homekit.network_warning_detected": "TBC ਨੈੱਟਵਰਕ_ਮੋਡ ਤੋਂ ਬਿਨਾਂ ਚੱਲਦਾ ਜਾਪਦਾ ਹੈ: ਹੋਸਟ (ਖੋਜਿਆ ਪਤਾ {address}, ਡੌਕਰ ਦੀ ਡਿਫੌਲਟ ਬ੍ਰਿਜ ਰੇਂਜ ਦੇ ਅੰਦਰ) - ਹੋਮਕਿਟ ਪੇਅਰਿੰਗ \"ਡਿਵਾਈਸ ਨਹੀਂ ਲੱਭੀ\" ਨਾਲ ਅਸਫਲ ਹੋ ਜਾਵੇਗੀ। ਹੋਸਟ ਨੈੱਟਵਰਕਿੰਗ 'ਤੇ ਜਾਣ ਲਈ ਤੈਨਾਤੀ ਦਸਤਾਵੇਜ਼ ਵੇਖੋ।"
 }

@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "HomeKit ayarları kaydedildi.",
   "homekit.start_failed": "HomeKit başlatılamadı: {error}",
   "homekit.starting": "Başlıyor…",
-  "homekit.title": "Ana SayfaKit"
+  "homekit.title": "Ana SayfaKit",
+  "homekit.network_detected_address": "Algılanan giden adres: {address}. Bu, ana makinenizin gerçek LAN IP'si değilse eşleştirme muhtemelen başarısız olacaktır.",
+  "homekit.network_warning_detected": "TBC, network_mode: host (algılanan adres {address}, Docker'ın varsayılan köprü aralığında) olmadan çalışıyor gibi görünüyor - HomeKit eşleştirmesi büyük olasılıkla \"Cihaz bulunamadı\" ile başarısız olacaktır. Ana bilgisayar ağına geçiş yapmak için dağıtım belgelerine bakın."
 }

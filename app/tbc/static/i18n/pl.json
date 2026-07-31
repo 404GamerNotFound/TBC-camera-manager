@@ -1230,7 +1230,9 @@
   "homekit.reset_pairing_hint": "Zapomina każdą sparowaną aplikację domową i generuje nową tożsamość akcesorium. Użyj tej opcji, jeśli parowanie zostanie zablokowane lub zerwane; każda aplikacja domowa, do której dodano ten most, będzie musiała dodać go ponownie.",
   "homekit.settings": "Ustawienia",
   "homekit.settings_saved": "Ustawienia HomeKit zostały zapisane.",
-  "homekit.start_failed": "Nie można uruchomić HomeKit: {błąd}",
+  "homekit.start_failed": "Nie można uruchomić HomeKit: {error}",
   "homekit.starting": "Zaczynam…",
-  "homekit.title": "Zestaw domowy"
+  "homekit.title": "Zestaw domowy",
+  "homekit.network_detected_address": "Wykryty adres wychodzący: {address}. Jeśli nie jest to rzeczywisty adres IP sieci LAN Twojego hosta, parowanie prawdopodobnie się nie powiedzie.",
+  "homekit.network_warning_detected": "Wygląda na to, że TBC działa bez network_mode: host (wykryto adres {address}, w domyślnym zakresie mostka Dockera) – parowanie HomeKit prawdopodobnie nie powiedzie się i wyświetli się komunikat „Nie znaleziono urządzenia”. Zapoznaj się z dokumentacją wdrażania, aby przejść do sieci hosta."
 }

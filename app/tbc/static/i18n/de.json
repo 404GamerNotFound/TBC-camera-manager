@@ -501,6 +501,8 @@
   "homekit.camera_selection_hint": "Jede freigegebene Kamera startet einen eigenen ffmpeg-Prozess nur, solange eine Home-App sie tatsächlich anzeigt. Begrenzt auf {max} Kameras.",
   "homekit.disabled": "HomeKit ist deaktiviert.",
   "homekit.enabled": "HomeKit aktivieren",
+  "homekit.network_detected_address": "Erkannte ausgehende Adresse: {address}. Falls dies nicht die tatsächliche LAN-IP deines Hosts ist, wird die Kopplung wahrscheinlich fehlschlagen.",
+  "homekit.network_warning_detected": "TBC scheint ohne network_mode: host zu laufen (erkannte Adresse {address}, innerhalb von Dockers Standard-Bridge-Bereich) - die HomeKit-Kopplung wird wahrscheinlich mit \"Gerät wurde nicht gefunden\" fehlschlagen. Sieh in der Dokumentation zur Bereitstellung nach, wie du auf Host-Networking umstellst.",
   "homekit.explanation": "Gibt ausgewählte Kameras als reine Live-Ansicht-HomeKit-Zubehörgeräte für die Apple Home-App frei (kein HomeKit Secure Video / keine verschlüsselte Ereignisaufzeichnung). Streams werden von der Home-App bei Bedarf gestartet - genau wie die Live-Ansicht den Stream einer Kamera erst startet, wenn ihre Kachel geöffnet wird.",
   "homekit.eyebrow": "Apple Home-App",
   "homekit.network_requirement": "Die HomeKit-Geräteerkennung nutzt mDNS/Bonjour-Multicast, was über Dockers Standard-Bridge-Netzwerk nicht funktioniert. Eine eigenständige Docker-/Docker-Compose-Installation muss dafür auf network_mode: host umgestellt werden - siehe die Dokumentation zur Bereitstellung. Über das Home-Assistant-Add-on wird dies derzeit nicht unterstützt.",

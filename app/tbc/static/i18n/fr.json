@@ -1230,7 +1230,9 @@
   "homekit.reset_pairing_hint": "Oublie chaque application Home couplée et génère une nouvelle identité d'accessoire. Utilisez-le si le couplage est bloqué ou interrompu ; chaque application Home pour laquelle ce pont a été ajouté devra l'ajouter à nouveau.",
   "homekit.settings": "Paramètres",
   "homekit.settings_saved": "Les paramètres HomeKit ont été enregistrés.",
-  "homekit.start_failed": "HomeKit n'a pas pu démarrer : {erreur}",
+  "homekit.start_failed": "HomeKit n'a pas pu démarrer : {error}",
   "homekit.starting": "Commencer…",
-  "homekit.title": "AccueilKit"
+  "homekit.title": "AccueilKit",
+  "homekit.network_detected_address": "Adresse sortante détectée : {address}. S'il ne s'agit pas de l'adresse IP LAN réelle de votre hôte, le couplage échouera probablement.",
+  "homekit.network_warning_detected": "TBC semble fonctionner sans network_mode: host (adresse détectée {address}, dans la plage de pont par défaut de Docker) - Le couplage HomeKit échouera probablement avec \"Périphérique introuvable\". Consultez la documentation de déploiement pour passer au réseau hôte."
 }

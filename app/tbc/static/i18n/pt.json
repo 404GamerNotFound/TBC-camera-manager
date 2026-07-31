@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "As configurações do HomeKit foram salvas.",
   "homekit.start_failed": "Não foi possível iniciar o HomeKit: {error}",
   "homekit.starting": "Começando…",
-  "homekit.title": "Kit doméstico"
+  "homekit.title": "Kit doméstico",
+  "homekit.network_detected_address": "Endereço de saída detectado: {address}. Se este não for o IP real da LAN do seu host, o emparelhamento provavelmente falhará.",
+  "homekit.network_warning_detected": "O TBC parece estar em execução sem network_mode: host (endereço detectado {address}, dentro do intervalo de ponte padrão do Docker) - O emparelhamento do HomeKit provavelmente falhará com \"Dispositivo não encontrado\". Consulte a documentação de implantação para mudar para rede host."
 }

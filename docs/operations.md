@@ -68,7 +68,11 @@ multicast, which does not work through Docker's default bridge networking - a st
 Docker/Docker Compose deployment needs `network_mode: host` (see
 [deployment.md](deployment.md#ports-and-network-access)) for pairing to succeed at all. This
 integration is **not currently supported through the Home Assistant OS add-on**, which runs
-without host networking (`tbc_camera_manager/DOCS.md`).
+without host networking (`tbc_camera_manager/DOCS.md`). The HomeKit page checks the address it
+would advertise and, if it looks like Docker's default bridge network rather than a real LAN
+address, shows a warning naming this directly - the symptom otherwise looks like a successful
+pairing attempt that then fails with "Device not found" once the Home app tries to actually
+connect, which is easy to mistake for something else.
 
 Audio and two-way talk are not implemented - only video. Pairing itself has not been verified
 against real Apple hardware as part of building this feature; treat it as unverified until

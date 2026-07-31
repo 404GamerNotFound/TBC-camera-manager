@@ -7,13 +7,19 @@
   demand the same way Live view does, and pairing uses a QR code/pincode shown on the new
   **Operations → HomeKit** page. Requires switching a standalone Docker/Docker Compose deployment
   to `network_mode: host` for mDNS pairing discovery to work at all - not currently supported
-  through the Home Assistant OS add-on, which runs without host networking. Pairing itself has
-  not yet been verified against real Apple hardware.
+  through the Home Assistant OS add-on, which runs without host networking. The settings page now
+  detects the single most common cause of a "Device not found" pairing failure (still running in
+  Docker's default bridge networking) and shows a specific warning instead of leaving the admin to
+  guess. Pairing itself has not yet been verified against real Apple hardware.
 - Added Birdseye, an optional single server-composited mosaic stream combining several cameras
   into one ffmpeg output (via the xstack filter), for embedding as a single video widget - a
   Home Assistant dashboard card, a TV/HDMI stick, or an NVR wall input - where the existing
   per-tile Live wall doesn't fit. Off by default and capped at 16 cameras, since it continuously
   transcodes every included camera instead of passing codecs through unchanged like Live view.
+  Added a bounded ffmpeg socket timeout for RTSP sources so one unreachable camera fails within
+  seconds instead of hanging the entire composite indefinitely (xstack needs every input to
+  deliver frames before producing any output), plus a page-level auto-refresh and live diagnostic
+  message while a stream is starting rather than only once it has failed.
 - Restyled the shared `.table-section` grouping used across the camera detail tabs (Controls,
   Recording, AI detection) and the Performance, License, AI detection, Network mappings,
   Recognition, SD card, and Storage explorer pages: each grouped section now renders as a

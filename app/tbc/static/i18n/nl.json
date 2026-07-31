@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "HomeKit-instellingen zijn opgeslagen.",
   "homekit.start_failed": "HomeKit kan niet worden gestart: {error}",
   "homekit.starting": "Beginnen…",
-  "homekit.title": "HomeKit"
+  "homekit.title": "HomeKit",
+  "homekit.network_detected_address": "Gedetecteerd uitgaand adres: {address}. Als dit niet het werkelijke LAN-IP-adres van uw host is, zal het koppelen waarschijnlijk mislukken.",
+  "homekit.network_warning_detected": "TBC lijkt te werken zonder netwerkmodus: host (gedetecteerd adres {address}, binnen het standaard brugbereik van Docker) - HomeKit-koppeling zal waarschijnlijk mislukken met \"Apparaat niet gevonden\". Zie de implementatiedocumentatie om over te schakelen naar hostnetwerken."
 }

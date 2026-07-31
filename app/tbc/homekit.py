@@ -11,6 +11,7 @@ subprocess, tail its stderr on a daemon thread, expose start/stop/status.
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
 import logging
 import shutil
@@ -21,6 +22,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from pyhap import util as pyhap_util
 from pyhap.camera import (
     VIDEO_CODEC_PARAM_LEVEL_TYPES,
     VIDEO_CODEC_PARAM_PROFILE_ID_TYPES,
@@ -28,6 +30,36 @@ from pyhap.camera import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+# Docker's default bridge network (172.17.0.0/16) and the range it allocates
+# custom/compose-created bridge networks from (172.18.0.0/16 through
+# 172.31.0.0/16, i.e. all of 172.16.0.0/12 in practice). A real LAN using
+# this block is possible but uncommon (192.168.0.0/16 and 10.0.0.0/8 are the
+# conventional home/office choices) - used as a best-effort hint, not a
+# guarantee either way, that network_mode: host is missing (see
+# docs/deployment.md's "Ports and network access" section).
+_DOCKER_BRIDGE_NETWORK = ipaddress.ip_network("172.16.0.0/12")
+
+
+def detect_host_networking_gap() -> dict[str, Any]:
+    """Best-effort check for the single most common HomeKit pairing failure:
+    running in Docker's default bridge networking rather than network_mode:
+    host, which makes the accessory advertise an address the Home app can
+    mDNS-discover but never actually reach - it gets as far as "Connecting..."
+    in the Home app before failing with "Device not found". Returns the
+    address it would advertise regardless, so it's shown even when the
+    heuristic doesn't fire, letting an admin double check it themselves."""
+    try:
+        address = pyhap_util.get_local_address()
+    except OSError:
+        return {"address": None, "likely_bridge_networking": False}
+    in_docker = Path("/.dockerenv").exists()
+    likely_bridge_networking = False
+    try:
+        likely_bridge_networking = in_docker and ipaddress.ip_address(address) in _DOCKER_BRIDGE_NETWORK
+    except ValueError:
+        pass
+    return {"address": address, "likely_bridge_networking": likely_bridge_networking}
 
 # A HomeKit bridge exposing hundreds of accessories is a pathological config
 # no real household needs - this bounds it defensively, the same way

@@ -1232,5 +1232,7 @@
   "homekit.settings_saved": "Pengaturan HomeKit telah disimpan.",
   "homekit.start_failed": "HomeKit tidak dapat dimulai: {error}",
   "homekit.starting": "Mulai…",
-  "homekit.title": "RumahKit"
+  "homekit.title": "RumahKit",
+  "homekit.network_detected_address": "Alamat keluar terdeteksi: {address}. Jika ini bukan IP LAN host Anda yang sebenarnya, kemungkinan besar penyandingan akan gagal.",
+  "homekit.network_warning_detected": "TBC tampaknya berjalan tanpa network_mode: host (alamat {address} terdeteksi, di dalam rentang jembatan default Docker) - Pemasangan HomeKit kemungkinan akan gagal dengan \"Perangkat tidak ditemukan\". Lihat dokumentasi penerapan untuk beralih ke jaringan host."
 }

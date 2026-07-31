@@ -7,7 +7,11 @@ from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 from app.tbc import database
-from app.tbc.homekit import HomeKitManager, _homekit_ffmpeg_command
+from app.tbc.homekit import (
+    HomeKitManager,
+    _homekit_ffmpeg_command,
+    detect_host_networking_gap,
+)
 
 
 class HomekitFfmpegCommandTests(unittest.TestCase):
@@ -63,6 +67,40 @@ class HomekitFfmpegCommandTests(unittest.TestCase):
 
         bitrate_index = command.index("-b:v") + 1
         self.assertEqual(command[bitrate_index], "800k")
+
+
+class DetectHostNetworkingGapTests(unittest.TestCase):
+    def test_docker_bridge_address_is_flagged(self):
+        with patch("app.tbc.homekit.pyhap_util.get_local_address", return_value="172.18.0.5"):
+            with patch("app.tbc.homekit.Path") as path_cls:
+                path_cls.return_value.exists.return_value = True
+                result = detect_host_networking_gap()
+
+        self.assertEqual(result, {"address": "172.18.0.5", "likely_bridge_networking": True})
+
+    def test_lan_address_is_not_flagged_even_inside_docker(self):
+        with patch("app.tbc.homekit.pyhap_util.get_local_address", return_value="192.168.1.42"):
+            with patch("app.tbc.homekit.Path") as path_cls:
+                path_cls.return_value.exists.return_value = True
+                result = detect_host_networking_gap()
+
+        self.assertEqual(result, {"address": "192.168.1.42", "likely_bridge_networking": False})
+
+    def test_bridge_range_address_outside_docker_is_not_flagged(self):
+        # The heuristic only fires when both signals agree - a legitimate
+        # 172.16.0.0/12 LAN outside a container must not be flagged.
+        with patch("app.tbc.homekit.pyhap_util.get_local_address", return_value="172.20.0.5"):
+            with patch("app.tbc.homekit.Path") as path_cls:
+                path_cls.return_value.exists.return_value = False
+                result = detect_host_networking_gap()
+
+        self.assertFalse(result["likely_bridge_networking"])
+
+    def test_address_resolution_failure_is_handled(self):
+        with patch("app.tbc.homekit.pyhap_util.get_local_address", side_effect=OSError("no route")):
+            result = detect_host_networking_gap()
+
+        self.assertEqual(result, {"address": None, "likely_bridge_networking": False})
 
 
 class HomeKitManagerStartStopTests(unittest.TestCase):

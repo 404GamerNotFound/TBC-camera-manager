@@ -470,6 +470,8 @@
   "homekit.camera_selection_hint": "Each exposed camera starts its own ffmpeg process only while a Home app is actually viewing it. Limited to {max} cameras.",
   "homekit.disabled": "HomeKit is turned off.",
   "homekit.enabled": "Enable HomeKit",
+  "homekit.network_detected_address": "Detected outbound address: {address}. If this isn't your host's actual LAN IP, pairing will likely fail.",
+  "homekit.network_warning_detected": "TBC appears to be running without network_mode: host (detected address {address}, inside Docker's default bridge range) - HomeKit pairing will likely fail with \"Device not found\". See the deployment documentation to switch to host networking.",
   "homekit.explanation": "Exposes selected cameras to the Apple Home app as live-view-only HomeKit accessories (no HomeKit Secure Video / encrypted event recording). Streams are started on demand by the Home app, the same way Live view starts a camera's stream when its tile is opened.",
   "homekit.eyebrow": "Apple Home app",
   "homekit.network_requirement": "HomeKit accessory discovery uses mDNS/Bonjour multicast, which does not work through Docker's default bridge networking. A standalone Docker/Docker Compose deployment must be switched to network_mode: host for pairing to work - see the deployment documentation. This is not currently supported through the Home Assistant add-on.",

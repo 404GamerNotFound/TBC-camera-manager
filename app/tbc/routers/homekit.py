@@ -13,7 +13,7 @@ from fastapi import Form, Request
 from fastapi.responses import HTMLResponse
 
 from .. import audit, database
-from ..homekit import MAX_HOMEKIT_CAMERAS
+from ..homekit import MAX_HOMEKIT_CAMERAS, detect_host_networking_gap
 from fastapi import APIRouter
 
 from ..main import (
@@ -85,6 +85,7 @@ async def homekit_settings(request: Request):
             "pairing": pairing,
             "qr_svg": _qr_svg(pairing["xhm_uri"]) if pairing["xhm_uri"] else None,
             "no_usable_cameras": no_usable_cameras,
+            "network_check": detect_host_networking_gap(),
             "max_cameras": MAX_HOMEKIT_CAMERAS,
             "flash": _pop_flash(request),
         },

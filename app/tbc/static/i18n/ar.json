@@ -1230,7 +1230,9 @@
   "homekit.reset_pairing_hint": "ينسى كل تطبيق Home مقترنًا وينشئ هوية ملحقة جديدة. استخدم هذا إذا كان الاقتران عالقًا أو مكسورًا؛ سيحتاج كل تطبيق Home تمت إضافة هذا الجسر إليه إلى إضافته مرة أخرى.",
   "homekit.settings": "الإعدادات",
   "homekit.settings_saved": "تم حفظ إعدادات HomeKit.",
-  "homekit.start_failed": "تعذر بدء تشغيل HomeKit: {خطأ}",
+  "homekit.start_failed": "تعذر بدء تشغيل HomeKit: {error}",
   "homekit.starting": "جارٍ البدء…",
-  "homekit.title": "هومكيت"
+  "homekit.title": "هومكيت",
+  "homekit.network_detected_address": "تم اكتشاف عنوان صادر: {address}. إذا لم يكن هذا هو عنوان IP الفعلي لشبكة LAN الخاصة بمضيفك، فمن المحتمل أن يفشل الاقتران.",
+  "homekit.network_warning_detected": "يبدو أن TBC يعمل بدون وضع الشبكة: المضيف (العنوان المكتشف {address}، داخل نطاق الجسر الافتراضي لـ Docker) - من المحتمل أن يفشل اقتران HomeKit مع ظهور \"لم يتم العثور على الجهاز\". راجع وثائق النشر للتبديل إلى شبكة المضيف."
 }

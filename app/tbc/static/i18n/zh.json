@@ -1230,7 +1230,9 @@
   "homekit.reset_pairing_hint": "忘记每个配对的家庭应用程序并生成新的配件标识。如果配对卡住或损坏，请使用此功能；每个添加了此桥的家庭应用程序都需要再次添加它。",
   "homekit.settings": "设置",
   "homekit.settings_saved": "HomeKit 设置已保存。",
-  "homekit.start_failed": "HomeKit 无法启动：{错误}",
+  "homekit.start_failed": "HomeKit 无法启动：{error}",
   "homekit.starting": "开始…",
-  "homekit.title": "家庭套件"
+  "homekit.title": "家庭套件",
+  "homekit.network_detected_address": "检测到的出站地址：{address}。如果这不是您主机的实际 LAN IP，配对可能会失败。",
+  "homekit.network_warning_detected": "TBC 似乎在没有网络模式的情况下运行：主机（检测到的地址 {address}，在 Docker 的默认网桥范围内） - HomeKit 配对可能会失败，并显示“找不到设备”。请参阅部署文档以切换到主机网络。"
 }

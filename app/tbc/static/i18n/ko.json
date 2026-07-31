@@ -1230,7 +1230,9 @@
   "homekit.reset_pairing_hint": "페어링된 모든 Home 앱을 잊어버리고 새로운 액세서리 ID를 생성합니다. 페어링이 중단되거나 끊어진 경우 이 기능을 사용하세요. 이 브리지가 추가된 모든 홈 앱은 이를 다시 추가해야 합니다.",
   "homekit.settings": "설정",
   "homekit.settings_saved": "HomeKit 설정이 저장되었습니다.",
-  "homekit.start_failed": "HomeKit을 시작할 수 없습니다: {오류}",
+  "homekit.start_failed": "HomeKit을 시작할 수 없습니다: {error}",
   "homekit.starting": "시작 중…",
-  "homekit.title": "홈킷"
+  "homekit.title": "홈킷",
+  "homekit.network_detected_address": "감지된 아웃바운드 주소: {address}. 호스트의 실제 LAN IP가 아닌 경우 페어링이 실패할 가능성이 높습니다.",
+  "homekit.network_warning_detected": "TBC는 network_mode: 호스트(Docker의 기본 브리지 범위 내에서 감지된 주소 {address}) 없이 실행 중인 것으로 보입니다. - HomeKit 페어링은 \"장치를 찾을 수 없음\"으로 인해 실패할 가능성이 높습니다. 호스트 네트워킹으로 전환하려면 배포 설명서를 참조하세요."
 }

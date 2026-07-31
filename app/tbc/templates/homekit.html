@@ -26,6 +26,19 @@
   not currently supported through the Home Assistant add-on.
 </div>
 
+{% if network_check.likely_bridge_networking %}
+<div class="flash flash-warning alert" data-i18n="homekit.network_warning_detected" data-i18n-params='{{ {"address": network_check.address} | tojson }}'>
+  TBC appears to be running without network_mode: host (detected address {{ network_check.address }},
+  inside Docker's default bridge range) - HomeKit pairing will likely fail with "Device not found".
+  See the deployment documentation to switch to host networking.
+</div>
+{% elif network_check.address %}
+<p class="quiet-box" data-i18n="homekit.network_detected_address" data-i18n-params='{{ {"address": network_check.address} | tojson }}'>
+  Detected outbound address: {{ network_check.address }}. If this isn't your host's actual LAN IP,
+  pairing will likely fail.
+</p>
+{% endif %}
+
 {% if status == 'failed' and message %}
 <details class="live-card-error-details">
   <summary data-i18n="live.error_details">Technical error details</summary>
