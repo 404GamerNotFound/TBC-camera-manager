@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- Gave `.clip-card` (the recording/snapshot tile used by both the camera detail page's "Recent
+  clips" strip and the main Recordings gallery) the same hover lift and subtle media zoom as the
+  redesigned dashboard camera card, instead of leaving it static while every card around it picked
+  up hover polish. CSS-only change, no template edits needed since both pages already share this
+  class.
 - Redesigned the camera dashboard card: a full-bleed snapshot image now carries the camera name,
   connection status, and connectivity/recording indicators as overlays, replacing the previous
   stacked header/thumbnail/boxed-stat layout - the boxed stat labels were also the source of a

@@ -868,6 +868,13 @@ button:focus-visible {
   .cam-card:hover {
     transform: none;
   }
+  .clip-card:hover {
+    transform: none;
+  }
+  .clip-card:hover video,
+  .clip-card:hover img.clip-media-still {
+    transform: none;
+  }
 }
 
 .cam-media {
@@ -2610,6 +2617,16 @@ code {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Mirrors .cam-card:hover (the dashboard snapshot card) - clip-card is used
+   both here and in recordings.html's main clips gallery, so this one rule
+   covers both. */
+.clip-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
 }
 
 .clip-card video,
@@ -2619,6 +2636,16 @@ code {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #111817;
+}
+
+.clip-card video,
+.clip-card img.clip-media-still {
+  transition: transform 0.5s ease;
+}
+
+.clip-card:hover video,
+.clip-card:hover img.clip-media-still {
+  transform: scale(1.035);
 }
 
 .clip-card video {
