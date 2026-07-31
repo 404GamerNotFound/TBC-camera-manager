@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0 - "Redesigned & connected"
+
+- Kept the Coral Home Assistant app in version lockstep with the standard
+  0.11.0 release, including the redesigned home page, loading improvements,
+  HomeKit integration, and bird's-eye view.
+
 ## 0.10.0 - "Automated backups"
 
 - Kept the Coral Home Assistant app in version lockstep with the standard 0.10.0 release, including automated encrypted backups, retention, optional external replication, and backup status reporting.
