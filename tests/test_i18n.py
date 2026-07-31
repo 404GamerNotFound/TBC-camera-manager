@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import json
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 
 
@@ -18,8 +19,9 @@ LOCALE_ROOT = STATIC_ROOT / "i18n"
 # excluded.
 GERMAN_UI = re.compile(
     r"[ÄÖÜäöüß]|\b(?:Aktivieren|Aktualisieren|Aufnahme|Aufnahmen|Benutzer|Bestätigen|"
-    r"Einstellungen|Entfernen|Geräte|Hinzufügen|Kamera|Kameras|Keine|Löschen|Noch|"
-    r"Öffnen|Prüfung|Schließen|Speichern|Sprache|Verbindung|Verfügbar|Zurück)\b"
+    r"Daueraufzeichnung|Einstellungen|eingebaut|Entfernen|Fokus|Geräte|Hinzufügen|Kamera|"
+    r"Kameras|Keine|Kerne|Löschen|Minuten|Noch|Öffnen|Prüfung|Python-Paket|Schließen|"
+    r"SD-Karte|Speichern|Spalten|Sprache|Verbindung|Verfügbar|Vorschaubild|Zurück)\b"
 )
 
 # data-i18n="key", data-i18n-aria-label="key", data-i18n-params="..." (skipped,
@@ -30,15 +32,62 @@ DATA_I18N_JINJA_TERNARY = re.compile(r"data-i18n=\"\{\{ '([\w.]+)' if .*? else '
 
 def _locales() -> dict[str, dict[str, str]]:
     return {
-        lang: json.loads((LOCALE_ROOT / f"{lang}.json").read_text(encoding="utf-8"))
-        for lang in ("en", "de", "es", "pt")
+        path.stem: json.loads(path.read_text(encoding="utf-8"))
+        for path in sorted(LOCALE_ROOT.glob("*.json"))
     }
+
+
+EXPECTED_NEW_LOCALES = {
+    "ar", "bn", "fa", "hi", "id", "it", "ja", "ko", "mr", "pa",
+    "ru", "ta", "te", "th", "tl", "tr", "ur", "vi", "zh", "zh-Hant",
+}
 
 
 def _ui_sources() -> list[Path]:
     return sorted(TEMPLATE_ROOT.rglob("*.html")) + sorted(
         path for path in STATIC_ROOT.glob("*.js") if path.name != "i18n.js"
     )
+
+
+class _UnkeyedTemplateCopyScanner(HTMLParser):
+    """Find literal text nodes that are not covered by an i18n marker."""
+
+    ALLOWED = re.compile(
+        r"^(?:TBC|REST|MCP|HLS|s ·|dBm–|· °C|MB|GB-|(?:· ){2}Not installed)$"
+    )
+
+    def __init__(self, path: Path) -> None:
+        super().__init__(convert_charrefs=True)
+        self.path = path
+        self.stack: list[tuple[str, dict[str, str | None]]] = []
+        self.findings: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.stack.append((tag, dict(attrs)))
+
+    def handle_endtag(self, tag: str) -> None:
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                self.stack = self.stack[:index]
+                break
+
+    def handle_data(self, data: str) -> None:
+        text = re.sub(r"\s+", " ", data).strip()
+        if not text or not re.search(r"[A-Za-zÄÖÜäöüß]", text) or not self.stack:
+            return
+        if any(tag in {"script", "style", "code", "pre"} for tag, _ in self.stack):
+            return
+        if any(
+            "data-i18n" in attrs
+            or "data-current-language" in attrs
+            or attrs.get("aria-hidden") == "true"
+            for _, attrs in self.stack
+        ):
+            return
+        if self.ALLOWED.fullmatch(text):
+            return
+        line, _ = self.getpos()
+        self.findings.append(f"{self.path.relative_to(ROOT)}:{line}: {text}")
 
 
 def _backend_python_sources() -> list[Path]:
@@ -89,6 +138,28 @@ def test_dynamic_browser_copy_uses_language_keys() -> None:
         assert not GERMAN_UI.search(source), path.relative_to(ROOT)
 
 
+def test_runtime_templates_do_not_leave_literal_ui_copy_unkeyed() -> None:
+    findings: list[str] = []
+    for path in sorted(TEMPLATE_ROOT.rglob("*.html")):
+        # Files carrying the " 2" suffix are archival copies and are never
+        # selected by Jinja's template loader.
+        if " 2" in path.name:
+            continue
+        source = path.read_text(encoding="utf-8")
+        # Jinja control/output blocks are dynamic data, not literal UI copy.
+        # Preserve their line breaks so reported source locations stay useful.
+        source = re.sub(
+            r"\{[{%#].*?[}%#]\}",
+            lambda match: "\n" * match.group(0).count("\n"),
+            source,
+            flags=re.DOTALL,
+        )
+        scanner = _UnkeyedTemplateCopyScanner(path)
+        scanner.feed(source)
+        findings.extend(scanner.findings)
+    assert not findings, "Literal UI copy without data-i18n found:\n" + "\n".join(findings)
+
+
 def test_readme_is_english() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert not GERMAN_UI.search(readme)
@@ -121,6 +192,40 @@ def test_locale_json_key_parity() -> None:
         extra = keys - reference
         assert not missing, f"{lang}.json is missing keys present in en.json: {sorted(missing)[:10]}"
         assert not extra, f"{lang}.json has keys not present in en.json: {sorted(extra)[:10]}"
+
+
+def test_locale_placeholder_tokens_are_not_translated() -> None:
+    """Guards against the translation pipeline mistranslating (or dropping)
+    the `{placeholder}` tokens inside a translated string, e.g. English
+    "{error}" becoming French "{erreur}". A mismatched or missing token
+    breaks the app/tbc/static/i18n.js runtime substitution for that string,
+    either leaving the literal "{erreur}" on screen or silently dropping the
+    real value. Locale brace content is matched permissively (not just
+    \\w+) because some scripts (Hindi, Bengali, ...) use combining marks
+    that \\w does not always match, which would otherwise hide a mismatch.
+    """
+    en = _locales()["en"]
+    en_placeholder_re = re.compile(r"\{(\w+)\}")
+    loc_placeholder_re = re.compile(r"\{([^{}]+)\}")
+    expected_by_key = {
+        key: set(en_placeholder_re.findall(value))
+        for key, value in en.items()
+        if en_placeholder_re.search(value)
+    }
+
+    findings: list[str] = []
+    for lang, strings in _locales().items():
+        if lang == "en":
+            continue
+        for key, expected in expected_by_key.items():
+            found = set(loc_placeholder_re.findall(strings.get(key, "")))
+            if found != expected:
+                findings.append(f"{lang}.json {key}: found {sorted(found)} != expected {sorted(expected)}")
+    assert not findings, "Locale placeholder tokens do not match en.json:\n" + "\n".join(findings)
+
+
+def test_twenty_new_high_speaker_locale_files_are_present() -> None:
+    assert EXPECTED_NEW_LOCALES <= set(_locales())
 
 
 def test_all_data_i18n_keys_exist() -> None:

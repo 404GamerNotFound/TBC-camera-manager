@@ -1,9 +1,89 @@
+// Prefixes a root-relative path ("/api/...") with the Home Assistant Ingress
+// path, if any - see app/tbc/ingress.py and base.html's inline script that
+// sets window.TBC_INGRESS_PREFIX. A no-op outside Ingress. Exposed on
+// `window` (not inside the IIFE below) so every other page script can call
+// it for its own fetch()/src assignments instead of hardcoding a path.
+window.tbcUrl = (path) => (window.TBC_INGRESS_PREFIX || "") + path;
+
+// Reads the per-session CSRF token base.html renders into <meta
+// name="csrf-token">. See the _csrf_protect middleware in app/tbc/main.py.
+window.tbcCsrfToken = () => {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.content : "";
+};
+
 (() => {
   "use strict";
 
+  // Every state-changing request in this app is same-origin and either a
+  // classic <form method="post"> or a fetch() call using the session
+  // cookie - both need the CSRF token the middleware checks. Patching
+  // fetch() once here covers every existing and future fetch() call site
+  // (live.js, camera-detail.js, video-player.js, health.js, ...) without
+  // threading the header through each of them individually.
+  const CSRF_UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const method = ((init && init.method) || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
+    if (!CSRF_UNSAFE_METHODS.has(method)) return nativeFetch(input, init);
+    const headers = new Headers((init && init.headers) || (input instanceof Request ? input.headers : undefined));
+    if (!headers.has("X-CSRF-Token")) headers.set("X-CSRF-Token", window.tbcCsrfToken());
+    return nativeFetch(input, { ...init, headers });
+  };
+
+  // Classic form POSTs (not fetch) prove the token via a hidden field
+  // instead of a header - inject it into every same-page <form
+  // method="post"> that doesn't already carry one.
+  const injectCsrfInputs = (root) => {
+    const token = window.tbcCsrfToken();
+    if (!token) return;
+    const forms = root instanceof HTMLFormElement ? [root] : root.querySelectorAll ? [...root.querySelectorAll("form")] : [];
+    forms.forEach((form) => {
+      if (form.method.toLowerCase() !== "post" || form.querySelector('input[name="csrf_token"]')) return;
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "csrf_token";
+      input.value = token;
+      form.appendChild(input);
+    });
+  };
+
   const STORAGE_KEY = "tbc-language";
-  const SUPPORTED_LANGUAGES = ["de", "en", "es", "pt"];
-  const LANGUAGE_NAMES = { de: "Deutsch", en: "English", es: "Español", pt: "Português" };
+  const SUPPORTED_LANGUAGES = [
+    "af", "ar", "bg", "bn", "de", "en", "es", "fa", "fr", "hi", "id", "it", "ja", "ko",
+    "mr", "nl", "pa", "pl", "pt", "ru", "ta", "te", "th", "tl", "tr", "ur", "vi", "zh", "zh-Hant",
+  ];
+  const LANGUAGE_NAMES = {
+    af: "Afrikaans",
+    ar: "العربية",
+    bg: "Български",
+    bn: "বাংলা",
+    de: "Deutsch",
+    en: "English",
+    es: "Español",
+    fa: "فارسی",
+    fr: "Français",
+    hi: "हिन्दी",
+    id: "Bahasa Indonesia",
+    it: "Italiano",
+    ja: "日本語",
+    ko: "한국어",
+    mr: "मराठी",
+    nl: "Nederlands",
+    pa: "ਪੰਜਾਬੀ",
+    pl: "Polski",
+    pt: "Português",
+    ru: "Русский",
+    ta: "தமிழ்",
+    te: "తెలుగు",
+    th: "ไทย",
+    tl: "Tagalog",
+    tr: "Türkçe",
+    ur: "اردو",
+    vi: "Tiếng Việt",
+    zh: "简体中文",
+    "zh-Hant": "繁體中文",
+  };
 
   const selectedLanguage = () => {
     try {
@@ -33,7 +113,7 @@
   })();
 
   const loadLocale = (lang) =>
-    fetch(`/static/i18n/${lang}.json${cacheBust}`)
+    fetch(tbcUrl(`/static/i18n/${lang}.json${cacheBust}`))
       .then((response) => (response.ok ? response.json() : {}))
       .catch(() => ({}));
 
@@ -59,7 +139,7 @@
     return interpolate(template, parameters);
   };
 
-  const ATTRS = ["aria-label", "title", "placeholder", "data-tooltip"];
+  const ATTRS = ["aria-label", "title", "placeholder", "data-tooltip", "alt"];
   const datasetKeyFor = (attribute) =>
     `i18n${attribute.replace(/(^|-)([a-z])/g, (_, __, letter) => letter.toUpperCase())}`;
 
@@ -78,13 +158,13 @@
     if (element.dataset.i18n) element.textContent = translate(element.dataset.i18n, paramsFor(element));
     for (const attribute of ATTRS) {
       const key = element.dataset[datasetKeyFor(attribute)];
-      if (key) element.setAttribute(attribute, translate(key));
+      if (key) element.setAttribute(attribute, translate(key, paramsFor(element)));
     }
-    element.querySelectorAll("[data-i18n], [data-i18n-aria-label], [data-i18n-title], [data-i18n-placeholder], [data-i18n-data-tooltip]").forEach((child) => {
+    element.querySelectorAll("[data-i18n], [data-i18n-aria-label], [data-i18n-title], [data-i18n-placeholder], [data-i18n-data-tooltip], [data-i18n-alt]").forEach((child) => {
       if (child.dataset.i18n) child.textContent = translate(child.dataset.i18n, paramsFor(child));
       for (const attribute of ATTRS) {
         const key = child.dataset[datasetKeyFor(attribute)];
-        if (key) child.setAttribute(attribute, translate(key));
+        if (key) child.setAttribute(attribute, translate(key, paramsFor(child)));
       }
     });
   };
@@ -98,6 +178,9 @@
     });
     document.querySelectorAll("[data-current-language]").forEach((label) => {
       label.textContent = LANGUAGE_NAMES[language];
+    });
+    document.querySelectorAll("[data-language-select]").forEach((select) => {
+      select.value = language;
     });
   };
 
@@ -114,21 +197,38 @@
 
   const initialize = () => {
     document.documentElement.lang = language;
-    translateElement(document.body);
+    translateElement(document.documentElement);
     updateControls();
+    injectCsrfInputs(document);
     document.addEventListener("click", (event) => {
       const control = event.target.closest("[data-language]");
       if (control) setLanguage(control.dataset.language);
     });
+    document.addEventListener("change", (event) => {
+      const select = event.target.closest("[data-language-select]");
+      if (select) setLanguage(select.value);
+    });
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) translateElement(node);
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
+          translateElement(node);
+          injectCsrfInputs(node);
         });
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
     document.documentElement.classList.remove("i18n-pending");
+    // Other page scripts (camera-form.js, cloud-account-form.js,
+    // network-account-form.js, live.js, ...) run as separate <script defer>
+    // tags and can call window.tbcI18n.t() before the locale fetch behind
+    // `ready` above has resolved - window.tbcI18n itself already exists (see
+    // below), so that doesn't throw, but `strings`/`fallbackStrings` are
+    // still empty at that point, so t() just returns the raw key. This must
+    // fire only from here (after `ready` resolved, i.e. strings are
+    // actually populated) - firing it eagerly at module load time, before
+    // the fetch even starts, would make it useless as a signal.
+    document.dispatchEvent(new CustomEvent("tbc:i18n-ready"));
   };
 
   window.tbcI18n = { get language() { return language; }, setLanguage, t: translate };

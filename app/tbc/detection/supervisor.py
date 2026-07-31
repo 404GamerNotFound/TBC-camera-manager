@@ -12,6 +12,7 @@ from .backend import Detection, DetectionBackend
 from .classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .frame_source import FrameGrabber
 from .loitering import LoiterTracker
+from .tracking import ObjectTracker, TrackedDetection
 from .zones import filter_detections_by_zones
 
 LOGGER = logging.getLogger(__name__)
@@ -31,9 +32,9 @@ class ActiveObjectTracker:
 
     active_timeout_seconds: float = 3.0
     _last_seen: dict[str, float] = field(default_factory=dict)
-    _last_detection: dict[str, Detection] = field(default_factory=dict)
+    _last_detection: dict[str, Detection | TrackedDetection] = field(default_factory=dict)
 
-    def update(self, detections: list[Detection], *, now: float | None = None) -> None:
+    def update(self, detections: list[Detection] | list[TrackedDetection], *, now: float | None = None) -> None:
         now = now if now is not None else time.time()
         for detection in detections:
             self._last_seen[detection.detection_key] = now
@@ -46,6 +47,13 @@ class ActiveObjectTracker:
             seen_at = self._last_seen.get(key)
             active = seen_at is not None and (now - seen_at) <= self.active_timeout_seconds
             detection = self._last_detection.get(key) if active else None
+            raw_value = None
+            if detection is not None:
+                payload: dict[str, Any] = {"confidence": round(detection.confidence, 3), "box": list(detection.box)}
+                track_id = getattr(detection, "track_id", None)
+                if track_id is not None:
+                    payload["track_id"] = track_id
+                raw_value = json.dumps(payload)
             rows.append(
                 {
                     "key": key,
@@ -55,11 +63,7 @@ class ActiveObjectTracker:
                     "supported": True,
                     "active": active,
                     "source": "local_ai",
-                    "raw_value": (
-                        json.dumps({"confidence": round(detection.confidence, 3), "box": list(detection.box)})
-                        if detection is not None
-                        else None
-                    ),
+                    "raw_value": raw_value,
                 }
             )
         return rows
@@ -128,6 +132,7 @@ async def _run_worker_once(
     sample_fps = float(settings.get("sample_fps") or 2.0)
     grabber = FrameGrabber(stream_uri, sample_fps=sample_fps)
     tracker = ActiveObjectTracker(active_timeout_seconds=max(3.0, 3.0 / sample_fps))
+    object_tracker = ObjectTracker()
     loiter_tracker = LoiterTracker()
     # A plugin-bundled model may need downloading on first use - keep that (and the
     # rest of backend construction) off the event loop so it doesn't stall other
@@ -147,10 +152,14 @@ async def _run_worker_once(
                 continue
             consecutive_failures = 0
             detections = await asyncio.to_thread(backend.infer, frame)
-            # Loitering uses the raw, pre-zone-filter detections - it is its own
+            # Assign persistent track IDs before anything else touches the detections -
+            # a track is only returned here once it has matched min_hits times in a row,
+            # which is what filters out single-frame false-positive flicker.
+            tracked_detections = object_tracker.update(detections)
+            # Loitering uses the raw, pre-zone-filter tracked detections - it is its own
             # zone type independent of include/exclude filtering below.
-            loiter_tracker.update(detections, zones)
-            filtered_detections = filter_detections_by_zones(detections, zones)
+            loiter_tracker.update(tracked_detections, zones)
+            filtered_detections = filter_detections_by_zones(tracked_detections, zones)
             tracker.update(filtered_detections)
             rows = tracker.detection_rows() + _loitering_rows(loiter_tracker, zones)
             on_detections(camera_id, rows)

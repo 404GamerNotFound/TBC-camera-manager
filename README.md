@@ -1,10 +1,18 @@
 # TBC - TB Camera
 
+[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2F404gamernotfound%2Ftbc-camera-manager%2Ftbc-camera-manager&query=downloadCount&style=for-the-badge&logo=docker&logoColor=white&label=Docker%20Pulls&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager)
+[![HA Installs](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2F404gamernotfound%2Ftbc-camera-manager%2Ftbc-camera-manager-ha&query=downloadCount&style=for-the-badge&logo=homeassistant&logoColor=white&label=HA%20Installs&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/pkgs/container/tbc-camera-manager-ha)
+[![Stars](https://img.shields.io/github/stars/404GamerNotFound/TBC-camera-manager?style=for-the-badge&logo=github&logoColor=white&label=Stars&color=blue)](https://github.com/404GamerNotFound/TBC-camera-manager/stargazers)
+[![Sponsors](https://img.shields.io/github/sponsors/404GamerNotFound?style=for-the-badge&logo=github&logoColor=white&label=Sponsors&color=blue)](https://github.com/sponsors/404GamerNotFound)
+[![PayPal](https://img.shields.io/badge/PayPal-ME-blue?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/TonyBrueser)
+[![Revolut](https://img.shields.io/badge/Revolut-ME-blue?style=for-the-badge&logo=revolut&logoColor=white)](https://revolut.me/tony1995)
+
 TBC is a modular, Docker-based camera manager. Camera vendors are integrated through installable camera modules. Reolink, Aqara, TP-Link/Tapo, Axis, Foscam, Hikvision, Dahua (including Amcrest/Annke OEM devices), Ubiquiti/UniFi Protect, and SONOFF are available as directly installable standard repositories. A generic ONVIF fallback and a vendor-neutral RTSP-only profile remain built in.
 
 The application includes authentication, camera management, RTSP stream discovery, dashboard snapshots, event-based and continuous recording, clip and SD-card browsers, user roles, MQTT and Home Assistant integration, live HLS with an optional sub-second WebRTC alternative (go2rtc), retention rules, notifications, health monitoring, AI detection, and NVR channel management.
 
-English is the default interface language. German and Spanish can be selected from the language menu.
+English is the default interface language. Afrikaans, Bulgarian, German, Spanish, French, Dutch,
+Polish, and Portuguese can be selected from the language menu.
 
 ## Quick start
 
@@ -29,6 +37,22 @@ Default values from `docker-compose.yml`:
 - Dashboard snapshots: `/data/dashboard-snapshots`, refreshed every 600 seconds by default
 
 Change `TBC_ADMIN_PASSWORD` and `TBC_SECRET_KEY` in `.env` before using TBC outside a test environment. Set `TBC_PUBLIC_BASE_URL` when webhooks or Home Assistant notifications should include links to clips and snapshots.
+
+### Prebuilt image
+
+Every tagged release also publishes a multi-arch (`amd64`/`aarch64`) image to GHCR, so `docker compose up --build` above can be skipped in favor of a plain pull - useful for Swarm stacks too, which ignore local `build` instructions:
+
+```bash
+docker pull ghcr.io/404gamernotfound/tbc-camera-manager:latest
+docker run -d --name tbc-camera-manager -p 8732:8732 \
+  -e TBC_ADMIN_PASSWORD=<strong-password> -e TBC_SECRET_KEY=<long-random-string> \
+  -v tbc-data:/data -v tbc-recordings:/recordings \
+  ghcr.io/404gamernotfound/tbc-camera-manager:latest
+```
+
+Or point `docker-compose.yml` at it directly by replacing its `image:`/`build:` lines with `image: ghcr.io/404gamernotfound/tbc-camera-manager:latest` and removing `build: .`. Tags follow the release: `latest`, `<major>.<minor>`, and the exact `<version>` (e.g. `0.7.0`).
+
+The pull-count badge above (via the third-party [ghcr-badge](https://github.com/eliasbenb/ghcr-badge) service) counts image pulls, not unique installs - CI runs, image updates, and re-pulls all add up, and it only covers this plain Docker image, not the separate Home Assistant app images.
 
 ## Home Assistant OS
 
@@ -108,10 +132,13 @@ The standard repositories include:
 - `unifi_protect` for local controllers and the `ui.com` cloud console
 - `eufy` with email verification-code support
 - `ewelink` for the official CoolKit Open Platform API
+- `google` for Nest cameras/doorbells via the official Smart Device Management API (inventory only - no stream URL, see [docs/cloud-accounts.md](docs/cloud-accounts.md))
 
 See [docs/cloud-accounts.md](docs/cloud-accounts.md).
 
 ## External sources, updates, and plugin tests
+
+![External sources](images/readme/external_sources.png)
 
 Public GitHub repositories can be registered as plugin sources instead of uploading ZIP files manually. Synchronization downloads and validates the current branch, tag, or subdirectory through the same safety checks as uploaded packages. TBC checks registered sources hourly by comparing commit SHAs and lists available updates under `Admin → Updates`.
 
@@ -160,7 +187,7 @@ Supported controls include play, mute, fullscreen, recording scrubbing, and opti
 
 HLS has a 5-10 second glass-to-glass delay, which is fine for a quick check but too slow for "who's at the door right now". TBC bundles [go2rtc](https://github.com/AlexxIT/go2rtc) as an optional, self-managed alternative that delivers sub-second WebRTC live view.
 
-- **Enable it**: `Admin → Live → Layout` has an "Enable WebRTC (go2rtc)" checkbox. Toggling it starts or stops the bundled go2rtc process immediately, no restart required. An in-app, translated explanation of the HLS vs. WebRTC tradeoffs (available in English, German, Spanish, and Portuguese) sits right next to the checkbox.
+- **Enable it**: `Admin → Live → Layout` has an "Enable WebRTC (go2rtc)" checkbox. Toggling it starts or stops the bundled go2rtc process immediately, no restart required. An in-app, translated explanation of the HLS vs. WebRTC tradeoffs (available in English, German, Spanish, French, and Portuguese) sits right next to the checkbox.
 - **Choose it**: once enabled by an admin, every viewer gets a per-camera HLS/WebRTC switch on the live wall. The choice is remembered per browser (`localStorage`), so different viewers can make different tradeoffs on the same tile. A tile that fails to reach a connected WebRTC state within 5 seconds - or drops later - automatically falls back to HLS.
 - **Networking**: go2rtc's own HTTP API stays bound to `127.0.0.1` inside the container and is never exposed. Only its WebRTC media port, `8555/tcp+udp`, is published (see `docker-compose.yml` and the Home Assistant add-on manifest) and only needs to be reachable by clients actually using WebRTC.
 
@@ -203,9 +230,11 @@ When a module reports multiple channels, TBC stores them individually. Channels 
 
 ## MQTT and Home Assistant
 
-TBC publishes camera and detection states under the configured MQTT topic prefix and can publish Home Assistant discovery messages. Recording events such as `recording_started`, `recording_finished`, and `recording_failed` are also published.
+TBC publishes camera and detection states under the configured MQTT topic prefix and can publish Home Assistant discovery messages, including instant per-detection motion `binary_sensor`s and PTZ/light/siren controls where the camera module supports them. Recording events such as `recording_started`, `recording_finished`, and `recording_failed` are also published.
 
-The read-only REST API and MCP interface are configured under `Admin → API access`. See [docs/api.md](docs/api.md) and [docs/mcp.md](docs/mcp.md).
+The REST API and MCP interface are configured under `Admin → API access`. See [docs/api.md](docs/api.md) and [docs/mcp.md](docs/mcp.md). A token created there with **Allow control** checked can also change camera/detection settings and start a live stream through the API - the basis for the integration below.
+
+For a richer Home Assistant experience - camera entities with live streaming, last-motion sensors, storage/health sensors, and switches to view and adjust camera settings from HA - install the official **[TBC Home Assistant integration](https://github.com/404GamerNotFound/TBC-ha_integration)** (a HACS-installable custom component, complementary to the MQTT discovery feature above).
 
 ## Technical architecture
 
@@ -227,9 +256,21 @@ The read-only REST API and MCP interface are configured under `Admin → API acc
 
 ## Development
 
+The complete documentation is maintained in [`docs/`](docs/README.md) and is also available from
+the **Docs** link in the footer of a running TBC instance. It includes the user guide, operations,
+deployment, API/MCP references, and plugin-development contracts.
+
 ```bash
 pytest -q
 python -m unittest discover -s tests
 python -m compileall app tests
 docker compose config
 ```
+
+Run `pytest -q --cov --cov-report=term-missing` (needs `pytest-cov`, see
+[`.github/requirements-ci.txt`](.github/requirements-ci.txt)) to see per-file coverage; CI enforces a
+50% floor via `--cov-fail-under=50` (see [`.coveragerc`](.coveragerc) for scope/exclusions).
+
+## License
+
+TBC is licensed under the [MIT License](LICENSE).

@@ -1,8 +1,20 @@
-"""Static attribution list for the /license page.
+"""Static attribution list, plus installed-plugin license discovery, for the /license page.
 
 Licenses were verified against each project's PyPI metadata and/or GitHub repository
 at the time this list was written - re-check before adding a new dependency.
 """
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from .camera_modules.registry import list_camera_module_registrations
+from .cloud_modules.registry import list_cloud_module_registrations
+from .network_modules.registry import list_network_module_registrations
+from .themes.registry import list_theme_registrations
+
+_LICENSE_FILENAMES = ("LICENSE", "LICENSE.md", "LICENSE.txt", "COPYING", "NOTICE")
 
 THIRD_PARTY_LICENSES: list[dict[str, str]] = [
     # Web framework & core
@@ -16,13 +28,16 @@ THIRD_PARTY_LICENSES: list[dict[str, str]] = [
 
     # Camera & cloud integrations
     {"category": "Camera & cloud integrations", "name": "python-onvif (onvif-zeep)", "license": "MIT", "url": "https://github.com/quatanium/python-onvif"},
-    {"category": "Camera & cloud integrations", "name": "reolink-aio", "license": "MIT", "url": "https://github.com/starkillerOG/reolink_aio"},
-    {"category": "Camera & cloud integrations", "name": "uiprotect", "license": "MIT", "url": "https://github.com/uilibs/uiprotect"},
-    {"category": "Camera & cloud integrations", "name": "pyeufysecurity", "license": "MIT", "url": "https://github.com/ptarjan/pyeufysecurity"},
-    {"category": "Camera & cloud integrations", "name": "ewelink", "license": "GPL-3.0", "url": "https://github.com/Olindholm/ewelink"},
     {"category": "Camera & cloud integrations", "name": "paho-mqtt", "license": "EPL-2.0 / EDL-1.0", "url": "https://github.com/eclipse-paho/paho.mqtt.python"},
     {"category": "Camera & cloud integrations", "name": "boto3", "license": "Apache-2.0", "url": "https://github.com/boto/boto3"},
     {"category": "Camera & cloud integrations", "name": "go2rtc", "license": "MIT", "url": "https://github.com/AlexxIT/go2rtc"},
+    {"category": "Camera & cloud integrations", "name": "HAP-python", "license": "Apache-2.0", "url": "https://github.com/ikalchev/HAP-python"},
+    {"category": "Camera & cloud integrations", "name": "zeroconf", "license": "LGPL-2.1-or-later", "url": "https://github.com/python-zeroconf/python-zeroconf"},
+    {"category": "Camera & cloud integrations", "name": "orjson", "license": "Apache-2.0 / MIT", "url": "https://github.com/ijl/orjson"},
+    {"category": "Camera & cloud integrations", "name": "chacha20poly1305-reuseable", "license": "Apache-2.0 / BSD-3-Clause", "url": "https://github.com/bdraco/chacha20poly1305-reuseable"},
+    {"category": "Camera & cloud integrations", "name": "ifaddr", "license": "MIT", "url": "https://github.com/pydron/ifaddr"},
+    {"category": "Camera & cloud integrations", "name": "base36", "license": "MIT", "url": "https://github.com/tonyseek/python-base36"},
+    {"category": "Camera & cloud integrations", "name": "PyQRCode", "license": "BSD-3-Clause", "url": "https://github.com/mnooner256/pyqrcode"},
 
     # AI detection & recognition
     {"category": "AI detection & recognition", "name": "NumPy", "license": "BSD-3-Clause", "url": "https://github.com/numpy/numpy"},
@@ -40,3 +55,78 @@ THIRD_PARTY_LICENSES: list[dict[str, str]] = [
     {"category": "Frontend", "name": "Bootstrap", "license": "MIT", "url": "https://github.com/twbs/bootstrap"},
     {"category": "Frontend", "name": "hls.js", "license": "Apache-2.0", "url": "https://github.com/video-dev/hls.js"},
 ]
+
+
+def _license_file_content(path: Path) -> str | None:
+    for filename in _LICENSE_FILENAMES:
+        candidate = path / filename
+        if candidate.is_file():
+            try:
+                return candidate.read_text(encoding="utf-8", errors="replace").strip()
+            except OSError:
+                return None
+    return None
+
+
+def list_plugin_licenses() -> list[dict[str, Any]]:
+    """Every installed plugin (any kind) that bundles a LICENSE/COPYING/NOTICE file.
+
+    Third-party plugins are separate git repositories the admin chose to install
+    (built-in or external) - unlike THIRD_PARTY_LICENSES above, there is no way
+    to know their license ahead of time, so this scans each installed plugin's
+    own directory instead of hand-maintaining a list. A plugin without one of
+    the recognized filenames simply doesn't appear here.
+    """
+    entries: list[dict[str, Any]] = []
+    for registration in list_camera_module_registrations():
+        if registration.package is None:
+            continue
+        text = _license_file_content(registration.package.path)
+        if text:
+            entries.append(
+                {
+                    "kind": "camera",
+                    "kind_label": "Camera plugin",
+                    "label": registration.module.label,
+                    "key": registration.module.key,
+                    "license_text": text,
+                }
+            )
+    for registration in list_cloud_module_registrations():
+        text = _license_file_content(registration.package.path)
+        if text:
+            entries.append(
+                {
+                    "kind": "cloud",
+                    "kind_label": "Cloud provider",
+                    "label": registration.module.label,
+                    "key": registration.module.key,
+                    "license_text": text,
+                }
+            )
+    for registration in list_network_module_registrations():
+        text = _license_file_content(registration.package.path)
+        if text:
+            entries.append(
+                {
+                    "kind": "network",
+                    "kind_label": "Network provider",
+                    "label": registration.module.label,
+                    "key": registration.module.key,
+                    "license_text": text,
+                }
+            )
+    for registration in list_theme_registrations():
+        text = _license_file_content(registration.package.path)
+        if text:
+            entries.append(
+                {
+                    "kind": "design",
+                    "kind_label": "Design",
+                    "label": registration.manifest.label,
+                    "key": registration.manifest.key,
+                    "license_text": text,
+                }
+            )
+    entries.sort(key=lambda entry: (entry["kind"], entry["label"].lower()))
+    return entries

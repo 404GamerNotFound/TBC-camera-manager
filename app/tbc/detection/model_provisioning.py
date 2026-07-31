@@ -108,6 +108,31 @@ def download_model_if_missing(url: str, model_path: Path) -> bool:
         return False
 
 
+def ensure_audio_model(model_path: Path, metadata_path: Path, *, model_url: str | None) -> bool:
+    """Provisions the local-audio-AI model, if the admin has configured one.
+
+    Unlike ensure_default_model/ensure_default_coral_model above, there is no
+    bundled default here: audio classification needs a raw-waveform-in,
+    AudioSet-style-classes-out ONNX model, and no such model ships with a
+    verified, stable public URL that TBC can point to unconditionally. Set
+    TBC_AUDIO_MODEL_URL (and drop a matching audio_default.json next to it,
+    following AudioModelMetadata's schema in detection/audio_backend.py) to
+    enable local audio detection; otherwise this returns False and the audio
+    worker simply never starts for any camera, exactly like local video
+    detection does today when TBC_DETECTION_MODELS_PATH has no default model.
+    """
+    if not model_url:
+        return model_path.exists() and metadata_path.exists()
+    if not metadata_path.exists():
+        LOGGER.warning(
+            "TBC_AUDIO_MODEL_URL is set, but %s (metadata) is missing - please create it manually "
+            "following the AudioModelMetadata schema.",
+            metadata_path,
+        )
+        return False
+    return download_model_if_missing(model_url, model_path)
+
+
 def ensure_default_model(model_path: Path, metadata_path: Path) -> bool:
     """Provisions the bundled default ONNX model on first start.
 

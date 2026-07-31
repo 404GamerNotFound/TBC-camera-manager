@@ -26,6 +26,7 @@ from .base import (
     CloudVerificationRequired,
     CloudVerificationSupport,
 )
+from ..plugin_requirements import MissingPluginRequirements, missing_requirements, read_requirements_field
 
 PLUGIN_SCHEMA_VERSION = 1
 MAX_ARCHIVE_BYTES = 10 * 1024 * 1024
@@ -50,6 +51,7 @@ RESERVED_FIELD_KEYS = {
     "updated_at",
 }
 ALLOWED_SUFFIXES = {".py", ".json", ".yaml", ".yml", ".md", ".txt"}
+ALLOWED_BARE_FILENAMES = {"LICENSE", "COPYING", "NOTICE"}
 
 
 class CloudPluginError(ValueError):
@@ -71,6 +73,7 @@ class CloudPluginManifest:
     default_port: int
     account_fields: tuple[CloudAccountField, ...]
     verification_support: CloudVerificationSupport
+    requirements: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -155,6 +158,10 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         )
     except ValueError as exc:
         raise CloudPluginError(f"Unknown value for verification_support: {exc}") from exc
+    try:
+        requirements = read_requirements_field(raw.get("requirements"))
+    except ValueError as exc:
+        raise CloudPluginError(str(exc)) from exc
     return CloudPluginManifest(
         schema_version=schema_version,
         key=key,
@@ -169,6 +176,7 @@ def read_manifest(path: Path) -> CloudPluginManifest:
         default_port=default_port,
         account_fields=account_fields,
         verification_support=verification_support,
+        requirements=requirements,
     )
 
 
@@ -393,6 +401,11 @@ def install_plugin_archive(archive: bytes, external_path: str) -> CloudPluginPac
             manifest = read_manifest(staging / "manifest.json")
             if (builtin_plugins_path() / manifest.key).exists():
                 raise CloudPluginError("Built-in cloud plugins cannot be overwritten")
+            missing = missing_requirements(manifest.requirements)
+            if missing:
+                raise MissingPluginRequirements(
+                    missing, plugin_label=manifest.label, plugin_kind="cloud", module_key=manifest.key
+                )
             package = CloudPluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key
@@ -447,7 +460,11 @@ def _validated_members(bundle: zipfile.ZipFile) -> tuple[list[zipfile.ZipInfo], 
         mode = member.external_attr >> 16
         if mode and stat.S_ISLNK(mode):
             raise CloudPluginError("Symbolic links are not allowed in plugins")
-        if not member.is_dir() and path.suffix.lower() not in ALLOWED_SUFFIXES:
+        if (
+            not member.is_dir()
+            and path.suffix.lower() not in ALLOWED_SUFFIXES
+            and path.name not in ALLOWED_BARE_FILENAMES
+        ):
             raise CloudPluginError(f"Nicht erlaubter Dateityp: {path.suffix or member.filename}")
         total_size += member.file_size
         if total_size > MAX_EXTRACTED_BYTES:

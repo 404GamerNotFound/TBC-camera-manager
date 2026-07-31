@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import socket
 import subprocess
 import logging
 import re
@@ -8,17 +9,38 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 LOGGER = logging.getLogger(__name__)
 RTSP_URI_PATTERN = re.compile(r"rtsps?://[^\s<>\"']+", re.IGNORECASE)
 
 
 class LiveManager:
+    # Floor between automatic restart attempts for a stream that crashed on its
+    # own (ffmpeg exited without stop() being called) - long enough that a
+    # permanently broken source (bad stream, camera offline) doesn't get its
+    # ffmpeg process relaunched every single ~3s status poll, forever.
+    RETRY_COOLDOWN_SECONDS = 15.0
+
     def __init__(self, live_path: str) -> None:
         self.live_path = Path(live_path)
         self._processes: dict[str, subprocess.Popen] = {}
         self._messages: dict[str, list[str]] = {}
         self._stopping: set[str] = set()
+        self._last_start_attempt: dict[str, float] = {}
+        # Incremented on every start() for a key. _read_stderr's background
+        # thread is a slow-running loop (its final step, diagnose_stream_open_
+        # failure, blocks for up to a few seconds on a socket connect) - if a
+        # newer start() for the same key happens while an older attempt's
+        # thread is still finishing up, the old thread must not go on to
+        # append its (now-stale, describing a superseded attempt) messages
+        # into what has since become a different generation's message list.
+        # Each thread captures its own generation once and checks it before
+        # every append, rather than racing on shared mutable state.
+        self._generation: dict[str, int] = {}
+        # Tracks what a running composite (Birdseye) stream was last built from -
+        # see start_composite()'s docstring.
+        self._signatures: dict[str, str] = {}
 
     def start(self, key: str, stream_uri: str) -> Path:
         if shutil.which("ffmpeg") is None:
@@ -27,16 +49,63 @@ class LiveManager:
         process = self._processes.get(key)
         if process and process.poll() is None and playlist.exists():
             return playlist
+        command = _live_ffmpeg_command(stream_uri, self._segment_pattern(key), playlist)
+        safe_stream_uri = redact_rtsp_credentials(stream_uri)
+        self._launch(key, command, f"Starting live stream {key}: {safe_stream_uri}", stream_uri)
+        return playlist
+
+    def start_composite(
+        self,
+        key: str,
+        sources: list[str],
+        *,
+        columns: int,
+        tile_width: int,
+        tile_height: int,
+        fps: int,
+        signature: str,
+    ) -> Path:
+        """Like start(), but for a single ffmpeg process compositing several
+        sources into one mosaic output (Birdseye) instead of passing one
+        camera's codec through unchanged. Idempotency additionally depends on
+        `signature` (e.g. derived from the selected cameras/columns/fps): a
+        settings change that keeps the process alive but changes what it
+        should show must still force a restart, unlike a plain re-view of an
+        unchanged stream."""
+        if shutil.which("ffmpeg") is None:
+            raise RuntimeError("ffmpeg is not installed")
+        playlist = self.playlist_path(key)
+        process = self._processes.get(key)
+        if process and process.poll() is None and playlist.exists() and self._signatures.get(key) == signature:
+            return playlist
+        command = _composite_ffmpeg_command(
+            sources,
+            self._segment_pattern(key),
+            playlist,
+            columns=columns,
+            tile_width=tile_width,
+            tile_height=tile_height,
+            fps=fps,
+        )
+        self._signatures[key] = signature
+        self._launch(key, command, f"Starting composite stream {key} from {len(sources)} source(s)", None)
+        return playlist
+
+    def _segment_pattern(self, key: str) -> Path:
+        return self.live_path / key / "segment%03d.ts"
+
+    def _launch(self, key: str, command: list[str], start_message: str, stream_uri: str | None) -> None:
         self.stop(key)
         self._stopping.discard(key)
+        self._last_start_attempt[key] = time.monotonic()
+        generation = self._generation.get(key, 0) + 1
+        self._generation[key] = generation
+        playlist = self.playlist_path(key)
         out_dir = self.live_path / key
         shutil.rmtree(out_dir, ignore_errors=True)
         out_dir.mkdir(parents=True, exist_ok=True)
-        segment_pattern = out_dir / "segment%03d.ts"
-        command = _live_ffmpeg_command(stream_uri, segment_pattern, playlist)
-        safe_stream_uri = redact_rtsp_credentials(stream_uri)
-        self._messages[key] = [f"Starting live stream {key}: {safe_stream_uri}"]
-        LOGGER.info("Starting live stream %s with %s", key, safe_stream_uri)
+        self._messages[key] = [start_message]
+        LOGGER.info(start_message)
         process = subprocess.Popen(
             command,
             stdout=subprocess.DEVNULL,
@@ -45,8 +114,19 @@ class LiveManager:
             bufsize=1,
         )
         self._processes[key] = process
-        threading.Thread(target=self._read_stderr, args=(key, process), daemon=True).start()
-        return playlist
+        threading.Thread(
+            target=self._read_stderr, args=(key, process, stream_uri, playlist, generation), daemon=True
+        ).start()
+
+    def should_retry(self, key: str) -> bool:
+        """True if this stream crashed on its own (status()=="failed") and the
+        retry cooldown has elapsed since the last start attempt - i.e. it is due
+        for an automatic restart rather than staying dead until the admin
+        manually reopens the live page or clicks refresh."""
+        if self.status(key) != "failed":
+            return False
+        last_attempt = self._last_start_attempt.get(key)
+        return last_attempt is None or (time.monotonic() - last_attempt) >= self.RETRY_COOLDOWN_SECONDS
 
     def stop(self, key: str) -> None:
         process = self._processes.pop(key, None)
@@ -93,7 +173,20 @@ class LiveManager:
     def segment_path(self, key: str, filename: str) -> Path:
         return self.live_path / key / filename
 
-    def _read_stderr(self, key: str, process: subprocess.Popen) -> None:
+    def _append_message(self, key: str, generation: int, message: str) -> bool:
+        """Appends to key's message list only if `generation` is still the
+        current one for that key - see _generation's docstring. Returns
+        whether the append happened, so callers can skip follow-up work (like
+        logging or the diagnosis probe) for an already-superseded attempt."""
+        if self._generation.get(key) != generation:
+            return False
+        self._messages.setdefault(key, []).append(message)
+        self._messages[key] = self._messages[key][-20:]
+        return True
+
+    def _read_stderr(
+        self, key: str, process: subprocess.Popen, stream_uri: str | None, playlist: Path, generation: int
+    ) -> None:
         if process.stderr is None:
             return
         for line in process.stderr:
@@ -103,18 +196,65 @@ class LiveManager:
             if _is_nonfatal_hls_warning(message):
                 LOGGER.debug("ffmpeg %s: %s", key, message)
                 continue
-            self._messages.setdefault(key, []).append(message)
-            self._messages[key] = self._messages[key][-20:]
-            LOGGER.warning("ffmpeg %s: %s", key, message)
+            if self._append_message(key, generation, message):
+                LOGGER.warning("ffmpeg %s: %s", key, message)
         return_code = process.wait()
         if return_code != 0:
             message = f"ffmpeg exited for {key} with code {return_code}"
-            self._messages.setdefault(key, []).append(message)
+            if not self._append_message(key, generation, message):
+                return
             if key in self._stopping:
                 LOGGER.info(message)
                 self._stopping.discard(key)
             else:
                 LOGGER.error(message)
+                # The stream never produced a single HLS segment - i.e. it failed
+                # while opening/negotiating the connection, not mid-stream. A raw
+                # TCP probe distinguishes "camera unreachable" (fixable on the
+                # network/credentials side) from "reachable, but ffmpeg still
+                # can't open it" (points at the runtime/host environment instead -
+                # see diagnose_stream_open_failure's docstring). This blocks for
+                # up to a few seconds, which is exactly why every append above
+                # goes through the generation check: a newer start() can and
+                # does happen while this is still running.
+                if stream_uri and not playlist.exists():
+                    diagnosis = diagnose_stream_open_failure(stream_uri)
+                    if diagnosis and self._append_message(key, generation, diagnosis):
+                        LOGGER.error("Live diagnosis for %s: %s", key, diagnosis)
+
+
+def diagnose_stream_open_failure(stream_uri: str, *, timeout: float = 3.0) -> str:
+    """Distinguishes "camera unreachable" from "reachable, but ffmpeg still
+    can't open the stream" for a live stream that failed before producing a
+    single HLS segment - by attempting a bare TCP connect to the same host and
+    port, independently of ffmpeg.
+
+    A plain socket connect succeeding while ffmpeg's own RTSP/HTTP open fails
+    (most often surfacing as "Operation not permitted") rules out the network
+    path, the camera being offline, and firewall/credentials as the cause - it
+    points at the runtime environment instead (seen repeatedly with virtualized
+    setups, e.g. Proxmox VMs, where low-level network syscalls ffmpeg relies on
+    behave differently than a plain connect()). If the bare connect itself
+    fails, that confirms a genuine reachability problem instead.
+    """
+    parsed = urlsplit(stream_uri)
+    host = parsed.hostname
+    if not host:
+        return ""
+    port = parsed.port or {"http": 80, "https": 443}.get(parsed.scheme.lower(), 554)
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            pass
+    except OSError as exc:
+        return (
+            f"Diagnosis: could not open a plain TCP connection to {host}:{port} either ({exc}). "
+            "The camera is likely unreachable on the network, powered off, or the host/port is wrong."
+        )
+    return (
+        f"Diagnosis: a plain TCP connection to {host}:{port} succeeds, but ffmpeg still could not open "
+        "the stream. This points to the runtime environment (e.g. a virtualized host's network stack) "
+        "rather than the camera, its credentials, or TBC itself."
+    )
 
 
 def stream_uri_for(camera: dict[str, Any], channel: dict[str, Any] | None = None) -> str | None:
@@ -143,6 +283,11 @@ def _is_nonfatal_hls_warning(message: str) -> bool:
 
 
 def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path) -> list[str]:
+    # -rtsp_transport is a private option of the RTSP demuxer only; ffmpeg
+    # hard-fails ("Option rtsp_transport not found") if it's passed for any
+    # other input protocol (e.g. a plain http:// bridge stream), so it must
+    # be conditional rather than always-on.
+    rtsp_only_options = ["-rtsp_transport", "tcp"] if urlsplit(stream_uri).scheme.lower() in ("rtsp", "rtsps") else []
     return [
         "ffmpeg",
         "-nostdin",
@@ -151,8 +296,7 @@ def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path)
         "warning",
         "-fflags",
         "+genpts+discardcorrupt",
-        "-rtsp_transport",
-        "tcp",
+        *rtsp_only_options,
         "-use_wallclock_as_timestamps",
         "1",
         "-i",
@@ -178,3 +322,89 @@ def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path)
         str(segment_pattern),
         str(playlist),
     ]
+
+
+# Compositing decodes and re-encodes every source continuously (unlike the
+# -c:v copy passthrough used everywhere else in this module), so the source
+# count is capped independently of how many cameras a deployment has - this
+# bounds the CPU/bandwidth cost of the optional Birdseye view regardless of
+# fleet size.
+MAX_BIRDSEYE_CAMERAS = 16
+
+
+def _composite_ffmpeg_command(
+    sources: list[str],
+    segment_pattern: Path,
+    playlist: Path,
+    *,
+    columns: int,
+    tile_width: int,
+    tile_height: int,
+    fps: int,
+) -> list[str]:
+    """Builds a single ffmpeg process that decodes every source in `sources`,
+    scales/letterboxes each into a `tile_width`x`tile_height` cell, and tiles
+    them into one mosaic frame (`columns` per row) via the xstack filter -
+    the Birdseye view. Every input is transcoded (libx264, not -c:v copy),
+    since a filter graph can't operate on compressed packets."""
+    command: list[str] = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "warning"]
+    for stream_uri in sources:
+        # xstack needs every input to deliver frames before it produces any
+        # output - unlike a single-camera live tile (where a slow/unreachable
+        # camera only stalls that one tile), one bad camera here blocks the
+        # entire mosaic. ffmpeg's rtsp demuxer -timeout otherwise defaults to
+        # 0 (wait forever), so without this a single dead camera hangs
+        # Birdseye indefinitely instead of failing within a bounded time.
+        is_rtsp = urlsplit(stream_uri).scheme.lower() in ("rtsp", "rtsps")
+        rtsp_only_options = ["-rtsp_transport", "tcp", "-timeout", "10000000"] if is_rtsp else []
+        command += [
+            "-fflags",
+            "+genpts+discardcorrupt",
+            *rtsp_only_options,
+            "-use_wallclock_as_timestamps",
+            "1",
+            "-i",
+            stream_uri,
+        ]
+
+    scale_filters = []
+    for index in range(len(sources)):
+        scale_filters.append(
+            f"[{index}:v]scale={tile_width}:{tile_height}:force_original_aspect_ratio=decrease,"
+            f"pad={tile_width}:{tile_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps={fps}[v{index}]"
+        )
+    layout = "|".join(
+        f"{(index % columns) * tile_width}_{(index // columns) * tile_height}" for index in range(len(sources))
+    )
+    stack_inputs = "".join(f"[v{index}]" for index in range(len(sources)))
+    filter_complex = ";".join(scale_filters) + f";{stack_inputs}xstack=inputs={len(sources)}:layout={layout}:fill=black[out]"
+
+    command += [
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "[out]",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-tune",
+        "zerolatency",
+        "-crf",
+        "30",
+        "-g",
+        str(fps * 2),
+        "-f",
+        "hls",
+        "-hls_time",
+        "2",
+        "-hls_list_size",
+        "5",
+        "-hls_flags",
+        "delete_segments+omit_endlist",
+        "-hls_segment_filename",
+        str(segment_pattern),
+        str(playlist),
+    ]
+    return command

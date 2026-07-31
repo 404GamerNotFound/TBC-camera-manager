@@ -55,6 +55,11 @@ class CameraModule(ABC):
     requires_manual_stream_uri: bool = False
     requires_credentials: bool = True
     capabilities: frozenset[CameraCapability] = frozenset()
+    # Overrides the "Host / IP" field label/i18n on the connection form for
+    # modules whose Host field holds something else (e.g. a cloud account's
+    # device serial number instead of a local network address). None keeps
+    # the normal translated "Host / IP" label - see docs/camera-modules.md.
+    identifier_label: str | None = None
 
     def supports(self, capability: CameraCapability) -> bool:
         return capability in self.capabilities
@@ -90,6 +95,22 @@ class CameraModule(ABC):
         raise ModuleFeatureUnsupported(f"The {self.label} module does not support a camera archive")
 
     async def get_control_state(self, camera: dict[str, Any], *, channel: int = 0) -> dict[str, Any]:
+        """Return the camera's current control-tab state as a plain dict.
+
+        This is intentionally untyped: the control tab template only ever reads
+        keys defensively (`control_state.some_field`, falsy/None-safe in Jinja),
+        so a module can report any subset of the fields it actually supports
+        without changing this base class. A few fields beyond the well-known
+        ones (floodlight/PIR/PTZ/battery/etc., see docs/camera-modules.md) have
+        an established convention for read-only device status that the core
+        template already renders generically when present, for modules able to
+        report them (e.g. an external Reolink-style plugin using its own
+        vendor SDK): `sdcard_supported`/`sdcard_status`/`sdcard_capacity_mb`/
+        `sdcard_free_mb`, `wifi_supported`/`wifi_signal_percent`, and
+        `ntp_supported`/`ntp_enabled`/`ntp_server`. These are display-only -
+        there is no corresponding send_control() action for them (formatting
+        an SD card or changing NTP settings is not implemented anywhere).
+        """
         raise ModuleFeatureUnsupported(f"The {self.label} module does not support camera control")
 
     async def send_control(self, camera: dict[str, Any], *, action: str, channel: int = 0, **params: Any) -> dict[str, Any]:

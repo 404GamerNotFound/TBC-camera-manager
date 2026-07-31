@@ -3,27 +3,45 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ app_name }} - TB Camera</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="theme-color" content="#11615c">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ app_name }}">
+    <link rel="manifest" href="{{ ingress_prefix }}/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ ingress_prefix }}/static/icons/icon-192.png?v={{ asset_version }}">
+    <link rel="apple-touch-icon" href="{{ ingress_prefix }}/static/icons/apple-touch-icon.png?v={{ asset_version }}">
+    <title data-i18n="nav.page_title" data-i18n-params='{{ {"app_name": app_name} | tojson }}'>{{ app_name }} - TB Camera</title>
+    <link href="{{ ingress_prefix }}/static/vendor/bootstrap.min.css?v={{ asset_version }}" rel="stylesheet">
     {% if active_theme %}
-    <link rel="stylesheet" href="{{ url_for('theme_asset', theme_key=active_theme.key, asset_path=active_theme.stylesheet) }}?v={{ asset_version }}">
+    <link rel="stylesheet" href="{{ ingress_prefix }}/design/{{ active_theme.key }}/static/{{ active_theme.stylesheet }}?v={{ asset_version }}">
+    {% if active_theme_dark %}
+    <link rel="stylesheet" href="{{ ingress_prefix }}/design/{{ active_theme_dark.key }}/static/{{ active_theme_dark.stylesheet }}?v={{ asset_version }}" media="(prefers-color-scheme: dark)">
     {% endif %}
-    <script src="{{ url_for('static', path='/i18n.js') }}?v={{ asset_version }}"></script>
+    {% endif %}
+    <script>
+      // Empty outside Home Assistant Ingress - see app/tbc/ingress.py. Read
+      // by static/i18n.js's tbcUrl() helper, used by every page's JS for
+      // fetch() calls that would otherwise hardcode a root-relative path.
+      window.TBC_INGRESS_PREFIX = "{{ ingress_prefix }}";
+    </script>
+    <script src="{{ ingress_prefix }}/static/i18n.js?v={{ asset_version }}"></script>
   </head>
   {% set path = request.url.path %}
-  <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else 'compact-app' }}"{% endif %}>
+  <body{% if username %} class="{{ 'live-view-page' if path.startswith('/live') else ('compact-app' if ui_preferences.compact_mode else '') }}"{% endif %}>
     <header class="topbar navbar navbar-expand-xl">
       <div class="container-fluid app-nav-container">
-        <a class="brand navbar-brand" href="/cameras" aria-label="TBC Dashboard" data-i18n-aria-label="nav.dashboard_title">
+        <a class="brand navbar-brand" href="{{ ingress_prefix }}/cameras" aria-label="TBC Dashboard" data-i18n-aria-label="nav.dashboard_title">
           <span class="brand-mark">TBC</span>
           <span class="brand-name" data-i18n="nav.app_name">TB Camera</span>
         </a>
       {% if username %}
-      {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') or path.startswith('/cloud-accounts') %}
+      {% set cameras_active = path.startswith('/cameras') or path.startswith('/live') or path.startswith('/birdseye') or path.startswith('/cloud-accounts') %}
       {% set archive_active = path.startswith('/recordings') or path.startswith('/sd-card') or path.startswith('/timeline') or path.startswith('/activity') %}
       {% set storage_active = path.startswith('/storage') or path.startswith('/retention') %}
-      {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') %}
-      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/api-access') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/recognition') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/plugin-sources') or path.startswith('/updates') or path.startswith('/license') %}
+      {% set ops_active = path.startswith('/health') or path.startswith('/notifications') or path.startswith('/mqtt') or path.startswith('/homekit') or path.startswith('/automations') %}
+      {% set admin_active = path.startswith('/users') or path.startswith('/settings') or path.startswith('/api-access') or path.startswith('/camera-modules') or path.startswith('/detection') or path.startswith('/recognition') or path.startswith('/design') or path.startswith('/cloud-modules') or path.startswith('/network-modules') or path.startswith('/network-accounts') or path.startswith('/network-mappings') or path.startswith('/plugin-sources') or path.startswith('/updates') or path.startswith('/license') %}
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-menu" aria-controls="main-menu" aria-expanded="false" aria-label="Toggle navigation" data-i18n-aria-label="nav.toggle" data-menu-toggle>
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -35,15 +53,21 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/cameras') %} active{% endif %}" href="/cameras">
+                  <a class="dropdown-item{% if path.startswith('/cameras') %} active{% endif %}" href="{{ ingress_prefix }}/cameras">
                     <span class="nav-shortcut" aria-hidden="true">K</span>
                     <span data-i18n="nav.cameras">Cameras</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/live') %} active{% endif %}" href="/live">
+                  <a class="dropdown-item{% if path.startswith('/live') %} active{% endif %}" href="{{ ingress_prefix }}/live">
                     <span class="nav-shortcut" aria-hidden="true">L</span>
                     <span data-i18n="camera.live">Live</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/birdseye') %} active{% endif %}" href="{{ ingress_prefix }}/birdseye">
+                    <span class="nav-shortcut" aria-hidden="true">B</span>
+                    <span data-i18n="birdseye.title">Birdseye</span>
                   </a>
                 </li>
               </ul>
@@ -54,25 +78,25 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/activity') %} active{% endif %}" href="/activity">
+                  <a class="dropdown-item{% if path.startswith('/activity') %} active{% endif %}" href="{{ ingress_prefix }}/activity">
                     <span class="nav-shortcut" aria-hidden="true">V</span>
                     <span data-i18n="nav.activity">Activity</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="/timeline">
+                  <a class="dropdown-item{% if path.startswith('/timeline') %} active{% endif %}" href="{{ ingress_prefix }}/timeline">
                     <span class="nav-shortcut" aria-hidden="true">T</span>
                     <span data-i18n="base.timeline">Timeline</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="/recordings">
+                  <a class="dropdown-item{% if path.startswith('/recordings') %} active{% endif %}" href="{{ ingress_prefix }}/recordings">
                     <span class="nav-shortcut" aria-hidden="true">C</span>
                     <span data-i18n="common.clips">Clips</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="/sd-card">
+                  <a class="dropdown-item{% if path.startswith('/sd-card') %} active{% endif %}" href="{{ ingress_prefix }}/sd-card">
                     <span class="nav-shortcut" aria-hidden="true">S</span>
                     <span data-i18n="base.sd_card">SD card</span>
                   </a>
@@ -86,19 +110,19 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="/storage">
+                  <a class="dropdown-item{% if path == '/storage' %} active{% endif %}" href="{{ ingress_prefix }}/storage">
                     <span class="nav-shortcut" aria-hidden="true">Z</span>
                     <span data-i18n="base.destinations">Destinations</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/storage/explorer') %} active{% endif %}" href="/storage/explorer">
+                  <a class="dropdown-item{% if path.startswith('/storage/explorer') %} active{% endif %}" href="{{ ingress_prefix }}/storage/explorer">
                     <span class="nav-shortcut" aria-hidden="true">E</span>
                     <span data-i18n="base.explorer">Explorer</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/retention') %} active{% endif %}" href="/retention">
+                  <a class="dropdown-item{% if path.startswith('/retention') %} active{% endif %}" href="{{ ingress_prefix }}/retention">
                     <span class="nav-shortcut" aria-hidden="true">R</span>
                     <span data-i18n="common.retention">Retention</span>
                   </a>
@@ -111,21 +135,33 @@
               </button>
               <ul class="dropdown-menu" data-menu-panel>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="/health">
+                  <a class="dropdown-item{% if path.startswith('/health') %} active{% endif %}" href="{{ ingress_prefix }}/health">
                     <span class="nav-shortcut" aria-hidden="true">P</span>
                     <span data-i18n="base.performance">Performance</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="/notifications">
+                  <a class="dropdown-item{% if path.startswith('/notifications') %} active{% endif %}" href="{{ ingress_prefix }}/notifications">
                     <span class="nav-shortcut" aria-hidden="true">N</span>
                     <span data-i18n="base.notifications">Notifications</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item{% if path.startswith('/mqtt') %} active{% endif %}" href="/mqtt">
+                  <a class="dropdown-item{% if path.startswith('/mqtt') %} active{% endif %}" href="{{ ingress_prefix }}/mqtt">
                     <span class="nav-shortcut" aria-hidden="true">M</span>
-                    <span>MQTT</span>
+                    <span data-i18n="mqtt.title">MQTT</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/automations') %} active{% endif %}" href="{{ ingress_prefix }}/automations">
+                    <span class="nav-shortcut" aria-hidden="true">A</span>
+                    <span data-i18n="nav.automations">Automations</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item{% if path.startswith('/homekit') %} active{% endif %}" href="{{ ingress_prefix }}/homekit">
+                    <span class="nav-shortcut" aria-hidden="true">H</span>
+                    <span data-i18n="homekit.title">HomeKit</span>
                   </a>
                 </li>
               </ul>
@@ -133,86 +169,83 @@
             {% set total_update_count = pending_plugin_update_count + (1 if app_update_available else 0) %}
             <li class="nav-item dropdown{% if admin_active %} is-active{% endif %}" data-menu-group>
               <button class="nav-link dropdown-toggle{% if admin_active %} active{% endif %}" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-menu-trigger>
-                Admin
+                <span data-i18n="common.admin">Admin</span>
                 {% if total_update_count %}
-                <span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>
+                <span class="nav-update-badge" title="{{ total_update_count }} update(s) available" data-i18n-title="plugin_updates.count_available" data-i18n-params='{{ {"count": total_update_count} | tojson }}'>{{ total_update_count }}</span>
                 {% endif %}
               </button>
-              <ul class="dropdown-menu" data-menu-panel>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="/users">
-                    <span class="nav-shortcut" aria-hidden="true">B</span>
-                    <span data-i18n="base.users">Users</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="/camera-modules">
-                    <span class="nav-shortcut" aria-hidden="true">P</span>
-                    <span data-i18n="base.camera_plugins">Camera plugins</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="/detection">
-                    <span class="nav-shortcut" aria-hidden="true">E</span>
-                    <span data-i18n="base.ai_detection">AI detection</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="/recognition">
-                    <span class="nav-shortcut" aria-hidden="true">R</span>
-                    <span data-i18n="nav.recognition">Face &amp; plate recognition</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="/design">
-                    <span class="nav-shortcut" aria-hidden="true">G</span>
-                    <span data-i18n="common.design">Design</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="/cloud-modules">
-                    <span class="nav-shortcut" aria-hidden="true">O</span>
-                    <span data-i18n="base.cloud_providers">Cloud providers</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="/plugin-sources">
-                    <span class="nav-shortcut" aria-hidden="true">X</span>
-                    <span data-i18n="base.external_sources">External sources</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}">
-                    <span class="nav-shortcut" aria-hidden="true">U</span>
-                    <span>Updates{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available">{{ total_update_count }}</span>{% endif %}</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/license') %} active{% endif %}" href="/license">
-                    <span class="nav-shortcut" aria-hidden="true">L</span>
-                    <span data-i18n="base.license">License</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/settings') %} active{% endif %}" href="/settings">
-                    <span class="nav-shortcut" aria-hidden="true">A</span>
-                    <span data-i18n="base.settings">Settings</span>
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="/api-access">
-                    <span class="nav-shortcut" aria-hidden="true">I</span>
-                    <span data-i18n="api.title">API access</span>
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                  <button class="dropdown-item" title="Debug Log" data-i18n-title="settings.debug_log" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log" type="button" data-debug-toggle>
-                    <span class="nav-shortcut" aria-hidden="true">D</span>
-                    <span data-i18n="settings.debug_log">Debug Log</span>
-                  </button>
-                </li>
-              </ul>
+              <div class="dropdown-menu dropdown-menu-end mega-menu" data-menu-panel>
+                <div class="mega-menu-grid">
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_cameras_ai">Cameras &amp; AI</p>
+                    <a class="dropdown-item{% if path.startswith('/detection') %} active{% endif %}" href="{{ ingress_prefix }}/detection">
+                      <span class="nav-shortcut" aria-hidden="true">E</span>
+                      <span data-i18n="base.ai_detection">AI detection</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/recognition') %} active{% endif %}" href="{{ ingress_prefix }}/recognition">
+                      <span class="nav-shortcut" aria-hidden="true">R</span>
+                      <span data-i18n="nav.recognition">Face &amp; plate recognition</span>
+                    </a>
+                  </div>
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_integrations">Plugins &amp; integrations</p>
+                    <a class="dropdown-item{% if path.startswith('/camera-modules') %} active{% endif %}" href="{{ ingress_prefix }}/camera-modules">
+                      <span class="nav-shortcut" aria-hidden="true">P</span>
+                      <span data-i18n="base.camera_plugins">Camera plugins</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/cloud-modules') %} active{% endif %}" href="{{ ingress_prefix }}/cloud-modules">
+                      <span class="nav-shortcut" aria-hidden="true">O</span>
+                      <span data-i18n="base.cloud_providers">Cloud providers</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/network-modules') or path.startswith('/network-accounts') %} active{% endif %}" href="{{ ingress_prefix }}/network-modules">
+                      <span class="nav-shortcut" aria-hidden="true">N</span>
+                      <span data-i18n="base.network_providers">Network providers</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/design') %} active{% endif %}" href="{{ ingress_prefix }}/design">
+                      <span class="nav-shortcut" aria-hidden="true">G</span>
+                      <span data-i18n="common.design">Design</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/plugin-sources') %} active{% endif %}" href="{{ ingress_prefix }}/plugin-sources">
+                      <span class="nav-shortcut" aria-hidden="true">X</span>
+                      <span data-i18n="base.external_sources">External sources</span>
+                    </a>
+                  </div>
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_system">System</p>
+                    <a class="dropdown-item{% if path.startswith('/users') %} active{% endif %}" href="{{ ingress_prefix }}/users">
+                      <span class="nav-shortcut" aria-hidden="true">B</span>
+                      <span data-i18n="base.users">Users</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/settings') and not path.startswith('/settings/audit-log') and not path.startswith('/settings/backup') %} active{% endif %}" href="{{ ingress_prefix }}/settings">
+                      <span class="nav-shortcut" aria-hidden="true">A</span>
+                      <span data-i18n="base.settings">Settings</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/updates') %} active{% endif %}" href="{{ ingress_prefix }}/updates" title="TBC {{ app_version }}{% if app_update_available %} · Update to {{ app_latest_version }} available{% endif %}" data-i18n-title="{{ 'plugin_updates.app_version_update_available' if app_update_available else 'plugin_updates.app_version' }}" data-i18n-params='{{ {"version": app_version, "latest_version": app_latest_version} | tojson }}'>
+                      <span class="nav-shortcut" aria-hidden="true">U</span>
+                      <span><span data-i18n="plugin_updates.updates">Updates</span>{% if total_update_count %}<span class="nav-update-badge" title="{{ total_update_count }} update(s) available" data-i18n-title="plugin_updates.count_available" data-i18n-params='{{ {"count": total_update_count} | tojson }}'>{{ total_update_count }}</span>{% endif %}</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/network-mappings') %} active{% endif %}" href="{{ ingress_prefix }}/network-mappings">
+                      <span class="nav-shortcut" aria-hidden="true">M</span>
+                      <span data-i18n="network_account.mappings">Network mappings</span>
+                    </a>
+                  </div>
+                  <div class="mega-menu-column">
+                    <p class="mega-menu-heading" data-i18n="nav.category_security">Security &amp; data</p>
+                    <a class="dropdown-item{% if path.startswith('/api-access') %} active{% endif %}" href="{{ ingress_prefix }}/api-access">
+                      <span class="nav-shortcut" aria-hidden="true">I</span>
+                      <span data-i18n="api.title">API access</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/settings/audit-log') %} active{% endif %}" href="{{ ingress_prefix }}/settings/audit-log">
+                      <span class="nav-shortcut" aria-hidden="true">U</span>
+                      <span data-i18n="audit.title">Audit log</span>
+                    </a>
+                    <a class="dropdown-item{% if path.startswith('/settings/backup') %} active{% endif %}" href="{{ ingress_prefix }}/settings/backup">
+                      <span class="nav-shortcut" aria-hidden="true">B</span>
+                      <span data-i18n="backup.title">Backup &amp; restore</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
             </li>
         {% endif %}
             <li class="nav-item dropdown" data-menu-group data-language-menu>
@@ -220,16 +253,49 @@
                 <span aria-hidden="true">🌐</span>
                 <span data-current-language>English</span>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end" data-menu-panel>
-                <li><button class="dropdown-item" type="button" data-language="de" lang="de" data-i18n="nav.language_de">Deutsch</button></li>
-                <li><button class="dropdown-item" type="button" data-language="en" lang="en" data-i18n="nav.language_en">English</button></li>
-                <li><button class="dropdown-item" type="button" data-language="es" lang="es" data-i18n="nav.language_es">Español</button></li>
-                <li><button class="dropdown-item" type="button" data-language="pt" lang="pt" data-i18n="nav.language_pt">Português</button></li>
+              <ul class="dropdown-menu dropdown-menu-end language-menu" data-menu-panel id="language-menu-list">
+                <li class="language-menu-search-row">
+                  <label class="visually-hidden" for="language-menu-search" data-i18n="nav.language_search">Search languages</label>
+                  <input type="search" id="language-menu-search" class="language-menu-search" placeholder="Search languages…" data-i18n-placeholder="nav.language_search_placeholder" autocomplete="off" data-plugin-search="#language-menu-list">
+                </li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="af" lang="af" data-i18n="nav.language_af">Afrikaans</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="ar" lang="ar" dir="rtl" data-i18n="nav.language_ar">Arabic</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="bg" lang="bg" data-i18n="nav.language_bg">Български</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="bn" lang="bn" data-i18n="nav.language_bn">Bengali</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="de" lang="de" data-i18n="nav.language_de">Deutsch</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="en" lang="en" data-i18n="nav.language_en">English</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="es" lang="es" data-i18n="nav.language_es">Español</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="fa" lang="fa" dir="rtl" data-i18n="nav.language_fa">Persian</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="fr" lang="fr" data-i18n="nav.language_fr">Français</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="hi" lang="hi" data-i18n="nav.language_hi">Hindi</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="id" lang="id" data-i18n="nav.language_id">Indonesian</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="it" lang="it" data-i18n="nav.language_it">Italian</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="ja" lang="ja" data-i18n="nav.language_ja">Japanese</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="ko" lang="ko" data-i18n="nav.language_ko">Korean</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="mr" lang="mr" data-i18n="nav.language_mr">Marathi</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="nl" lang="nl" data-i18n="nav.language_nl">Nederlands</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="pa" lang="pa" data-i18n="nav.language_pa">Punjabi</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="pl" lang="pl" data-i18n="nav.language_pl">Polski</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="pt" lang="pt" data-i18n="nav.language_pt">Português</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="ru" lang="ru" data-i18n="nav.language_ru">Russian</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="ta" lang="ta" data-i18n="nav.language_ta">Tamil</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="te" lang="te" data-i18n="nav.language_te">Telugu</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="th" lang="th" data-i18n="nav.language_th">Thai</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="tl" lang="tl" data-i18n="nav.language_tl">Tagalog</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="tr" lang="tr" data-i18n="nav.language_tr">Turkish</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="ur" lang="ur" dir="rtl" data-i18n="nav.language_ur">Urdu</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="vi" lang="vi" data-i18n="nav.language_vi">Vietnamese</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="zh" lang="zh-CN" data-i18n="nav.language_zh">Chinese</button></li>
+                <li data-plugin-search-item><button class="dropdown-item" type="button" data-language="zh-Hant" lang="zh-Hant" data-i18n="nav.language_zh_hant">Chinese (Traditional)</button></li>
+                <li class="quiet-box language-menu-empty" data-plugin-search-empty hidden data-i18n="nav.language_search_empty">No languages found.</li>
               </ul>
             </li>
+            <li class="nav-item">
+              <a class="icon-button" href="{{ ingress_prefix }}/account/2fa" title="Two-factor authentication" data-i18n-title="twofactor.title" aria-label="Two-factor authentication" data-i18n-aria-label="twofactor.title">🛡</a>
+            </li>
             <li class="nav-item nav-logout">
-              <form method="post" action="/logout">
-                <button class="icon-button" title="Sign out" data-i18n-title="nav.sign_out" aria-label="Sign out" data-i18n-aria-label="nav.sign_out" data-i18n-title="nav.sign_out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
+              <form method="post" action="{{ ingress_prefix }}/logout">
+                <button class="icon-button" title="Sign out" data-i18n-title="nav.sign_out" aria-label="Sign out" data-i18n-aria-label="nav.sign_out" type="submit">⏻</button>
               </form>
             </li>
           </ul>
@@ -244,6 +310,23 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    {% if username %}
+    <footer class="app-footer">
+      <div class="app-footer-inner shell container-xxl">
+        <div class="app-footer-brand">
+          <span class="brand-mark">TBC</span>
+          <span class="app-footer-meta" data-i18n="nav.footer_version" data-i18n-params='{{ {"app_name": app_name, "version": app_version} | tojson }}'>{{ app_name }} {{ app_version }}</span>
+        </div>
+        <nav class="app-footer-links" aria-label="Footer" data-i18n-aria-label="nav.footer">
+          <a href="{{ ingress_prefix }}/docs" data-i18n="docs.footer_link">Docs</a>
+          {% if role == 'admin' %}
+          <a href="{{ ingress_prefix }}/license" data-i18n="base.license">License</a>
+          <button type="button" data-debug-toggle data-i18n="settings.debug_log">Debug Log</button>
+          {% endif %}
+        </nav>
+      </div>
+    </footer>
+    {% endif %}
     {% if username and role == 'admin' %}
     <aside class="debug-drawer" data-debug-drawer hidden aria-hidden="true" aria-label="Debug Log" data-i18n-aria-label="settings.debug_log">
       <div class="debug-drawer-panel">
@@ -254,6 +337,7 @@
           </div>
           <div class="button-row">
             <button class="secondary-button" type="button" data-i18n="common.refresh" data-debug-refresh>Refresh</button>
+            <a class="secondary-button" href="{{ ingress_prefix }}/api/debug-log/export" data-i18n="debug.download_full">Download full log</a>
             <button class="icon-button" type="button" aria-label="Close debug log" data-i18n-aria-label="base.close_debug_log" data-debug-close>x</button>
           </div>
         </div>
@@ -261,11 +345,13 @@
       </div>
     </aside>
     <button class="debug-fab" type="button" data-debug-toggle data-i18n="common.log">Log</button>
-    <script src="{{ url_for('static', path='/debug-log.js') }}?v={{ asset_version }}" defer></script>
+    <script src="{{ ingress_prefix }}/static/debug-log.js?v={{ asset_version }}" defer></script>
     {% endif %}
+    <script src="{{ ingress_prefix }}/static/form-guard.js?v={{ asset_version }}" defer></script>
     {% if username %}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="{{ url_for('static', path='/main-menu.js') }}?v={{ asset_version }}" defer></script>
+    <script src="{{ ingress_prefix }}/static/vendor/bootstrap.bundle.min.js?v={{ asset_version }}" defer></script>
+    <script src="{{ ingress_prefix }}/static/main-menu.js?v={{ asset_version }}" defer></script>
+    <script src="{{ ingress_prefix }}/static/plugin-search.js?v={{ asset_version }}" defer></script>
     {% endif %}
   </body>
 </html>

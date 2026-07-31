@@ -11,6 +11,7 @@ class Settings:
     admin_password: str = "bitte-aendern"
     database_path: str = "/data/tbc.sqlite3"
     recordings_path: str = "/recordings"
+    backups_path: str = "/data/backups"
     live_path: str = "/tmp/tbc-live"
     dashboard_snapshots_path: str = "/data/dashboard-snapshots"
     dashboard_snapshot_interval_seconds: int = 600
@@ -19,12 +20,24 @@ class Settings:
     poll_interval_seconds: int = 60
     web_port: int = 8732
     cookie_secure: bool = False
+    # 14 days matches Starlette's own SessionMiddleware default - kept as
+    # the default here so leaving TBC_SESSION_MAX_AGE_SECONDS unset doesn't
+    # change behavior for existing deployments, just makes it configurable.
+    session_max_age_seconds: int = 14 * 24 * 60 * 60
     camera_modules_path: str = "/data/camera-modules"
     theme_modules_path: str = "/data/design-themes"
     cloud_modules_path: str = "/data/cloud-modules"
+    network_modules_path: str = "/data/network-modules"
     detection_models_path: str = "/data/detection-models"
     detection_default_sample_fps: float = 2.0
     detection_default_confidence_threshold: float = 0.5
+    # No verified stable default exists for a raw-waveform AudioSet-style ONNX model -
+    # see detection/model_provisioning.py:ensure_audio_model. Unset by default; local
+    # audio detection stays off until an admin configures one.
+    audio_model_url: str = ""
+    audio_default_confidence_threshold: float = 0.5
+    homekit_path: str = "/data/homekit"
+    homekit_port: int = 51826
 
 
 def load_settings() -> Settings:
@@ -33,6 +46,7 @@ def load_settings() -> Settings:
         admin_password=os.getenv("TBC_ADMIN_PASSWORD", "bitte-aendern"),
         database_path=os.getenv("TBC_DATABASE_PATH", "/data/tbc.sqlite3"),
         recordings_path=os.getenv("TBC_RECORDINGS_PATH", "/recordings"),
+        backups_path=os.getenv("TBC_BACKUPS_PATH", "/data/backups"),
         live_path=os.getenv("TBC_LIVE_PATH", "/tmp/tbc-live"),
         dashboard_snapshots_path=os.getenv("TBC_DASHBOARD_SNAPSHOTS_PATH", "/data/dashboard-snapshots"),
         dashboard_snapshot_interval_seconds=max(
@@ -44,12 +58,20 @@ def load_settings() -> Settings:
         poll_interval_seconds=max(15, int(os.getenv("TBC_POLL_INTERVAL_SECONDS", "60"))),
         web_port=int(os.getenv("TBC_PORT", "8732")),
         cookie_secure=os.getenv("TBC_COOKIE_SECURE", "false").lower() in {"1", "true", "yes"},
+        session_max_age_seconds=max(300, int(os.getenv("TBC_SESSION_MAX_AGE_SECONDS", str(14 * 24 * 60 * 60)))),
         camera_modules_path=os.getenv("TBC_CAMERA_MODULES_PATH", "/data/camera-modules"),
         theme_modules_path=os.getenv("TBC_THEME_MODULES_PATH", "/data/design-themes"),
         cloud_modules_path=os.getenv("TBC_CLOUD_MODULES_PATH", "/data/cloud-modules"),
+        network_modules_path=os.getenv("TBC_NETWORK_MODULES_PATH", "/data/network-modules"),
         detection_models_path=os.getenv("TBC_DETECTION_MODELS_PATH", "/data/detection-models"),
         detection_default_sample_fps=max(0.1, float(os.getenv("TBC_DETECTION_SAMPLE_FPS", "2.0"))),
         detection_default_confidence_threshold=min(
             1.0, max(0.05, float(os.getenv("TBC_DETECTION_CONFIDENCE_THRESHOLD", "0.5")))
         ),
+        audio_model_url=os.getenv("TBC_AUDIO_MODEL_URL", ""),
+        audio_default_confidence_threshold=min(
+            1.0, max(0.05, float(os.getenv("TBC_AUDIO_CONFIDENCE_THRESHOLD", "0.5")))
+        ),
+        homekit_path=os.getenv("TBC_HOMEKIT_PATH", "/data/homekit"),
+        homekit_port=int(os.getenv("TBC_HOMEKIT_PORT", "51826")),
     )

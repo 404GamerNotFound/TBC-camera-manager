@@ -207,6 +207,117 @@ See docs/cloud-accounts.md (in the TBC repository) for the full contract.
     return _build_zip(files)
 
 
+def build_network_plugin_template() -> bytes:
+    """A minimal, installable example network-account plugin - manifest, module, and a self-test."""
+    files = {
+        "manifest.json": """{
+  "schema_version": 1,
+  "key": "acme_network",
+  "label": "Acme Network",
+  "version": "1.0.0",
+  "description": "Template for a custom network-account plugin - adjust the key, name, and fields",
+  "entrypoint": "plugin.py",
+  "account_fields": [
+    {
+      "key": "host",
+      "label": "Host",
+      "type": "text",
+      "required": true,
+      "placeholder": "192.168.1.1"
+    },
+    {
+      "key": "identifier",
+      "label": "Username",
+      "type": "text",
+      "required": true,
+      "autocomplete": "username"
+    },
+    {
+      "key": "secret",
+      "label": "Password",
+      "type": "password",
+      "required": true,
+      "autocomplete": "current-password"
+    }
+  ]
+}
+""",
+        "plugin.py": '''from .module import AcmeNetworkModule
+
+
+def create_module():
+    return AcmeNetworkModule()
+''',
+        "module.py": '''from __future__ import annotations
+
+from typing import Any
+
+from tbc_network_api import NetworkAccountModule, NetworkConnectionError, NetworkDevice
+
+
+class AcmeNetworkModule(NetworkAccountModule):
+    """Template for a custom TBC network-account plugin.
+
+    Adjust this class, the key in manifest.json, and discover_devices() to
+    match the actual controller API. `account` contains the fields declared
+    in manifest.json (here: host, identifier, secret).
+    """
+
+    async def discover_devices(self, account: dict[str, Any]) -> list[NetworkDevice]:
+        host = str(account.get("host") or "")
+        if not host:
+            raise NetworkConnectionError("Host is required")
+        # TODO: Query the actual controller API for its client/device list.
+        return []
+
+
+def create_module():
+    return AcmeNetworkModule()
+''',
+        "tests/test_module.py": '''import unittest
+
+from tbc_network_api import NetworkConnectionError
+
+from module import AcmeNetworkModule
+
+
+class AcmeNetworkModuleTests(unittest.IsolatedAsyncioTestCase):
+    async def test_discover_devices_requires_host(self):
+        module = AcmeNetworkModule()
+
+        with self.assertRaises(NetworkConnectionError):
+            await module.discover_devices({})
+
+    async def test_discover_devices_returns_a_list(self):
+        module = AcmeNetworkModule()
+
+        devices = await module.discover_devices({"host": "192.168.1.1"})
+
+        self.assertEqual(devices, [])
+
+
+if __name__ == "__main__":
+    unittest.main()
+''',
+        "README.md": """# Acme Network (template)
+
+This template is a complete, installable network-account plugin for TBC.
+Before using it:
+
+1. `manifest.json`: adjust `key`, `label`, `description`, `account_fields`
+   (account form) to match the actual controller API.
+2. `module.py`: implement `discover_devices()` - return one `NetworkDevice`
+   per client the controller knows about (MAC address, name, online state,
+   wired/Wi-Fi, AP/switch name, signal, last seen).
+3. `tests/test_module.py`: add your own tests - `Admin -> Network providers -> Run tests`
+   runs them directly in TBC.
+
+See docs/network-accounts.md (in the TBC repository) for the full contract.
+""",
+    }
+    return _build_zip(files)
+
+
 def build_design_theme_template() -> bytes:
     """A minimal, installable example design theme - manifest and stylesheet, no code."""
     files = {

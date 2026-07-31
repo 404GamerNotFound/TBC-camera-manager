@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .base import ArchiveDownload, CameraCapability, CameraModule, CameraSnapshot, ModuleFeatureUnsupported
+from ..plugin_requirements import MissingPluginRequirements, missing_requirements, read_requirements_field
 
 PLUGIN_SCHEMA_VERSION = 1
 MAX_ARCHIVE_BYTES = 10 * 1024 * 1024
@@ -23,6 +24,10 @@ MAX_EXTRACTED_BYTES = 25 * 1024 * 1024
 MAX_FILES = 200
 PLUGIN_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
 ALLOWED_SUFFIXES = {".py", ".json", ".yaml", ".yml", ".md", ".txt"}
+# Extensionless files with none of the suffixes above still pass validation
+# when their bare name is one of these - lets a plugin ship its own LICENSE
+# file, which the /license page then surfaces automatically (see licenses.py).
+ALLOWED_BARE_FILENAMES = {"LICENSE", "COPYING", "NOTICE"}
 
 
 class CameraPluginError(ValueError):
@@ -41,6 +46,7 @@ class PluginManifest:
     default_onvif_port: int
     default_http_port: int
     default_rtsp_port: int
+    requirements: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -110,6 +116,10 @@ def read_manifest(path: Path) -> PluginManifest:
     ports = raw.get("ports") or {}
     if not isinstance(ports, dict):
         raise CameraPluginError("ports must be a JSON object")
+    try:
+        requirements = read_requirements_field(raw.get("requirements"))
+    except ValueError as exc:
+        raise CameraPluginError(str(exc)) from exc
     return PluginManifest(
         schema_version=schema_version,
         key=key,
@@ -121,6 +131,7 @@ def read_manifest(path: Path) -> PluginManifest:
         default_onvif_port=_valid_port(ports.get("onvif"), 8000),
         default_http_port=_valid_port(ports.get("http"), 80),
         default_rtsp_port=_valid_port(ports.get("rtsp"), 554),
+        requirements=requirements,
     )
 
 
@@ -178,6 +189,7 @@ def _install_plugin_api() -> None:
     # the host's package tree - see docs/camera-modules.md.
     api.onvif = importlib.import_module(f"{tbc_package}.camera_modules.onvif")
     api.onvif_control = importlib.import_module(f"{tbc_package}.camera_modules.onvif_control")
+    api.onvif_privacy_mask = importlib.import_module(f"{tbc_package}.camera_modules.onvif_privacy_mask")
     api.streams = importlib.import_module(f"{tbc_package}.camera_modules.streams")
     api.detections = importlib.import_module(f"{tbc_package}.camera_modules.detections")
     api.ManualRtspCameraModule = importlib.import_module(f"{tbc_package}.manual_rtsp.module").ManualRtspCameraModule
@@ -215,6 +227,11 @@ def install_plugin_archive(archive: bytes, external_path: str) -> PluginPackage:
             manifest = read_manifest(staging / "manifest.json")
             if (builtin_plugins_path() / manifest.key).exists():
                 raise CameraPluginError("Built-in plugins cannot be overwritten")
+            missing = missing_requirements(manifest.requirements)
+            if missing:
+                raise MissingPluginRequirements(
+                    missing, plugin_label=manifest.label, plugin_kind="camera", module_key=manifest.key
+                )
             package = PluginPackage(manifest=manifest, path=staging, builtin=False)
             load_plugin_module(package)
             target = root / manifest.key
@@ -269,7 +286,11 @@ def _validated_members(bundle: zipfile.ZipFile) -> tuple[list[zipfile.ZipInfo], 
         mode = member.external_attr >> 16
         if mode and stat.S_ISLNK(mode):
             raise CameraPluginError("Symbolic links are not allowed in plugins")
-        if not member.is_dir() and path.suffix.lower() not in ALLOWED_SUFFIXES:
+        if (
+            not member.is_dir()
+            and path.suffix.lower() not in ALLOWED_SUFFIXES
+            and path.name not in ALLOWED_BARE_FILENAMES
+        ):
             raise CameraPluginError(f"Nicht erlaubter Dateityp: {path.suffix or member.filename}")
         total_size += member.file_size
         if total_size > MAX_EXTRACTED_BYTES:

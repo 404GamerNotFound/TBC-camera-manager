@@ -187,6 +187,7 @@
         muteButton.textContent = this.video.muted ? "🔇" : "🔊";
       });
       bar.appendChild(muteButton);
+      this.muteButton = muteButton;
 
       if (this.options.mode === "live") {
         const pill = document.createElement("span");
@@ -232,8 +233,33 @@
         if (request) request.call(this.shell);
       });
       bar.appendChild(fullscreenButton);
+      this.fullscreenButton = fullscreenButton;
 
       this.shell.appendChild(bar);
+
+      // t() falls back to the raw key ("player.play_pause" etc.) if this
+      // constructor runs before i18n.js's own locale fetch resolves (see
+      // the comment next to `tbc:i18n-ready` in i18n.js) - redo these
+      // aria-labels once it's ready instead of leaving raw keys on the
+      // controls permanently.
+      document.addEventListener("tbc:i18n-ready", () => this._retranslate(), { once: true });
+    }
+
+    _retranslate() {
+      this.playButton?.setAttribute("aria-label", t("player.play_pause"));
+      this.muteButton?.setAttribute("aria-label", t("player.mute"));
+      this.fullscreenButton?.setAttribute("aria-label", t("player.fullscreen"));
+      if (this.ptz) {
+        [
+          ["Up", "player.ptz_up"],
+          ["Left", "player.ptz_left"],
+          ["Stop", "player.ptz_stop"],
+          ["Right", "player.ptz_right"],
+          ["Down", "player.ptz_down"],
+          ["ZoomDec", "player.zoom_out"],
+          ["ZoomInc", "player.zoom_in"],
+        ].forEach(([command, key]) => this.shell.querySelector(`[data-ptz="${command}"]`)?.setAttribute("aria-label", t(key)));
+      }
     }
 
     _buildPtzOverlay(ptz) {
@@ -325,7 +351,7 @@
     async _pollDetections() {
       if (!this.detection || !this.detection.cameraId) return;
       try {
-        const response = await fetch(`/api/cameras/${this.detection.cameraId}/detections/live`, {
+        const response = await fetch(tbcUrl(`/api/cameras/${this.detection.cameraId}/detections/live`), {
           credentials: "same-origin",
         });
         if (!response.ok) return;
@@ -362,7 +388,9 @@
         const width = (xmax - xmin) * content.width;
         const height = (ymax - ymin) * content.height;
         ctx.strokeRect(x, y, width, height);
-        const label = item.label || item.key;
+        const i18nKey = `detection.trigger_${item.key}`;
+        const translated = t(i18nKey);
+        const label = translated !== i18nKey ? translated : item.label || item.key;
         const textWidth = ctx.measureText(label).width + 8;
         ctx.fillStyle = color;
         ctx.fillRect(x, Math.max(0, y - 16), textWidth, 16);
@@ -423,7 +451,7 @@
     async _sendPtz(command) {
       if (!this.ptz || !this.ptz.cameraId) return;
       try {
-        const response = await fetch(`/cameras/${this.ptz.cameraId}/control/ptz`, {
+        const response = await fetch(tbcUrl(`/cameras/${this.ptz.cameraId}/control/ptz`), {
           method: "POST",
           credentials: "same-origin",
           headers: {

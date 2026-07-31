@@ -1,23 +1,24 @@
 # Python 3.13 is intentional: some camera-provider dependencies are not yet
 # compatible with Python 3.14.
-FROM python:3.13-slim
+#
+# Multi-stage build: the builder stage has the compiler toolchain
+# (gcc/libxml2-dev/libxslt1-dev) some pure-Python-only wheels' rare source
+# fallback needs to build lxml/cryptography from sdist, plus curl to fetch
+# go2rtc. None of that - nor pip's build cache - ends up in the runtime
+# image, which only carries ffmpeg and the installed Python packages.
+FROM python:3.13-slim AS builder
 
-ARG BUILD_VERSION=dev
-ARG BUILD_ARCH=amd64
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    TBC_DATABASE_PATH=/data/tbc.sqlite3 \
-    TBC_RECORDINGS_PATH=/recordings \
-    TBC_CAMERA_MODULES_PATH=/data/camera-modules \
-    TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
-    TBC_DETECTION_MODELS_PATH=/data/detection-models \
-    TBC_PORT=8732
-
-WORKDIR /app
+# BUILD_ARCH defaults to buildx's own per-platform TARGETARCH (amd64/arm64)
+# so a plain `docker build .` or `docker buildx build --platform
+# linux/amd64,linux/arm64 --push .` (no explicit --build-arg) already picks
+# the right go2rtc binary below - the Home Assistant builder workflow still
+# overrides it explicitly with its own "amd64"/"aarch64" arch strings, which
+# takes precedence over this default either way.
+ARG TARGETARCH
+ARG BUILD_ARCH=${TARGETARCH}
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg gcc libxml2-dev libxslt1-dev curl \
+    && apt-get install -y --no-install-recommends gcc libxml2-dev libxslt1-dev curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # go2rtc powers the optional WebRTC live-view mode (sub-second latency vs. HLS's
@@ -28,7 +29,7 @@ RUN apt-get update \
 ARG GO2RTC_VERSION=1.9.14
 RUN case "${BUILD_ARCH}" in \
         amd64) GO2RTC_ARCH=amd64; GO2RTC_SHA256=32d616af226bd731678ffde328b94cfb94e30339bfefc469cfb76323144615a6 ;; \
-        aarch64) GO2RTC_ARCH=arm64; GO2RTC_SHA256=359fabade8a7a51e81a55fe6df6b0ef81764a5e1d63179577534eaaa71904b50 ;; \
+        aarch64|arm64) GO2RTC_ARCH=arm64; GO2RTC_SHA256=359fabade8a7a51e81a55fe6df6b0ef81764a5e1d63179577534eaaa71904b50 ;; \
         *) echo "unsupported BUILD_ARCH for go2rtc: ${BUILD_ARCH}" >&2; exit 1 ;; \
     esac \
     && curl -fsSL -o /usr/local/bin/go2rtc \
@@ -37,9 +38,37 @@ RUN case "${BUILD_ARCH}" in \
     && chmod +x /usr/local/bin/go2rtc
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ---------------------------------------------------------------------------
+
+FROM python:3.13-slim
+
+ARG BUILD_VERSION=dev
+ARG TARGETARCH
+ARG BUILD_ARCH=${TARGETARCH}
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TBC_DATABASE_PATH=/data/tbc.sqlite3 \
+    TBC_PLUGIN_SITE_PACKAGES_PATH=/data/plugin-site-packages \
+    TBC_RECORDINGS_PATH=/recordings \
+    TBC_CAMERA_MODULES_PATH=/data/camera-modules \
+    TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
+    TBC_DETECTION_MODELS_PATH=/data/detection-models \
+    TBC_PORT=8732
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /install /usr/local
+COPY --from=builder /usr/local/bin/go2rtc /usr/local/bin/go2rtc
 
 COPY app ./app
+COPY docs ./docs
 
 RUN useradd --create-home --uid 10001 tbc \
     && mkdir -p /data /recordings /recordings/tbc-camera-manager \

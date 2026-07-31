@@ -43,7 +43,13 @@ class _McpAuthMiddleware:
         auth_header = headers.get(b"authorization", b"").decode("latin-1") or None
         api_key_header = headers.get(b"x-api-key", b"").decode("latin-1") or None
         config = database.get_api_config(self.database_path)
-        error = api_auth_error(config, auth_header, api_key_header)
+        error = api_auth_error(
+            config,
+            auth_header,
+            api_key_header,
+            find_token=lambda prefix: database.find_active_api_token_by_prefix(self.database_path, prefix),
+            on_success=lambda token: database.touch_api_token_last_used(self.database_path, int(token["id"])),
+        )
         if error:
             code, message = error
             await JSONResponse({"error": message}, status_code=code)(scope, receive, send)

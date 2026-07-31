@@ -40,6 +40,11 @@
     });
   });
 
+  const networkPickerSelect = document.querySelector("[data-network-picker-select]");
+  if (networkPickerSelect) {
+    networkPickerSelect.addEventListener("change", () => networkPickerSelect.form.submit());
+  }
+
   document.querySelectorAll("[data-trigger-fieldset]").forEach((triggerFieldset) => {
     triggerFieldset.querySelectorAll("[data-trigger-selection]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -106,7 +111,7 @@
 
   async function pollLivePreview(liveKey, attempt = 0) {
     try {
-      const response = await fetch("/api/live/status", { credentials: "same-origin" });
+      const response = await fetch(tbcUrl("/api/live/status"), { credentials: "same-origin" });
       const data = await response.json().catch(() => ({ items: [] }));
       const item = (data.items || []).find((entry) => entry.key === liveKey);
       if (item && item.status === "running") {
@@ -133,7 +138,7 @@
     const liveKey = livePlayerContainer.dataset.liveKey;
     setLivePlaceholder(t("live.stream_starting_progress"));
     try {
-      const response = await fetch(`/api/live/${encodeURIComponent(liveKey)}/start`, {
+      const response = await fetch(tbcUrl(`/api/live/${encodeURIComponent(liveKey)}/start`), {
         method: "POST",
         credentials: "same-origin",
       });
@@ -506,7 +511,7 @@
     const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     try {
-      const response = await fetch(`/cameras/${cameraId}/detection/zones`, {
+      const response = await fetch(tbcUrl(`/cameras/${cameraId}/detection/zones`), {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -540,7 +545,7 @@
     const zoneId = button.dataset.zoneDelete;
     button.disabled = true;
     try {
-      const response = await fetch(`/cameras/${cameraId}/detection/zones/${zoneId}`, {
+      const response = await fetch(tbcUrl(`/cameras/${cameraId}/detection/zones/${zoneId}`), {
         method: "DELETE",
         credentials: "same-origin",
       });
@@ -565,4 +570,110 @@
     image.addEventListener("error", resizeCanvas);
   }
   window.addEventListener("resize", resizeCanvas);
+})();
+
+(() => {
+  const editor = document.querySelector("[data-md-zone-editor]");
+  if (!editor) return;
+
+  const grid = editor.querySelector("[data-md-zone-grid]");
+  const cellsInput = editor.querySelector("[data-md-zone-cells]");
+  const selectAllButton = editor.querySelector("[data-md-zone-select-all]");
+  const clearButton = editor.querySelector("[data-md-zone-clear]");
+  if (!grid || !cellsInput) return;
+
+  const columns = Math.max(1, parseInt(grid.dataset.columns, 10) || 1);
+  const rows = Math.max(1, parseInt(grid.dataset.rows, 10) || 1);
+  const total = columns * rows;
+  grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+  const cells = [];
+  for (let index = 0; index < total; index += 1) {
+    const cell = document.createElement("div");
+    cell.className = "md-zone-cell md-zone-cell-active";
+    cell.dataset.active = "1";
+    cell.addEventListener("click", () => {
+      const active = cell.dataset.active === "1";
+      cell.dataset.active = active ? "0" : "1";
+      cell.classList.toggle("md-zone-cell-active", !active);
+      syncCellsInput();
+    });
+    grid.appendChild(cell);
+    cells.push(cell);
+  }
+
+  function syncCellsInput() {
+    cellsInput.value = cells.map((cell) => cell.dataset.active).join("");
+  }
+
+  function setAll(active) {
+    cells.forEach((cell) => {
+      cell.dataset.active = active ? "1" : "0";
+      cell.classList.toggle("md-zone-cell-active", active);
+    });
+    syncCellsInput();
+  }
+
+  selectAllButton?.addEventListener("click", () => setAll(true));
+  clearButton?.addEventListener("click", () => setAll(false));
+
+  syncCellsInput();
+})();
+
+(() => {
+  const editor = document.querySelector("[data-privacy-mask-editor]");
+  if (!editor) return;
+
+  const imageWrap = editor.querySelector("[data-privacy-mask-image-wrap]");
+  const image = editor.querySelector("[data-privacy-mask-image]");
+  const pointsInput = editor.querySelector("[data-privacy-mask-points]");
+  const undoButton = editor.querySelector("[data-privacy-mask-undo]");
+  const clearButton = editor.querySelector("[data-privacy-mask-clear]");
+  if (!imageWrap || !image || !pointsInput) return;
+
+  let points = [];
+  const markers = [];
+
+  function syncPointsInput() {
+    // ONVIF normalized device coordinates: -1..1 on both axes, (0,0) at center.
+    pointsInput.value = JSON.stringify(points.map(([nx, ny]) => [nx, ny]));
+  }
+
+  function renderMarkers() {
+    markers.forEach((marker) => marker.remove());
+    markers.length = 0;
+    const rect = image.getBoundingClientRect();
+    points.forEach(([nx, ny]) => {
+      const marker = document.createElement("div");
+      marker.className = "privacy-mask-point";
+      marker.style.left = `${((nx + 1) / 2) * rect.width}px`;
+      marker.style.top = `${((ny + 1) / 2) * rect.height}px`;
+      imageWrap.appendChild(marker);
+      markers.push(marker);
+    });
+  }
+
+  image.addEventListener("click", (event) => {
+    const rect = image.getBoundingClientRect();
+    const fracX = (event.clientX - rect.left) / rect.width;
+    const fracY = (event.clientY - rect.top) / rect.height;
+    points.push([fracX * 2 - 1, fracY * 2 - 1]);
+    syncPointsInput();
+    renderMarkers();
+  });
+
+  undoButton?.addEventListener("click", () => {
+    points.pop();
+    syncPointsInput();
+    renderMarkers();
+  });
+
+  clearButton?.addEventListener("click", () => {
+    points = [];
+    syncPointsInput();
+    renderMarkers();
+  });
+
+  window.addEventListener("resize", renderMarkers);
+  syncPointsInput();
 })();

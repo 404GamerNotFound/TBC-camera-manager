@@ -15,9 +15,9 @@
         <strong data-i18n="plugin.import_plugin">Import plugin</strong>
         <small data-i18n="plugin.plugin_file">Plugin file</small>
       </span>
-      <span class="status-pill status-idle">ZIP</span>
+      <span class="status-pill status-idle" data-i18n="plugin.zip">ZIP</span>
     </summary>
-    <form class="editor-form compact-form" method="post" action="/cloud-modules/import" enctype="multipart/form-data">
+    <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cloud-modules/import" enctype="multipart/form-data">
       <div class="quiet-box" data-i18n="plugin.cloud_plugins_contain_executable_python">
         Cloud plugins contain executable Python code. Only import packages from trusted sources. Maximum file size: 10 MB.
       </div>
@@ -30,6 +30,11 @@
       </div>
     </form>
   </details>
+
+  <div class="quiet-box plugin-external-source-hint">
+    <span data-i18n="plugin.external_source_hint">Prefer not to upload a ZIP? Install plugins straight from a public GitHub repository instead.</span>
+    <a class="secondary-button" href="{{ ingress_prefix }}/plugin-sources" data-i18n="base.external_sources">External sources</a>
+  </div>
 
   <div class="plugin-search-bar">
     <label class="visually-hidden" for="cloud-module-search" data-i18n="plugin.search_plugins">Search plugins</label>
@@ -58,7 +63,7 @@
       </dl>
       <p class="plugin-card-capabilities">
         <span class="status-pill status-active">{{ cloud_module.auth_type.value }}</span>
-        <span class="status-pill status-idle">{{ cloud_module.account_fields | length }} account fields</span>
+        <span class="status-pill status-idle" data-i18n="plugin.account_fields" data-i18n-params='{{ {"count": cloud_module.account_fields | length} | tojson }}'>{{ cloud_module.account_fields | length }} account fields</span>
         {% if cloud_module.verification_support.value == 'supported' %}
         <span class="status-pill status-active" data-i18n="plugin.2fa_supported">2FA supported</span>
         {% else %}
@@ -66,15 +71,15 @@
         {% endif %}
       </p>
       <div class="form-actions plugin-card-actions">
-        <a class="secondary-button" href="/cloud-modules/{{ cloud_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
+        <a class="secondary-button" href="{{ ingress_prefix }}/cloud-modules/{{ cloud_module.key }}/export" data-i18n="plugin.export_zip">Export ZIP</a>
         {% if has_tests[cloud_module.key] %}
-        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/run-tests">
+        <form method="post" action="{{ ingress_prefix }}/cloud-modules/{{ cloud_module.key }}/run-tests">
           <button class="secondary-button" type="submit" data-i18n="plugin.run_tests">Run tests</button>
         </form>
         {% endif %}
         {% if registration.origin == 'uploaded' %}
-        <form method="post" action="/cloud-modules/{{ cloud_module.key }}/delete">
-          <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %}>Remove</button>
+        <form method="post" action="{{ ingress_prefix }}/cloud-modules/{{ cloud_module.key }}/delete">
+          <button class="danger-button" type="submit" {% if account_counts[cloud_module.key] %}disabled{% endif %} data-i18n="plugin.remove">Remove</button>
         </form>
         {% endif %}
       </div>
@@ -82,6 +87,4 @@
     {% endfor %}
     <p class="quiet-box" data-plugin-search-empty hidden data-i18n="plugin.no_plugins_found">No plugins found.</p>
   </section>
-</section>
-<script src="{{ url_for('static', path='/plugin-search.js') }}?v={{ asset_version }}" defer></script>
-{% endblock %}
+</section>{% endblock %}

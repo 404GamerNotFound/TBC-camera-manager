@@ -32,9 +32,16 @@ acme-camera-plugin.zip
   "description": "Acme cameras",
   "entrypoint": "plugin.py",
   "capabilities": ["live", "detections"],
-  "ports": {"onvif": 8000, "http": 80, "rtsp": 554}
+  "ports": {"onvif": 8000, "http": 80, "rtsp": 554},
+  "requirements": ["acme-camera-sdk==2.1.0"]
 }
 ```
+
+`requirements` is optional - a list of the plugin's own pip dependencies TBC does not already
+ship, installed on demand with an explicit admin confirmation instead of having to live in
+TBC's own `requirements.txt`. See
+[**Plugin-declared pip requirements**](plugin-sources.md#plugin-declared-pip-requirements-requirements)
+in plugin-sources.md.
 
 Built-in modules are completely contained in `app/tbc/camera_plugins/<key>/`. This includes
 not only `manifest.json`, `plugin.py`, and `detections.json`, but also the full
@@ -96,6 +103,13 @@ only `rtsp://` and `rtsps://`, and never renders it unredacted in HTML. The exte
 The unified `CameraSnapshot` contains device status, manufacturer data, RTSP URI, detection
 states, and channels. Detection rows use `key`, `label`, `category`, `channel`, `supported`,
 `active`, `source`, and optionally `raw_value`.
+
+A module whose `host` field holds something other than a local IP address (for example, an
+account-linked device serial number for a cloud-only camera) may set `identifier_label` to a
+plain-text string, overriding the connection form's default translated "Host / IP" label with
+that text. Leave it unset (the default, `None`) to keep the normal label - this is what every
+ONVIF-based module does. See the external `xsense-camera` plugin for an example of a module
+whose cameras have no local IP at all.
 
 ## Import and export
 
@@ -159,10 +173,67 @@ pan and tilt commands, including positions stored on the camera through `reolink
 `ptz_presets()` and `set_ptz_command(preset=...)`, as well as floodlight, PIR sensor, siren,
 restart, and battery status. `tplink`, `aqara`, `axis`, `dahua`, `foscam`, and `hikvision`
 provide PTZ through the manufacturer-neutral ONVIF PTZ service
-(`app/tbc/camera_modules/onvif_control.py`). When a camera has the `CONTROL` capability, the
-web interface adds a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC
-also publishes the same actions as Home Assistant entities (lights, switches, buttons, and
+(`app/tbc/camera_modules/onvif_control.py`), including camera-side presets (ONVIF
+`GetPresets`/`GotoPreset`/`SetPreset`/`RemovePreset`, reported as `ptz_presets` and applied
+through `send_control(action="ptz", preset=...)`, `"ptz_preset_save"`, and
+`"ptz_preset_delete"`) and patrol/preset tours where the camera's ONVIF implementation
+supports them (`GetPresetTours`/`OperatePresetTour`, reported as `ptz_patrol_supported` and
+`ptz_patrol_tours`, started/stopped through `send_control(action="ptz_patrol", tour=...,
+command="start"|"stop")`). When a camera has the `CONTROL` capability, the web interface adds
+a **Control** tab. If MQTT and Home Assistant Discovery are enabled, TBC also publishes the
+same actions as Home Assistant entities (lights, switches, buttons, numbers, selects, and
 sensors) and accepts remote control through MQTT command topics (`app/tbc/mqtt.py`).
+
+ONVIF-based modules also implement the `image`, `daynight`, and `hdr` actions through the
+ONVIF Imaging service (`GetImagingSettings`/`SetImagingSettings`), which were previously only
+implemented by the external Reolink plugin: `image_bright_supported`/`image_brightness` and
+the equivalent contrast/saturation/sharpness pairs map to `tt:ImagingSettings20`'s
+`Brightness`/`Contrast`/`ColorSaturation`/`Sharpness` (rescaled from the ONVIF 0-100 range to
+this app's 0-255 UI range - a camera whose real range differs would be rescaled incorrectly,
+a known simplification); `daynight_mode` maps to `IrCutFilter` (`AUTO`/`ON`/`OFF` for
+Auto/Color/Black&White); `hdr_supported` maps to `WideDynamicRange.Mode`. There is no ONVIF
+equivalent of the Reolink plugin's "hue" slider, image flip/mirror, or an "anti-flicker"
+setting, so those are not implemented for ONVIF-based modules.
+
+ONVIF-based modules also expose **experimental** onboard motion-detection zones through the
+ONVIF Rule Engine's `CellMotionDetector` analytics module: `md_zone_supported`,
+`md_zone_config_token`, `md_zone_columns`, and `md_zone_rows` describe a grid, applied through
+`send_control(action="md_zone", config_token=..., columns=..., rows=..., cells=...)` where
+`cells` is a row-major `"0"`/`"1"` string. Unlike PTZ, the ONVIF spec leaves the active-cell
+bitmap itself as an unstandardized extension point, so this is best-effort: grid discovery is
+reliable, but the write may be a no-op or fail outright depending on the camera's own ONVIF
+stack, and the current on-camera zone configuration is never read back (the grid editor always
+starts fully selected).
+
+ONVIF-based modules also expose **experimental** privacy masks through the ONVIF **Media2**
+service (`app/tbc/camera_modules/onvif_privacy_mask.py`), which is a materially bigger
+departure from the rest of ONVIF support than the two features above: Media2 (`CreateMask`/
+`GetMasks`/`SetMask`/`DeleteMask`) is a separate service from the classic ver10 Media service
+this project's `onvif-zeep` dependency implements, and that dependency has no Media2 support
+at all - no service factory, no bundled WSDL. `onvif_privacy_mask.py` builds its own Media2
+SOAP client at runtime from a WSDL/schema closure bundled under
+`app/tbc/camera_modules/onvif_media2_schema/` (hand-assembled from the ONVIF Foundation's own
+published `media2.wsdl` and `onvif.xsd`, which do not fully agree with each other as published
+- notably `onvif.xsd` doesn't define the `tt:Polygon`/`tt:Vector` types `media2.wsdl` requires;
+this bundle fixes that and has been verified to parse and build real SOAP requests without any
+network access), reusing `onvif-zeep`'s `ONVIFService` for the actual SOAP/WS-Security
+plumbing. `privacy_mask_supported`, `privacy_mask_config_token`, and `privacy_masks` (a list of
+`{token, enabled, type, points}`) report existing masks; `send_control(action=
+"privacy_mask_create", config_token=..., points=[{"x":..., "y":...}, ...])` creates a solid
+black polygon mask (ONVIF normalized device coordinates, -1.0 to 1.0) and `send_control(
+action="privacy_mask_delete", token=...)` removes one. Kept in its own module rather than
+`onvif_control.py`, deliberately: this is meaningfully less-trodden ground than PTZ/imaging/
+motion zones, so a failure here shouldn't be able to affect them.
+
+Beyond the fields above, `get_control_state()` has an established convention (see the
+docstring in `app/tbc/camera_modules/base.py`) for read-only device status the core template
+renders generically whenever present, for modules with their own way to report it (typically
+an external plugin using a vendor SDK - none of TBC's built-in modules populate these today):
+`sdcard_supported`/`sdcard_status`/`sdcard_capacity_mb`/`sdcard_free_mb` for SD card
+capacity, `wifi_supported`/`wifi_signal_percent` for Wi-Fi signal strength, and
+`ntp_supported`/`ntp_enabled`/`ntp_server` for NTP time sync. These are display-only fields
+with no corresponding `send_control()` action - formatting an SD card or changing NTP settings
+is not implemented anywhere in TBC.
 
 For models with optical zoom, such as the RLC-823A and TrackMix series,
 `get_control_state()` also reports `zoom_supported` and `focus_supported` with current
@@ -175,6 +246,23 @@ stored on the camera through `quick_reply_dict()`. Calling
 `send_control(action="quick_reply", file_id=...)` plays a clip through the speaker with
 `play_quick_reply()`. Both features continue to depend only on `CONTROL`, not on separate
 manifest capabilities.
+
+`get_control_state()` may also report image adjustments (`image_bright_supported` /
+`image_brightness`, and the equivalent contrast/saturation/hue/sharpness pairs), day/night
+mode and threshold (`daynight_mode`, `daynight_threshold`), HDR and IR lights
+(`hdr_supported`, `ir_supported`), motion and per-class AI detection sensitivity
+(`md_sensitivity_supported` / `md_sensitivity`, `ai_sensitivity_rows`), on-screen display
+options (`osd_supported`), speaker/doorbell volume (`volume_supported` and the
+`volume_speak`/`volume_doorbell` variants), and the main/sub stream video codec
+(`video_codec_main`, `video_codec_sub`). Each is applied through the matching
+`send_control(action=...)` (`image`, `daynight`, `daynight_threshold`, `hdr`, `ir_lights`,
+`md_sensitivity`, `ai_sensitivity`, `osd`, `volume`, `video_codec`). All of these, plus PTZ
+presets, battery sleep state, and doorbell quick replies, are also exposed as Home Assistant
+MQTT entities (`app/tbc/mqtt.py`) — `number` entities for adjustable values, `select` for
+day/night mode and video codec, `switch` for HDR/IR (optimistic, since no readback exists for
+them), and dynamically generated `number`/`button` entities per AI-sensitivity class and quick
+reply. The on-screen display form is not published to MQTT: it applies three fields in one
+submit and has no single-value Home Assistant equivalent.
 
 ## Firmware updates (`FIRMWARE`)
 

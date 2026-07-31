@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-panel">
+  <div>
+    <p class="eyebrow" data-i18n="nav.app_name">TB Camera</p>
+    <h1>TBC</h1>
+  </div>
+  <form class="login-form" method="post" action="{{ ingress_prefix }}/login/2fa">
+    {% if error %}
+    <div class="inline-error" data-i18n="{{ error_key }}" data-i18n-params='{{ error_params | tojson }}'>{{ error }}</div>
+    {% endif %}
+    <p class="hint-text" data-i18n="twofactor.prompt">Enter the 6-digit code from your authenticator app, or one of your recovery codes.</p>
+    <label>
+      <span data-i18n="twofactor.code_label">Verification code</span>
+      <input name="code" autocomplete="one-time-code" inputmode="numeric" required autofocus>
+    </label>
+    <button class="primary-button" type="submit" data-i18n="twofactor.verify">Verify</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from .camera_modules import get_camera_module
 from .camera_modules.registry import UnknownCameraModuleError
@@ -16,8 +16,19 @@ __all__ = [
 
 
 def api_auth_error(
-    config: dict[str, Any], auth_header: str | None, api_key_header: str | None
+    config: dict[str, Any],
+    auth_header: str | None,
+    api_key_header: str | None,
+    *,
+    find_token: Callable[[str], dict[str, Any] | None],
+    on_success: Callable[[dict[str, Any]], None] | None = None,
 ) -> tuple[int, str] | None:
+    """Validate a request's API key against the active `api_tokens`.
+
+    `find_token(prefix)` should look up a non-revoked token row by its
+    12-character prefix; `on_success` (if given) is called with the matched
+    token row so the caller can record last-used-at/audit info.
+    """
     if not config["enabled"]:
         return (404, "API ist deaktiviert")
     if not config["require_api_key"]:
@@ -26,8 +37,13 @@ def api_auth_error(
     if auth_header and auth_header.lower().startswith("bearer "):
         token = auth_header[7:].strip()
     token = token or (api_key_header or "").strip()
-    if not token or not config.get("api_key_hash") or not verify_api_key(token, config["api_key_hash"]):
+    if not token or len(token) < 12:
         return (401, "invalid or missing API key")
+    token_row = find_token(token[:12])
+    if not token_row or not verify_api_key(token, token_row["token_hash"]):
+        return (401, "invalid or missing API key")
+    if on_success:
+        on_success(token_row)
     return None
 
 

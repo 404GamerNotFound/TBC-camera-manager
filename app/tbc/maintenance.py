@@ -74,6 +74,34 @@ def apply_cleanup(database_path: str) -> int:
     return len(doomed)
 
 
+def delete_recording_group(
+    database_path: str,
+    *,
+    camera_id: int,
+    detection_key: str,
+    storage_id: int | None,
+) -> int:
+    """Delete every ready clip represented by one explorer usage row.
+
+    The storage id is deliberately part of the selection: a camera/event can
+    span multiple destinations and the trash action must only remove the data
+    counted by the row the administrator chose.
+    """
+    recording_ids = database.list_ready_recording_ids_by_camera_event(
+        database_path,
+        camera_id=camera_id,
+        detection_key=detection_key,
+        storage_id=storage_id,
+    )
+    for recording_id in recording_ids:
+        recording = database.get_recording(database_path, recording_id)
+        if recording is None:
+            continue
+        delete_recording_files(recording)
+        database.delete_recording_metadata(database_path, recording_id)
+    return len(recording_ids)
+
+
 def _recording_bytes_for_storage(database_path: str, storage_id: int) -> int:
     return sum(
         int(recording.get("size_bytes") or 0)

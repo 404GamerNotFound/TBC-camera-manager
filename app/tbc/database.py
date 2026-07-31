@@ -1,12 +1,87 @@
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterable
 
-from .security import hash_password, verify_password
+from .security import (
+    SecretDecryptionError,
+    decrypt_secret,
+    encrypt_secret,
+    hash_password,
+    is_encrypted_secret,
+    verify_password,
+)
+
+
+_ENCRYPTION_KEY: str | None = None
+
+
+def configure_encryption(secret_key: str) -> None:
+    """Set the process-wide key used to encrypt/decrypt stored secrets.
+
+    Called once at app startup with SETTINGS.secret_key.
+    """
+    global _ENCRYPTION_KEY
+    _ENCRYPTION_KEY = secret_key
+
+
+def _encrypt_field(value: str | None) -> str | None:
+    if _ENCRYPTION_KEY is None or not value:
+        return value
+    return encrypt_secret(_ENCRYPTION_KEY, value)
+
+
+def _decrypt_field(value: str | None) -> str | None:
+    if _ENCRYPTION_KEY is None or not value:
+        return value
+    try:
+        return decrypt_secret(_ENCRYPTION_KEY, value)
+    except SecretDecryptionError:
+        return value
+
+
+def _decrypt_row(row: dict[str, Any], fields: Iterable[str]) -> dict[str, Any]:
+    for field in fields:
+        if field in row:
+            row[field] = _decrypt_field(row[field])
+    return row
+
+
+def _encrypt_sensitive_config_values(config: dict[str, Any], sensitive_keys: Iterable[str]) -> dict[str, Any]:
+    """Encrypt every password-type field in a cloud/network account's config_json.
+
+    `"secret"` is always treated as sensitive (the generic identifier/secret
+    pair's own field name); `sensitive_keys` adds whichever other config keys
+    the module declared as password-type fields (e.g. a module using "email"/
+    "password" instead of "identifier"/"secret") - without this, only a field
+    literally named "secret" ever got encrypted, leaving custom-named
+    password fields stored in plaintext in config_json.
+    """
+    stored_config = dict(config)
+    for key in {"secret", *sensitive_keys}:
+        value = stored_config.get(key)
+        if isinstance(value, str) and value:
+            stored_config[key] = _encrypt_field(value)
+    return stored_config
+
+
+def _decrypt_config_values(config: dict[str, Any]) -> dict[str, Any]:
+    """Decrypt every string value in a hydrated account config.
+
+    Mirrors _encrypt_sensitive_config_values() without needing to know which
+    keys were sensitive at read time: _decrypt_field() already safely passes
+    plaintext values through unchanged (see its SecretDecryptionError
+    fallback), so attempting to decrypt every string is harmless and correct
+    for both old plaintext rows and newly-encrypted ones.
+    """
+    for key, value in config.items():
+        if isinstance(value, str) and value:
+            config[key] = _decrypt_field(value)
+    return config
 
 
 SCHEMA = """
@@ -21,9 +96,18 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS user_recovery_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    code_hash TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS cameras (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    module_key TEXT NOT NULL DEFAULT 'reolink',
+    module_key TEXT NOT NULL DEFAULT 'standard_onvif',
     name TEXT NOT NULL,
     host TEXT NOT NULL,
     onvif_port INTEGER NOT NULL DEFAULT 8000,
@@ -85,6 +169,19 @@ CREATE TABLE IF NOT EXISTS storage_targets (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS backup_schedule (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled INTEGER NOT NULL DEFAULT 0,
+    interval_hours INTEGER NOT NULL DEFAULT 24,
+    retain_count INTEGER NOT NULL DEFAULT 7,
+    storage_id INTEGER,
+    last_run_at TEXT,
+    last_status TEXT,
+    last_message TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(storage_id) REFERENCES storage_targets(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS camera_channels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     camera_id INTEGER NOT NULL,
@@ -132,6 +229,15 @@ CREATE TABLE IF NOT EXISTS camera_detection_settings (
     backend TEXT NOT NULL DEFAULT 'cpu',
     confidence_threshold REAL NOT NULL DEFAULT 0.5,
     sample_fps REAL NOT NULL DEFAULT 2.0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS camera_audio_detection_settings (
+    camera_id INTEGER PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    confidence_threshold REAL NOT NULL DEFAULT 0.5,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
@@ -220,6 +326,19 @@ CREATE TABLE IF NOT EXISTS notification_channels (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS notification_event_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    title_template TEXT NOT NULL DEFAULT '{{ title }}',
+    message_template TEXT NOT NULL DEFAULT '{{ message }}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(channel_id) REFERENCES notification_channels(id) ON DELETE CASCADE,
+    UNIQUE(channel_id, event_type)
+);
+
 CREATE TABLE IF NOT EXISTS health_status (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     component_type TEXT NOT NULL,
@@ -264,9 +383,40 @@ CREATE TABLE IF NOT EXISTS api_config (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    token_hash TEXT NOT NULL,
+    token_prefix TEXT NOT NULL,
+    can_control INTEGER NOT NULL DEFAULT 0,
+    created_by_user_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TEXT,
+    revoked_at TEXT,
+    FOREIGN KEY(created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER,
+    username TEXT,
+    action TEXT NOT NULL,
+    target_type TEXT,
+    target_id TEXT,
+    detail_json TEXT,
+    ip_address TEXT
+);
+
 CREATE TABLE IF NOT EXISTS ui_settings (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_theme_key TEXT NOT NULL DEFAULT 'standard',
+    date_format TEXT NOT NULL DEFAULT 'de',
+    time_format TEXT NOT NULL DEFAULT '24h',
+    timezone TEXT NOT NULL DEFAULT 'Europe/Berlin',
+    show_seconds INTEGER NOT NULL DEFAULT 0,
+    compact_mode INTEGER NOT NULL DEFAULT 1,
+    dashboard_refresh_seconds INTEGER NOT NULL DEFAULT 0,
     live_grid_columns INTEGER NOT NULL DEFAULT 3,
     live_rotation_enabled INTEGER NOT NULL DEFAULT 0,
     live_rotation_seconds INTEGER NOT NULL DEFAULT 15,
@@ -279,6 +429,16 @@ CREATE TABLE IF NOT EXISTS live_layout (
     row_span INTEGER NOT NULL DEFAULT 1,
     sort_order INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS birdseye_cameras (
+    camera_id INTEGER PRIMARY KEY REFERENCES cameras(id) ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS homekit_cameras (
+    camera_id INTEGER PRIMARY KEY REFERENCES cameras(id) ON DELETE CASCADE,
+    aid INTEGER NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS cloud_accounts (
@@ -298,6 +458,24 @@ CREATE TABLE IF NOT EXISTS cloud_accounts (
     pending_verification_field TEXT,
     pending_verification_message TEXT,
     pending_verification_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS network_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    module_key TEXT NOT NULL,
+    label TEXT NOT NULL,
+    host TEXT,
+    port INTEGER,
+    verify_ssl INTEGER NOT NULL DEFAULT 0,
+    identifier TEXT NOT NULL,
+    secret TEXT NOT NULL,
+    config_json TEXT NOT NULL DEFAULT '{}',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    last_test_status TEXT,
+    last_test_message TEXT,
+    last_test_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -361,6 +539,76 @@ CREATE TABLE IF NOT EXISTS recognition_events (
     FOREIGN KEY(matched_face_id) REFERENCES known_faces(id) ON DELETE SET NULL,
     FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS automation_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    source TEXT NOT NULL,
+    camera_id INTEGER,
+    event_type TEXT,
+    kind TEXT,
+    matched_face_id INTEGER,
+    matched_plate_id INTEGER,
+    unknown_only INTEGER NOT NULL DEFAULT 0,
+    cooldown_seconds INTEGER NOT NULL DEFAULT 0,
+    last_fired_at TEXT,
+    notification_channel_id INTEGER NOT NULL,
+    title_template TEXT NOT NULL DEFAULT '{{ title }}',
+    message_template TEXT NOT NULL DEFAULT '{{ message }}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE,
+    FOREIGN KEY(matched_face_id) REFERENCES known_faces(id) ON DELETE SET NULL,
+    FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL,
+    FOREIGN KEY(notification_channel_id) REFERENCES notification_channels(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS network_device_status (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    camera_id INTEGER NOT NULL,
+    online INTEGER,
+    connection_type TEXT,
+    uplink_name TEXT,
+    signal_dbm INTEGER,
+    checked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(camera_id),
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS network_device_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    camera_id INTEGER NOT NULL,
+    previous_online INTEGER,
+    online INTEGER,
+    connection_type TEXT,
+    uplink_name TEXT,
+    signal_dbm INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+);
+
+-- SQLite doesn't index foreign keys automatically, and these are the
+-- columns the clip browser, timeline, cleanup/retention pass, and event/
+-- audit lists actually filter or sort by (see list_recordings,
+-- list_ready_recordings_for_cleanup, list_recent_events, list_detections,
+-- list_recognition_events, list_network_device_events, list_audit_events
+-- in database.py). IF NOT EXISTS makes these safe to add here rather than
+-- as a MIGRATIONS entry - they backfill on every existing database's next
+-- startup same as the CREATE TABLE statements above.
+CREATE INDEX IF NOT EXISTS idx_recordings_camera_started ON recordings(camera_id, started_at);
+CREATE INDEX IF NOT EXISTS idx_recordings_status ON recordings(status);
+CREATE INDEX IF NOT EXISTS idx_camera_events_camera_id ON camera_events(camera_id);
+CREATE INDEX IF NOT EXISTS idx_camera_detections_camera_id ON camera_detections(camera_id);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_camera_id ON recognition_events(camera_id);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_created_at ON recognition_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_matched_face_id ON recognition_events(matched_face_id);
+CREATE INDEX IF NOT EXISTS idx_recognition_events_matched_plate_id ON recognition_events(matched_plate_id);
+CREATE INDEX IF NOT EXISTS idx_network_device_events_camera_id ON network_device_events(camera_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_audit_log_username ON audit_log(username);
+CREATE INDEX IF NOT EXISTS idx_automation_rules_source ON automation_rules(source);
+CREATE INDEX IF NOT EXISTS idx_camera_channels_camera_id ON camera_channels(camera_id);
 """
 
 MIGRATIONS: tuple[str, ...] = (
@@ -397,6 +645,37 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE plugin_sources ADD COLUMN last_checked_at TEXT",
     "ALTER TABLE camera_detection_zones ADD COLUMN min_dwell_seconds INTEGER NOT NULL DEFAULT 10",
     "ALTER TABLE ui_settings ADD COLUMN live_webrtc_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE recordings ADD COLUMN locked INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE recordings ADD COLUMN locked_at TEXT",
+    "ALTER TABLE api_tokens ADD COLUMN can_control INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE cameras ADD COLUMN network_account_id INTEGER",
+    "ALTER TABLE cameras ADD COLUMN network_device_mac TEXT",
+    "ALTER TABLE users ADD COLUMN totp_secret TEXT",
+    "ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN onboarding_dismissed INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN date_format TEXT NOT NULL DEFAULT 'de'",
+    "ALTER TABLE ui_settings ADD COLUMN time_format TEXT NOT NULL DEFAULT '24h'",
+    "ALTER TABLE ui_settings ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Europe/Berlin'",
+    "ALTER TABLE ui_settings ADD COLUMN show_seconds INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN compact_mode INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE ui_settings ADD COLUMN dashboard_refresh_seconds INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN birdseye_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN birdseye_columns INTEGER NOT NULL DEFAULT 3",
+    "ALTER TABLE ui_settings ADD COLUMN birdseye_fps INTEGER NOT NULL DEFAULT 5",
+    "ALTER TABLE ui_settings ADD COLUMN homekit_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN homekit_pincode TEXT",
+)
+
+
+NOTIFICATION_EVENT_DEFAULTS: tuple[dict[str, str], ...] = (
+    {"event_type": "recording_finished", "label": "Recording finished"},
+    {"event_type": "recording_failed", "label": "Recording failed"},
+    {"event_type": "known_face_detected", "label": "Known face detected"},
+    {"event_type": "unknown_face_detected", "label": "Unknown face detected"},
+    {"event_type": "known_plate_detected", "label": "Known plate detected"},
+    {"event_type": "unknown_plate_detected", "label": "Unknown plate detected"},
+    {"event_type": "cleanup_finished", "label": "Retention cleanup finished"},
+    {"event_type": "health_status_changed", "label": "Health status changed"},
 )
 
 
@@ -407,6 +686,16 @@ def connect(database_path: str):
     connection.row_factory = sqlite3.Row
     try:
         connection.execute("PRAGMA foreign_keys=ON")
+        # WAL lets the many concurrent short-lived connections here (web requests,
+        # pollers, detection workers) read while another one writes, instead of
+        # serializing every reader behind the single writer. journal_mode is a
+        # persistent database property (a no-op re-statement after the first call);
+        # busy_timeout and synchronous are per-connection and must be set each time.
+        # synchronous=NORMAL is the documented safe pairing with WAL: a power loss
+        # can only lose the last transactions, never corrupt the database.
+        connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute("PRAGMA busy_timeout=5000")
+        connection.execute("PRAGMA synchronous=NORMAL")
         yield connection
         connection.commit()
     finally:
@@ -440,6 +729,55 @@ def initialize(database_path: str, default_recordings_path: str = "/recordings")
         db.execute(
             "INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')"
         )
+        db.execute(
+            """
+            INSERT OR IGNORE INTO backup_schedule (id, enabled, interval_hours, retain_count)
+            VALUES (1, 0, 24, 7)
+            """
+        )
+    _encrypt_plaintext_secrets_in_place(database_path)
+
+
+def _encrypt_plaintext_secrets_in_place(database_path: str) -> None:
+    """One-time upgrade pass: encrypt any secrets still stored as plaintext.
+
+    Safe to run on every startup - values already prefixed with the encrypted
+    marker are left untouched by _encrypt_field/_decrypt_field's passthrough.
+    """
+    if _ENCRYPTION_KEY is None:
+        return
+    with connect(database_path) as db:
+        for table, id_column, fields in (
+            ("cameras", "id", ("password",)),
+            ("cloud_accounts", "id", ("secret",)),
+            ("network_accounts", "id", ("secret",)),
+            ("storage_targets", "id", ("s3_secret_access_key",)),
+            ("mqtt_config", "id", ("password",)),
+            ("notification_channels", "id", ("token", "smtp_password")),
+        ):
+            rows = db.execute(f"SELECT {id_column}, {', '.join(fields)} FROM {table}").fetchall()
+            for row in rows:
+                for field in fields:
+                    value = row[field]
+                    if value and not is_encrypted_secret(value):
+                        db.execute(
+                            f"UPDATE {table} SET {field} = ? WHERE {id_column} = ?",
+                            (_encrypt_field(value), row[id_column]),
+                        )
+        for row in db.execute("SELECT id, config_json FROM cloud_accounts"):
+            try:
+                config = json.loads(row["config_json"] or "{}")
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if not isinstance(config, dict):
+                continue
+            secret = config.get("secret")
+            if secret and not is_encrypted_secret(secret):
+                config["secret"] = _encrypt_field(secret)
+                db.execute(
+                    "UPDATE cloud_accounts SET config_json = ? WHERE id = ?",
+                    (json.dumps(config, ensure_ascii=False, separators=(",", ":")), row["id"]),
+                )
 
 
 def ensure_admin_user(database_path: str, username: str, password: str) -> None:
@@ -460,9 +798,49 @@ def authenticate_user(database_path: str, username: str, password: str) -> dict[
     return dict(row)
 
 
+def set_user_totp(database_path: str, user_id: int, *, secret: str | None, enabled: bool) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE users SET totp_secret = ?, totp_enabled = ? WHERE id = ?",
+            (secret, 1 if enabled else 0, user_id),
+        )
+        if not enabled:
+            db.execute("DELETE FROM user_recovery_codes WHERE user_id = ?", (user_id,))
+
+
+def replace_user_recovery_codes(database_path: str, user_id: int, code_hashes: list[str]) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM user_recovery_codes WHERE user_id = ?", (user_id,))
+        db.executemany(
+            "INSERT INTO user_recovery_codes (user_id, code_hash) VALUES (?, ?)",
+            [(user_id, code_hash) for code_hash in code_hashes],
+        )
+
+
+def consume_recovery_code(database_path: str, user_id: int, code_hash: str) -> bool:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            "UPDATE user_recovery_codes SET used = 1 WHERE user_id = ? AND code_hash = ? AND used = 0",
+            (user_id, code_hash),
+        )
+        return cursor.rowcount > 0
+
+
+def count_unused_recovery_codes(database_path: str, user_id: int) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM user_recovery_codes WHERE user_id = ? AND used = 0",
+            (user_id,),
+        ).fetchone()
+    return int(row["total"])
+
+
 def get_user(database_path: str, user_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
-        row = db.execute("SELECT id, username, role, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
+        row = db.execute(
+            "SELECT id, username, role, created_at, totp_secret, totp_enabled FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
     return dict(row) if row else None
 
 
@@ -470,7 +848,7 @@ def list_users(database_path: str) -> list[dict[str, Any]]:
     with connect(database_path) as db:
         rows = db.execute(
             """
-            SELECT u.id, u.username, u.role, u.created_at,
+            SELECT u.id, u.username, u.role, u.created_at, u.totp_enabled,
                    COUNT(a.camera_id) AS camera_count
               FROM users u
               LEFT JOIN user_camera_access a ON a.user_id = u.id
@@ -560,7 +938,7 @@ def list_cameras(database_path: str) -> list[dict[str, Any]]:
             ORDER BY c.name COLLATE NOCASE
             """
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("password",)) for row in rows]
 
 
 def list_cameras_for_user(database_path: str, user_id: int, role: str) -> list[dict[str, Any]]:
@@ -584,7 +962,7 @@ def list_cameras_for_user(database_path: str, user_id: int, role: str) -> list[d
             """,
             (user_id,),
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("password",)) for row in rows]
 
 
 def get_camera(database_path: str, camera_id: int) -> dict[str, Any] | None:
@@ -598,7 +976,7 @@ def get_camera(database_path: str, camera_id: int) -> dict[str, Any] | None:
             """,
             (camera_id,),
         ).fetchone()
-    return dict(row) if row else None
+    return _decrypt_row(dict(row), ("password",)) if row else None
 
 
 def count_cameras_by_module(database_path: str, module_key: str) -> int:
@@ -608,6 +986,15 @@ def count_cameras_by_module(database_path: str, module_key: str) -> int:
             (module_key,),
         ).fetchone()
     return int(row["total"] if row else 0)
+
+
+def list_camera_ids_by_module(database_path: str, module_key: str) -> list[int]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT id FROM cameras WHERE module_key = ?",
+            (module_key,),
+        ).fetchall()
+    return [int(row["id"]) for row in rows]
 
 
 def create_cloud_account(
@@ -621,6 +1008,7 @@ def create_cloud_account(
     identifier: str = "",
     secret: str = "",
     config: dict[str, Any] | None = None,
+    sensitive_keys: Iterable[str] = (),
 ) -> int:
     account_config = dict(config or {})
     if not account_config:
@@ -637,6 +1025,7 @@ def create_cloud_account(
     verify_ssl = bool(account_config.get("verify_ssl", verify_ssl))
     identifier = str(account_config.get("identifier") or identifier or "")
     secret = str(account_config.get("secret") or secret or "")
+    stored_config = _encrypt_sensitive_config_values(account_config, sensitive_keys)
     with connect(database_path) as db:
         cursor = db.execute(
             """
@@ -652,8 +1041,8 @@ def create_cloud_account(
                 port,
                 1 if verify_ssl else 0,
                 identifier,
-                secret,
-                json.dumps(account_config, ensure_ascii=False, separators=(",", ":")),
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
             ),
         )
         return int(cursor.lastrowid)
@@ -677,6 +1066,7 @@ def update_cloud_account_configuration(
     *,
     label: str,
     config: dict[str, Any],
+    sensitive_keys: Iterable[str] = (),
 ) -> None:
     host = str(config.get("host") or "").strip() or None
     raw_port = config.get("port")
@@ -684,6 +1074,7 @@ def update_cloud_account_configuration(
     verify_ssl = bool(config.get("verify_ssl", False))
     identifier = str(config.get("identifier") or "")
     secret = str(config.get("secret") or "")
+    stored_config = _encrypt_sensitive_config_values(config, sensitive_keys)
     with connect(database_path) as db:
         db.execute(
             """
@@ -702,8 +1093,8 @@ def update_cloud_account_configuration(
                 port,
                 1 if verify_ssl else 0,
                 identifier,
-                secret,
-                json.dumps(config, ensure_ascii=False, separators=(",", ":")),
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
                 account_id,
             ),
         )
@@ -761,6 +1152,7 @@ def clear_cloud_account_configuration_fields(
 
 def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
     account = dict(row)
+    account["secret"] = _decrypt_field(account.get("secret"))
     try:
         config = json.loads(account.get("config_json") or "{}")
     except (TypeError, json.JSONDecodeError):
@@ -773,6 +1165,8 @@ def _hydrate_cloud_account(row: sqlite3.Row) -> dict[str, Any]:
             "identifier": account.get("identifier") or "",
             "secret": account.get("secret") or "",
         }
+    else:
+        config = _decrypt_config_values(config)
     account["config"] = config
     account.update(config)
     return account
@@ -807,6 +1201,255 @@ def count_cloud_accounts_by_module(database_path: str, module_key: str) -> int:
             (module_key,),
         ).fetchone()
     return int(row["total"] if row else 0)
+
+
+def create_network_account(
+    database_path: str,
+    *,
+    module_key: str,
+    label: str,
+    config: dict[str, Any],
+    sensitive_keys: Iterable[str] = (),
+) -> int:
+    host = str(config.get("host") or "").strip() or None
+    raw_port = config.get("port")
+    port = int(raw_port) if raw_port not in (None, "") else None
+    verify_ssl = bool(config.get("verify_ssl", False))
+    identifier = str(config.get("identifier") or "")
+    secret = str(config.get("secret") or "")
+    stored_config = _encrypt_sensitive_config_values(config, sensitive_keys)
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO network_accounts (
+                module_key, label, host, port, verify_ssl, identifier, secret, config_json
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                module_key,
+                label,
+                host,
+                port,
+                1 if verify_ssl else 0,
+                identifier,
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_network_accounts(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT * FROM network_accounts ORDER BY label COLLATE NOCASE").fetchall()
+    return [_hydrate_network_account(row) for row in rows]
+
+
+def get_network_account(database_path: str, account_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM network_accounts WHERE id = ?", (account_id,)).fetchone()
+    return _hydrate_network_account(row) if row else None
+
+
+def update_network_account_configuration(
+    database_path: str,
+    account_id: int,
+    *,
+    label: str,
+    config: dict[str, Any],
+    sensitive_keys: Iterable[str] = (),
+) -> None:
+    host = str(config.get("host") or "").strip() or None
+    raw_port = config.get("port")
+    port = int(raw_port) if raw_port not in (None, "") else None
+    verify_ssl = bool(config.get("verify_ssl", False))
+    identifier = str(config.get("identifier") or "")
+    secret = str(config.get("secret") or "")
+    stored_config = _encrypt_sensitive_config_values(config, sensitive_keys)
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE network_accounts
+               SET label = ?, host = ?, port = ?, verify_ssl = ?,
+                   identifier = ?, secret = ?, config_json = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (
+                label,
+                host,
+                port,
+                1 if verify_ssl else 0,
+                identifier,
+                _encrypt_field(secret),
+                json.dumps(stored_config, ensure_ascii=False, separators=(",", ":")),
+                account_id,
+            ),
+        )
+
+
+def _hydrate_network_account(row: sqlite3.Row) -> dict[str, Any]:
+    account = dict(row)
+    account["secret"] = _decrypt_field(account.get("secret"))
+    try:
+        config = json.loads(account.get("config_json") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        config = {}
+    if not isinstance(config, dict) or not config:
+        config = {
+            "host": account.get("host") or "",
+            "port": account.get("port") or 443,
+            "verify_ssl": bool(account.get("verify_ssl")),
+            "identifier": account.get("identifier") or "",
+            "secret": account.get("secret") or "",
+        }
+    else:
+        config = _decrypt_config_values(config)
+    account["config"] = config
+    account.update(config)
+    return account
+
+
+def update_network_account_test_result(
+    database_path: str, account_id: int, *, status: str, message: str
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE network_accounts
+               SET last_test_status = ?,
+                   last_test_message = ?,
+                   last_test_at = CURRENT_TIMESTAMP,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (status, message, account_id),
+        )
+
+
+def delete_network_account(database_path: str, account_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE cameras SET network_account_id = NULL, network_device_mac = NULL WHERE network_account_id = ?",
+            (account_id,),
+        )
+        db.execute("DELETE FROM network_accounts WHERE id = ?", (account_id,))
+
+
+def count_network_accounts_by_module(database_path: str, module_key: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM network_accounts WHERE module_key = ?",
+            (module_key,),
+        ).fetchone()
+    return int(row["total"] if row else 0)
+
+
+def set_camera_network_mapping(
+    database_path: str, camera_id: int, *, network_account_id: int, mac: str
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cameras
+               SET network_account_id = ?, network_device_mac = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (network_account_id, mac.strip().lower(), camera_id),
+        )
+
+
+def clear_camera_network_mapping(database_path: str, camera_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE cameras
+               SET network_account_id = NULL, network_device_mac = NULL, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (camera_id,),
+        )
+
+
+def upsert_network_device_status(
+    database_path: str,
+    camera_id: int,
+    *,
+    online: bool | None,
+    connection_type: str | None,
+    uplink_name: str | None,
+    signal_dbm: int | None,
+) -> None:
+    """Record a camera's current network-connectivity snapshot.
+
+    Mirrors upsert_health_status()/health_events: network_device_status holds
+    only the latest snapshot per camera (so "where was it last seen" survives
+    a probe that returns nothing, e.g. the device went offline and dropped
+    out of the controller's client list); a network_device_events row is
+    appended only when online state or the uplink device changes, so the log
+    doesn't grow every poll cycle (default 60s) for an unchanged camera.
+    """
+    with connect(database_path) as db:
+        previous = db.execute(
+            "SELECT online, uplink_name FROM network_device_status WHERE camera_id = ?",
+            (camera_id,),
+        ).fetchone()
+        db.execute(
+            """
+            INSERT INTO network_device_status (
+                camera_id, online, connection_type, uplink_name, signal_dbm, checked_at
+            )
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(camera_id) DO UPDATE SET
+                online = excluded.online,
+                connection_type = excluded.connection_type,
+                uplink_name = excluded.uplink_name,
+                signal_dbm = excluded.signal_dbm,
+                checked_at = CURRENT_TIMESTAMP
+            """,
+            (camera_id, online, connection_type, uplink_name, signal_dbm),
+        )
+        changed = previous is None or bool(previous["online"]) != bool(online) or previous["uplink_name"] != uplink_name
+        if changed:
+            db.execute(
+                """
+                INSERT INTO network_device_events (
+                    camera_id, previous_online, online, connection_type, uplink_name, signal_dbm
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    camera_id,
+                    previous["online"] if previous else None,
+                    online,
+                    connection_type,
+                    uplink_name,
+                    signal_dbm,
+                ),
+            )
+
+
+def get_network_device_status(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM network_device_status WHERE camera_id = ?", (camera_id,)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_network_device_events(database_path: str, camera_id: int, limit: int = 50) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT * FROM network_device_events
+             WHERE camera_id = ?
+             ORDER BY id DESC
+             LIMIT ?
+            """,
+            (camera_id, limit),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def create_plugin_source(
@@ -904,7 +1547,7 @@ def delete_plugin_source(database_path: str, source_id: int) -> None:
 def get_storage_target(database_path: str, storage_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute("SELECT * FROM storage_targets WHERE id = ?", (storage_id,)).fetchone()
-    return dict(row) if row else None
+    return _decrypt_row(dict(row), ("s3_secret_access_key",)) if row else None
 
 
 def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
@@ -912,7 +1555,73 @@ def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
         rows = db.execute(
             "SELECT * FROM storage_targets ORDER BY name COLLATE NOCASE"
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("s3_secret_access_key",)) for row in rows]
+
+
+def get_backup_schedule(database_path: str) -> dict[str, Any]:
+    """Return the singleton automated-backup configuration with safe defaults."""
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT OR IGNORE INTO backup_schedule (id, enabled, interval_hours, retain_count)
+            VALUES (1, 0, 24, 7)
+            """
+        )
+        row = db.execute("SELECT * FROM backup_schedule WHERE id = 1").fetchone()
+    assert row is not None
+    schedule = dict(row)
+    schedule["enabled"] = bool(schedule["enabled"])
+    return schedule
+
+
+def update_backup_schedule(
+    database_path: str,
+    *,
+    enabled: bool,
+    interval_hours: int,
+    retain_count: int,
+    storage_id: int | None,
+) -> None:
+    if interval_hours not in {6, 12, 24, 168}:
+        raise ValueError("Unsupported backup interval")
+    if not 1 <= retain_count <= 365:
+        raise ValueError("Backup retention must be between 1 and 365")
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO backup_schedule (id, enabled, interval_hours, retain_count, storage_id)
+            VALUES (1, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                enabled = excluded.enabled,
+                interval_hours = excluded.interval_hours,
+                retain_count = excluded.retain_count,
+                storage_id = excluded.storage_id,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if enabled else 0, interval_hours, retain_count, storage_id),
+        )
+
+
+def record_backup_schedule_run(
+    database_path: str,
+    *,
+    status: str,
+    message: str | None = None,
+) -> None:
+    if status not in {"success", "error"}:
+        raise ValueError("Unsupported backup schedule status")
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE backup_schedule
+               SET last_run_at = CURRENT_TIMESTAMP,
+                   last_status = ?,
+                   last_message = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = 1
+            """,
+            (status, (message or None)[:1000]),
+        )
 
 
 def create_storage_target(
@@ -946,7 +1655,7 @@ def create_storage_target(
                 s3_bucket,
                 s3_prefix,
                 s3_access_key_id,
-                s3_secret_access_key,
+                _encrypt_field(s3_secret_access_key),
             ),
         )
         return int(cursor.lastrowid)
@@ -995,7 +1704,7 @@ def update_storage_target(
                 s3_bucket,
                 s3_prefix,
                 s3_access_key_id,
-                s3_secret_access_key,
+                _encrypt_field(s3_secret_access_key),
                 retention_days,
                 retention_max_gb,
                 storage_id,
@@ -1009,6 +1718,7 @@ def delete_storage_target(database_path: str, storage_id: int) -> None:
             "UPDATE cameras SET recording_storage_id = NULL WHERE recording_storage_id = ?",
             (storage_id,),
         )
+        db.execute("UPDATE backup_schedule SET storage_id = NULL WHERE storage_id = ?", (storage_id,))
         db.execute("DELETE FROM storage_targets WHERE id = ?", (storage_id,))
 
 
@@ -1021,7 +1731,7 @@ def create_camera(
     http_port: int,
     username: str,
     password: str,
-    module_key: str = "reolink",
+    module_key: str = "standard_onvif",
     rtsp_port: int = 554,
     manual_stream_uri: str | None = None,
 ) -> int:
@@ -1036,7 +1746,7 @@ def create_camera(
             """,
             (
                 module_key, name, host, onvif_port, http_port, rtsp_port,
-                username, password, manual_stream_uri,
+                username, _encrypt_field(password), manual_stream_uri,
             ),
         )
         return int(cursor.lastrowid)
@@ -1088,7 +1798,7 @@ def update_camera_connection(
              WHERE id = ?
             """,
             (
-                name, host, onvif_port, http_port, rtsp_port, username, password,
+                name, host, onvif_port, http_port, rtsp_port, username, _encrypt_field(password),
                 1 if clear_manual_stream_uri else 0,
                 manual_stream_uri,
                 manual_stream_uri,
@@ -1129,6 +1839,31 @@ def list_camera_channels(database_path: str, camera_id: int) -> list[dict[str, A
             (camera_id,),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_camera_channels_for_cameras(
+    database_path: str, camera_ids: list[int]
+) -> dict[int, list[dict[str, Any]]]:
+    """Channels for several cameras in one query - used by the live wall, which
+    otherwise re-queries per camera on every ~3s status poll (see live.js).
+    """
+    if not camera_ids:
+        return {}
+    with connect(database_path) as db:
+        placeholders = ",".join("?" for _ in camera_ids)
+        rows = db.execute(
+            f"""
+            SELECT *
+              FROM camera_channels
+             WHERE camera_id IN ({placeholders})
+             ORDER BY camera_id, channel_index
+            """,
+            camera_ids,
+        ).fetchall()
+    channels_by_camera: dict[int, list[dict[str, Any]]] = {camera_id: [] for camera_id in camera_ids}
+    for row in rows:
+        channels_by_camera[row["camera_id"]].append(dict(row))
+    return channels_by_camera
 
 
 def get_camera_channel(database_path: str, channel_id: int) -> dict[str, Any] | None:
@@ -1283,6 +2018,56 @@ def update_camera_detection_settings(
             """,
             (camera_id, 1 if enabled else 0, backend, confidence_threshold, sample_fps),
         )
+
+
+def get_camera_audio_detection_settings(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM camera_audio_detection_settings WHERE camera_id = ?",
+            (camera_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    settings = dict(row)
+    settings["enabled"] = bool(settings["enabled"])
+    return settings
+
+
+def update_camera_audio_detection_settings(
+    database_path: str,
+    camera_id: int,
+    *,
+    enabled: bool,
+    confidence_threshold: float,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO camera_audio_detection_settings (camera_id, enabled, confidence_threshold, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(camera_id) DO UPDATE SET
+                enabled = excluded.enabled,
+                confidence_threshold = excluded.confidence_threshold,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (camera_id, 1 if enabled else 0, confidence_threshold),
+        )
+
+
+def list_enabled_camera_audio_detection_settings(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT c.id AS camera_id,
+                   c.name AS camera_name,
+                   s.confidence_threshold
+              FROM camera_audio_detection_settings s
+              JOIN cameras c ON c.id = s.camera_id
+             WHERE s.enabled = 1
+             ORDER BY c.name COLLATE NOCASE
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def list_enabled_camera_detection_settings(database_path: str) -> list[dict[str, Any]]:
@@ -1489,7 +2274,7 @@ def create_continuous_recording(
                 file_name, local_path, remote_key, duration_seconds, size_bytes,
                 started_at, ended_at
             )
-            VALUES (?, ?, 'continuous', 'Daueraufzeichnung', 'ready', ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, 'continuous', 'Continuous', 'ready', ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 camera_id,
@@ -1586,7 +2371,7 @@ def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | Non
             """,
             (recording_id,),
         ).fetchone()
-    return dict(row) if row else None
+    return _decrypt_row(dict(row), ("s3_secret_access_key",)) if row else None
 
 
 def _recording_filters(
@@ -1715,16 +2500,45 @@ def list_recording_sizes_by_camera_event(database_path: str) -> list[dict[str, A
         rows = db.execute(
             """
             SELECT c.name AS camera_name, r.camera_id, r.detection_key,
+                   r.storage_id,
+                   COALESCE(s.name, r.storage_kind, 'Unknown storage') AS storage_name,
                    COUNT(*) AS clip_count,
                    COALESCE(SUM(r.size_bytes), 0) AS size_bytes
               FROM recordings r
               JOIN cameras c ON c.id = r.camera_id
+              LEFT JOIN storage_targets s ON s.id = r.storage_id
              WHERE r.status = 'ready'
-             GROUP BY r.camera_id, r.detection_key
+             GROUP BY r.camera_id, r.detection_key, r.storage_id
              ORDER BY size_bytes DESC
             """
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_ready_recording_ids_by_camera_event(
+    database_path: str,
+    *,
+    camera_id: int,
+    detection_key: str,
+    storage_id: int | None,
+) -> list[int]:
+    """Return the exact ready-clip group shown in the storage explorer."""
+    storage_filter = "r.storage_id IS NULL" if storage_id is None else "r.storage_id = ?"
+    params: tuple[Any, ...] = (camera_id, detection_key) if storage_id is None else (camera_id, detection_key, storage_id)
+    with connect(database_path) as db:
+        rows = db.execute(
+            f"""
+            SELECT r.id
+              FROM recordings r
+             WHERE r.status = 'ready'
+               AND r.camera_id = ?
+               AND r.detection_key = ?
+               AND {storage_filter}
+             ORDER BY r.id
+            """,
+            params,
+        ).fetchall()
+    return [int(row["id"]) for row in rows]
 
 
 def list_ready_recordings_for_cleanup(database_path: str) -> list[dict[str, Any]]:
@@ -1734,7 +2548,7 @@ def list_ready_recordings_for_cleanup(database_path: str) -> list[dict[str, Any]
             SELECT r.*, c.name AS camera_name
               FROM recordings r
               JOIN cameras c ON c.id = r.camera_id
-             WHERE r.status = 'ready'
+             WHERE r.status = 'ready' AND r.locked = 0
              ORDER BY r.started_at ASC, r.id ASC
             """
         ).fetchall()
@@ -1810,12 +2624,107 @@ def delete_retention_rule(database_path: str, rule_id: int) -> None:
         db.execute("DELETE FROM retention_rules WHERE id = ?", (rule_id,))
 
 
+def any_recording_triggers_configured(database_path: str) -> bool:
+    with connect(database_path) as db:
+        row = db.execute("SELECT COUNT(*) AS total FROM camera_recording_triggers").fetchone()
+    return int(row["total"]) > 0
+
+
+def get_onboarding_dismissed(database_path: str) -> bool:
+    with connect(database_path) as db:
+        row = db.execute("SELECT onboarding_dismissed FROM ui_settings WHERE id = 1").fetchone()
+    return bool(row and row["onboarding_dismissed"])
+
+
+def set_onboarding_dismissed(database_path: str, dismissed: bool) -> None:
+    with connect(database_path) as db:
+        db.execute("INSERT OR IGNORE INTO ui_settings (id, active_theme_key) VALUES (1, 'standard')")
+        db.execute("UPDATE ui_settings SET onboarding_dismissed = ? WHERE id = 1", (1 if dismissed else 0,))
+
+
+def get_camera_quota_rule(database_path: str, camera_id: int) -> dict[str, Any] | None:
+    """The camera-wide retention rule the camera detail page's quota form manages:
+    scoped to exactly this camera, no detection-key restriction. Event-scoped rules
+    for the same camera stay untouched by the quota form."""
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT * FROM retention_rules
+             WHERE camera_id = ? AND (detection_key IS NULL OR detection_key = '')
+             ORDER BY id ASC LIMIT 1
+            """,
+            (camera_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def camera_recording_usage_bytes(database_path: str, camera_id: int) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COALESCE(SUM(size_bytes), 0) AS total FROM recordings WHERE camera_id = ? AND status = 'ready'",
+            (camera_id,),
+        ).fetchone()
+    return int(row["total"] or 0)
+
+
 def list_notification_channels(database_path: str) -> list[dict[str, Any]]:
     with connect(database_path) as db:
         rows = db.execute(
             "SELECT * FROM notification_channels ORDER BY enabled DESC, name COLLATE NOCASE"
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [_decrypt_row(dict(row), ("token", "smtp_password")) for row in rows]
+
+
+def get_notification_channel(database_path: str, channel_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM notification_channels WHERE id = ?", (channel_id,)).fetchone()
+    return _decrypt_row(dict(row), ("token", "smtp_password")) if row else None
+
+
+def notification_event_defaults() -> list[dict[str, Any]]:
+    """Return a fresh set of selectable notification event presets."""
+    return [
+        {
+            **event,
+            "enabled": 1,
+            "title_template": "{{ title }}",
+            "message_template": "{{ message }}",
+        }
+        for event in NOTIFICATION_EVENT_DEFAULTS
+    ]
+
+
+def list_notification_event_templates(database_path: str, channel_id: int, event_filter: str | None = None) -> list[dict[str, Any]]:
+    """Return every event preset, filling missing rows for legacy channels.
+
+    Old channel configurations used ``event_filter`` only.  Keeping that value
+    as the fallback means they retain their previous delivery behaviour until
+    an administrator saves the redesigned form.
+    """
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT event_type, enabled, title_template, message_template FROM notification_event_templates WHERE channel_id = ?",
+            (channel_id,),
+        ).fetchall()
+    configured = {str(row["event_type"]): dict(row) for row in rows}
+    enabled_events = {item.strip() for item in (event_filter or "").split(",") if item.strip()}
+    has_legacy_filter = bool(enabled_events)
+    templates: list[dict[str, Any]] = []
+    for event in notification_event_defaults():
+        stored = configured.get(str(event["event_type"]))
+        if stored:
+            event.update(stored)
+        elif has_legacy_filter:
+            event["enabled"] = int(event["event_type"] in enabled_events)
+        templates.append(event)
+    return templates
+
+
+def get_notification_event_template(database_path: str, channel: dict[str, Any], event_type: str) -> dict[str, Any] | None:
+    for template in list_notification_event_templates(database_path, int(channel["id"]), channel.get("event_filter")):
+        if template["event_type"] == event_type:
+            return template
+    return None
 
 
 def create_notification_channel(database_path: str, **values: Any) -> int:
@@ -1830,7 +2739,9 @@ def create_notification_channel(database_path: str, **values: Any) -> int:
             """,
             _notification_values(values),
         )
-        return int(cursor.lastrowid)
+        channel_id = int(cursor.lastrowid)
+        _replace_notification_event_templates(db, channel_id, values.get("event_templates"))
+        return channel_id
 
 
 def update_notification_channel(database_path: str, channel_id: int, **values: Any) -> None:
@@ -1858,11 +2769,40 @@ def update_notification_channel(database_path: str, channel_id: int, **values: A
             """,
             (*_notification_values(values), channel_id),
         )
+        _replace_notification_event_templates(db, channel_id, values.get("event_templates"))
 
 
 def delete_notification_channel(database_path: str, channel_id: int) -> None:
     with connect(database_path) as db:
         db.execute("DELETE FROM notification_channels WHERE id = ?", (channel_id,))
+
+
+def _replace_notification_event_templates(db: sqlite3.Connection, channel_id: int, templates: Any) -> None:
+    """Persist the complete event-preset selection for one channel."""
+    if templates is None:
+        return
+    by_type = {
+        str(template.get("event_type")): template
+        for template in templates
+        if isinstance(template, dict) and template.get("event_type")
+    }
+    db.execute("DELETE FROM notification_event_templates WHERE channel_id = ?", (channel_id,))
+    for default in notification_event_defaults():
+        event_type = str(default["event_type"])
+        template = by_type.get(event_type, default)
+        db.execute(
+            """
+            INSERT INTO notification_event_templates (channel_id, event_type, enabled, title_template, message_template)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                channel_id,
+                event_type,
+                1 if template.get("enabled") else 0,
+                str(template.get("title_template") or "{{ title }}"),
+                str(template.get("message_template") or "{{ message }}"),
+            ),
+        )
 
 
 def upsert_health_status(
@@ -2060,7 +3000,7 @@ def get_mqtt_config(database_path: str) -> dict[str, Any]:
                 """
             )
             row = db.execute("SELECT * FROM mqtt_config WHERE id = 1").fetchone()
-    return dict(row)
+    return _decrypt_row(dict(row), ("password",))
 
 
 def update_mqtt_config(
@@ -2098,7 +3038,7 @@ def update_mqtt_config(
                 host,
                 port,
                 username,
-                password,
+                _encrypt_field(password),
                 topic_prefix,
                 1 if discovery_enabled else 0,
                 discovery_prefix,
@@ -2132,29 +3072,149 @@ def update_api_config(database_path: str, *, enabled: bool, require_api_key: boo
         )
 
 
-def set_api_key(database_path: str, *, key_hash: str, key_prefix: str) -> None:
+def create_api_token(
+    database_path: str,
+    *,
+    name: str,
+    key_hash: str,
+    key_prefix: str,
+    created_by_user_id: int | None,
+    can_control: bool = False,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO api_tokens (name, token_hash, token_prefix, created_by_user_id, can_control)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (name, key_hash, key_prefix, created_by_user_id, 1 if can_control else 0),
+        )
+        return int(cursor.lastrowid)
+
+
+def list_api_tokens(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT * FROM api_tokens ORDER BY revoked_at IS NOT NULL, created_at DESC"
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def find_active_api_token_by_prefix(database_path: str, prefix: str) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT * FROM api_tokens WHERE token_prefix = ? AND revoked_at IS NULL",
+            (prefix,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def touch_api_token_last_used(database_path: str, token_id: int) -> None:
     with connect(database_path) as db:
         db.execute(
-            """
-            INSERT INTO api_config (id, api_key_hash, api_key_prefix)
-            VALUES (1, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                api_key_hash = excluded.api_key_hash,
-                api_key_prefix = excluded.api_key_prefix,
-                updated_at = CURRENT_TIMESTAMP
-            """,
-            (key_hash, key_prefix),
+            "UPDATE api_tokens SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (token_id,),
         )
 
 
-def clear_api_key(database_path: str) -> None:
+def revoke_api_token(database_path: str, token_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            "UPDATE api_tokens SET revoked_at = CURRENT_TIMESTAMP WHERE id = ? AND revoked_at IS NULL",
+            (token_id,),
+        )
+
+
+def delete_api_token(database_path: str, token_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM api_tokens WHERE id = ?", (token_id,))
+
+
+def record_audit_event(
+    database_path: str,
+    *,
+    user_id: int | None,
+    username: str | None,
+    action: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    detail: dict[str, Any] | None = None,
+    ip_address: str | None = None,
+) -> None:
     with connect(database_path) as db:
         db.execute(
             """
-            UPDATE api_config
-               SET api_key_hash = NULL, api_key_prefix = NULL, updated_at = CURRENT_TIMESTAMP
-             WHERE id = 1
+            INSERT INTO audit_log (user_id, username, action, target_type, target_id, detail_json, ip_address)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                username,
+                action,
+                target_type,
+                str(target_id) if target_id is not None else None,
+                json.dumps(detail, ensure_ascii=False, separators=(",", ":")) if detail else None,
+                ip_address,
+            ),
+        )
+
+
+def list_audit_events(
+    database_path: str,
+    *,
+    limit: int = 200,
+    offset: int = 0,
+    action: str | None = None,
+    username: str | None = None,
+) -> dict[str, Any]:
+    clauses: list[str] = []
+    params: list[Any] = []
+    if action:
+        clauses.append("action = ?")
+        params.append(action)
+    if username:
+        clauses.append("username = ?")
+        params.append(username)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    with connect(database_path) as db:
+        rows = db.execute(
+            f"""
+            SELECT * FROM audit_log
+            {where}
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?
+            """,
+            (*params, limit, offset),
+        ).fetchall()
+        total = db.execute(f"SELECT COUNT(*) AS total FROM audit_log {where}", params).fetchone()["total"]
+    events = []
+    for row in rows:
+        event = dict(row)
+        try:
+            event["detail"] = json.loads(event.get("detail_json") or "null")
+        except (TypeError, json.JSONDecodeError):
+            event["detail"] = None
+        events.append(event)
+    return {"events": events, "total": int(total)}
+
+
+def list_distinct_audit_actions(database_path: str) -> list[str]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT DISTINCT action FROM audit_log ORDER BY action").fetchall()
+    return [row["action"] for row in rows]
+
+
+def set_recording_locked(database_path: str, recording_id: int, locked: bool) -> None:
+    with connect(database_path) as db:
+        db.execute(
             """
+            UPDATE recordings
+               SET locked = ?,
+                   locked_at = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (1 if locked else 0, 1 if locked else 0, recording_id),
         )
 
 
@@ -2178,6 +3238,152 @@ def set_active_theme_key(database_path: str, theme_key: str) -> None:
                 updated_at = CURRENT_TIMESTAMP
             """,
             (theme_key,),
+        )
+
+
+UI_DATE_FORMATS = {"de", "iso", "us"}
+UI_TIME_FORMATS = {"24h", "12h"}
+UI_TIMEZONES = {
+    "Pacific/Pago_Pago",
+    "Pacific/Honolulu",
+    "America/Anchorage",
+    "America/Los_Angeles",
+    "America/Denver",
+    "America/Chicago",
+    "America/Mexico_City",
+    "America/Bogota",
+    "America/Lima",
+    "America/New_York",
+    "America/Toronto",
+    "America/Caracas",
+    "America/Halifax",
+    "America/Santiago",
+    "America/Sao_Paulo",
+    "America/Argentina/Buenos_Aires",
+    "Atlantic/Azores",
+    "UTC",
+    "Europe/London",
+    "Africa/Accra",
+    "Africa/Casablanca",
+    "Europe/Berlin",
+    "Europe/Paris",
+    "Africa/Lagos",
+    "Europe/Athens",
+    "Africa/Cairo",
+    "Africa/Johannesburg",
+    "Asia/Jerusalem",
+    "Europe/Moscow",
+    "Europe/Istanbul",
+    "Africa/Nairobi",
+    "Asia/Riyadh",
+    "Asia/Baghdad",
+    "Asia/Tehran",
+    "Asia/Dubai",
+    "Asia/Kabul",
+    "Asia/Karachi",
+    "Asia/Kolkata",
+    "Asia/Kathmandu",
+    "Asia/Dhaka",
+    "Asia/Almaty",
+    "Asia/Yangon",
+    "Asia/Bangkok",
+    "Asia/Jakarta",
+    "Asia/Shanghai",
+    "Asia/Singapore",
+    "Asia/Hong_Kong",
+    "Asia/Kuala_Lumpur",
+    "Asia/Manila",
+    "Australia/Perth",
+    "Asia/Tokyo",
+    "Asia/Seoul",
+    "Australia/Adelaide",
+    "Australia/Sydney",
+    "Australia/Brisbane",
+    "Pacific/Guam",
+    "Pacific/Noumea",
+    "Pacific/Auckland",
+    "Pacific/Fiji",
+    "Pacific/Tongatapu",
+}
+UI_DASHBOARD_REFRESH_INTERVALS = {0, 15, 30, 60, 300}
+
+
+def get_ui_preferences(database_path: str) -> dict[str, Any]:
+    """Return the instance-wide display preferences with safe defaults."""
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT date_format, time_format, timezone, show_seconds,
+                   compact_mode, dashboard_refresh_seconds
+            FROM ui_settings WHERE id = 1
+            """
+        ).fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+            row = {
+                "date_format": "de", "time_format": "24h", "timezone": "Europe/Berlin",
+                "show_seconds": 0, "compact_mode": 1, "dashboard_refresh_seconds": 0,
+            }
+    preferences = dict(row)
+    date_format = str(preferences.get("date_format") or "de")
+    time_format = str(preferences.get("time_format") or "24h")
+    timezone = str(preferences.get("timezone") or "Europe/Berlin")
+    refresh_seconds = int(preferences.get("dashboard_refresh_seconds") or 0)
+    return {
+        "date_format": date_format if date_format in UI_DATE_FORMATS else "de",
+        "time_format": time_format if time_format in UI_TIME_FORMATS else "24h",
+        "timezone": timezone if timezone in UI_TIMEZONES else "Europe/Berlin",
+        "show_seconds": bool(preferences.get("show_seconds")),
+        "compact_mode": bool(preferences.get("compact_mode", 1)),
+        "dashboard_refresh_seconds": (
+            refresh_seconds if refresh_seconds in UI_DASHBOARD_REFRESH_INTERVALS else 0
+        ),
+    }
+
+
+def update_ui_preferences(
+    database_path: str,
+    *,
+    date_format: str,
+    time_format: str,
+    timezone: str,
+    show_seconds: bool,
+    compact_mode: bool,
+    dashboard_refresh_seconds: int,
+) -> None:
+    """Persist validated preferences shared by all users of this instance."""
+    if date_format not in UI_DATE_FORMATS:
+        date_format = "de"
+    if time_format not in UI_TIME_FORMATS:
+        time_format = "24h"
+    if timezone not in UI_TIMEZONES:
+        timezone = "Europe/Berlin"
+    if dashboard_refresh_seconds not in UI_DASHBOARD_REFRESH_INTERVALS:
+        dashboard_refresh_seconds = 0
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO ui_settings (
+                id, date_format, time_format, timezone, show_seconds,
+                compact_mode, dashboard_refresh_seconds
+            ) VALUES (1, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                date_format = excluded.date_format,
+                time_format = excluded.time_format,
+                timezone = excluded.timezone,
+                show_seconds = excluded.show_seconds,
+                compact_mode = excluded.compact_mode,
+                dashboard_refresh_seconds = excluded.dashboard_refresh_seconds,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (
+                date_format,
+                time_format,
+                timezone,
+                1 if show_seconds else 0,
+                1 if compact_mode else 0,
+                dashboard_refresh_seconds,
+            ),
         )
 
 
@@ -2257,6 +3463,107 @@ def set_live_layout_item(
         )
 
 
+def get_birdseye_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT birdseye_enabled, birdseye_columns, birdseye_fps FROM ui_settings WHERE id = 1"
+        ).fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+            return {"enabled": False, "columns": 3, "fps": 5}
+    return {
+        "enabled": bool(row["birdseye_enabled"]),
+        "columns": int(row["birdseye_columns"]),
+        "fps": int(row["birdseye_fps"]),
+    }
+
+
+def set_birdseye_settings(database_path: str, *, enabled: bool, columns: int, fps: int) -> None:
+    columns = max(1, min(6, columns))
+    fps = max(1, min(10, fps))
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO ui_settings (id, birdseye_enabled, birdseye_columns, birdseye_fps)
+            VALUES (1, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                birdseye_enabled = excluded.birdseye_enabled,
+                birdseye_columns = excluded.birdseye_columns,
+                birdseye_fps = excluded.birdseye_fps,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if enabled else 0, columns, fps),
+        )
+
+
+def get_birdseye_camera_ids(database_path: str) -> list[int]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT camera_id FROM birdseye_cameras ORDER BY sort_order").fetchall()
+    return [int(row["camera_id"]) for row in rows]
+
+
+def set_birdseye_camera_ids(database_path: str, camera_ids: list[int]) -> None:
+    unique_camera_ids = list(dict.fromkeys(camera_ids))
+    with connect(database_path) as db:
+        db.execute("DELETE FROM birdseye_cameras")
+        db.executemany(
+            "INSERT INTO birdseye_cameras (camera_id, sort_order) VALUES (?, ?)",
+            [(camera_id, index) for index, camera_id in enumerate(unique_camera_ids)],
+        )
+
+
+def _generate_homekit_pincode() -> str:
+    digits = [str(secrets.randbelow(10)) for _ in range(8)]
+    return f"{''.join(digits[:3])}-{''.join(digits[3:5])}-{''.join(digits[5:])}"
+
+
+def get_homekit_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+        row = db.execute("SELECT homekit_enabled, homekit_pincode FROM ui_settings WHERE id = 1").fetchone()
+        pincode = row["homekit_pincode"]
+        if not pincode:
+            pincode = _generate_homekit_pincode()
+            db.execute("UPDATE ui_settings SET homekit_pincode = ? WHERE id = 1", (pincode,))
+    return {"enabled": bool(row["homekit_enabled"]), "pincode": pincode}
+
+
+def set_homekit_enabled(database_path: str, enabled: bool) -> None:
+    with connect(database_path) as db:
+        db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+        db.execute("UPDATE ui_settings SET homekit_enabled = ? WHERE id = 1", (1 if enabled else 0,))
+
+
+def get_homekit_camera_aids(database_path: str) -> dict[int, int]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT camera_id, aid FROM homekit_cameras").fetchall()
+    return {int(row["camera_id"]): int(row["aid"]) for row in rows}
+
+
+def set_homekit_camera_ids(database_path: str, camera_ids: list[int]) -> None:
+    """Replaces the exposed-camera selection, preserving each still-selected
+    camera's existing HAP accessory ID (AID) and assigning a new, never
+    previously used AID to any newly added camera. AIDs must stay stable
+    across restarts - the Home app keys room/automation assignments on them -
+    so this is deliberately not a delete-and-reinsert like
+    set_birdseye_camera_ids, whose per-item state (grid sort order) has no
+    such stability requirement."""
+    unique_camera_ids = list(dict.fromkeys(camera_ids))
+    with connect(database_path) as db:
+        existing = db.execute("SELECT camera_id, aid FROM homekit_cameras").fetchall()
+        existing_aids = {int(row["camera_id"]): int(row["aid"]) for row in existing}
+        next_aid = max([*existing_aids.values(), 1]) + 1
+        db.execute("DELETE FROM homekit_cameras")
+        rows_to_insert: list[tuple[int, int]] = []
+        for camera_id in unique_camera_ids:
+            aid = existing_aids.get(camera_id)
+            if aid is None:
+                aid = next_aid
+                next_aid += 1
+            rows_to_insert.append((camera_id, aid))
+        db.executemany("INSERT INTO homekit_cameras (camera_id, aid) VALUES (?, ?)", rows_to_insert)
+
+
 def _valid_role(role: str) -> str:
     return "viewer" if role == "viewer" else "admin"
 
@@ -2268,14 +3575,14 @@ def _notification_values(values: dict[str, Any]) -> tuple[Any, ...]:
         1 if values.get("enabled") else 0,
         values.get("event_filter"),
         values.get("url"),
-        values.get("token"),
+        _encrypt_field(values.get("token")),
         values.get("chat_id"),
         values.get("email_to"),
         values.get("email_from"),
         values.get("smtp_host"),
         values.get("smtp_port"),
         values.get("smtp_username"),
-        values.get("smtp_password"),
+        _encrypt_field(values.get("smtp_password")),
         values.get("ha_service"),
         1 if values.get("include_snapshot") else 0,
     )
@@ -2388,14 +3695,65 @@ def create_recognition_event(
         return int(cursor.lastrowid)
 
 
-def list_recognition_events(database_path: str, *, kind: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
+def _recognition_event_filters(
+    *,
+    camera_id: int | None,
+    kind: str | None,
+    matched_face_id: int | None,
+    matched_plate_id: int | None,
+    unknown_only: bool,
+    date_from: str | None,
+    date_to: str | None,
+) -> tuple[str, list[Any]]:
     filters = []
     params: list[Any] = []
+    if camera_id:
+        filters.append("re.camera_id = ?")
+        params.append(camera_id)
     if kind:
         filters.append("re.kind = ?")
         params.append(kind)
+    if matched_face_id:
+        filters.append("re.matched_face_id = ?")
+        params.append(matched_face_id)
+    if matched_plate_id:
+        filters.append("re.matched_plate_id = ?")
+        params.append(matched_plate_id)
+    if unknown_only:
+        filters.append("re.matched_face_id IS NULL AND re.matched_plate_id IS NULL")
+    if date_from:
+        filters.append("re.created_at >= ?")
+        params.append(date_from)
+    if date_to:
+        filters.append("re.created_at <= ?")
+        params.append(date_to)
     where = f"WHERE {' AND '.join(filters)}" if filters else ""
-    params.append(limit)
+    return where, params
+
+
+def list_recognition_events(
+    database_path: str,
+    *,
+    camera_id: int | None = None,
+    kind: str | None = None,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+    unknown_only: bool = False,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[dict[str, Any]]:
+    where, params = _recognition_event_filters(
+        camera_id=camera_id,
+        kind=kind,
+        matched_face_id=matched_face_id,
+        matched_plate_id=matched_plate_id,
+        unknown_only=unknown_only,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    params = [*params, limit, offset]
     with connect(database_path) as db:
         rows = db.execute(
             f"""
@@ -2404,8 +3762,251 @@ def list_recognition_events(database_path: str, *, kind: str | None = None, limi
               JOIN cameras c ON c.id = re.camera_id
               {where}
              ORDER BY re.created_at DESC, re.id DESC
-             LIMIT ?
+             LIMIT ? OFFSET ?
             """,
             params,
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def count_recognition_events(
+    database_path: str,
+    *,
+    camera_id: int | None = None,
+    kind: str | None = None,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+    unknown_only: bool = False,
+    date_from: str | None = None,
+    date_to: str | None = None,
+) -> int:
+    where, params = _recognition_event_filters(
+        camera_id=camera_id,
+        kind=kind,
+        matched_face_id=matched_face_id,
+        matched_plate_id=matched_plate_id,
+        unknown_only=unknown_only,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    with connect(database_path) as db:
+        row = db.execute(
+            f"""
+            SELECT COUNT(*) AS total
+              FROM recognition_events re
+              JOIN cameras c ON c.id = re.camera_id
+              {where}
+            """,
+            params,
+        ).fetchone()
+    return int(row["total"]) if row else 0
+
+
+def get_recognition_event(database_path: str, event_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT re.*, c.name AS camera_name
+              FROM recognition_events re
+              JOIN cameras c ON c.id = re.camera_id
+             WHERE re.id = ?
+            """,
+            (event_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def list_automation_rules(database_path: str) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT ar.*, c.name AS camera_name,
+                   nc.name AS channel_name,
+                   kf.name AS matched_face_name,
+                   kp.plate_text AS matched_plate_text, kp.label AS matched_plate_label
+              FROM automation_rules ar
+              LEFT JOIN cameras c ON c.id = ar.camera_id
+              LEFT JOIN notification_channels nc ON nc.id = ar.notification_channel_id
+              LEFT JOIN known_faces kf ON kf.id = ar.matched_face_id
+              LEFT JOIN known_plates kp ON kp.id = ar.matched_plate_id
+             ORDER BY ar.enabled DESC, ar.name COLLATE NOCASE
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_automation_rule(database_path: str, rule_id: int) -> dict[str, Any] | None:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM automation_rules WHERE id = ?", (rule_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_automation_rule(
+    database_path: str,
+    *,
+    name: str,
+    enabled: bool,
+    source: str,
+    camera_id: int | None,
+    event_type: str | None,
+    kind: str | None,
+    matched_face_id: int | None,
+    matched_plate_id: int | None,
+    unknown_only: bool,
+    cooldown_seconds: int,
+    notification_channel_id: int,
+    title_template: str,
+    message_template: str,
+) -> int:
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            INSERT INTO automation_rules (
+                name, enabled, source, camera_id, event_type, kind,
+                matched_face_id, matched_plate_id, unknown_only, cooldown_seconds,
+                notification_channel_id, title_template, message_template
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                1 if enabled else 0,
+                source,
+                camera_id,
+                event_type,
+                kind,
+                matched_face_id,
+                matched_plate_id,
+                1 if unknown_only else 0,
+                cooldown_seconds,
+                notification_channel_id,
+                title_template,
+                message_template,
+            ),
+        )
+        return int(cursor.lastrowid)
+
+
+def update_automation_rule(
+    database_path: str,
+    rule_id: int,
+    *,
+    name: str,
+    enabled: bool,
+    source: str,
+    camera_id: int | None,
+    event_type: str | None,
+    kind: str | None,
+    matched_face_id: int | None,
+    matched_plate_id: int | None,
+    unknown_only: bool,
+    cooldown_seconds: int,
+    notification_channel_id: int,
+    title_template: str,
+    message_template: str,
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            UPDATE automation_rules
+               SET name = ?,
+                   enabled = ?,
+                   source = ?,
+                   camera_id = ?,
+                   event_type = ?,
+                   kind = ?,
+                   matched_face_id = ?,
+                   matched_plate_id = ?,
+                   unknown_only = ?,
+                   cooldown_seconds = ?,
+                   notification_channel_id = ?,
+                   title_template = ?,
+                   message_template = ?,
+                   updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+            """,
+            (
+                name,
+                1 if enabled else 0,
+                source,
+                camera_id,
+                event_type,
+                kind,
+                matched_face_id,
+                matched_plate_id,
+                1 if unknown_only else 0,
+                cooldown_seconds,
+                notification_channel_id,
+                title_template,
+                message_template,
+                rule_id,
+            ),
+        )
+
+
+def delete_automation_rule(database_path: str, rule_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM automation_rules WHERE id = ?", (rule_id,))
+
+
+def list_matching_automation_rules(
+    database_path: str,
+    *,
+    source: str,
+    camera_id: int,
+    event_type: str | None = None,
+    kind: str | None = None,
+    matched_face_id: int | None = None,
+    matched_plate_id: int | None = None,
+) -> list[dict[str, Any]]:
+    """Enabled rules whose scoping matches this event. camera_id/event_type/kind on the rule
+    are NULL-or-equal; identity scoping requires exact agreement - a rule scoped to a specific
+    known face/plate only matches that same id, unknown_only only matches an event with no
+    match at all, and an unscoped rule (no identity, unknown_only=0) matches any identity.
+    """
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT * FROM automation_rules
+             WHERE enabled = 1
+               AND source = ?
+               AND (camera_id IS NULL OR camera_id = ?)
+               AND (event_type IS NULL OR event_type = ?)
+               AND (kind IS NULL OR kind = ?)
+               AND (
+                     (unknown_only = 0 AND matched_face_id IS NULL AND matched_plate_id IS NULL)
+                  OR (unknown_only = 1 AND ? IS NULL AND ? IS NULL)
+                  OR (matched_face_id IS NOT NULL AND matched_face_id = ?)
+                  OR (matched_plate_id IS NOT NULL AND matched_plate_id = ?)
+                   )
+            """,
+            (
+                source,
+                camera_id,
+                event_type,
+                kind,
+                matched_face_id,
+                matched_plate_id,
+                matched_face_id,
+                matched_plate_id,
+            ),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def try_fire_automation_rule(database_path: str, rule_id: int, *, cooldown_seconds: int) -> bool:
+    """Atomically claims this firing with a single conditional UPDATE (not read-then-write),
+    so two concurrent evaluations of the same rule - recognition workers run on separate
+    threads via asyncio.to_thread - can't both pass the cooldown check and double-fire.
+    """
+    with connect(database_path) as db:
+        cursor = db.execute(
+            """
+            UPDATE automation_rules
+               SET last_fired_at = CURRENT_TIMESTAMP
+             WHERE id = ?
+               AND (last_fired_at IS NULL OR last_fired_at <= datetime(CURRENT_TIMESTAMP, '-' || ? || ' seconds'))
+            """,
+            (rule_id, cooldown_seconds),
+        )
+        return cursor.rowcount == 1

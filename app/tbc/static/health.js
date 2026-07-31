@@ -4,6 +4,7 @@
   const refreshButton = document.querySelector("[data-health-refresh]");
   const statusBody = document.querySelector("[data-health-status-body]");
   const eventsBody = document.querySelector("[data-health-events-body]");
+  const preferences = document.querySelector("[data-time-format]")?.dataset || {};
   if (!state || !statusBody || !eventsBody) return;
 
   const setText = (selector, value) => {
@@ -22,10 +23,39 @@
     return td;
   };
 
+  const timestamp = (value) => {
+    if (!value) return "";
+    const raw = String(value);
+    // SQLite CURRENT_TIMESTAMP is UTC but does not include an offset.
+    const normalized = /(?:Z|[+-]\d\d:\d\d)$/.test(raw) ? raw : `${raw.replace(" ", "T")}Z`;
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) return raw;
+    const zone = preferences.timezone || "Europe/Berlin";
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(parsed).reduce((result, part) => ({...result, [part.type]: part.value}), {});
+    const date = preferences.dateFormat === "iso"
+      ? `${parts.year}-${parts.month}-${parts.day}`
+      : preferences.dateFormat === "us"
+        ? `${parts.month}/${parts.day}/${parts.year}`
+        : `${parts.day}.${parts.month}.${parts.year}`;
+    const time = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      hour: "numeric",
+      minute: "2-digit",
+      ...(preferences.showSeconds === "true" ? {second: "2-digit"} : {}),
+      hour12: preferences.timeFormat === "12h",
+    }).format(parsed);
+    return `${date} ${time}`;
+  };
+
   const statusPill = (value) => {
     const span = document.createElement("span");
     span.className = `status-pill status-${value || "unknown"}`;
-    span.textContent = value || "unknown";
+    const status = value || "unknown";
+    const key = `status.${status}`;
+    const translated = t(key);
+    span.textContent = translated === key ? status : translated;
     return span;
   };
 
@@ -36,7 +66,7 @@
       tr.append(cell(item.component_type), cell(item.component_id));
       const statusCell = document.createElement("td");
       statusCell.append(statusPill(item.status));
-      tr.append(statusCell, cell(item.message), cell(item.checked_at));
+      tr.append(statusCell, cell(item.message), cell(timestamp(item.checked_at)));
       statusBody.append(tr);
     });
   };
@@ -46,7 +76,7 @@
     events.forEach((event) => {
       const tr = document.createElement("tr");
       tr.append(
-        cell(event.created_at),
+        cell(timestamp(event.created_at)),
         cell(`${event.component_type || ""} ${event.component_id || ""}`.trim()),
         cell(event.previous_status),
       );
@@ -70,7 +100,7 @@
   const refresh = async () => {
     state.className = "status-pill status-warning";
     state.textContent = t("health.check_running");
-    const response = await fetch("/api/health/refresh", {
+    const response = await fetch(tbcUrl("/api/health/refresh"), {
       method: "POST",
       credentials: "same-origin",
       headers: {"Accept": "application/json"},

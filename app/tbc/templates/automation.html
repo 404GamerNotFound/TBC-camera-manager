@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="base.operations">Operations</p>
+    <h1 data-i18n="nav.automations">Automations</h1>
+  </div>
+</section>
+<p class="hint-text" data-i18n="automation.hint">{% raw %}Fires an existing notification channel when the chosen event matches. Templates support {{ title }}, {{ message }}, {{ label }}, and {{ event_type }}. "Recording skipped" only fires when no storage destination is configured, not per detection.{% endraw %}</p>
+
+<section class="storage-grid">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/automations">
+    <div class="section-title"><h2 data-i18n="automation.new_rule">New rule</h2></div>
+    <div class="form-grid">
+      <label><span data-i18n="common.name">Name</span><input name="name" required></label>
+      <label class="check-row"><input name="enabled" type="checkbox" checked><span data-i18n="camera.active">active</span></label>
+      <label><span data-i18n="automation.source">Trigger</span>
+        <select name="source">
+          <option value="recording_event" data-i18n="automation.source_recording_event">Recording event</option>
+          <option value="recognition_event" data-i18n="automation.source_recognition_event">Recognition event</option>
+        </select>
+      </label>
+      <label><span data-i18n="camera_new_choice.camera">Camera</span>
+        <select name="camera_id">
+          <option value="" data-i18n="recordings.all">All</option>
+          {% for camera in cameras %}
+          <option value="{{ camera.id }}">{{ camera.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label><span data-i18n="automation.event_type">Event type</span>
+        <select name="event_type">
+          <option value="" data-i18n="recordings.all">All</option>
+          <option value="recording_started" data-i18n="automation.event_recording_started">Recording started</option>
+          <option value="recording_finished" data-i18n="automation.event_recording_finished">Recording finished</option>
+          <option value="recording_failed" data-i18n="automation.event_recording_failed">Recording failed</option>
+          <option value="recording_skipped" data-i18n="automation.event_recording_skipped">Recording skipped</option>
+        </select>
+      </label>
+      <label><span data-i18n="notification.type">Type</span>
+        <select name="kind">
+          <option value="" data-i18n="recordings.all">All</option>
+          <option value="face" data-i18n="recognition.face">Face</option>
+          <option value="plate" data-i18n="recognition.plate">Plate</option>
+        </select>
+      </label>
+      <label><span data-i18n="recognition.identity">Identity</span>
+        <select name="identity">
+          <option value="" data-i18n="recordings.all">All</option>
+          <option value="unknown" data-i18n="recognition.identity_unknown">Unknown match</option>
+          {% for face in known_faces %}
+          <option value="face:{{ face.id }}">{{ face.name }}</option>
+          {% endfor %}
+          {% for plate in known_plates %}
+          <option value="plate:{{ plate.id }}">{{ plate.label or plate.plate_text }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label><span data-i18n="automation.cooldown_seconds">Cooldown (seconds)</span><input name="cooldown_seconds" type="number" min="0" value="0"></label>
+      <label><span data-i18n="automation.channel">Channel</span>
+        <select name="notification_channel_id" required>
+          {% for channel in channels %}
+          <option value="{{ channel.id }}">{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label><span data-i18n="automation.title_template">Title template</span><input name="title_template" value="{{ '{{ title }}' }}"></label>
+      <label><span data-i18n="automation.message_template">Message template</span><input name="message_template" value="{{ '{{ message }}' }}"></label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="notifications.create">Create</button></div>
+  </form>
+  <section class="storage-list">
+    <div class="section-title"><h2 data-i18n="automation.rules">Rules</h2><span>{{ rules | length }}</span></div>
+    {% for rule in rules %}
+    <article class="storage-item">
+      <form method="post" action="{{ ingress_prefix }}/automations/{{ rule.id }}">
+        <div class="form-grid">
+          <label><span data-i18n="common.name">Name</span><input name="name" value="{{ rule.name }}" required></label>
+          <label class="check-row"><input name="enabled" type="checkbox" {% if rule.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
+          <label><span data-i18n="automation.source">Trigger</span>
+            <select name="source">
+              <option value="recording_event" {% if rule.source == 'recording_event' %}selected{% endif %} data-i18n="automation.source_recording_event">Recording event</option>
+              <option value="recognition_event" {% if rule.source == 'recognition_event' %}selected{% endif %} data-i18n="automation.source_recognition_event">Recognition event</option>
+            </select>
+          </label>
+          <label><span data-i18n="camera_new_choice.camera">Camera</span>
+            <select name="camera_id">
+              <option value="" data-i18n="recordings.all">All</option>
+              {% for camera in cameras %}
+              <option value="{{ camera.id }}" {% if rule.camera_id == camera.id %}selected{% endif %}>{{ camera.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label><span data-i18n="automation.event_type">Event type</span>
+            <select name="event_type">
+              <option value="" data-i18n="recordings.all">All</option>
+              <option value="recording_started" {% if rule.event_type == 'recording_started' %}selected{% endif %} data-i18n="automation.event_recording_started">Recording started</option>
+              <option value="recording_finished" {% if rule.event_type == 'recording_finished' %}selected{% endif %} data-i18n="automation.event_recording_finished">Recording finished</option>
+              <option value="recording_failed" {% if rule.event_type == 'recording_failed' %}selected{% endif %} data-i18n="automation.event_recording_failed">Recording failed</option>
+              <option value="recording_skipped" {% if rule.event_type == 'recording_skipped' %}selected{% endif %} data-i18n="automation.event_recording_skipped">Recording skipped</option>
+            </select>
+          </label>
+          <label><span data-i18n="notification.type">Type</span>
+            <select name="kind">
+              <option value="" data-i18n="recordings.all">All</option>
+              <option value="face" {% if rule.kind == 'face' %}selected{% endif %} data-i18n="recognition.face">Face</option>
+              <option value="plate" {% if rule.kind == 'plate' %}selected{% endif %} data-i18n="recognition.plate">Plate</option>
+            </select>
+          </label>
+          <label><span data-i18n="recognition.identity">Identity</span>
+            <select name="identity">
+              <option value="" {% if not rule.matched_face_id and not rule.matched_plate_id and not rule.unknown_only %}selected{% endif %} data-i18n="recordings.all">All</option>
+              <option value="unknown" {% if rule.unknown_only %}selected{% endif %} data-i18n="recognition.identity_unknown">Unknown match</option>
+              {% for face in known_faces %}
+              <option value="face:{{ face.id }}" {% if rule.matched_face_id == face.id %}selected{% endif %}>{{ face.name }}</option>
+              {% endfor %}
+              {% for plate in known_plates %}
+              <option value="plate:{{ plate.id }}" {% if rule.matched_plate_id == plate.id %}selected{% endif %}>{{ plate.label or plate.plate_text }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label><span data-i18n="automation.cooldown_seconds">Cooldown (seconds)</span><input name="cooldown_seconds" type="number" min="0" value="{{ rule.cooldown_seconds }}"></label>
+          <label><span data-i18n="automation.channel">Channel</span>
+            <select name="notification_channel_id" required>
+              {% for channel in channels %}
+              <option value="{{ channel.id }}" {% if rule.notification_channel_id == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label><span data-i18n="automation.title_template">Title template</span><input name="title_template" value="{{ rule.title_template }}"></label>
+          <label><span data-i18n="automation.message_template">Message template</span><input name="message_template" value="{{ rule.message_template }}"></label>
+        </div>
+        <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
+      </form>
+      <div class="button-row">
+        <form method="post" action="{{ ingress_prefix }}/automations/{{ rule.id }}/test"><button class="secondary-button" type="submit" data-i18n="notification.test_button">Send test message</button></form>
+        <form method="post" action="{{ ingress_prefix }}/automations/{{ rule.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+      </div>
+    </article>
+    {% else %}
+    <p class="hint-text" data-i18n="automation.no_rules_yet">No automation rules yet</p>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}

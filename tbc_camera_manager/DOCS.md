@@ -10,8 +10,10 @@ https://github.com/404GamerNotFound/TBC-camera-manager
 ```
 
 Select **TBC Camera Manager**, install the app, and set at least
-`admin_password` before the first start. Select **Open web UI** to access TBC on
-port `8732`.
+`admin_password` before the first start. TBC appears in the Home Assistant
+sidebar once running (Ingress is enabled - see **Network and web interface**
+below); **Open web UI** works the same way and routes through Supervisor's
+own proxy rather than a direct connection to port `8732`.
 
 ## Options
 
@@ -47,10 +49,26 @@ create supported detection and control entities.
 ## Network and web interface
 
 TBC runs in the protected app container without host networking. It connects to
-cameras, RTSP, ONVIF, and MQTT through the configured IP addresses. The web
-interface is exposed directly on TCP port `8732`. Ingress is not enabled yet,
-because login redirects, static resources, and HLS streams first need complete
-testing under the dynamic ingress subpath.
+cameras, RTSP, ONVIF, and MQTT through the configured IP addresses.
+
+The web interface uses Home Assistant **Ingress**: TBC reads the dynamic,
+per-installation path Supervisor assigns (`X-Ingress-Path`, sent on every
+request) and prefixes every redirect, cookie, link, and API URL it emits with
+it - see `app/tbc/ingress.py` for the mechanism. This is what gives TBC its
+sidebar entry and lets **Open web UI** work without a direct connection to
+port `8732`. Port `8732` still stays published too, for a reverse proxy or
+bookmark pointed at it directly - TBC's own login still gates access either
+way, so this isn't a security trade-off.
+
+**One feature does not fully work through Ingress: WebRTC live view.** The
+SDP offer/answer signaling is a same-origin request and works fine through
+Ingress, but the actual video (ICE/RTP media on port `8555`) is a direct
+connection between the browser and the bundled `go2rtc` process that no
+HTTP-only reverse proxy - including Ingress - can tunnel. WebRTC mode
+therefore still needs direct network reachability to port `8555`, exactly as
+it does outside Home Assistant. **HLS live view has no such limitation** and
+works fully through Ingress, including from outside the local network (e.g.
+via Nabu Casa Cloud).
 
 ## Technical architecture
 
@@ -65,18 +83,21 @@ container and uses the environment variables supplied by Docker Compose.
 ## Publishing for maintainers
 
 The app version in `config.yaml` must match the TBC version in
-`app/tbc/__init__.py`. A Git tag in the format `vX.Y.Z` starts
-`.github/workflows/home-assistant-app.yml`. The workflow rejects a release when
-the tag and app version differ, builds separate `amd64` and `aarch64` images, and
-then publishes a shared multi-architecture manifest as:
+`app/tbc/__init__.py`. Changing the version in `config.yaml` on `main`, pushing a
+Git tag in the format `vX.Y.Z`, or manually dispatching
+`.github/workflows/home-assistant-app.yml` starts the image release. The workflow
+rejects a tagged release when the tag and app version differ, builds separate
+`amd64` and `aarch64` images, and then publishes a shared multi-architecture
+manifest as:
 
 ```text
 ghcr.io/404gamernotfound/tbc-camera-manager-ha:X.Y.Z
 ```
 
-The workflow can also be started manually from the GitHub Actions page. It must
-run at least once before the app can be installed. A configuration version alone
-does not create a container image.
+Wait until the workflow and its final anonymous-pull check succeed before asking
+users to install the new version. Home Assistant reads `config.yaml` directly
+from the app repository and cannot install an advertised version until its
+matching public image tag exists.
 
 GitHub Container Registry creates a new package as private by default. After the
 first publication, open the package settings and change its visibility to

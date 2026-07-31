@@ -50,6 +50,7 @@ class ContainerLauncherTests(unittest.TestCase):
             self.assertEqual(
                 os.environ["TBC_RECORDINGS_PATH"], "/recordings/tbc-camera-manager"
             )
+            self.assertEqual(os.environ["TBC_PLUGIN_SITE_PACKAGES_PATH"], "/data/plugin-site-packages")
             self.assertEqual(os.environ["TBC_POLL_INTERVAL_SECONDS"], "30")
 
     def test_home_assistant_password_is_required(self):

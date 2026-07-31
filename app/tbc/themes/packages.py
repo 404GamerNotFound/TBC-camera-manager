@@ -20,6 +20,7 @@ THEME_KEY_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
 # Themes ship no executable code, unlike camera plugins: only stylesheets,
 # metadata and image assets are ever installed or served from a theme package.
 ALLOWED_SUFFIXES = {".css", ".json", ".md", ".png", ".jpg", ".jpeg", ".svg", ".webp", ".ico"}
+ALLOWED_BARE_FILENAMES = {"LICENSE", "COPYING", "NOTICE"}
 
 
 class ThemePackageError(ValueError):
@@ -174,7 +175,11 @@ def _validated_members(bundle: zipfile.ZipFile) -> tuple[list[zipfile.ZipInfo], 
         mode = member.external_attr >> 16
         if mode and stat.S_ISLNK(mode):
             raise ThemePackageError("Symbolic links are not allowed in designs")
-        if not member.is_dir() and path.suffix.lower() not in ALLOWED_SUFFIXES:
+        if (
+            not member.is_dir()
+            and path.suffix.lower() not in ALLOWED_SUFFIXES
+            and path.name not in ALLOWED_BARE_FILENAMES
+        ):
             raise ThemePackageError(f"Nicht erlaubter Dateityp: {path.suffix or member.filename}")
         total_size += member.file_size
         if total_size > MAX_EXTRACTED_BYTES:

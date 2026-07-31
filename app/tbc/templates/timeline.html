@@ -8,7 +8,7 @@
   </div>
 </section>
 
-<form class="filter-bar" method="get" action="/timeline">
+<form class="filter-bar" method="get" action="{{ ingress_prefix }}/timeline">
   <label>
     <span data-i18n="camera_new_choice.camera">Camera</span>
     <select name="camera_id">
@@ -24,8 +24,8 @@
   <button class="primary-button" type="submit" data-i18n="activity.show">Show</button>
   {% if selected_camera_id %}
   <div class="button-row timeline-day-nav">
-    <a class="secondary-button" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
-    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="/timeline?camera_id={{ selected_camera_id }}&amp;day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
+    <a class="secondary-button" href="{{ ingress_prefix }}/timeline?camera_id={{ selected_camera_id }}&amp;day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="{{ ingress_prefix }}/timeline?camera_id={{ selected_camera_id }}&amp;day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
   </div>
   {% endif %}
 </form>
@@ -54,7 +54,7 @@
       </label>
       <label class="check-row{% if not sd_card_available %} is-disabled{% endif %}">
         <input type="checkbox" data-timeline-toggle="sdcard" {% if sd_card_available %}checked{% endif %} {% if not sd_card_available %}disabled{% endif %}>
-        <span>SD card recordings{% if not sd_card_available %} (unavailable){% endif %}</span>
+        <span data-i18n="{{ 'activity.sd_card_recordings_unavailable' if not sd_card_available else 'activity.sd_card_recordings' }}">SD card recordings{% if not sd_card_available %} (unavailable){% endif %}</span>
       </label>
     </div>
     <div class="timeline-zoom-controls">
@@ -93,6 +93,6 @@
 </section>
 {% endif %}
 
-<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
-<script src="{{ url_for('static', path='/timeline.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/timeline.js?v={{ asset_version }}" defer></script>
 {% endblock %}

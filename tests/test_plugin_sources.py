@@ -78,7 +78,12 @@ class StandardPluginSourceTests(unittest.TestCase):
             "ubiquiti": "TBC-ubiquiti",
         }
 
-        self.assertEqual({source.key for source in STANDARD_PLUGIN_SOURCES}, set(expected_repositories))
+        camera_sources = {
+            source.key
+            for source in STANDARD_PLUGIN_SOURCES
+            if source.plugin_kind == "camera" and not source.subdirectory
+        }
+        self.assertEqual(camera_sources, set(expected_repositories))
         for key, repository in expected_repositories.items():
             with self.subTest(key=key):
                 source = get_standard_plugin_source(key.upper())
@@ -88,6 +93,37 @@ class StandardPluginSourceTests(unittest.TestCase):
                 self.assertEqual(source.ref, "main")
                 self.assertEqual(source.subdirectory, "")
                 self.assertIn(source, STANDARD_PLUGIN_SOURCES)
+
+    def test_network_standard_repository_is_available(self):
+        source = get_standard_plugin_source("unifi-network")
+
+        self.assertIsNotNone(source)
+        self.assertEqual(source.plugin_kind, "network")
+        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-network-ubiquiti")
+        self.assertEqual(source.ref, "main")
+        self.assertEqual(source.subdirectory, "")
+
+    def test_fritzbox_standard_repository_is_available(self):
+        source = get_standard_plugin_source("fritzbox-network")
+
+        self.assertIsNotNone(source)
+        self.assertEqual(source.plugin_kind, "network")
+        self.assertEqual(source.repo_url, "https://github.com/404GamerNotFound/TBC-fritz.box")
+        self.assertEqual(source.ref, "main")
+        self.assertEqual(source.subdirectory, "")
+
+    def test_xsense_standard_repositories_share_one_repo_via_subdirectory(self):
+        cloud_source = get_standard_plugin_source("xsense-cloud")
+        camera_source = get_standard_plugin_source("xsense-camera")
+
+        self.assertIsNotNone(cloud_source)
+        self.assertIsNotNone(camera_source)
+        self.assertEqual(cloud_source.plugin_kind, "cloud")
+        self.assertEqual(camera_source.plugin_kind, "camera")
+        self.assertEqual(cloud_source.repo_url, "https://github.com/404GamerNotFound/TBC-X-Sense")
+        self.assertEqual(camera_source.repo_url, "https://github.com/404GamerNotFound/TBC-X-Sense")
+        self.assertEqual(cloud_source.subdirectory, "cloud")
+        self.assertEqual(camera_source.subdirectory, "camera")
 
     def test_unknown_standard_repository_returns_none(self):
         self.assertIsNone(get_standard_plugin_source("unknown"))
@@ -141,8 +177,13 @@ class StandardPluginSourceTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual([candidate.key for candidate in candidates], ["example-cloud"])
-        self.assertEqual(candidates[0].install_url, "/plugin-sources#source-21")
+        by_key = {candidate.key: candidate for candidate in candidates}
+        self.assertEqual(
+            set(by_key),
+            {"example-cloud", "xsense-cloud", "eufy", "unifi_protect", "ewelink", "google"},
+        )
+        self.assertEqual(by_key["example-cloud"].install_url, "/plugin-sources#source-21")
+        self.assertEqual(by_key["xsense-cloud"].install_url, "/plugin-sources#standard-source-xsense-cloud")
 
 class ExtractPluginArchiveTests(unittest.TestCase):
     def test_extracts_repo_root_when_no_subdirectory(self):
@@ -211,6 +252,22 @@ class ExtractPluginArchiveTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(result)) as bundle:
             self.assertEqual(sorted(bundle.namelist()), ["plugin/manifest.json", "plugin/plugin.py"])
 
+    def test_license_file_is_kept_in_the_plugin_package(self):
+        archive = _fake_github_zip(
+            entries={
+                "LICENSE": "MIT License...",
+                "manifest.json": "{}",
+                "plugin.py": "x = 1",
+            }
+        )
+
+        result = extract_plugin_archive(archive, "")
+
+        with zipfile.ZipFile(io.BytesIO(result)) as bundle:
+            self.assertEqual(
+                sorted(bundle.namelist()), ["plugin/LICENSE", "plugin/manifest.json", "plugin/plugin.py"]
+            )
+
 
 class FetchGithubRepoArchiveTests(unittest.TestCase):
     def test_404_is_reported_as_plugin_source_error(self):
@@ -223,6 +280,19 @@ class FetchGithubRepoArchiveTests(unittest.TestCase):
         with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
             urlopen.side_effect = urllib.error.URLError("boom")
             with self.assertRaisesRegex(PluginSourceError, "nicht erreicht"):
+                fetch_github_repo_archive("owner", "repo", "main")
+
+    def test_exhausted_rate_limit_is_reported_with_reset_time(self):
+        headers = {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "1784378301"}
+        with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
+            urlopen.side_effect = urllib.error.HTTPError("url", 403, "Forbidden", headers, None)
+            with self.assertRaisesRegex(PluginSourceError, "rate limit.*12:38 UTC"):
+                fetch_github_repo_archive("owner", "repo", "main")
+
+    def test_403_without_rate_limit_headers_is_reported_generically(self):
+        with patch("app.tbc.plugin_sources.urllib.request.urlopen") as urlopen:
+            urlopen.side_effect = urllib.error.HTTPError("url", 403, "Forbidden", {}, None)
+            with self.assertRaisesRegex(PluginSourceError, "HTTP 403"):
                 fetch_github_repo_archive("owner", "repo", "main")
 
     def test_successful_fetch_returns_bytes(self):

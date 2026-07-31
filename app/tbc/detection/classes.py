@@ -39,9 +39,40 @@ LOITERING_KEY_LABELS: dict[str, str] = {
     "ai_animal_loitering": "Tier verweilt (lokale KI)",
 }
 
+# AudioSet class names (from the pretrained audio classifier) that map to each
+# local-audio-AI trigger key. Several AudioSet labels can map to the same key -
+# e.g. a smoke alarm and a generic beeping fire alarm should both raise
+# "ai_smoke_alarm". Prefixed with "ai_" for the same reason as the vision keys
+# above, and additionally kept distinct from the vendor-reported "sound"/"cry"
+# detection_key tokens (see camera_modules/detections.py's DIRECT_TOKEN_MAP) -
+# those describe a camera's own onboard audio-event flag, not TBC's own local
+# audio-classification pipeline.
+AUDIOSET_LABEL_TO_DETECTION_KEY: dict[str, str] = {
+    "dog": "ai_bark",
+    "bark": "ai_bark",
+    "bow-wow": "ai_bark",
+    "howl": "ai_bark",
+    "growling": "ai_bark",
+    "glass": "ai_glass_break",
+    "shatter": "ai_glass_break",
+    "smoke detector, smoke alarm": "ai_smoke_alarm",
+    "fire alarm": "ai_smoke_alarm",
+    "smoke alarm": "ai_smoke_alarm",
+}
+
+AUDIO_KEY_LABELS: dict[str, str] = {
+    "ai_bark": "Hund bellt (lokale KI)",
+    "ai_glass_break": "Glasbruch (lokale KI)",
+    "ai_smoke_alarm": "Rauchmelder (lokale KI)",
+}
+
 
 def canonical_detection_key(label: str) -> str | None:
     return COCO_LABEL_TO_DETECTION_KEY.get(label.strip().lower())
+
+
+def canonical_audio_detection_key(label: str) -> str | None:
+    return AUDIOSET_LABEL_TO_DETECTION_KEY.get(label.strip().lower())
 
 
 def loitering_key_for(detection_key: str) -> str | None:

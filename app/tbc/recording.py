@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from . import database, mqtt
+from . import automation, database, mqtt
 from .config import load_settings
 from .notifications import notify_event
 
@@ -98,6 +98,15 @@ class RecordingManager:
                     detection_key,
                     "No storage destination is configured",
                 )
+                automation.evaluate_and_fire(
+                    self.database_path,
+                    source="recording_event",
+                    camera_id=camera_id,
+                    event_type="recording_skipped",
+                    title=f"TBC: {event_label}",
+                    message=f"{camera['name']}: No storage destination is configured",
+                    public_base_url=load_settings().public_base_url,
+                )
                 continue
 
             duration_seconds = max(5, min(3600, int(camera.get("recording_duration_seconds") or 30)))
@@ -139,6 +148,15 @@ class RecordingManager:
                 detection_key,
                 f"{event_label}: Vorlauf {pre_seconds}s, Nachlauf {post_seconds}s",
             )
+            automation.evaluate_and_fire(
+                self.database_path,
+                source="recording_event",
+                camera_id=camera_id,
+                event_type="recording_started",
+                title=f"TBC: {event_label}",
+                message=f"{camera['name']}: Vorlauf {pre_seconds}s, Nachlauf {post_seconds}s",
+                public_base_url=load_settings().public_base_url,
+            )
             asyncio.create_task(self._run_job(job, active))
             started_any = True
         return started_any
@@ -171,6 +189,16 @@ class RecordingManager:
                 recording=recording,
                 public_base_url=load_settings().public_base_url,
             )
+            automation.evaluate_and_fire(
+                self.database_path,
+                source="recording_event",
+                camera_id=job.camera_id,
+                event_type="recording_finished",
+                title=f"TBC: {job.event_label}",
+                message=f"{job.camera_name}: Clip wurde gespeichert",
+                recording=recording,
+                public_base_url=load_settings().public_base_url,
+            )
             _record_and_publish_event(
                 self.database_path,
                 job.camera_id,
@@ -189,6 +217,15 @@ class RecordingManager:
             )
             notify_event(
                 self.database_path,
+                event_type="recording_failed",
+                title="TBC: Recording failed",
+                message=f"{job.camera_name}: {exc}",
+                public_base_url=load_settings().public_base_url,
+            )
+            automation.evaluate_and_fire(
+                self.database_path,
+                source="recording_event",
+                camera_id=job.camera_id,
                 event_type="recording_failed",
                 title="TBC: Recording failed",
                 message=f"{job.camera_name}: {exc}",
@@ -327,6 +364,12 @@ class ContinuousRecordingManager:
         work_dir = CONTINUOUS_ROOT / str(camera_id)
         work_dir.mkdir(parents=True, exist_ok=True)
         pattern = work_dir / f"{_slug(str(camera['name']))}_%Y%m%dT%H%M%S.mp4"
+        # A quick, short-timeout probe of the live stream, not the (possibly
+        # stale) camera module metadata - fails open (no tag) if the camera
+        # doesn't answer in time, same as a plain H.264 camera.
+        hevc_tag_args = _hevc_tag_args(
+            str(camera["stream_uri"]), extra_probe_args=["-rtsp_transport", "tcp"], timeout=5
+        )
         command = [
             "ffmpeg",
             "-hide_banner",
@@ -343,6 +386,7 @@ class ContinuousRecordingManager:
             "-an",
             "-c",
             "copy",
+            *hevc_tag_args,
             "-avoid_negative_ts",
             "make_zero",
             "-f",
@@ -490,6 +534,56 @@ def _probe_duration(path: Path) -> int | None:
         return None
 
 
+def _probe_video_codec(source: str, *, extra_args: list[str] | None = None, timeout: int = 10) -> str | None:
+    if shutil.which("ffprobe") is None:
+        return None
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                *(extra_args or []),
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=codec_name",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                source,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        # "-select_streams v:0" should already limit this to one line, but
+        # some sources (observed with short MPEG-TS test clips at least)
+        # still make ffprobe repeat the same stream's fields more than once -
+        # take the first line rather than exact-matching the full output.
+        lines = result.stdout.strip().splitlines()
+        return lines[0].strip() if lines else None
+    except Exception:
+        return None
+
+
+def _hevc_tag_args(source: str, *, extra_probe_args: list[str] | None = None, timeout: int = 10) -> list[str]:
+    """`-tag:v hvc1` for HEVC/H.265 streams copied verbatim from the camera.
+
+    `-c copy` passes the camera's own codec tag through unchanged, and IP
+    cameras overwhelmingly write HEVC as `hev1`. Safari and QuickTime only
+    recognize `hvc1` for HEVC-in-MP4 and silently refuse to play `hev1` at
+    all (NETWORK_NO_SOURCE) even though the stream itself decodes fine
+    elsewhere - see the GitHub issue this was reported in. Harmless no-op
+    for H.264 cameras (including a failed/timed-out probe, which just skips
+    the tag): it's only added when the source is confirmed HEVC, never
+    blindly.
+    """
+    if _probe_video_codec(source, extra_args=extra_probe_args, timeout=timeout) in ("hevc", "h265"):
+        return ["-tag:v", "hvc1"]
+    return []
+
+
 def _record_clip(job: RecordingJob, active: ActiveRecording) -> dict[str, Any]:
     if shutil.which("ffmpeg") is None:
         raise RuntimeError("ffmpeg is not installed in the container")
@@ -577,6 +671,7 @@ def _record_body(stream_uri: str, body_ts: Path, active: ActiveRecording) -> Non
 
 def _build_mp4(pre_segments: list[Path], body_ts: Path, output_file: Path, work_dir: Path) -> None:
     output_file.parent.mkdir(parents=True, exist_ok=True)
+    hevc_tag_args = _hevc_tag_args(str(body_ts))
     if pre_segments:
         concat_file = work_dir / "concat.txt"
         concat_file.write_text(
@@ -597,6 +692,7 @@ def _build_mp4(pre_segments: list[Path], body_ts: Path, output_file: Path, work_
             str(concat_file),
             "-c",
             "copy",
+            *hevc_tag_args,
             "-movflags",
             "+faststart",
             str(output_file),
@@ -612,6 +708,7 @@ def _build_mp4(pre_segments: list[Path], body_ts: Path, output_file: Path, work_
             str(body_ts),
             "-c",
             "copy",
+            *hevc_tag_args,
             "-movflags",
             "+faststart",
             str(output_file),

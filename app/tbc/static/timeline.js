@@ -185,7 +185,11 @@
 
     if (titleEl) {
       titleEl.textContent =
-        laneKind === "continuous" ? "Daueraufzeichnung" : laneKind === "sdcard" ? `SD-Karte · ${item.label}` : item.label;
+        laneKind === "continuous"
+          ? window.tbcI18n.t("timeline.continuous")
+          : laneKind === "sdcard"
+            ? `${window.tbcI18n.t("base.sd_card")} · ${item.label}`
+            : item.label;
     }
     if (metaEl) metaEl.textContent = `${formatTime(item.start)} – ${formatTime(item.end)}`;
   }
@@ -359,7 +363,7 @@
         date_from: data.day,
         date_to: data.day,
       });
-      const response = await fetch(`/api/sd-card/recordings?${params.toString()}`, {
+      const response = await fetch(tbcUrl(`/api/sd-card/recordings?${params.toString()}`), {
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });
@@ -372,7 +376,7 @@
             start: String(row.start_time).replace(" ", "T"),
             end: row.end_time ? String(row.end_time).replace(" ", "T") : row.start_time.replace(" ", "T"),
             duration: row.duration_seconds || 0,
-            label: row.trigger_label || row.file_name || "SD-Karte",
+            label: row.trigger_label || row.file_name || window.tbcI18n.t("base.sd_card"),
             media_url: row.media_url,
             detection_key: "sdcard",
           }))

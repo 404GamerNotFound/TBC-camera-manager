@@ -4,11 +4,11 @@
 <section class="page-heading">
   <div>
     <p class="eyebrow" data-i18n="mqtt.home_assistant">Home Assistant</p>
-    <h1>MQTT</h1>
+    <h1 data-i18n="mqtt.title">MQTT</h1>
   </div>
 </section>
 
-<form class="editor-form" method="post" action="/mqtt">
+<form class="editor-form" method="post" action="{{ ingress_prefix }}/mqtt">
   <label class="check-row">
     <input name="enabled" type="checkbox" {% if config.enabled %}checked{% endif %}>
     <span data-i18n="mqtt.enable_mqtt">Enable MQTT</span>
@@ -45,6 +45,11 @@
   </div>
   <div class="form-actions">
     <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+  </div>
+</form>
+<form method="post" action="{{ ingress_prefix }}/mqtt/test" class="editor-form">
+  <div class="form-actions">
+    <button class="secondary-button" type="submit" data-i18n="notification.test_button">Send test message</button>
   </div>
 </form>
 {% endblock %}

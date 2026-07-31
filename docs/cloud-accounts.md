@@ -26,6 +26,7 @@ authoritative configuration:
   "entrypoint": "plugin.py",
   "auth_type": "credentials",
   "verification_support": "not_applicable",
+  "requirements": ["acme-cloud-sdk==1.0.0"],
   "account_fields": [
     {
       "key": "email",
@@ -54,6 +55,12 @@ authoritative configuration:
   ]
 }
 ```
+
+`requirements` is optional - a list of the plugin's own pip dependencies TBC does not already
+ship, installed on demand with an explicit admin confirmation instead of having to live in
+TBC's own `requirements.txt`. See
+[**Plugin-declared pip requirements**](plugin-sources.md#plugin-declared-pip-requirements-requirements)
+in plugin-sources.md.
 
 `account_fields` is the complete, plugin-supplied description of the account form. The main
 project has no knowledge of provider-specific fields. Supported types are `text`, `email`,
@@ -85,8 +92,9 @@ also flattens the configuration into the `account` dictionary so a plugin can re
 `requires_host`, and `default_port` remain compatible. If `account_fields` is absent, the
 loader generates the original standard form from those values.
 
-Built-in plugins are completely contained in `app/tbc/cloud_plugins/<key>/`. They are
-self-contained and can be exported as ZIP files.
+Every cloud plugin - including the reference ones below - is a self-contained external plugin,
+installed like any other from `STANDARD_PLUGIN_SOURCES` or a custom GitHub repository. TBC
+ships none of them built-in; see [plugin-sources.md](plugin-sources.md).
 
 ## Public contract
 
@@ -152,13 +160,14 @@ corresponding login request could otherwise no longer be identified reliably.
 A plugin that must preserve state between requesting and entering a code, for example to
 continue the same partial login instead of starting again, manages that state itself. A common
 implementation is a process-wide, time-limited cache such as `_PENDING_CHALLENGES` in the
-`eufy` plugin. TBC passes only the administrator-entered code as a field value.
+[`TBC-eufy`](https://github.com/404GamerNotFound/TBC-eufy) plugin. TBC passes only the
+administrator-entered code as a field value.
 
 ## Reference implementation: UniFi Protect
 
-The built-in `unifi_protect` plugin signs in to a controller through
-[`uiprotect`](https://pypi.org/project/uiprotect/), either locally by IP address or through a
-`<console-id>.ui.com` cloud address. `discover_devices()` reads
+[`TBC-unifi-protect`](https://github.com/404GamerNotFound/TBC-unifi-protect) signs in to a
+controller through [`uiprotect`](https://pypi.org/project/uiprotect/), either locally by IP
+address or through a `<console-id>.ui.com` cloud address. `discover_devices()` reads
 `ProtectApiClient.update()` → `Bootstrap.cameras` and resolves the first RTSP-enabled channel
 through `CameraChannel.rtsp_url`. When RTSP is disabled, `manual_stream_uri` remains empty.
 Discovered devices use `suggested_module_key="ubiquiti"`.
@@ -172,7 +181,7 @@ it reliably. Affected administrators need a separate local account without 2FA.
 
 ## Reference implementation: Eufy Security
 
-The built-in `eufy` plugin uses
+[`TBC-eufy`](https://github.com/404GamerNotFound/TBC-eufy) uses
 [`pyeufysecurity`](https://pypi.org/project/pyeufysecurity/) for encrypted Eufy v2 cloud
 authentication and device discovery. Its manifest supplies an email address, password, ISO
 country code, one-time verification code with `transient: true`, and optional local RTSP
@@ -204,8 +213,9 @@ never logged.
 
 ## Reference implementation: eWeLink (SONOFF)
 
-The built-in `ewelink` plugin uses the [`ewelink`](https://pypi.org/project/ewelink/) library,
-which calls the official CoolKit Open Platform API through `v2/user/login`,
+[`TBC-ewelink`](https://github.com/404GamerNotFound/TBC-ewelink) uses the
+[`ewelink`](https://pypi.org/project/ewelink/) library, which calls the official CoolKit Open
+Platform API through `v2/user/login`,
 `v2/device/thing`, and HMAC-signed requests. Unlike Eufy or UniFi Protect, an eWeLink app
 account with email and password is not sufficient. CoolKit also requires a dedicated **app ID
 and app secret**, which can be registered for free at
@@ -224,6 +234,47 @@ open the camera, enable RTSP, and copy the link. Enter that link manually in the
 `sonoff` camera module. Device discovery therefore provides inventory only, not automatic
 camera import. Unlike UniFi Protect and, in part, Eufy, TBC does not display **Add as camera**
 for eWeLink devices.
+
+## Reference implementation: Google Nest
+
+[`TBC-google`](https://github.com/404GamerNotFound/TBC-google) talks directly to Google's
+official [Smart Device Management (SDM) API](https://developers.google.com/nest/device-access)
+with `aiohttp` - no vendor SDK exists for it. The manifest requests a Device Access **Project
+ID**, an OAuth **client ID/secret**, and a **refresh token**; obtaining all three is a one-time,
+outside-of-TBC setup (Device Access Console registration, an OAuth client in Google Cloud
+Console, and a manual authorization-code exchange) documented in the plugin's own README, since
+none of it fits a login form. Once obtained, the refresh token is a static, long-lived secret
+like an API key - `test_connection()`/`discover_devices()` exchange it for a short-lived access
+token on every call, the same as any other credential-based cloud plugin here.
+
+`discover_devices()` lists every device under the project and keeps only the ones carrying a
+camera- or doorbell-related trait (`CameraLiveStream`, `CameraImage`, `CameraEventImage`, or
+`DoorbellChime`) rather than trusting the device `type` string, since Google's own docs warn
+against inferring capability from `type` alone. Like eWeLink and X-Sense, it returns **no**
+`manual_stream_uri`: the SDM API's `CameraLiveStream` trait only ever produces a stream valid for
+about 5 minutes, and devices already migrated to the Google Home app support WebRTC only, not
+RTSP - neither fits a manual RTSP URL a camera module could reopen later. Discovery therefore
+provides inventory only; TBC does not display **Add as camera** for Google Nest devices.
+
+The refresh token itself has no documented in-app two-factor flow to hook into, so
+`verification_support` is `not_applicable`. Google requires the refresh token to be used at
+least once every 6 months or it stops working, which TBC's periodic connection checks satisfy on
+their own as long as the account stays configured.
+
+## Reference implementation: X-Sense
+
+[`TBC-X-Sense`](https://github.com/404GamerNotFound/TBC-X-Sense) is a *cloud* plugin (its
+`cloud/` subdirectory - the repo also ships a matching `camera/` plugin, see
+[camera-modules.md](camera-modules.md)) for X-Sense's account API. Unlike every other cloud
+plugin here, X-Sense has no official developer API at all - the entire integration is
+reverse-engineered, including a fixed device-identity block that mimics X-Sense's own Android
+app. `discover_devices()` lists cameras (model, serial, name) for inventory only and, like
+eWeLink, never returns a stream URL: X-Sense's live-view endpoint issues a short-lived session
+ticket rather than a persistent address, so there is nothing stable to hand back from a
+one-time discovery call. Instead, admins add the camera manually with the matching `camera/`
+plugin, whose `probe()` re-fetches a fresh live-view URL on every background poll cycle - see
+that plugin's README for why. `verification_support` is `not_applicable`; the reverse-engineered
+API this depends on has no documented two-factor flow to hook into.
 
 ## Import, export, and admin interface
 

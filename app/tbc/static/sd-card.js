@@ -82,7 +82,7 @@
       const download = document.createElement("a");
       download.className = "secondary-button";
       download.href = recording.download_url;
-      download.textContent = "Download";
+      download.textContent = t("common.download");
 
       actions.append(preview, download);
       actionCell.append(actions);
@@ -113,7 +113,7 @@
     if (loading) loading.hidden = false;
     setError("");
 
-    const response = await fetch(`/api/sd-card/recordings?${paramsFromForm().toString()}`, {
+    const response = await fetch(tbcUrl(`/api/sd-card/recordings?${paramsFromForm().toString()}`), {
       credentials: "same-origin",
       headers: {"Accept": "application/json"},
     });

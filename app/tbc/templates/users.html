@@ -9,7 +9,7 @@
 </section>
 
 <section class="storage-grid">
-  <form class="editor-form" method="post" action="/users">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/users">
     <div class="section-title">
       <h2 data-i18n="users.new_user">New user</h2>
     </div>
@@ -53,7 +53,7 @@
     </div>
     {% for user in users %}
     <article class="storage-item">
-      <form method="post" action="/users/{{ user.id }}">
+      <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}">
         <div class="form-grid">
           <label>
             <span data-i18n="camera.username">Username</span>
@@ -66,8 +66,8 @@
           <label>
             <span data-i18n="users.role">Role</span>
             <select name="role">
-              <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %}>Viewer</option>
-              <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+              <option value="viewer" {% if user.role == 'viewer' %}selected{% endif %} data-i18n="common.viewer">Viewer</option>
+              <option value="admin" {% if user.role == 'admin' %}selected{% endif %} data-i18n="common.admin">Admin</option>
             </select>
           </label>
           <fieldset class="span-2 checkbox-field">
@@ -86,12 +86,18 @@
           <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
         </div>
       </form>
-      <form method="post" action="/users/{{ user.id }}/delete">
-        <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
-      </form>
+      <div class="button-row">
+        {% if user.totp_enabled %}
+        <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}/totp-disable">
+          <button class="secondary-button" type="submit" data-i18n="twofactor.admin_disable">Disable 2FA</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ ingress_prefix }}/users/{{ user.id }}/delete">
+          <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
+        </form>
+      </div>
     </article>
     {% endfor %}
   </section>
 </section>
 {% endblock %}
-

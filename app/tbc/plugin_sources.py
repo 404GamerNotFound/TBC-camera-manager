@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import re
 import urllib.error
 import urllib.parse
@@ -119,6 +120,64 @@ STANDARD_PLUGIN_SOURCES = (
         label="Ubiquiti / UniFi Protect",
         description="UniFi Protect cameras via a generated RTSP/RTSPS link",
         repo_url="https://github.com/404GamerNotFound/TBC-ubiquiti",
+    ),
+    StandardPluginSource(
+        key="unifi-network",
+        plugin_kind="network",
+        label="Ubiquiti UniFi Network",
+        description="Maps cameras to UniFi Network clients for live connectivity status (AP/switch, signal, online state)",
+        repo_url="https://github.com/404GamerNotFound/TBC-network-ubiquiti",
+    ),
+    StandardPluginSource(
+        key="fritzbox-network",
+        plugin_kind="network",
+        label="AVM FRITZ!Box",
+        description="Maps cameras to FRITZ!Box/mesh devices for live connectivity status (mesh node, signal, online state)",
+        repo_url="https://github.com/404GamerNotFound/TBC-fritz.box",
+    ),
+    StandardPluginSource(
+        key="xsense-cloud",
+        plugin_kind="cloud",
+        label="X-Sense",
+        description="Lists X-Sense account cameras (serial, name, model) for manual import - unofficial, reverse-engineered API",
+        repo_url="https://github.com/404GamerNotFound/TBC-X-Sense",
+        subdirectory="cloud",
+    ),
+    StandardPluginSource(
+        key="xsense-camera",
+        plugin_kind="camera",
+        label="X-Sense",
+        description="X-Sense cameras (SSC0A/SSC0B) via a local WebRTC bridge to the X-Sense cloud - unofficial, reverse-engineered",
+        repo_url="https://github.com/404GamerNotFound/TBC-X-Sense",
+        subdirectory="camera",
+    ),
+    StandardPluginSource(
+        key="eufy",
+        plugin_kind="cloud",
+        label="Eufy Security",
+        description="Eufy Security cloud account and camera discovery via pyeufysecurity",
+        repo_url="https://github.com/404GamerNotFound/TBC-eufy",
+    ),
+    StandardPluginSource(
+        key="unifi_protect",
+        plugin_kind="cloud",
+        label="UniFi Protect",
+        description="Ubiquiti UniFi Protect Controller (local or via the ui.com cloud console) via uiprotect",
+        repo_url="https://github.com/404GamerNotFound/TBC-unifi-protect",
+    ),
+    StandardPluginSource(
+        key="ewelink",
+        plugin_kind="cloud",
+        label="eWeLink (SONOFF)",
+        description="SONOFF devices via the official eWeLink/CoolKit Open Platform cloud account",
+        repo_url="https://github.com/404GamerNotFound/TBC-ewelink",
+    ),
+    StandardPluginSource(
+        key="google",
+        plugin_kind="cloud",
+        label="Google Nest",
+        description="Google Nest cameras and doorbells via the official Smart Device Management API",
+        repo_url="https://github.com/404GamerNotFound/TBC-google",
     ),
 )
 
@@ -251,8 +310,34 @@ def _translate_urllib_error(exc: urllib.error.URLError, owner: str, repo: str, r
             return PluginSourceError(
                 f"Repository or branch/tag not found (is '{owner}/{repo}' public, does '{ref}' exist?)"
             )
+        if exc.code in (403, 429):
+            rate_limit_error = _translate_rate_limit_error(exc)
+            if rate_limit_error is not None:
+                return rate_limit_error
         return PluginSourceError(f"GitHub-Anfrage fehlgeschlagen: HTTP {exc.code}")
     return PluginSourceError(f"GitHub konnte nicht erreicht werden: {exc.reason}")
+
+
+def _translate_rate_limit_error(exc: urllib.error.HTTPError) -> PluginSourceError | None:
+    """Recognize GitHub's unauthenticated rate limit (60 requests/hour/IP) and say so plainly.
+
+    Without this, a used-up rate limit surfaces as a bare "HTTP 403" that
+    looks like a broken repository or a permissions problem - it is neither,
+    and retrying immediately (or re-installing) just wastes the next
+    request too. GitHub reports this via headers, not the response body.
+    """
+    headers = exc.headers
+    if headers is None or headers.get("X-RateLimit-Remaining") != "0":
+        return None
+    reset_header = headers.get("X-RateLimit-Reset")
+    when = ""
+    if reset_header and reset_header.isdigit():
+        reset_time = datetime.datetime.fromtimestamp(int(reset_header), tz=datetime.timezone.utc)
+        when = f" It resets at {reset_time.strftime('%H:%M UTC')}."
+    return PluginSourceError(
+        "GitHub's unauthenticated rate limit (60 requests/hour/IP) has been reached."
+        f"{when} Please wait a bit and synchronize again."
+    )
 
 
 def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
@@ -262,12 +347,14 @@ def extract_plugin_archive(archive: bytes, subdirectory: str) -> bytes:
     folder; this strips that (and, if given, descends into `subdirectory`)
     and re-zips the contents under one synthetic top-level folder - the same
     "one shared top folder" shape every install_*_archive() already
-    validates. Repository-only metadata such as `.gitattributes` and
-    `.github/`, as well as generated caches such as `__pycache__/`, is
-    intentionally omitted because it is not part of the runtime plugin
-    package. A GitHub-sourced install still goes through the exact same
-    security checks (path traversal, allowed file types, size limits) as a
-    manually uploaded ZIP. Nothing here is a substitute for that validation.
+    validates. Repository-only metadata such as `.gitattributes`/`.github/`
+    and generated caches such as `__pycache__/` is intentionally omitted
+    because it is not part of the runtime plugin package - a `LICENSE` file
+    is deliberately *not* in that list, since install_*_archive() now accepts
+    it and the /license page surfaces it automatically (see licenses.py). A
+    GitHub-sourced install still goes through the exact same security checks
+    (path traversal, allowed file types, size limits) as a manually uploaded
+    ZIP. Nothing here is a substitute for that validation.
     """
     try:
         bundle = zipfile.ZipFile(BytesIO(archive))

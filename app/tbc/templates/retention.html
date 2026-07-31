@@ -9,7 +9,7 @@
 </section>
 
 <section class="storage-grid">
-  <form class="editor-form" method="post" action="/retention">
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/retention">
     <div class="section-title"><h2 data-i18n="retention.new_rule">New rule</h2></div>
     <div class="form-grid">
       <label><span data-i18n="common.name">Name</span><input name="name" required></label>
@@ -25,7 +25,7 @@
     <div class="section-title"><h2 data-i18n="retention.rules">Rules</h2><span>{{ rules | length }}</span></div>
     {% for rule in rules %}
     <article class="storage-item">
-      <form method="post" action="/retention/{{ rule.id }}">
+      <form method="post" action="{{ ingress_prefix }}/retention/{{ rule.id }}">
         <div class="form-grid">
           <label><span data-i18n="common.name">Name</span><input name="name" value="{{ rule.name }}" required></label>
           <label class="check-row"><input name="enabled" type="checkbox" {% if rule.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
@@ -36,7 +36,7 @@
         </div>
         <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
       </form>
-      <form method="post" action="/retention/{{ rule.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
+      <form method="post" action="{{ ingress_prefix }}/retention/{{ rule.id }}/delete"><button class="danger-button" type="submit" data-i18n="common.delete">Delete</button></form>
     </article>
     {% endfor %}
   </section>

@@ -134,6 +134,15 @@ class CloudDevice:
     plugin does not need its own CameraModule as long as the vendor's account
     API resolves each device down to a plain RTSP/RTSPS URI. See
     docs/cloud-accounts.md.
+
+    `needs_account_credentials`, when set instead of `manual_stream_uri`, means
+    this device has no stream URL at all but its `suggested_module_key`
+    CameraModule can work with the cloud account's own stored username/
+    password plus this device's `external_id` (e.g. a serial number) - the
+    account already authenticated with those credentials to discover this
+    device, so "Add as camera" can reuse them instead of asking the admin to
+    retype them. See `CloudAccountModule.account_username_field`/
+    `account_password_field`, which declare which config keys those are.
     """
 
     external_id: str
@@ -142,6 +151,7 @@ class CloudDevice:
     online: bool | None = None
     manual_stream_uri: str | None = None
     suggested_module_key: str = "rtsp_only"
+    needs_account_credentials: bool = False
 
 
 class CloudAccountModule(ABC):
@@ -157,6 +167,12 @@ class CloudAccountModule(ABC):
     default_port: int = 443
     account_fields: tuple[CloudAccountField, ...] = ()
     verification_support: CloudVerificationSupport = CloudVerificationSupport.NOT_APPLICABLE
+    # Config keys (from account_fields) holding this account's own
+    # username/password - only meaningful for modules that return
+    # CloudDevice(needs_account_credentials=True); None means the module
+    # doesn't support "Add as camera" reusing its stored account credentials.
+    account_username_field: str | None = None
+    account_password_field: str | None = None
 
     @abstractmethod
     async def test_connection(self, account: dict[str, Any]) -> str:

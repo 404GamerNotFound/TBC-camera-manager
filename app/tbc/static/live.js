@@ -13,9 +13,30 @@
   const soloTitle = document.querySelector("[data-live-solo-title]");
   const soloPlayerContainer = document.querySelector("[data-live-solo-player]");
   const soloCloseButton = document.querySelector("[data-live-solo-close]");
+  const initialItemsElement = document.querySelector("[data-live-initial-items]");
+
+  const initialItems = (() => {
+    try {
+      const items = JSON.parse(initialItemsElement?.textContent || "[]");
+      return Array.isArray(items) ? items : [];
+    } catch (_) {
+      return [];
+    }
+  })();
 
   if (!cards.length) {
-    if (summary) summary.textContent = t("live.no_streams");
+    // t() falls back to the raw key if this runs before i18n.js's own
+    // locale fetch resolves (see the comment next to `tbc:i18n-ready` in
+    // i18n.js) - redo it once ready instead of leaving "live.no_streams" on
+    // screen.
+    if (summary) {
+      summary.textContent = t("live.no_streams");
+      document.addEventListener(
+        "tbc:i18n-ready",
+        () => { summary.textContent = t("live.no_streams"); },
+        { once: true },
+      );
+    }
     return;
   }
 
@@ -63,7 +84,7 @@
     summary.className = `status-pill ${failed ? "status-error" : starting ? "status-warning" : "status-active"}`;
     const startingText = starting ? t("live.starting_count", {count: starting}) : "";
     const failedText = failed ? t("live.error_count", {count: failed}) : "";
-    summary.textContent = `${running}/${items.length} live${startingText}${failedText}`;
+    summary.textContent = `${running}/${items.length} ${t("live.status_live")}${startingText}${failedText}`;
   };
 
   const placeholderText = (status) => {
@@ -191,7 +212,7 @@
     const now = Date.now();
     if (now - last < AUTO_RETRY_COOLDOWN_MS) return;
     lastAutoRetry.set(item.key, now);
-    fetchJson(`/api/live/${encodeURIComponent(item.key)}/start`, {method: "POST"}).catch(() => {});
+    startLiveItem(item.key).catch(() => {});
   };
 
   const renderItem = (item) => {
@@ -200,14 +221,24 @@
     if (!card) return;
     const pill = card.querySelector("[data-live-status]");
     const message = card.querySelector("[data-live-message]");
+    const errorDetails = card.querySelector("[data-live-error-details]");
     const player = card.querySelector("[data-live-player]");
     if (pill) {
       pill.className = `status-pill ${statusClass(item.status)}`;
-      pill.textContent = item.status;
+      const statusKey = `status.${item.status}`;
+      const statusText = t(statusKey);
+      pill.textContent = statusText === statusKey ? item.status : statusText;
     }
     if (message) {
       message.textContent = item.message || "";
-      message.hidden = !item.message;
+    }
+    if (errorDetails) {
+      // The API already redacts RTSP credentials before placing this message
+      // in the item payload. Only show the expandable diagnostic on an actual
+      // failed/missing stream, not while a healthy stream is starting.
+      const hasErrorDetails = Boolean(item.message) && (item.status === "failed" || item.status === "missing");
+      errorDetails.hidden = !hasErrorDetails;
+      if (!hasErrorDetails) errorDetails.open = false;
     }
     if (player) {
       if (item.status === "running") {
@@ -225,13 +256,34 @@
     setSummary(items);
   };
 
+  // The Home Assistant Supervisor strips the ingress prefix before forwarding
+  // requests to TBC, but browser-side requests still need that prefix. The
+  // template normally supplies it via TBC_INGRESS_PREFIX. Android WebViews
+  // and installed PWAs can retain a page while the Supervisor rotates an
+  // ingress token, however, so also recover it from the current URL instead
+  // of falling back to Home Assistant's own root-level /api endpoint.
+  const ingressPrefixFromLocation = () =>
+    window.location.pathname.match(/^\/api\/hassio_ingress\/[^/]+(?=\/|$)/)?.[0] || "";
+
+  const withIngressPrefix = (path) => {
+    const prefix = window.TBC_INGRESS_PREFIX || ingressPrefixFromLocation();
+    return prefix + path;
+  };
+
   const fetchJson = async (url, options = {}) => {
-    const response = await fetch(url, {
+    const response = await fetch(withIngressPrefix(url), {
       credentials: "same-origin",
       headers: {"Accept": "application/json"},
       ...options,
     });
     const data = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+      // A session can expire while the live wall remains open in a mobile
+      // WebView. Reload through the app's own login route rather than keeping
+      // a stale page alive and repeatedly showing a generic API failure.
+      window.location.assign(withIngressPrefix("/login"));
+      throw new Error("unauthorized");
+    }
     if (!response.ok) {
       throw new Error(data.error || t("live.api_failed"));
     }
@@ -241,23 +293,37 @@
   const refresh = async () => {
     const data = await fetchJson("/api/live/status");
     renderItems(data.items || []);
+    return data.items || [];
   };
 
-  const startAll = async () => {
-    if (summary) summary.textContent = t("live.starting");
-    const data = await fetchJson("/api/live/start-all", {method: "POST"});
-    renderItems(data.items || []);
+  const startLiveItem = async (key) => {
+    const data = await fetchJson(`/api/live/${encodeURIComponent(key)}/start`, {method: "POST"});
+    return data.item;
   };
+
+  let pollFailures = 0;
 
   const schedulePolling = () => {
     window.clearInterval(pollTimer);
     pollTimer = window.setInterval(() => {
-      refresh().catch((error) => {
-        if (summary) {
-          summary.className = "status-pill status-error";
-          summary.textContent = error.message;
-        }
-      });
+      refresh()
+        .then(() => {
+          pollFailures = 0;
+        })
+        .catch((error) => {
+          // A single failed poll is usually a transient hiccup (mobile network,
+          // Ingress proxy blip) that the next 3s cycle heals on its own - only
+          // surface the error once it persists, so the summary doesn't flicker
+          // red while the streams themselves keep playing fine.
+          pollFailures += 1;
+          // The initial state is rendered by the server, so a browser-side
+          // polling outage must not replace a working wall with a misleading
+          // global "Live API could not be loaded" message. Keep showing the
+          // last known stream state and retry on the next cycle.
+          if (pollFailures < 2 || !summary || latestItems.size) return;
+          summary.className = "status-pill status-warning";
+          summary.textContent = t("live.starting");
+        });
     }, 3000);
   };
 
@@ -516,19 +582,13 @@
 
   refreshButton?.addEventListener("click", () => {
     refresh().catch((error) => {
-      if (summary) {
-        summary.className = "status-pill status-error";
-        summary.textContent = error.message;
+      if (summary && !latestItems.size) {
+        summary.className = "status-pill status-warning";
+        summary.textContent = t("live.starting");
       }
     });
   });
 
-  startAll()
-    .catch((error) => {
-      if (summary) {
-        summary.className = "status-pill status-error";
-        summary.textContent = error.message;
-      }
-    })
-    .finally(schedulePolling);
+  renderItems(initialItems);
+  refresh().catch(() => {}).finally(schedulePolling);
 })();

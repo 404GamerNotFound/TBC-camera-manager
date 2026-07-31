@@ -1,0 +1,10 @@
+[run]
+source = app/tbc
+
+[report]
+show_missing = true
+skip_covered = false
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError

@@ -20,6 +20,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _BOOTSTRAP_MODULE = {
     "camera": "app.tbc.camera_modules.pytest_bootstrap",
     "cloud": "app.tbc.cloud_modules.pytest_bootstrap",
+    "network": "app.tbc.network_modules.pytest_bootstrap",
 }
 
 
@@ -40,10 +41,11 @@ async def run_plugin_tests(plugin_dir: Path, plugin_kind: str) -> PluginTestResu
     trust boundary - it is the same code, just exercised deliberately by an
     admin instead of implicitly on load.
 
-    `plugin_kind` ("camera" or "cloud") selects which `tbc_camera_api`/
-    `tbc_cloud_api` facade bootstrap to preload, so a plugin's tests can
-    import the same facade its own module.py uses - the test subprocess
-    otherwise starts with a clean sys.modules and never sees it.
+    `plugin_kind` ("camera", "cloud", or "network") selects which
+    `tbc_camera_api`/`tbc_cloud_api`/`tbc_network_api` facade bootstrap to
+    preload, so a plugin's tests can import the same facade its own
+    module.py uses - the test subprocess otherwise starts with a clean
+    sys.modules and never sees it.
     """
     tests_dir = plugin_dir / "tests"
     if not tests_dir.is_dir() or not any(tests_dir.glob("test_*.py")):

@@ -5,11 +5,27 @@ import hashlib
 import hmac
 import os
 import secrets
+import struct
+import time
+import urllib.parse
 from dataclasses import dataclass
+from functools import lru_cache
+
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 
 HASH_NAME = "pbkdf2_sha256"
 DEFAULT_ITERATIONS = 310_000
+
+ENCRYPTED_PREFIX = "enc:v1:"
+_HKDF_SALT = b"tbc-camera-manager-secret-encryption"
+_HKDF_INFO = b"tbc-secret-v1"
+
+
+class SecretDecryptionError(RuntimeError):
+    """Raised when an encrypted secret cannot be decrypted with the current key."""
 
 
 @dataclass(frozen=True)
@@ -61,8 +77,60 @@ def verify_password(password: str, stored_hash: str) -> bool:
     return hmac.compare_digest(candidate, parsed.digest)
 
 
+TOTP_PERIOD_SECONDS = 30
+TOTP_DIGITS = 6
+
+
+def generate_totp_secret() -> str:
+    return base64.b32encode(os.urandom(20)).decode("ascii")
+
+
+def totp_code(secret: str, *, timestamp: float | None = None) -> str:
+    """RFC 6238 TOTP (SHA-1, 6 digits, 30s period - the authenticator-app default)."""
+    counter = int((time.time() if timestamp is None else timestamp) // TOTP_PERIOD_SECONDS)
+    key = base64.b32decode(secret + "=" * (-len(secret) % 8), casefold=True)
+    digest = hmac.new(key, struct.pack(">Q", counter), hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    value = (int.from_bytes(digest[offset : offset + 4], "big") & 0x7FFFFFFF) % (10**TOTP_DIGITS)
+    return str(value).zfill(TOTP_DIGITS)
+
+
+def verify_totp(secret: str, code: str, *, timestamp: float | None = None, window: int = 1) -> bool:
+    """Accepts the current period's code ±window periods, to tolerate clock skew
+    between the server and the phone running the authenticator app."""
+    candidate = code.strip().replace(" ", "")
+    if not candidate.isdigit() or len(candidate) != TOTP_DIGITS or not secret:
+        return False
+    now = time.time() if timestamp is None else timestamp
+    return any(
+        hmac.compare_digest(totp_code(secret, timestamp=now + step * TOTP_PERIOD_SECONDS), candidate)
+        for step in range(-window, window + 1)
+    )
+
+
+def totp_provisioning_uri(secret: str, *, username: str, issuer: str) -> str:
+    label = urllib.parse.quote(f"{issuer}:{username}")
+    query = urllib.parse.urlencode(
+        {"secret": secret, "issuer": issuer, "algorithm": "SHA1", "digits": TOTP_DIGITS, "period": TOTP_PERIOD_SECONDS}
+    )
+    return f"otpauth://totp/{label}?{query}"
+
+
+def generate_recovery_codes(count: int = 8) -> list[str]:
+    return ["-".join(secrets.token_hex(2) for _ in range(3)) for _ in range(count)]
+
+
+def hash_recovery_code(code: str) -> str:
+    normalized = code.strip().lower().replace(" ", "")
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 def generate_api_key() -> str:
     return "tbc_" + secrets.token_urlsafe(32)
+
+
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
 def hash_api_key(key: str) -> str:
@@ -73,4 +141,60 @@ def verify_api_key(key: str, stored_hash: str) -> bool:
     if not key or not stored_hash:
         return False
     return hmac.compare_digest(hash_api_key(key), stored_hash)
+
+
+@lru_cache(maxsize=8)
+def _fernet_for_key(secret_key: str) -> Fernet:
+    derived = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=_HKDF_SALT,
+        info=_HKDF_INFO,
+    ).derive(secret_key.encode("utf-8"))
+    return Fernet(base64.urlsafe_b64encode(derived))
+
+
+def encrypt_secret(secret_key: str, plaintext: str | None) -> str | None:
+    """Encrypt a secret value for storage. Empty/None values pass through unchanged."""
+    if not plaintext:
+        return plaintext
+    token = _fernet_for_key(secret_key).encrypt(plaintext.encode("utf-8"))
+    return ENCRYPTED_PREFIX + token.decode("ascii")
+
+
+def decrypt_secret(secret_key: str, value: str | None) -> str | None:
+    """Decrypt a secret value read from storage.
+
+    Values without the encrypted-value prefix are returned unchanged - this
+    is what lets pre-existing plaintext secrets keep working until they are
+    re-encrypted in place.
+    """
+    if not value or not value.startswith(ENCRYPTED_PREFIX):
+        return value
+    token = value[len(ENCRYPTED_PREFIX):].encode("ascii")
+    try:
+        return _fernet_for_key(secret_key).decrypt(token).decode("utf-8")
+    except InvalidToken as exc:
+        raise SecretDecryptionError(
+            "Unable to decrypt stored secret - the TBC_SECRET_KEY does not match "
+            "the key it was encrypted with."
+        ) from exc
+
+
+def is_encrypted_secret(value: str | None) -> bool:
+    return bool(value) and value.startswith(ENCRYPTED_PREFIX)
+
+
+def encrypt_bytes(secret_key: str, data: bytes) -> bytes:
+    """Encrypt arbitrary binary data (e.g. a backup archive) with the derived key."""
+    return _fernet_for_key(secret_key).encrypt(data)
+
+
+def decrypt_bytes(secret_key: str, token: bytes) -> bytes:
+    try:
+        return _fernet_for_key(secret_key).decrypt(token)
+    except InvalidToken as exc:
+        raise SecretDecryptionError(
+            "Unable to decrypt this backup - it was created with a different TBC_SECRET_KEY."
+        ) from exc
 

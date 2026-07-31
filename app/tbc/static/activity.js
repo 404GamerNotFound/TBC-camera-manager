@@ -126,7 +126,7 @@
         block.style.left = `${percent(startSeconds)}%`;
         block.style.width = `${percent(durationSeconds)}%`;
         if (!isSd) block.style.setProperty("--marker-hue", hue(item.detection_key));
-        block.title = `${camera.name} · ${formatTime(item.start)}–${formatTime(item.end)}${item.label ? " · " + item.label : ""}${isSd ? " · SD card" : ""}`;
+        block.title = `${camera.name} · ${formatTime(item.start)}–${formatTime(item.end)}${item.label ? " · " + item.label : ""}${isSd ? ` · ${window.tbcI18n.t("base.sd_card")}` : ""}`;
         block.href = `/timeline?camera_id=${camera.id}&day=${day}`;
         lane.appendChild(block);
       });
@@ -145,7 +145,7 @@
     entry.promise = (async () => {
       try {
         const params = new URLSearchParams({ camera_id: String(camera.id), date_from: day, date_to: day });
-        const response = await fetch(`/api/sd-card/recordings?${params.toString()}`, {
+        const response = await fetch(tbcUrl(`/api/sd-card/recordings?${params.toString()}`), {
           credentials: "same-origin",
           headers: { Accept: "application/json" },
         });
@@ -158,7 +158,7 @@
               start: String(row.start_time).replace(" ", "T"),
               end: row.end_time ? String(row.end_time).replace(" ", "T") : String(row.start_time).replace(" ", "T"),
               duration: row.duration_seconds || 0,
-              label: row.trigger_label || row.file_name || "SD card",
+              label: row.trigger_label || row.file_name || window.tbcI18n.t("base.sd_card"),
               detection_key: "sdcard",
               source: "sdcard",
             }));

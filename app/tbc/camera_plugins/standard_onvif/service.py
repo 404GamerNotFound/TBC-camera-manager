@@ -1,15 +1,51 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, Callable
 
 from tbc_camera_api import CameraSnapshot
 from tbc_camera_api import onvif as _onvif
 from tbc_camera_api import streams as _streams
-from .catalog import catalog_rows
+from .catalog import ONVIF_DETECTIONS, catalog_rows
 
 probe_onvif = _onvif.probe_onvif
 rtsp_uri_with_credentials = _streams.rtsp_uri_with_credentials
+
+_DEFINITIONS_BY_KEY = {definition.key: definition for definition in ONVIF_DETECTIONS}
+
+
+async def monitor_events(camera: dict[str, Any], on_detections: Callable[[list[dict[str, Any]]], None]) -> None:
+    """Real-time ONVIF events for cameras without a dedicated vendor plugin.
+
+    Wraps onvif.monitor_events' generic {key, active} pairs into the full
+    detection row shape main._process_detection_states expects, looking up
+    each key's label/category from this plugin's own catalog. Only keys the
+    catalog recognizes are forwarded - an unrecognized topic is silently
+    dropped rather than surfaced as an unlabeled row.
+    """
+
+    def _to_rows(states: list[dict[str, Any]]) -> None:
+        rows = []
+        for state in states:
+            definition = _DEFINITIONS_BY_KEY.get(state["key"])
+            if definition is None:
+                continue
+            rows.append(
+                {
+                    "key": definition.key,
+                    "label": definition.label,
+                    "category": definition.category,
+                    "channel": None,
+                    "supported": True,
+                    "active": bool(state["active"]),
+                    "source": "onvif-events",
+                    "raw_value": None,
+                }
+            )
+        if rows:
+            on_detections(rows)
+
+    await _onvif.monitor_events(camera, _to_rows)
 
 
 async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:
@@ -43,4 +79,23 @@ async def probe_camera(camera: dict[str, Any]) -> CameraSnapshot:
         serial=onvif_probe.serial,
         stream_uri=stream_uri,
         detections=catalog_rows(onvif_probe.event_detection_keys),
+        channels=_channels_for(onvif_probe, camera),
     )
+
+
+def _channels_for(onvif_probe: Any, camera: dict[str, Any]) -> list[dict[str, Any]]:
+    # A camera with a single lens keeps the plain stream_uri above and has
+    # no channels - only cameras where the ONVIF probe found more than one
+    # physical lens (distinct VideoSource) get a channel per lens, so each
+    # lens can be viewed/recorded independently instead of only the first
+    # one ever being reachable.
+    if len(onvif_probe.stream_profiles) <= 1:
+        return []
+    return [
+        {
+            "channel_index": index,
+            "name": f"Lens {index + 1}",
+            "stream_uri": rtsp_uri_with_credentials(profile.uri, camera["username"], camera["password"]),
+        }
+        for index, profile in enumerate(onvif_probe.stream_profiles)
+    ]

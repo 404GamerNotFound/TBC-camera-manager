@@ -193,6 +193,44 @@ a {
   border-radius: 7px;
   color: var(--text);
   font-weight: 800;
+  /* Menu chrome stays left-to-right even for items whose own dir="rtl" is only
+     there for correct Arabic/Persian/Urdu glyph shaping - without this,
+     text-align defaults to "right" AND (since this is a grid container) the
+     grid's column order itself reverses, physically moving the item's
+     content into the 32px icon column on the right instead of the label
+     column on the left. Overriding direction doesn't garble the RTL script
+     itself: a lone run of strong-RTL characters (e.g. "العربية") still
+     reorders correctly per the Unicode bidi algorithm regardless of the
+     paragraph's base direction. */
+  direction: ltr;
+  text-align: left;
+}
+
+.language-menu {
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.language-menu-search-row {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: inherit;
+  padding: 2px 2px 8px;
+}
+
+.language-menu-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.language-menu-empty {
+  margin: 6px 2px 2px;
 }
 
 .dropdown-item span:not(.nav-shortcut) {
@@ -253,10 +291,112 @@ a {
   display: block;
 }
 
+.mega-menu {
+  width: min(1080px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: calc(100vw - 32px);
+  padding: 16px;
+}
+
+.mega-menu .dropdown-item {
+  align-items: start;
+}
+
+.mega-menu .dropdown-item span:not(.nav-shortcut) {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.mega-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 20px;
+}
+
+.mega-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mega-menu-column + .mega-menu-column {
+  border-left: 1px solid var(--line);
+  padding-left: 16px;
+}
+
+.mega-menu-heading {
+  margin: 2px 9px 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .shell {
   width: min(1220px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 36px 0 64px;
+}
+
+.app-footer {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.app-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 0;
+}
+
+.app-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-footer-brand .brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+}
+
+.app-footer-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.app-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.app-footer-links a,
+.app-footer-links button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-footer-links a:hover,
+.app-footer-links a:focus,
+.app-footer-links button:hover,
+.app-footer-links button:focus {
+  color: var(--brand-strong);
 }
 
 .flash,
@@ -361,6 +501,66 @@ section.diagnostic-note {
   background: color-mix(in srgb, var(--ok) 16%, var(--surface));
 }
 
+.md-zone-grid {
+  display: grid;
+  gap: 2px;
+  margin: 12px 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.md-zone-cell {
+  aspect-ratio: 1;
+  min-width: 10px;
+  border-radius: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.md-zone-cell-active {
+  background: var(--brand);
+  border-color: var(--brand-strong);
+}
+
+.privacy-mask-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.privacy-mask-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.privacy-mask-draw {
+  margin-top: 12px;
+}
+
+.privacy-mask-point {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: 2px solid var(--surface);
+  pointer-events: none;
+}
+
 .progress-track {
   height: 8px;
   overflow: hidden;
@@ -428,7 +628,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -440,7 +641,8 @@ select {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input[type="checkbox"] {
+input[type="checkbox"],
+input[type="radio"] {
   width: 18px;
   min-height: 18px;
   height: 18px;
@@ -448,7 +650,8 @@ input[type="checkbox"] {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 0;
   border-color: var(--brand);
   box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--brand) 16%, transparent);
@@ -521,6 +724,7 @@ button,
   color: white;
   background: var(--brand-strong);
   border-color: var(--brand-strong);
+  transform: translateY(-1px);
 }
 
 .secondary-button {
@@ -532,8 +736,9 @@ button,
 .secondary-button:hover,
 .secondary-button:focus {
   color: var(--brand-strong);
-  background: color-mix(in srgb, var(--brand) 22%, var(--surface));
-  border-color: color-mix(in srgb, var(--brand) 22%, transparent);
+  background: color-mix(in srgb, var(--brand) 12%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+  transform: translateY(-1px);
 }
 
 .danger-button {
@@ -549,6 +754,28 @@ button,
   border-color: #872d2d;
 }
 
+.danger-icon-button {
+  color: white;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.danger-icon-button:hover,
+.danger-icon-button:focus {
+  color: white;
+  background: #872d2d;
+  border-color: #872d2d;
+}
+
+.table-action-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.table-action-cell form {
+  margin: 0;
+}
+
 .icon-button {
   width: 42px;
   padding: 0;
@@ -561,7 +788,7 @@ button,
 .icon-button:focus {
   color: var(--brand-strong);
   background: var(--surface-soft);
-  border-color: color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
 }
 
 .primary-button:focus-visible,
@@ -604,89 +831,173 @@ button:focus-visible {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.camera-card:has(.probe-indicator:hover),
-.camera-card:has(.probe-indicator:focus-visible) {
-  position: relative;
-  z-index: 3;
+/* ---------- Dashboard camera card (image-forward hero snapshot with
+   overlaid status/name, replacing the old header+snapshot+boxed-stat
+   layout). Scoped to .cam-card, a modifier class added alongside
+   .camera-card only in dashboard.html - live.html/birdseye.html's
+   ".camera-card live-card" tiles and storage_explorer.html's bare
+   ".camera-card" shell are untouched by everything below. ---------- */
+.cam-card {
+  padding: 0;
+  gap: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: cam-card-rise 0.45s ease forwards;
 }
 
-.probe-status-list {
+.cam-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+}
+
+@keyframes cam-card-rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cam-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .cam-card:hover {
+    transform: none;
+  }
+  .clip-card:hover {
+    transform: none;
+  }
+  .clip-card:hover video,
+  .clip-card:hover img.clip-media-still {
+    transform: none;
+  }
+}
+
+.cam-media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--surface-soft);
+}
+
+/* Clipping (for the rounded top corners and the hover zoom below) lives here,
+   scoped to just the image - not on .cam-card itself - so the glyph tooltips
+   in .cam-badges-top (a sibling, not a descendant, of this frame) can still
+   render past the card's edge instead of being cut off with it. */
+.cam-media-frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+}
+
+.cam-media-frame img,
+.cam-media-empty {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cam-media-frame img {
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.cam-card:hover .cam-media-frame img {
+  transform: scale(1.035);
+}
+
+.cam-media-empty {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.cam-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.62) 100%);
+  pointer-events: none;
+}
+
+.cam-badges-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
   display: flex;
-  align-items: center;
-  min-height: 30px;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.probe-indicator {
+.cam-glyphs {
+  display: flex;
+  gap: 6px;
+}
+
+.cam-glyph {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
-  border: 1px solid currentColor;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1;
+  background: rgba(15, 20, 18, 0.55);
+  color: #fff;
   cursor: help;
   outline: none;
 }
 
-.probe-indicator-ok {
-  color: var(--ok);
-  border-color: rgba(30, 123, 77, 0.3);
-  background: color-mix(in srgb, var(--ok) 16%, var(--surface));
+.cam-glyph svg {
+  width: 13px;
+  height: 13px;
 }
 
-.probe-indicator-error {
-  color: var(--danger);
-  border-color: rgba(167, 55, 55, 0.3);
-  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
+.cam-glyph.is-bad {
+  color: #ff9d9d;
 }
 
-.recording-glyph {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
+.cam-glyph.is-good {
+  color: #8de8b3;
 }
 
-.recording-glyph::before {
-  content: "";
-  width: 0;
-  height: 0;
-  margin-left: 2px;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-left: 10px solid currentColor;
+.cam-glyph.is-rec {
+  color: #ff8a8a;
 }
 
-.recording-indicator-inactive .recording-glyph::after {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  transform: rotate(-45deg);
-}
-
-.probe-indicator::after {
+/* Anchored from the right, not left: the whole .cam-glyphs cluster sits at
+   the card's right edge (.cam-badges-top's justify-content: space-between),
+   so every glyph - not just the last one - is close enough to that edge that
+   a left-anchored tooltip would grow off the card/viewport. Anchoring every
+   glyph's tooltip from its own right edge makes it grow back over the image
+   instead, regardless of position in the cluster. */
+.cam-glyph::after {
   content: attr(data-tooltip);
   position: absolute;
   z-index: 20;
-  top: calc(100% + 9px);
-  left: 0;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
   width: max-content;
-  max-width: min(290px, calc(100vw - 48px));
-  padding: 9px 11px;
+  max-width: min(260px, calc(100vw - 48px));
+  padding: 8px 10px;
   border-radius: 7px;
   color: white;
   background: #17211e;
-  box-shadow: 0 10px 26px rgba(20, 32, 28, 0.22);
-  font-size: 0.78rem;
+  box-shadow: 0 10px 26px rgba(20, 32, 28, 0.3);
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.4;
   text-align: left;
@@ -699,48 +1010,44 @@ button:focus-visible {
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
 
-.probe-indicator:hover::after,
-.probe-indicator:focus-visible::after {
+.cam-glyph:hover::after,
+.cam-glyph:focus-visible::after {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
 
-.probe-indicator:focus-visible {
-  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--brand) 18%, transparent);
+.cam-glyph:focus-visible {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
-.camera-snapshot {
-  display: grid;
-  gap: 7px;
+.cam-caption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  z-index: 2;
+  color: #fff;
+}
+
+.cam-caption h2 {
   margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
 }
 
-.camera-snapshot img,
-.camera-snapshot-empty {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
+.cam-caption h2 a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.camera-snapshot img {
-  display: block;
-  object-fit: cover;
-}
-
-.camera-snapshot figcaption {
-  color: var(--muted);
-  font-size: 0.76rem;
-}
-
-.camera-snapshot-empty {
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  color: var(--muted);
-  text-align: center;
+.cam-caption p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-variant-numeric: tabular-nums;
 }
 
 .live-card {
@@ -819,62 +1126,127 @@ dt {
   background: var(--surface-soft);
 }
 
-.camera-metrics {
-  gap: 8px;
-  overflow: visible;
-  padding: 8px;
-  border-color: color-mix(in srgb, var(--brand) 16%, transparent);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--surface-soft) 30%, var(--surface)), var(--surface));
+.cam-body {
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 14px;
 }
 
-.camera-metrics .camera-metric {
+.cam-stats {
   display: flex;
-  min-width: 0;
-  min-height: 76px;
-  padding: 10px 6px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--brand) 14%, transparent);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.04);
-  text-align: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 
-.camera-metrics dt {
-  width: 100%;
-  max-width: 100%;
+.cam-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
   color: var(--muted);
-  font-size: clamp(0.58rem, 0.65vw, 0.68rem);
-  letter-spacing: 0.045em;
-  line-height: 1.2;
+  cursor: default;
+}
+
+.cam-stat svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.cam-stat b {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cam-stat.stat-supported svg {
+  color: var(--brand);
+}
+
+.cam-stat.stat-active svg {
+  color: var(--ok);
+}
+
+.cam-stat.stat-features svg {
+  color: var(--accent);
+}
+
+.cam-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cam-model {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.camera-metrics dd {
-  order: -1;
-  margin: 0 0 5px;
+.cam-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.cam-open svg {
+  width: 12px;
+  height: 12px;
+}
+
+.fleet-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.fleet-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.fleet-stat .n {
   color: var(--text);
-  font-size: 1.65rem;
+  font-size: 1.6rem;
+  font-weight: 800;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.camera-metric-supported dd {
-  color: var(--brand);
+.fleet-stat .l {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
 }
 
-.camera-metric-active dd {
+.fleet-stat.is-ok .n {
   color: var(--ok);
 }
 
-.camera-metric-active.is-empty dd {
-  color: var(--muted);
+.fleet-stat.is-warn .n {
+  color: var(--warn);
 }
 
-.camera-metric-features dd {
-  color: var(--warn);
+.fleet-stat.is-danger .n {
+  color: var(--danger);
 }
 
 dt {
@@ -892,14 +1264,24 @@ dd {
 .status-pill {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 28px;
-  padding: 5px 9px;
+  padding: 5px 10px;
   border-radius: 999px;
   color: var(--muted);
   background: var(--surface-soft);
   font-size: 0.78rem;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.status-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .status-ok,
@@ -922,7 +1304,7 @@ dd {
 .status-idle,
 .status-unknown {
   color: var(--muted);
-  background: color-mix(in srgb, var(--text) 6%, var(--surface));
+  background: var(--surface-soft);
 }
 
 .empty-state {
@@ -946,6 +1328,71 @@ dd {
 
 .span-2 {
   grid-column: span 2;
+}
+
+.notification-events {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.notification-events-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px 18px;
+}
+
+.notification-events h3,
+.notification-events p {
+  margin: 0;
+}
+
+.notification-events h3 {
+  font-size: 1rem;
+}
+
+.notification-events-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.notification-placeholder-hint {
+  overflow-wrap: anywhere;
+}
+
+.notification-event-list {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-event-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(180px, 1fr) minmax(220px, 1.3fr);
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  transition: opacity 0.15s ease;
+}
+
+.notification-event-card.is-disabled {
+  opacity: 0.58;
+}
+
+.notification-event-card textarea {
+  min-height: 44px;
+  resize: vertical;
+}
+
+.notification-event-toggle {
+  min-height: 44px;
 }
 
 .compact-form {
@@ -1051,6 +1498,10 @@ dd {
 .detail-tab-panel > .event-panel,
 .recording-stack > .editor-form {
   margin: 0;
+}
+
+.detail-tab-panel > .table-section {
+  margin-top: 0;
 }
 
 .recording-tab-layout {
@@ -1227,6 +1678,57 @@ code {
   font-size: 0.82rem;
   line-height: 1.5;
   white-space: pre;
+}
+
+.license-text {
+  margin: 6px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.network-device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.network-device-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.network-device-option:hover {
+  background: var(--surface);
+}
+
+.network-device-option-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.network-device-option-body small {
+  color: var(--muted);
 }
 
 .code-block code {
@@ -1442,7 +1944,16 @@ code {
 
 
 .table-section {
-  margin-top: 22px;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.table-section > .section-title {
+  margin-bottom: 14px;
 }
 
 .settings-layout,
@@ -1514,6 +2025,98 @@ code {
   display: grid;
   gap: 12px;
   padding: 16px;
+}
+
+.topology-tree {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0 0 0 20px;
+  list-style: none;
+  border-left: 2px solid var(--line);
+}
+
+.topology-tree li {
+  position: relative;
+  padding-left: 12px;
+}
+
+.topology-tree li::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 14px;
+  width: 12px;
+  height: 2px;
+  background: var(--line);
+}
+
+.topology-tree-accounts {
+  border-left: none;
+  padding-left: 0;
+}
+
+.topology-tree-accounts > li::before {
+  display: none;
+}
+
+.topology-account summary {
+  cursor: pointer;
+}
+
+.topology-account-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.topology-uplink-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.topology-camera-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topology-camera-row small {
+  color: var(--muted);
+}
+
+.topology-camera-log {
+  margin-top: 4px;
+}
+
+.topology-camera-log summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.topology-camera-log ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.topology-camera-log li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 0;
+}
+
+.topology-camera-log li::before {
+  content: none;
 }
 
 .plugin-manager {
@@ -1615,6 +2218,40 @@ code {
   margin-bottom: 12px;
   font-size: 0.88rem;
   line-height: 1.4;
+}
+
+.source-add-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.source-add-panel > .standard-source-intro {
+  margin: -4px 0 0;
+}
+
+.source-add-panel > .editor-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.plugin-external-source-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.plugin-external-source-hint a {
+  flex: 0 0 auto;
 }
 
 .source-disclosure {
@@ -1731,6 +2368,192 @@ code {
   margin: 0;
 }
 
+.source-workspace {
+  display: grid;
+  grid-template-columns: minmax(210px, 250px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.source-filter-panel,
+.source-list-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.source-filter-panel {
+  position: sticky;
+  top: 86px;
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.source-filter-search {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.source-filter-search input {
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.source-filter-group {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.source-filter-group legend {
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.source-filter-option {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 9px;
+  border-color: transparent;
+  border-radius: 6px;
+  color: var(--text);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.84rem;
+}
+
+.source-filter-option:hover,
+.source-filter-option:focus {
+  color: var(--brand-strong);
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.source-filter-option.is-active {
+  color: var(--brand-strong);
+  border-color: color-mix(in srgb, var(--brand) 24%, transparent);
+  background: color-mix(in srgb, var(--brand) 14%, var(--surface));
+}
+
+.source-results {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.source-list-panel {
+  padding: 16px;
+}
+
+.source-list-panel > .section-title {
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.source-list-panel > .section-title > div {
+  min-width: 0;
+}
+
+.source-list-panel .standard-source-intro {
+  margin: 3px 0 0;
+  font-size: 0.85rem;
+}
+
+.source-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.source-list-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.05fr) minmax(175px, 1.1fr) minmax(112px, 0.58fr) minmax(130px, 0.78fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.source-list-row:last-child {
+  border-bottom: 0;
+}
+
+.source-list-primary,
+.source-list-repository {
+  min-width: 0;
+}
+
+.source-list-primary h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.source-list-primary p,
+.source-list-repository {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.source-list-repository {
+  display: grid;
+  gap: 2px;
+}
+
+.source-list-repository a {
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+
+.source-list-row > .status-pill {
+  justify-self: start;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.source-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.source-list-actions form {
+  margin: 0;
+}
+
+.compact-app .source-list-actions .primary-button,
+.compact-app .source-list-actions .secondary-button,
+.compact-app .source-list-actions .danger-button {
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 0.76rem;
+}
+
+.source-filter-empty {
+  margin: 0;
+}
+
 .compact-app .source-registration-actions button,
 .compact-app .source-registration-actions .secondary-button {
   min-height: 34px;
@@ -1794,6 +2617,16 @@ code {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Mirrors .cam-card:hover (the dashboard snapshot card) - clip-card is used
+   both here and in recordings.html's main clips gallery, so this one rule
+   covers both. */
+.clip-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
 }
 
 .clip-card video,
@@ -1803,6 +2636,16 @@ code {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #111817;
+}
+
+.clip-card video,
+.clip-card img.clip-media-still {
+  transition: transform 0.5s ease;
+}
+
+.clip-card:hover video,
+.clip-card:hover img.clip-media-still {
+  transform: scale(1.035);
 }
 
 .clip-card video {
@@ -2166,6 +3009,36 @@ code {
   cursor: nwse-resize;
 }
 
+.live-card-error-details {
+  margin: 4px 0 0;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 154, 154, 0.65);
+  border-radius: 6px;
+  color: white;
+  background: rgba(66, 10, 10, 0.86);
+  font-size: 0.74rem;
+  pointer-events: auto;
+}
+
+.live-card-error-details summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.live-card-error-details pre {
+  max-height: 9rem;
+  margin: 6px 0 0;
+  overflow: auto;
+  color: inherit;
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .live-card-message {
   margin: 0;
   padding-top: 2px;
@@ -2203,7 +3076,8 @@ code {
 body.live-kiosk .topbar,
 body.live-kiosk .page-heading,
 body.live-kiosk .debug-fab,
-body.live-kiosk .debug-drawer {
+body.live-kiosk .debug-drawer,
+body.live-kiosk .app-footer {
   display: none !important;
 }
 
@@ -3037,7 +3911,8 @@ tr:last-child td {
 }
 
 .compact-app .table-section {
-  margin-top: 16px;
+  margin-top: 14px;
+  padding: 14px;
 }
 
 .compact-app th,
@@ -3085,6 +3960,129 @@ tr:last-child td {
 .compact-app .empty-state {
   min-height: 200px;
   padding: 22px;
+}
+
+.docs-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.docs-sidebar,
+.docs-article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.docs-sidebar {
+  position: sticky;
+  top: 92px;
+  padding: 18px;
+}
+
+.docs-navigation {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.docs-navigation a {
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.docs-navigation a:hover,
+.docs-navigation a:focus,
+.docs-navigation a.active {
+  color: var(--brand-strong);
+  background: var(--surface-soft);
+}
+
+.docs-navigation a.active {
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.docs-article {
+  min-width: 0;
+  padding: clamp(22px, 4vw, 44px);
+}
+
+.markdown-body {
+  overflow-wrap: anywhere;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: 1.6em 0 0.55em;
+  line-height: 1.2;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--line);
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+
+.markdown-body h2 {
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+.markdown-body p,
+.markdown-body li {
+  line-height: 1.7;
+}
+
+.markdown-body a {
+  color: var(--brand-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.markdown-body pre,
+.markdown-body :not(pre) > code {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.markdown-body pre {
+  max-width: 100%;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.markdown-body :not(pre) > code {
+  padding: 0.12em 0.35em;
+}
+
+.markdown-body blockquote {
+  margin: 1.25rem 0;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 4px solid var(--brand);
+  color: var(--muted);
+}
+
+.markdown-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 
@@ -3136,12 +4134,58 @@ tr:last-child td {
     box-shadow: none;
   }
 
+  .mega-menu {
+    min-width: 0;
+    max-width: none;
+    padding: 10px;
+  }
+
+  .mega-menu-grid {
+    grid-template-columns: 1fr;
+    gap: 14px 0;
+  }
+
+  .mega-menu-column + .mega-menu-column {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+
+  .app-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .nav-logout {
     margin-left: 0;
   }
 }
 
+@media (max-width: 1100px) {
+  .source-list-row {
+    grid-template-columns: minmax(170px, 1fr) minmax(180px, 1fr) auto;
+  }
+
+  .source-list-row > .status-pill {
+    grid-column: 3;
+  }
+
+  .source-list-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 760px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-sidebar {
+    position: static;
+  }
+
   .auth-panel,
   .form-grid,
   .details-strip,
@@ -3172,6 +4216,10 @@ tr:last-child td {
 
   .span-2 {
     grid-column: auto;
+  }
+
+  .notification-event-card {
+    grid-template-columns: 1fr;
   }
 
   .page-heading {
@@ -3214,6 +4262,30 @@ tr:last-child td {
 
   .storage-list.standard-source-grid {
     grid-template-columns: 1fr;
+  }
+
+  .source-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .source-filter-panel {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .source-filter-search {
+    grid-column: 1 / -1;
+  }
+
+  .source-list-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .source-list-row > .status-pill,
+  .source-list-actions {
+    grid-column: auto;
   }
 
   .source-registration-grid,

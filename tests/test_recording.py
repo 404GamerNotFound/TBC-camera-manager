@@ -1,10 +1,19 @@
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from app.tbc import database, recording
 from app.tbc.maintenance import apply_cleanup, cleanup_preview
-from app.tbc.recording import ContinuousRecordingManager, _bbox_for_active_event, _drawbox_filter, _motion_is_active
+from app.tbc.recording import (
+    ContinuousRecordingManager,
+    _bbox_for_active_event,
+    _drawbox_filter,
+    _hevc_tag_args,
+    _motion_is_active,
+    _probe_video_codec,
+)
 
 
 class RecordingTests(unittest.TestCase):
@@ -67,6 +76,84 @@ class RecordingTests(unittest.TestCase):
             self.assertEqual([item["id"] for item in preview], [recording_id])
             self.assertEqual(deleted, 1)
             self.assertIsNone(database.get_recording(handle.name, recording_id))
+
+    def test_locked_recording_is_exempt_from_retention_cleanup(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Einfahrt",
+                host="192.0.2.10",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            recording_id = database.create_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=1,
+                detection_key="person",
+                event_label="Person",
+                storage_kind="local",
+                started_at="2000-06-01T12:00:00",
+            )
+            database.update_recording_finished(
+                handle.name,
+                recording_id,
+                status="ready",
+                size_bytes=1024,
+                ended_at="2000-06-01T12:00:30",
+            )
+            database.create_retention_rule(
+                handle.name,
+                name="Personen 7 Tage",
+                enabled=True,
+                camera_id=camera_id,
+                detection_key="person",
+                max_age_days=7,
+                max_size_gb=None,
+            )
+            database.set_recording_locked(handle.name, recording_id, True)
+
+            preview = cleanup_preview(handle.name)
+            deleted = apply_cleanup(handle.name)
+
+            self.assertEqual(preview, [])
+            self.assertEqual(deleted, 0)
+            self.assertIsNotNone(database.get_recording(handle.name, recording_id))
+
+    def test_set_recording_locked_toggles_flag_and_timestamp(self):
+        with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
+            database.initialize(handle.name)
+            camera_id = database.create_camera(
+                handle.name,
+                name="Einfahrt",
+                host="192.0.2.10",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            recording_id = database.create_recording(
+                handle.name,
+                camera_id=camera_id,
+                storage_id=1,
+                detection_key="person",
+                event_label="Person",
+                storage_kind="local",
+                started_at="2000-06-01T12:00:00",
+            )
+
+            database.set_recording_locked(handle.name, recording_id, True)
+            locked = database.get_recording(handle.name, recording_id)
+            self.assertTrue(locked["locked"])
+            self.assertIsNotNone(locked["locked_at"])
+
+            database.set_recording_locked(handle.name, recording_id, False)
+            unlocked = database.get_recording(handle.name, recording_id)
+            self.assertFalse(unlocked["locked"])
+            self.assertIsNone(unlocked["locked_at"])
 
     def test_retention_size_limit_keeps_newest_matching_clip(self):
         with tempfile.NamedTemporaryFile(suffix=".sqlite3") as handle:
@@ -365,6 +452,70 @@ class DrawboxFilterTests(unittest.TestCase):
         self.assertIn("y=ih*0.0000", expression)
         self.assertIn("w=iw*1.0000", expression)
         self.assertIn("h=ih*1.0000", expression)
+
+
+class HevcTagArgsTests(unittest.TestCase):
+    """`-c copy` passes the camera's own hev1/hvc1 tag through unchanged, and
+    IP cameras overwhelmingly write hev1 - which Safari/QuickTime refuse to
+    play at all in an MP4 container (issue: recorded clips silently fail to
+    play - NETWORK_NO_SOURCE - despite decoding fine elsewhere). These mock
+    ffprobe/subprocess directly rather than requiring the real binaries,
+    since CI's Python job (unlike the Docker build) doesn't install ffmpeg.
+    """
+
+    def _run(self, stdout: str):
+        with patch("app.tbc.recording.shutil.which", return_value="/usr/bin/ffprobe"):
+            with patch("app.tbc.recording.subprocess.run") as mock_run:
+                mock_run.return_value = subprocess.CompletedProcess(args=[], returncode=0, stdout=stdout, stderr="")
+                return _hevc_tag_args("body.ts"), mock_run
+
+    def test_hevc_gets_tagged_hvc1(self):
+        tag_args, _ = self._run("hevc\n")
+        self.assertEqual(tag_args, ["-tag:v", "hvc1"])
+
+    def test_h265_alias_also_gets_tagged(self):
+        tag_args, _ = self._run("h265\n")
+        self.assertEqual(tag_args, ["-tag:v", "hvc1"])
+
+    def test_h264_is_left_alone(self):
+        tag_args, _ = self._run("h264\n")
+        self.assertEqual(tag_args, [])
+
+    def test_duplicated_ffprobe_output_is_still_handled(self):
+        # Regression test: some sources make ffprobe repeat the same
+        # stream's fields more than once even with -select_streams v:0 -
+        # an exact-match comparison against the full (multi-line) stdout
+        # would silently skip the tag for a real HEVC camera.
+        tag_args, _ = self._run("hevc\nhevc\n")
+        self.assertEqual(tag_args, ["-tag:v", "hvc1"])
+
+    def test_missing_ffprobe_binary_fails_open(self):
+        with patch("app.tbc.recording.shutil.which", return_value=None):
+            self.assertIsNone(_probe_video_codec("body.ts"))
+            self.assertEqual(_hevc_tag_args("body.ts"), [])
+
+    def test_ffprobe_failure_fails_open(self):
+        with patch("app.tbc.recording.shutil.which", return_value="/usr/bin/ffprobe"):
+            with patch("app.tbc.recording.subprocess.run", side_effect=subprocess.TimeoutExpired("ffprobe", 10)):
+                self.assertIsNone(_probe_video_codec("body.ts"))
+                self.assertEqual(_hevc_tag_args("body.ts"), [])
+
+    def test_extra_probe_args_are_forwarded(self):
+        # Used to pass -rtsp_transport tcp when probing a live camera URI
+        # instead of a local file.
+        _, mock_run = self._run("h264\n")
+        called_args = mock_run.call_args[0][0]
+        self.assertNotIn("-rtsp_transport", called_args)
+
+        with patch("app.tbc.recording.shutil.which", return_value="/usr/bin/ffprobe"):
+            with patch("app.tbc.recording.subprocess.run") as mock_run_rtsp:
+                mock_run_rtsp.return_value = subprocess.CompletedProcess(
+                    args=[], returncode=0, stdout="h264\n", stderr=""
+                )
+                _hevc_tag_args("rtsp://camera/stream", extra_probe_args=["-rtsp_transport", "tcp"])
+                called_args = mock_run_rtsp.call_args[0][0]
+                self.assertIn("-rtsp_transport", called_args)
+                self.assertIn("tcp", called_args)
 
 
 if __name__ == "__main__":

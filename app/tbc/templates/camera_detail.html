@@ -7,6 +7,12 @@
   'recording_failed': 'Recording failed',
   'recording_skipped': 'Recording skipped'
 } %}
+{% set event_type_keys = {
+  'recording_started': 'camera.event_recording_started',
+  'recording_finished': 'camera.event_recording_saved',
+  'recording_failed': 'camera.event_recording_failed',
+  'recording_skipped': 'camera.event_recording_skipped'
+} %}
 <section class="page-heading camera-detail-heading">
   <div>
     <p class="eyebrow">{{ camera_module.label if camera_module else camera.module_key }} · {{ camera.host }}:{{ camera.onvif_port }}</p>
@@ -14,15 +20,15 @@
     <div class="camera-heading-status">
       <span class="status-pill status-{{ camera.last_probe_status or 'unknown' }}">{{ camera.last_probe_status or 'new' }}</span>
       {% if camera.recording_enabled %}<span data-i18n="camera.recording_active">Recording active</span>{% endif %}
-      <span>{{ detections | selectattr('active') | list | length }} active detections</span>
+      <span data-i18n="camera.active_detections" data-i18n-params='{{ {"count": detections | selectattr("active") | list | length} | tojson }}'>{{ detections | selectattr('active') | list | length }} active detections</span>
     </div>
   </div>
   {% if role == 'admin' %}
   <div class="button-row">
-    <form method="post" action="/cameras/{{ camera.id }}/refresh">
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/refresh">
       <button class="primary-button" type="submit" data-i18n="common.refresh">Refresh</button>
     </form>
-    <form method="post" action="/cameras/{{ camera.id }}/delete">
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/delete">
       <button class="danger-button" type="submit" data-i18n="common.delete">Delete</button>
     </form>
   </div>
@@ -41,13 +47,15 @@
 
 <nav class="detail-tabs" aria-label="Camera sections" data-i18n-aria-label="camera.camera_sections" role="tablist" data-detail-tabs>
   <button type="button" role="tab" aria-selected="true" aria-controls="camera-overview" data-detail-tab="overview" data-i18n="camera.overview">Overview</button>
+  <button type="button" role="tab" aria-selected="false" aria-controls="camera-plugin" data-detail-tab="plugin" data-i18n="camera.plugin">Plugin</button>
+  <button type="button" role="tab" aria-selected="false" aria-controls="camera-network" data-detail-tab="network" data-i18n="camera.network_tab">Network</button>
   {% if role == 'admin' %}
-  {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording">Recording <span class="tab-count">{{ events | length }}</span></button>{% endif %}
-  {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones">AI detection <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
+  {% if 'recording' in module_capabilities or (detection_settings and detection_settings.enabled) %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-recording" data-detail-tab="recording"><span data-i18n="camera.recording">Recording</span> <span class="tab-count">{{ events | length }}</span></button>{% endif %}
+  {% if camera.stream_uri %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-ai-zones" data-detail-tab="ai-zones"><span data-i18n="base.ai_detection">AI detection</span> <span class="tab-count">{{ detection_zones | length }}</span></button>{% endif %}
   {% if 'control' in module_capabilities %}<button type="button" role="tab" aria-selected="false" aria-controls="camera-control" data-detail-tab="control" data-i18n="camera.controls">Controls</button>{% endif %}
   <button type="button" role="tab" aria-selected="false" aria-controls="camera-connection" data-detail-tab="connection" data-i18n="camera.connection">Connection</button>
   {% endif %}
-  <button type="button" role="tab" aria-selected="false" aria-controls="camera-detections" data-detail-tab="detections">Detections <span class="tab-count">{{ detections | length }}</span></button>
+  <button type="button" role="tab" aria-selected="false" aria-controls="camera-detections" data-detail-tab="detections"><span data-i18n="camera.detections">Detections</span> <span class="tab-count">{{ detections | length }}</span></button>
 </nav>
 
 <div class="detail-tab-panel" id="camera-overview" role="tabpanel" data-detail-panel="overview">
@@ -55,7 +63,7 @@
   <div class="overview-metric overview-metric-device">
     <span data-i18n="camera.device">Device</span>
     <strong>{{ camera.manufacturer or 'Unknown' }} {{ camera.model or '' }}</strong>
-    <small>Firmware {{ camera.firmware or 'not reported' }}</small>
+    <small><span data-i18n="camera.firmware">Firmware</span> {% if camera.firmware %}{{ camera.firmware }}{% else %}<span data-i18n="camera.not_reported">not reported</span>{% endif %}</small>
   </div>
   <div class="overview-metric">
     <span data-i18n="camera.cpu_load">CPU load</span>
@@ -76,8 +84,8 @@
   </div>
   <div class="overview-metric">
     <span data-i18n="camera.last_check">Last check</span>
-    <strong class="overview-metric-time">{{ camera.last_probe_at or 'Not checked yet' }}</strong>
-    <small>{{ channels | length }} channel(s) · {{ detections | selectattr('supported') | list | length }} detections</small>
+    {% if camera.last_probe_at %}<strong class="overview-metric-time">{{ camera.last_probe_at | format_timestamp(ui_preferences) }}</strong>{% else %}<strong class="overview-metric-time" data-i18n="camera.not_checked_yet">Not checked yet</strong>{% endif %}
+    <small>{{ channels | length }} <span data-i18n="camera.channels">channels</span> · {{ detections | selectattr('supported') | list | length }} <span data-i18n="camera.detections_lower">detections</span></small>
   </div>
 </section>
 {% if camera.stream_uri %}
@@ -85,14 +93,20 @@
   <span data-i18n="camera.stream">Stream</span>
   <code>{{ camera.stream_uri | redact_rtsp_credentials }}</code>
   {% if 'live' in module_capabilities %}
-  <form method="post" action="/live/camera/{{ camera.id }}/start">
+  <form method="post" action="{{ ingress_prefix }}/live/camera/{{ camera.id }}/start">
     <button class="secondary-button" type="submit" data-i18n="camera.live">Live</button>
   </form>
   {% endif %}
   {% if 'archive' in module_capabilities %}
-  <a class="secondary-button" href="/sd-card?camera_id={{ camera.id }}" data-i18n="base.sd_card">SD card</a>
+  <a class="secondary-button" href="{{ ingress_prefix }}/sd-card?camera_id={{ camera.id }}" data-i18n="base.sd_card">SD card</a>
   {% endif %}
 </section>
+{% if live_diagnostic %}
+<section class="diagnostic-note diagnostic-{{ 'warning' if live_status == 'starting' else 'error' }}">
+  <strong data-i18n="camera.live_diagnostic_title">Live stream diagnosis</strong>
+  <p>{{ live_diagnostic | redact_rtsp_credentials }}</p>
+</section>
+{% endif %}
 {% endif %}
 
 {% if channels and 'channels' in module_capabilities %}
@@ -118,13 +132,13 @@
           <td>{{ channel.channel_index + 1 }}</td>
           <td>
             {% if role == 'admin' %}
-            <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/channels/{{ channel.id }}">
+            <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/channels/{{ channel.id }}">
               <input name="name" value="{{ channel.name }}" required>
               <label class="check-row">
                 <input name="enabled" type="checkbox" {% if channel.enabled %}checked{% endif %}>
                 <span data-i18n="camera.active">active</span>
               </label>
-              <button class="secondary-button" type="submit">OK</button>
+              <button class="secondary-button" type="submit" data-i18n="common.ok">OK</button>
             </form>
             {% else %}
             {{ channel.name }}
@@ -134,7 +148,7 @@
           <td data-i18n="{{ 'camera.yes' if channel.stream_uri else 'camera.channel_unknown' }}">{{ 'yes' if channel.stream_uri else 'unknown' }}</td>
           <td>
             {% if channel.stream_uri %}
-            <form method="post" action="/live/channel/{{ channel.id }}/start">
+            <form method="post" action="{{ ingress_prefix }}/live/channel/{{ channel.id }}/start">
               <button class="secondary-button" type="submit" data-i18n="camera.live">Live</button>
             </form>
             {% endif %}
@@ -146,20 +160,216 @@
   </div>
 </section>
 {% endif %}
+
+<section class="table-section">
+  <div class="section-title">
+    <h2 data-i18n="camera.recent_clips">Recent clips</h2>
+    <a class="text-button" href="{{ ingress_prefix }}/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
+  </div>
+  {% if recent_clips %}
+  <section class="clip-grid">
+    {% for clip in recent_clips %}
+    <article class="clip-card">
+      {% if clip.snapshot_path or clip.snapshot_remote_key %}
+      <img class="clip-media-still" src="{{ ingress_prefix }}/recordings/{{ clip.id }}/snapshot" alt="{{ clip.event_label }}" loading="lazy" decoding="async">
+      {% else %}
+      <div class="clip-placeholder">{{ clip.detection_key }}</div>
+      {% endif %}
+      <div class="clip-body">
+        <div class="card-header">
+          <div>
+            <h2{% if clip.detection_key == 'continuous' %} data-i18n="timeline.continuous"{% endif %}>{{ 'Continuous' if clip.detection_key == 'continuous' else clip.event_label }}</h2>
+            <p>{{ clip.started_at | format_timestamp(ui_preferences) }}</p>
+          </div>
+          <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
+        </div>
+        <div class="card-footer">
+          <span>{{ clip.duration_seconds or 0 }}s · {{ clip.storage_kind }}</span>
+          <a class="secondary-button" href="{{ ingress_prefix }}/recordings/{{ clip.id }}/download" data-i18n="common.download">Download</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <div class="quiet-box" data-i18n="recordings.no_clips_found">No clips found</div>
+  {% endif %}
+</section>
+
 {% if role != 'admin' %}
 <section class="stream-line">
   <span data-i18n="camera.recordings">Recordings</span>
-  <a class="text-button" href="/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
+  <a class="text-button" href="{{ ingress_prefix }}/recordings?camera_id={{ camera.id }}" data-i18n="camera.open_clips">Open clips</a>
   {% if 'archive' in module_capabilities %}
-  <a class="text-button" href="/sd-card?camera_id={{ camera.id }}" data-i18n="camera.open_sd_card">Open SD card</a>
+  <a class="text-button" href="{{ ingress_prefix }}/sd-card?camera_id={{ camera.id }}" data-i18n="camera.open_sd_card">Open SD card</a>
   {% endif %}
 </section>
 {% endif %}
 </div>
 
+<div class="detail-tab-panel" id="camera-plugin" role="tabpanel" data-detail-panel="plugin" hidden>
+  {% if not camera_module %}
+  <div class="diagnostic-note diagnostic-warning" data-i18n="camera.plugin_not_installed" data-i18n-params='{{ {"key": camera.module_key} | tojson }}'>The plugin "{{ camera.module_key }}" is not installed on this server. Some tabs and settings for this camera may be unavailable until it is reinstalled.</div>
+  {% if role == 'admin' %}
+  <div class="form-actions">
+    <a class="secondary-button" href="{{ ingress_prefix }}/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+  </div>
+  {% endif %}
+  {% else %}
+  <section class="table-section">
+    <div class="section-title">
+      <h2>{{ camera_module.label }}</h2>
+      <span>{{ camera_module.key }}</span>
+    </div>
+    {% if camera_module.description %}
+    <p class="hint-text">{{ camera_module.description }}</p>
+    {% endif %}
+    <dl class="metric-row plugin-card-meta">
+      <div>
+        <dt data-i18n="camera.source">Source</dt>
+        <dd>
+          {% if camera_module_registration and camera_module_registration.origin == 'uploaded' %}<span data-i18n="plugin.source_zip_import">ZIP import</span>
+          {% elif camera_module_registration and camera_module_registration.origin == 'entrypoint' %}<span data-i18n="plugin.source_entrypoint">Python package</span>
+          {% else %}<span data-i18n="plugin.source_builtin">Built-in</span>{% endif %}
+        </dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.plugin_version">Version</dt>
+        <dd>{{ camera_module_registration.version if camera_module_registration else '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.plugin_requires_credentials">Requires credentials</dt>
+        <dd data-i18n="{{ 'camera.yes' if camera_module.requires_credentials else 'camera.no' }}">{{ 'yes' if camera_module.requires_credentials else 'no' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.plugin_custom_stream_url">Custom stream URL</dt>
+        <dd data-i18n="{{ 'camera.plugin_custom_stream_required' if camera_module.requires_manual_stream_uri else ('camera.plugin_custom_stream_supported' if camera_module.supports_manual_stream_uri else 'camera.plugin_custom_stream_not_applicable') }}">
+          {{ 'required' if camera_module.requires_manual_stream_uri else ('supported' if camera_module.supports_manual_stream_uri else 'not applicable') }}
+        </dd>
+      </div>
+    </dl>
+    {% if camera_module.capabilities %}
+    <p class="section-title" data-i18n="camera.plugin_capabilities">Capabilities</p>
+    <p class="plugin-card-capabilities">
+      {% for capability in camera_module.capabilities %}
+      <span class="status-pill status-active">{{ capability.value }}</span>
+      {% endfor %}
+    </p>
+    {% endif %}
+  </section>
+  {% if role == 'admin' and camera_module_registration %}
+  <div class="form-actions">
+    <a class="secondary-button" href="{{ ingress_prefix }}/camera-modules" data-i18n="plugin_source.manage_camera_plugins">Manage camera plugins</a>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+<div class="detail-tab-panel" id="camera-network" role="tabpanel" data-detail-panel="network" hidden>
+  {% if not network_accounts %}
+  <div class="diagnostic-note" data-i18n="camera.network_no_accounts_configured">No network provider account has been configured yet.</div>
+  {% if role == 'admin' %}
+  <div class="form-actions">
+    <a class="secondary-button" href="{{ ingress_prefix }}/network-accounts" data-i18n="network_account.manage_network_providers">Manage network providers</a>
+  </div>
+  {% endif %}
+  {% elif camera.network_account_id and camera.network_device_mac %}
+  <section class="table-section">
+    <div class="section-title">
+      <h2 data-i18n="camera.network_tab">Network</h2>
+      {% if network_state %}
+      <span class="status-pill {{ 'status-active' if network_state.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if network_state.online else 'network_account.offline' }}">{{ 'online' if network_state.online else 'offline' }}</span>
+      {% endif %}
+    </div>
+    {% if not network_state %}
+    <div class="diagnostic-note diagnostic-warning" data-i18n="camera.device_status_being_retrieved_background">The device status is being retrieved in the background or could not be reached recently. Commands can still be sent if the camera supports them; the status will be current the next time this page is opened.</div>
+    {% else %}
+    <dl class="metric-row plugin-card-meta">
+      <div>
+        <dt data-i18n="camera.network_connection_type">Connection</dt>
+        <dd data-i18n="{{ 'network_account.wired' if network_state.connection_type == 'wired' else 'network_account.wifi' }}">{{ network_state.connection_type or '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.network_uplink">Connected via</dt>
+        <dd>{{ network_state.uplink_name or '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.network_signal">Signal</dt>
+        <dd>{% if network_state.signal_dbm is not none %}{{ network_state.signal_dbm }} dBm{% else %}–{% endif %}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.network_ip_address">IP address</dt>
+        <dd>{{ network_state.ip_address or '–' }}</dd>
+      </div>
+      <div>
+        <dt data-i18n="camera.last_seen">Last seen</dt>
+        <dd>{% if network_state.last_seen %}{{ network_state.last_seen | format_timestamp(ui_preferences) }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</dd>
+      </div>
+    </dl>
+    {% endif %}
+    <p class="hint-text">{{ camera.network_device_mac }}</p>
+  </section>
+  {% if role == 'admin' %}
+  <div class="form-actions">
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/network/unlink">
+      <button class="danger-button" type="submit" data-i18n="network_account.unlink">Unlink</button>
+    </form>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="diagnostic-note" data-i18n="camera.network_not_mapped">This camera is not mapped to a network device yet.</div>
+  {% if role == 'admin' %}
+  <form class="inline-form" method="get" action="{{ ingress_prefix }}/cameras/{{ camera.id }}#network" data-network-picker-form>
+    <label>
+      <span data-i18n="network_account.account">Account</span>
+      <select name="network_account_id" data-network-picker-select>
+        <option value="" data-i18n="network_account.select_account">Select an account</option>
+        {% for account in network_accounts %}
+        <option value="{{ account.id }}" {% if account.id == network_picker_account_id %}selected{% endif %}>{{ account.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+  {% if network_picker_error %}
+  <div class="diagnostic-note diagnostic-warning">{{ network_picker_error }}</div>
+  {% elif network_picker_account_id %}
+  {% if not network_picker_devices %}
+  <p class="quiet-box" data-i18n="network_account.no_devices_found">No devices were found on this account.</p>
+  {% else %}
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/network">
+    <input type="hidden" name="network_account_id" value="{{ network_picker_account_id }}">
+    <label>
+      <span data-i18n="network_account.device">Device</span>
+      <input type="search" placeholder="Search devices…" data-i18n-placeholder="network_account.search_devices" autocomplete="off" data-plugin-search="#network-device-list">
+    </label>
+    <div class="network-device-list" id="network-device-list">
+      {% for device in network_picker_devices %}
+      <label class="network-device-option" data-plugin-search-item>
+        <input type="radio" name="mac" value="{{ device.mac_address }}" required>
+        <span class="network-device-option-body">
+          <strong>{{ device.name }}</strong>
+          <small>{{ device.mac_address }}{% if device.ip_address %} · {{ device.ip_address }}{% endif %}</small>
+        </span>
+        {% if device.online is not none %}
+        <span class="status-pill {{ 'status-active' if device.online else 'status-idle' }}" data-i18n="{{ 'network_account.online' if device.online else 'network_account.offline' }}">{{ 'online' if device.online else 'offline' }}</span>
+        {% endif %}
+      </label>
+      {% endfor %}
+      <p class="quiet-box" data-plugin-search-empty hidden data-i18n="network_account.no_devices_match_search">No devices match your search.</p>
+    </div>
+    <div class="form-actions">
+      <button class="primary-button" type="submit" data-i18n="network_account.map_camera">Map camera</button>
+    </div>
+  </form>
+  {% endif %}
+  {% endif %}
+  {% endif %}
+  {% endif %}
+</div>
+
 {% if role == 'admin' %}
 <div class="detail-tab-panel" id="camera-connection" role="tabpanel" data-detail-panel="connection" hidden>
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/connection">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/connection">
     <div class="section-title">
       <h2 data-i18n="camera.connection">Connection</h2>
       <span>{{ camera.host }}:{{ camera.onvif_port }}</span>
@@ -170,7 +380,11 @@
         <input name="name" value="{{ camera.name }}" required>
       </label>
       <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
+        {% if camera_module and camera_module.identifier_label %}
+        <span>{{ camera_module.identifier_label }}</span>
+        {% else %}
         <span data-i18n="camera.host_ip">Host / IP</span>
+        {% endif %}
         <input name="host" value="{{ camera.host }}" required>
       </label>
       <label {% if camera_module and camera_module.requires_manual_stream_uri %}hidden{% endif %}>
@@ -194,7 +408,7 @@
         <span data-i18n="camera.new_rtsp_rtsps_url">New RTSP/RTSPS URL</span>
         <input name="manual_stream_uri" type="password" autocomplete="off" placeholder="leave blank = unchanged" data-i18n-placeholder="camera.leave_blank_unchanged">
         {% if camera.manual_stream_uri %}
-        <small>Current: <code>{{ camera.manual_stream_uri | redact_rtsp_credentials }}</code></small>
+        <small><span data-i18n="camera.current">Current:</span> <code>{{ camera.manual_stream_uri | redact_rtsp_credentials }}</code></small>
         {% else %}
         <small data-i18n="camera.full_url_stored_securely_redacted">The full URL is stored securely and redacted in the interface.</small>
         {% endif %}
@@ -221,7 +435,7 @@
 <div class="detail-tab-panel recording-tab-layout" id="camera-recording" role="tabpanel" data-detail-panel="recording" hidden>
   <div class="recording-stack">
   {% if 'recording' in module_capabilities %}
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/continuous-recording">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/continuous-recording">
     <div class="section-title">
       <h2 data-i18n="camera.continuous_recording">Continuous recording</h2>
       {% if camera.continuous_recording_enabled %}
@@ -252,13 +466,13 @@
       </label>
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/timeline?camera_id={{ camera.id }}" data-i18n="camera.open_timeline">Open timeline</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/timeline?camera_id={{ camera.id }}" data-i18n="camera.open_timeline">Open timeline</a>
       <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
     </div>
   </form>
   {% endif %}
 
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/recording">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/recording">
     <div class="section-title">
       <h2 data-i18n="camera.motion_recording">Motion recording</h2>
       {% if camera.recording_enabled %}
@@ -334,13 +548,13 @@
         {% endif %}
         <p class="hint-text" data-i18n="camera.local_ai_hint">Detections produced by the TBC server's image model, independently of the events reported by the camera.</p>
         <div class="button-row trigger-actions">
-          <button class="text-button" type="button" data-trigger-selection="all" {% if not local_ai_enabled %}disabled{% endif %}>Select all</button>
+          <button class="text-button" type="button" data-trigger-selection="all" {% if not local_ai_enabled %}disabled{% endif %} data-i18n="camera.select_all">Select all</button>
         </div>
         <div class="checkbox-grid">
           {% for trigger in ai_triggers %}
           <label class="check-row">
             <input name="trigger_keys" type="checkbox" value="{{ trigger.key }}" {% if trigger.key in active_trigger_keys %}checked{% endif %} {% if not local_ai_enabled %}disabled{% endif %}>
-            <span>{{ trigger.label }}</span>
+            <span data-i18n="detection.trigger_{{ trigger.key }}">{{ trigger.label }}</span>
           </label>
           {% if not local_ai_enabled and trigger.key in active_trigger_keys %}
           <input name="trigger_keys" type="hidden" value="{{ trigger.key }}">
@@ -351,7 +565,29 @@
       {% endif %}
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/storage" data-i18n="camera.manage_storage">Manage storage</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/storage" data-i18n="camera.manage_storage">Manage storage</a>
+      <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+    </div>
+  </form>
+
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/storage-quota">
+    <div class="section-title">
+      <h2 data-i18n="camera.storage_quota_title">Storage quota</h2>
+      <span data-i18n="camera.storage_quota_usage" data-i18n-params='{{ {"gb": camera_usage_gb} | tojson }}'>Current usage: {{ camera_usage_gb }} GB</span>
+    </div>
+    <p class="hint-text" data-i18n="camera.storage_quota_hint">Limits how much this camera's clips may occupy: by age, size, or both. The oldest unlocked clips are deleted first during the regular retention cleanup. Leave both fields empty for no per-camera limit.</p>
+    <div class="form-grid">
+      <label>
+        <span data-i18n="retention.maximum_age_days">Maximum age in days</span>
+        <input name="quota_max_age_days" type="number" min="1" value="{{ camera_quota_rule.max_age_days if camera_quota_rule and camera_quota_rule.max_age_days else '' }}">
+      </label>
+      <label>
+        <span data-i18n="retention.maximum_size_gb">Maximum size in GB</span>
+        <input name="quota_max_size_gb" type="number" min="0.1" step="0.1" value="{{ camera_quota_rule.max_size_gb if camera_quota_rule and camera_quota_rule.max_size_gb else '' }}">
+      </label>
+    </div>
+    <div class="form-actions">
+      <a class="secondary-button" href="{{ ingress_prefix }}/retention" data-i18n="common.retention">Retention</a>
       <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
     </div>
   </form>
@@ -368,13 +604,13 @@
       {% for event in events %}
       <li>
         <div class="event-list-heading">
-          <strong>{{ event_type_labels.get(event.event_type, event.event_type) }}</strong>
+          <strong data-i18n="{{ event_type_keys.get(event.event_type, '') }}">{{ event_type_labels.get(event.event_type, event.event_type) }}</strong>
           {% if event.detection_key %}
           {% set event_key = event.detection_key.split(':')[-1] %}
           <span class="event-trigger">{{ trigger_labels.get(event_key, event_key | replace('_', ' ') | title) }}</span>
           {% endif %}
         </div>
-        <span>{{ event.created_at }}</span>
+        <span>{{ event.created_at | format_timestamp(ui_preferences) }}</span>
         {% if event.payload %}
         <p>{{ event.payload }}</p>
         {% endif %}
@@ -390,7 +626,7 @@
 
   {% if camera.stream_uri %}
 <div class="detail-tab-panel" id="camera-ai-zones" role="tabpanel" data-detail-panel="ai-zones" hidden>
-  <form class="editor-form compact-form" method="post" action="/cameras/{{ camera.id }}/detection">
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/detection">
     <div class="section-title">
       <h2 data-i18n="camera.local_ai_short">Local AI detection</h2>
       {% if detection_settings and detection_settings.enabled %}
@@ -400,9 +636,8 @@
       {% endif %}
     </div>
     <p class="hint-text">
-      Detects people, vehicles, and animals directly in the video stream, independently of the events reported by the camera.
-      It runs on the TBC server's CPU and may require noticeable processing power depending on the camera resolution.
-      {% if 'recording' not in module_capabilities %}This camera module does not support event recordings. Detections are still captured and exposed through MQTT/Home Assistant, but they do not create a clip.{% endif %}
+      <span data-i18n="camera.local_ai_description">Detects people, vehicles, and animals directly in the video stream, independently of the events reported by the camera. It runs on the TBC server's CPU and may require noticeable processing power depending on the camera resolution.</span>
+      {% if 'recording' not in module_capabilities %}<span data-i18n="camera.local_ai_no_recording_hint">This camera module does not support event recordings. Detections are still captured and exposed through MQTT/Home Assistant, but they do not create a clip.</span>{% endif %}
     </p>
     <label class="check-row">
       <input name="detection_enabled" type="checkbox" {% if detection_settings and detection_settings.enabled %}checked{% endif %}>
@@ -421,7 +656,7 @@
         <span data-i18n="camera.backend">Backend</span>
         <select name="detection_backend">
           {% for key, available, message in detection_backend_status %}
-          <option value="{{ key }}" {% if (detection_settings.backend if detection_settings else 'cpu') == key %}selected{% endif %}>
+          <option value="{{ key }}" {% if (detection_settings.backend if detection_settings else 'cpu') == key %}selected{% endif %}{% if not available %} data-i18n="camera.backend_option_unavailable" data-i18n-params='{{ {"label": detection_backend_labels.get(key, key | upper)} | tojson }}'{% endif %}>
             {{ detection_backend_labels.get(key, key | upper) }}{% if not available %} (unavailable on this server){% endif %}
           </option>
           {% endfor %}
@@ -429,7 +664,32 @@
       </label>
     </div>
     <div class="form-actions">
-      <a class="secondary-button" href="/detection" data-i18n="camera.backend_status">Backend-Status</a>
+      <a class="secondary-button" href="{{ ingress_prefix }}/detection" data-i18n="camera.backend_status">Backend-Status</a>
+      <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+    </div>
+  </form>
+
+  <form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/audio-detection">
+    <div class="section-title">
+      <h2 data-i18n="camera.local_audio_short">Local audio detection</h2>
+      {% if audio_detection_settings and audio_detection_settings.enabled %}
+      <span class="status-pill status-active" data-i18n="camera.active">active</span>
+      {% else %}
+      <span class="status-pill status-idle" data-i18n="camera.off">off</span>
+      {% endif %}
+    </div>
+    <p class="hint-text" data-i18n="camera.local_audio_description">Detects barking, breaking glass, and smoke/fire alarm sounds directly from the camera's audio stream, independently of the events reported by the camera. Requires a configured local audio model - see the deployment documentation.</p>
+    <label class="check-row">
+      <input name="audio_detection_enabled" type="checkbox" {% if audio_detection_settings and audio_detection_settings.enabled %}checked{% endif %}>
+      <span data-i18n="camera.enable_local_audio">Enable local audio detection for this camera</span>
+    </label>
+    <div class="form-grid">
+      <label>
+        <span data-i18n="camera.min_confidence">Minimum confidence</span>
+        <input name="audio_detection_confidence_threshold" type="number" min="0.05" max="1" step="0.05" value="{{ audio_detection_settings.confidence_threshold if audio_detection_settings else detection_default_confidence_threshold }}" required>
+      </label>
+    </div>
+    <div class="form-actions">
       <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
     </div>
   </form>
@@ -446,7 +706,7 @@
       local AI detection evaluates the entire image.
     </p>
     <div class="zone-editor-canvas-wrap">
-      <img class="zone-editor-image" data-zone-image src="/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image">
+      <img class="zone-editor-image" data-zone-image src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
       <canvas class="zone-editor-canvas" data-zone-canvas></canvas>
     </div>
     <div class="zone-editor-toolbar">
@@ -494,12 +754,12 @@
       <li data-zone-id="{{ zone.id }}">
         <div class="zone-list-heading">
           <strong>{{ zone.name }}</strong>
-          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}">
+          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}" data-i18n="{% if zone.mode == 'exclude' %}zones.mode_exclude{% elif zone.mode == 'loiter' %}zones.mode_loiter{% else %}zones.mode_include{% endif %}" data-i18n-params='{{ {"seconds": zone.min_dwell_seconds} | tojson }}'>
             {% if zone.mode == 'exclude' %}Exclude{% elif zone.mode == 'loiter' %}Loitering zone ({{ zone.min_dwell_seconds }}s){% else %}Include{% endif %}
           </span>
         </div>
         <span>
-          {% if zone.classes %}{% for key in zone.classes %}{{ detection_key_labels.get(key, key) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}All classes{% endif %}
+          {% if zone.classes %}{% for key in zone.classes %}{{ detection_key_labels.get(key, key) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span data-i18n="common.all_classes">All classes</span>{% endif %}
         </span>
         <button class="text-button" type="button" data-zone-delete="{{ zone.id }}" data-i18n="common.delete">Delete</button>
       </li>
@@ -517,12 +777,12 @@
   <div class="tbc-toast-stack" data-toast-stack aria-live="polite"></div>
 
   {% if control_channel_options|length > 1 %}
-  <form class="inline-form control-channel-form" method="get" action="/cameras/{{ camera.id }}#control" data-control-channel-form>
+  <form class="inline-form control-channel-form" method="get" action="{{ ingress_prefix }}/cameras/{{ camera.id }}#control" data-control-channel-form>
     <label>
       <span data-i18n="camera.channel">Channel</span>
       <select name="control_channel" data-control-channel-select>
         {% for option in control_channel_options %}
-        <option value="{{ option }}" {% if option == selected_control_channel %}selected{% endif %}>Channel {{ option + 1 }}</option>
+        <option value="{{ option }}" {% if option == selected_control_channel %}selected{% endif %} data-i18n="camera.channel_number" data-i18n-params='{{ {"number": option + 1} | tojson }}'>Channel {{ option + 1 }}</option>
         {% endfor %}
       </select>
     </label>
@@ -553,13 +813,13 @@
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.pan_tilt_head_ptz">Pan/tilt head (PTZ)</h2></div>
     <div class="button-row ptz-controls">
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Up"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.up">▲ Up</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Down"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.down">▼ Down</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Left"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.left">◄ Left</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Right"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.right">► Right</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomInc"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_in">＋ Zoom</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomDec"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_out">－ Zoom</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Stop"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="text-button" type="submit" data-i18n="camera.stop">■ Stop</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Up"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.up">▲ Up</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Down"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.down">▼ Down</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Left"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.left">◄ Left</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Right"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.right">► Right</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomInc"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_in">＋ Zoom</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="ZoomDec"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.zoom_out">－ Zoom</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form><input type="hidden" name="command" value="Stop"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="text-button" type="submit" data-i18n="camera.stop">■ Stop</button></form>
     </div>
   </section>
   {% if control_state and control_state.ptz_presets %}
@@ -567,24 +827,64 @@
     <div class="section-title"><h2 data-i18n="camera.ptz_presets">PTZ presets</h2></div>
     <div class="button-row ptz-controls">
       {% for preset_name, preset_id in control_state.ptz_presets.items() %}
-      <form method="post" action="/cameras/{{ camera.id }}/control/ptz" data-control-form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz" data-control-form>
         <input type="hidden" name="preset" value="{{ preset_id }}">
         <input type="hidden" name="channel" value="{{ selected_control_channel }}">
         <button class="secondary-button" type="submit">{{ preset_name }}</button>
       </form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-preset-delete" data-control-form>
+        <input type="hidden" name="preset" value="{{ preset_id }}">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="text-button" type="submit" data-i18n="camera.ptz_preset_delete_named" data-i18n-params='{{ {"name": preset_name} | tojson }}'>Delete {{ preset_name }}</button>
+      </form>
       {% endfor %}
     </div>
+  </section>
+  {% endif %}
+  {% if control_state and 'ptz_presets' in control_state %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.ptz_preset_save">Save preset</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-preset-save" data-control-form>
+      <label><span data-i18n="camera.ptz_preset_name">Preset name</span><input name="name" type="text" required maxlength="64"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.ptz_preset_save">Save preset</button>
+    </form>
+  </section>
+  {% endif %}
+  {% if control_state and control_state.ptz_patrol_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.ptz_patrol">Patrol</h2></div>
+    {% if control_state.ptz_patrol_tours %}
+    <div class="button-row ptz-controls">
+      {% for tour_name, tour_id in control_state.ptz_patrol_tours.items() %}
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-patrol" data-control-form>
+        <input type="hidden" name="tour" value="{{ tour_id }}">
+        <input type="hidden" name="command" value="start">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="primary-button" type="submit">{{ tour_name }}</button>
+      </form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ptz-patrol" data-control-form>
+        <input type="hidden" name="tour" value="{{ tour_id }}">
+        <input type="hidden" name="command" value="stop">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="text-button" type="submit" data-i18n="camera.stop">■ Stop</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="diagnostic-note" data-i18n="camera.ptz_patrol_no_tours">This camera supports patrol but has no tours configured yet. Configure tours in the camera's own admin interface.</div>
+    {% endif %}
   </section>
   {% endif %}
   {% endif %}
 
   {% if control_state and (control_state.zoom_supported or control_state.focus_supported) %}
   <section class="table-section">
-    <div class="section-title"><h2 data-i18n="camera.zoom_focus">Zoom &amp; Fokus</h2></div>
+    <div class="section-title"><h2 data-i18n="camera.zoom_focus">Zoom &amp; Focus</h2></div>
     {% if control_state.zoom_supported %}
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/zoom" data-control-form>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/zoom" data-control-form>
       <label>
-        <span>Zoom ({{ control_state.zoom_range.min }}–{{ control_state.zoom_range.max }})</span>
+        <span data-i18n="camera.zoom_range" data-i18n-params='{{ {"min": control_state.zoom_range.min, "max": control_state.zoom_range.max} | tojson }}'>Zoom ({{ control_state.zoom_range.min }}–{{ control_state.zoom_range.max }})</span>
         <input name="position" type="range" min="{{ control_state.zoom_range.min or 0 }}" max="{{ control_state.zoom_range.max or 100 }}" value="{{ control_state.zoom_position or control_state.zoom_range.min or 0 }}">
       </label>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
@@ -592,13 +892,254 @@
     </form>
     {% endif %}
     {% if control_state.focus_supported %}
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/focus" data-control-form>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/focus" data-control-form>
       <label>
-        <span>Fokus ({{ control_state.focus_range.min }}–{{ control_state.focus_range.max }})</span>
+        <span data-i18n="camera.focus_range" data-i18n-params='{{ {"min": control_state.focus_range.min, "max": control_state.focus_range.max} | tojson }}'>Focus ({{ control_state.focus_range.min }}–{{ control_state.focus_range.max }})</span>
         <input name="position" type="range" min="{{ control_state.focus_range.min or 0 }}" max="{{ control_state.focus_range.max or 100 }}" value="{{ control_state.focus_position or control_state.focus_range.min or 0 }}">
       </label>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="secondary-button" type="submit" data-i18n="camera.apply_focus">Apply focus</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.image_bright_supported or control_state.image_contrast_supported or control_state.image_saturation_supported or control_state.image_hue_supported or control_state.image_sharpness_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.image_adjustments">Image adjustments</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/image" data-control-form>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      {% if control_state.image_bright_supported %}
+      <label><span data-i18n="camera.brightness">Brightness</span><input name="bright" type="range" min="0" max="255" value="{{ control_state.image_brightness or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_contrast_supported %}
+      <label><span data-i18n="camera.contrast">Contrast</span><input name="contrast" type="range" min="0" max="255" value="{{ control_state.image_contrast or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_saturation_supported %}
+      <label><span data-i18n="camera.saturation">Saturation</span><input name="saturation" type="range" min="0" max="255" value="{{ control_state.image_saturation or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_hue_supported %}
+      <label><span data-i18n="camera.hue">Hue</span><input name="hue" type="range" min="0" max="255" value="{{ control_state.image_hue or 0 }}"></label>
+      {% endif %}
+      {% if control_state.image_sharpness_supported %}
+      <label><span data-i18n="camera.sharpness">Sharpness</span><input name="sharpness" type="range" min="0" max="255" value="{{ control_state.image_sharpness or 0 }}"></label>
+      {% endif %}
+      <button class="secondary-button" type="submit" data-i18n="camera.apply_image_adjustments">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.daynight_mode is not none or control_state.hdr_supported or control_state.ir_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.day_night_ir">Day/Night &amp; IR</h2></div>
+    {% if control_state.daynight_mode is not none %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/daynight" data-control-form>
+      <label><span data-i18n="camera.day_night_mode">Day/Night mode</span>
+        <select name="mode">
+          <option value="Auto" {% if control_state.daynight_mode == "Auto" %}selected{% endif %} data-i18n="camera.mode_auto">Auto</option>
+          <option value="Color" {% if control_state.daynight_mode == "Color" %}selected{% endif %} data-i18n="camera.mode_color">Color</option>
+          <option value="Black&amp;White" {% if control_state.daynight_mode == "Black&White" %}selected{% endif %} data-i18n="camera.mode_black_white">Black &amp; White</option>
+        </select>
+      </label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% if control_state.daynight_threshold is not none %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/daynight-threshold" data-control-form>
+      <label><span data-i18n="camera.day_night_threshold">Day/Night threshold</span><input name="value" type="range" min="0" max="100" value="{{ control_state.daynight_threshold }}"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% if control_state.hdr_supported %}
+    <div class="button-row">
+      <span data-i18n="camera.hdr">HDR</span>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/hdr" data-control-form><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="camera.turn">Turn on</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/hdr" data-control-form><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.turn_off">Turn off</button></form>
+    </div>
+    {% endif %}
+    {% if control_state.ir_supported %}
+    <div class="button-row">
+      <span data-i18n="camera.ir_lights">IR lights</span>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ir-lights" data-control-form><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="api.activate">Activate</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ir-lights" data-control-form><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.deactivate">Deactivate</button></form>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.md_sensitivity_supported or control_state.ai_sensitivity_rows) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.detection_sensitivity">Detection sensitivity</h2></div>
+    {% if control_state.md_sensitivity_supported %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/md-sensitivity" data-control-form>
+      <label><span data-i18n="camera.motion_sensitivity">Motion sensitivity</span><input name="value" type="range" min="1" max="50" value="{{ control_state.md_sensitivity or 25 }}"></label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% for row in control_state.ai_sensitivity_rows %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/ai-sensitivity" data-control-form>
+      <label><span>{{ row.label }}</span><input name="value" type="range" min="0" max="100" value="{{ row.value or 50 }}"></label>
+      <input type="hidden" name="ai_type" value="{{ row.ai_type }}">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if control_state and control_state.md_zone_supported %}
+  <section class="table-section" data-md-zone-editor data-camera-id="{{ camera.id }}" data-control-channel="{{ selected_control_channel }}">
+    <div class="section-title"><h2 data-i18n="camera.md_zone_title">Onboard motion zones</h2></div>
+    <div class="diagnostic-note diagnostic-warning" data-i18n="camera.md_zone_experimental_note">Experimental: this uses the camera's ONVIF motion-detection grid, which is not standardized in the same way across vendors. It may not work on every camera. The grid does not reflect the camera's current zone configuration; it starts fully selected and only writes what you set here.</div>
+    <div class="md-zone-grid" data-md-zone-grid style="--md-zone-columns: {{ control_state.md_zone_columns }};" data-columns="{{ control_state.md_zone_columns }}" data-rows="{{ control_state.md_zone_rows }}"></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/md-zone" data-control-form data-md-zone-form>
+      <input type="hidden" name="config_token" value="{{ control_state.md_zone_config_token }}">
+      <input type="hidden" name="columns" value="{{ control_state.md_zone_columns }}">
+      <input type="hidden" name="rows" value="{{ control_state.md_zone_rows }}">
+      <input type="hidden" name="cells" data-md-zone-cells value="">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="button" data-md-zone-select-all data-i18n="camera.md_zone_select_all">Select all</button>
+      <button class="secondary-button" type="button" data-md-zone-clear data-i18n="camera.md_zone_clear">Clear all</button>
+      <button class="primary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and control_state.privacy_mask_supported %}
+  <section class="table-section" data-privacy-mask-editor data-camera-id="{{ camera.id }}" data-control-channel="{{ selected_control_channel }}">
+    <div class="section-title"><h2 data-i18n="camera.privacy_mask_title">Privacy masks</h2></div>
+    <div class="diagnostic-note diagnostic-warning" data-i18n="camera.privacy_mask_experimental_note">Experimental: this uses the camera's ONVIF Media2 service, which is not implemented by every ONVIF camera. Masks are always solid black rectangles/polygons and cannot be edited after creation - delete and recreate to change one.</div>
+    {% if control_state.privacy_masks %}
+    <ul class="privacy-mask-list">
+      {% for mask in control_state.privacy_masks %}
+      <li>
+        <span data-i18n="camera.privacy_mask_point_count" data-i18n-params='{{ {"count": mask.points | length} | tojson }}'>{{ mask.points | length }} points</span>
+        <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/privacy-mask-delete" data-control-form>
+          <input type="hidden" name="token" value="{{ mask.token }}">
+          <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+          <button class="text-button" type="submit" data-i18n="common.delete">Delete</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="privacy-mask-draw">
+      <div class="zone-editor-canvas-wrap" data-privacy-mask-image-wrap>
+        <img class="zone-editor-image" data-privacy-mask-image src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
+      </div>
+      <div class="button-row">
+        <button class="secondary-button" type="button" data-privacy-mask-undo data-i18n="camera.privacy_mask_undo_point">Remove last point</button>
+        <button class="secondary-button" type="button" data-privacy-mask-clear data-i18n="camera.privacy_mask_clear_points">Clear points</button>
+      </div>
+      <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/privacy-mask-create" data-control-form data-privacy-mask-form>
+        <input type="hidden" name="config_token" value="{{ control_state.privacy_mask_config_token }}">
+        <input type="hidden" name="points" data-privacy-mask-points value="[]">
+        <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+        <button class="primary-button" type="submit" data-i18n="camera.privacy_mask_save">Save mask</button>
+      </form>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if control_state and control_state.osd_supported %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.osd">On-screen display</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/osd" data-control-form>
+      <label><span data-i18n="camera.osd_name_position">Camera name position</span>
+        <select name="name_pos">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="Off" data-i18n="camera.osd_off">Off</option>
+          <option value="Upper Left" data-i18n="camera.osd_upper_left">Upper left</option>
+          <option value="Upper Right" data-i18n="camera.osd_upper_right">Upper right</option>
+          <option value="Top Center" data-i18n="camera.osd_top_center">Top center</option>
+          <option value="Bottom Center" data-i18n="camera.osd_bottom_center">Bottom center</option>
+          <option value="Lower Left" data-i18n="camera.osd_lower_left">Lower left</option>
+          <option value="Lower Right" data-i18n="camera.osd_lower_right">Lower right</option>
+        </select>
+      </label>
+      <label><span data-i18n="camera.osd_date_position">Date position</span>
+        <select name="date_pos">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="Off" data-i18n="camera.osd_off">Off</option>
+          <option value="Upper Left" data-i18n="camera.osd_upper_left">Upper left</option>
+          <option value="Upper Right" data-i18n="camera.osd_upper_right">Upper right</option>
+          <option value="Top Center" data-i18n="camera.osd_top_center">Top center</option>
+          <option value="Bottom Center" data-i18n="camera.osd_bottom_center">Bottom center</option>
+          <option value="Lower Left" data-i18n="camera.osd_lower_left">Lower left</option>
+          <option value="Lower Right" data-i18n="camera.osd_lower_right">Lower right</option>
+        </select>
+      </label>
+      <label><span data-i18n="camera.osd_watermark">Logo watermark</span>
+        <select name="watermark">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="on" data-i18n="camera.on">On</option>
+          <option value="off" data-i18n="camera.off">Off</option>
+        </select>
+      </label>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.volume_supported or control_state.volume_speak_supported or control_state.volume_doorbell_supported) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.volume">Volume</h2></div>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/volume" data-control-form>
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      {% if control_state.volume_supported %}
+      <label><span data-i18n="camera.volume_system">System volume</span><input name="volume" type="range" min="0" max="100" value="{{ control_state.volume or 0 }}"></label>
+      {% endif %}
+      {% if control_state.volume_speak_supported %}
+      <label><span data-i18n="camera.volume_speak">Two-way audio volume</span><input name="volume_speak" type="range" min="0" max="100" value="{{ control_state.volume_speak or 0 }}"></label>
+      {% endif %}
+      {% if control_state.volume_doorbell_supported %}
+      <label><span data-i18n="camera.volume_doorbell">Doorbell ringtone volume</span><input name="volume_doorbell" type="range" min="0" max="100" value="{{ control_state.volume_doorbell or 0 }}"></label>
+      {% endif %}
+      {% if control_state.doorbell_button_sound_supported %}
+      <label><span data-i18n="camera.doorbell_button_sound">Doorbell button confirmation sound</span>
+        <select name="doorbell_button_sound">
+          <option value="" data-i18n="camera.osd_no_change">No change</option>
+          <option value="on" data-i18n="camera.on">On</option>
+          <option value="off" data-i18n="camera.off">Off</option>
+        </select>
+      </label>
+      {% endif %}
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.video_codec_main or control_state.video_codec_sub) %}
+  <section class="table-section">
+    <div class="section-title"><h2 data-i18n="camera.video_codec">Video codec</h2></div>
+    {% if control_state.video_codec_main %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/video-codec" data-control-form>
+      <label><span data-i18n="camera.video_codec_main">Main stream</span>
+        <select name="value">
+          <option value="h264" {% if control_state.video_codec_main == "h264" %}selected{% endif %} data-i18n="camera.codec_h264">H.264</option>
+          <option value="h265" {% if control_state.video_codec_main == "h265" %}selected{% endif %} data-i18n="camera.codec_h265">H.265</option>
+        </select>
+      </label>
+      <input type="hidden" name="stream" value="main">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
+    </form>
+    {% endif %}
+    {% if control_state.video_codec_sub %}
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/video-codec" data-control-form>
+      <label><span data-i18n="camera.video_codec_sub">Substream</span>
+        <select name="value">
+          <option value="h264" {% if control_state.video_codec_sub == "h264" %}selected{% endif %} data-i18n="camera.codec_h264">H.264</option>
+          <option value="h265" {% if control_state.video_codec_sub == "h265" %}selected{% endif %} data-i18n="camera.codec_h265">H.265</option>
+        </select>
+      </label>
+      <input type="hidden" name="stream" value="sub">
+      <input type="hidden" name="channel" value="{{ selected_control_channel }}">
+      <button class="secondary-button" type="submit" data-i18n="camera.apply">Apply</button>
     </form>
     {% endif %}
   </section>
@@ -611,8 +1152,8 @@
       <span class="status-pill {{ 'status-active' if control_state and control_state.floodlight_state else 'status-idle' }}" data-control-pill="floodlight" data-i18n="{{ 'camera.on' if control_state and control_state.floodlight_state else 'camera.off' }}">{{ 'on' if control_state and control_state.floodlight_state else 'off' }}</span>
     </div>
     <div class="button-row">
-      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="on"><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="camera.turn">Turn on</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="off"><input type="hidden" name="state" value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.turn_off">Turn off</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="on"><input type="hidden" name="state" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="camera.turn">Turn on</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/floodlight" data-control-form data-control-pill-target="floodlight" data-control-pill-value="off"><input type="hidden" name="state" value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.turn_off">Turn off</button></form>
     </div>
   </section>
   {% endif %}
@@ -624,8 +1165,8 @@
       <span class="status-pill {{ 'status-active' if control_state and control_state.pir_enabled else 'status-idle' }}" data-control-pill="pir" data-i18n="{{ 'camera.active' if control_state and control_state.pir_enabled else 'camera.off' }}">{{ 'active' if control_state and control_state.pir_enabled else 'off' }}</span>
     </div>
     <div class="button-row">
-      <form method="post" action="/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="active"><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="api.activate">Activate</button></form>
-      <form method="post" action="/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.deactivate">Deactivate</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="active"><input type="hidden" name="enable" value="on"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="primary-button" type="submit" data-i18n="api.activate">Activate</button></form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/pir" data-control-form data-control-pill-target="pir" data-control-pill-value="off"><input type="hidden" name="channel" value="{{ selected_control_channel }}"><button class="secondary-button" type="submit" data-i18n="camera.deactivate">Deactivate</button></form>
     </div>
   </section>
   {% endif %}
@@ -633,7 +1174,7 @@
   {% if not control_state or control_state.siren_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.siren">Siren</h2></div>
-    <form class="inline-form" method="post" action="/cameras/{{ camera.id }}/control/siren" data-control-form>
+    <form class="inline-form" method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/siren" data-control-form>
       <label><span data-i18n="camera.duration_sec">Duration (sec.)</span><input name="duration" type="number" min="1" max="30" value="5"></label>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="primary-button" type="submit" data-i18n="camera.play_siren">Play siren</button>
@@ -646,7 +1187,7 @@
     <div class="section-title"><h2 data-i18n="camera.quick_replies">Quick replies</h2></div>
     <div class="button-row">
       {% for file_id, name in control_state.quick_reply_options.items() %}
-      <form method="post" action="/cameras/{{ camera.id }}/control/quick-reply" data-control-form>
+      <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/quick-reply" data-control-form>
         <input type="hidden" name="file_id" value="{{ file_id }}">
         <input type="hidden" name="channel" value="{{ selected_control_channel }}">
         <button class="secondary-button" type="submit">{{ name }}</button>
@@ -666,14 +1207,50 @@
       {% else %}
       <strong class="metric-unavailable">–</strong><small data-i18n="camera.not_available">Not available</small>
       {% endif %}
+      {% if control_state and control_state.battery_asleep is not none %}
+      <span class="status-pill {{ 'status-idle' if control_state.battery_asleep else 'status-active' }}" data-i18n="{{ 'camera.battery_asleep' if control_state.battery_asleep else 'camera.battery_awake' }}">{{ 'asleep' if control_state.battery_asleep else 'awake' }}</span>
+      {% endif %}
     </div>
+  </section>
+  {% endif %}
+
+  {% if control_state and (control_state.sdcard_supported or control_state.wifi_supported or control_state.ntp_supported) %}
+  <section class="overview-metrics">
+    {% if control_state.sdcard_supported %}
+    <div class="overview-metric">
+      <span data-i18n="camera.sdcard_status">SD card</span>
+      {% if control_state.sdcard_capacity_mb is not none %}
+      <strong data-i18n="camera.sdcard_usage" data-i18n-params='{{ {"free": control_state.sdcard_free_mb, "capacity": control_state.sdcard_capacity_mb} | tojson }}'>{{ control_state.sdcard_free_mb }} / {{ control_state.sdcard_capacity_mb }} MB</strong>
+      <small>{{ control_state.sdcard_status or '' }}</small>
+      {% else %}
+      <strong>{{ control_state.sdcard_status or '–' }}</strong>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if control_state.wifi_supported %}
+    <div class="overview-metric">
+      <span data-i18n="camera.wifi_signal">WiFi signal</span>
+      {% if control_state.wifi_signal_percent is not none %}
+      <strong>{{ control_state.wifi_signal_percent }} %</strong>
+      {% else %}
+      <strong class="metric-unavailable">–</strong><small data-i18n="camera.not_available">Not available</small>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if control_state.ntp_supported %}
+    <div class="overview-metric">
+      <span data-i18n="camera.ntp_status">NTP</span>
+      <strong>{{ control_state.ntp_server or '–' }}</strong>
+      <small>{% if control_state.ntp_enabled %}<span data-i18n="camera.on">On</span>{% else %}<span data-i18n="camera.off">Off</span>{% endif %}</small>
+    </div>
+    {% endif %}
   </section>
   {% endif %}
 
   {% if not control_state or control_state.reboot_supported %}
   <section class="table-section">
     <div class="section-title"><h2 data-i18n="camera.restart">Restart</h2></div>
-    <form method="post" action="/cameras/{{ camera.id }}/control/reboot" data-control-form>
+    <form method="post" action="{{ ingress_prefix }}/cameras/{{ camera.id }}/control/reboot" data-control-form>
       <input type="hidden" name="channel" value="{{ selected_control_channel }}">
       <button class="danger-button" type="submit" data-i18n="camera.restart_camera">Restart camera</button>
     </form>
@@ -722,6 +1299,7 @@
           <th data-i18n="camera.source">Source</th>
           <th data-i18n="camera.supported">Supported</th>
           <th data-i18n="camera.status">Status</th>
+          <th data-i18n="camera.last_seen">Last seen</th>
         </tr>
       </thead>
       <tbody>
@@ -732,9 +1310,9 @@
           <td>{{ detection.source }}</td>
           <td>
             {% if detection.supported %}
-            <span class="state-dot state-on"></span> ja
+            <span class="state-dot state-on"></span> <span data-i18n="camera.yes">yes</span>
             {% else %}
-            <span class="state-dot"></span> nein
+            <span class="state-dot"></span> <span data-i18n="camera.no">no</span>
             {% endif %}
           </td>
           <td>
@@ -744,6 +1322,7 @@
             <span class="status-pill status-idle" data-i18n="camera.inactive">inactive</span>
             {% endif %}
           </td>
+          <td>{% if detection.last_seen %}{{ detection.last_seen | format_timestamp(ui_preferences) }}{% else %}<span data-i18n="camera.never">never</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -752,8 +1331,7 @@
 </section>
 </div>
 {% if 'control' in module_capabilities %}
-<script src="{{ url_for('static', path='/vendor/hls.min.js') }}?v={{ asset_version }}" defer></script>
-<script src="{{ url_for('static', path='/video-player.js') }}?v={{ asset_version }}" defer></script>
-{% endif %}
-<script src="{{ url_for('static', path='/camera-detail.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/vendor/hls.min.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
+{% endif %}<script src="{{ ingress_prefix }}/static/camera-detail.js?v={{ asset_version }}" defer></script>
 {% endblock %}

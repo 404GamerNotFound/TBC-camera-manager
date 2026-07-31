@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .backend import Detection
+from .tracking import TrackedDetection
 
 
 def point_in_polygon(point: tuple[float, float], polygon: list[tuple[float, float]]) -> bool:
@@ -30,7 +31,9 @@ def _zone_matches_class(zone: dict[str, Any], detection_key: str) -> bool:
     return not classes or detection_key in classes
 
 
-def filter_detections_by_zones(detections: list[Detection], zones: list[dict[str, Any]]) -> list[Detection]:
+def filter_detections_by_zones(
+    detections: list[Detection] | list[TrackedDetection], zones: list[dict[str, Any]]
+) -> list[Detection] | list[TrackedDetection]:
     """Applies include/exclude zone constraints to raw detections, by box centroid.
 
     No zones configured means no filtering (unchanged M1 behaviour). An exclude zone
