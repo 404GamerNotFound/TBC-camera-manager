@@ -1263,6 +1263,126 @@ class BirdseyeRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class HomeKitRouteTests(unittest.TestCase):
+    """HOMEKIT_MANAGER.start/stop are always patched here - a real call would
+    spawn the app.tbc.homekit_worker subprocess, which tries to bind a real
+    port and register real mDNS via zeroconf, neither of which belongs in a
+    test run."""
+
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = database.create_camera(
+            main.SETTINGS.database_path,
+            name="HomeKit camera",
+            host="203.0.113.30",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+        )
+        database.update_camera_probe(
+            main.SETTINGS.database_path,
+            self.camera_id,
+            status="ok",
+            message="ready",
+            stream_uri="rtsp://203.0.113.30:554/live",
+        )
+
+    def test_unauthenticated_request_is_redirected_to_login(self):
+        CLIENT.post("/logout")
+
+        response = CLIENT.get("/homekit", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/login")
+        _login()
+
+    def test_viewer_cannot_change_settings(self):
+        database.create_user(main.SETTINGS.database_path, username="hk-viewer", password="viewerpass123", role="viewer")
+        CLIENT.post("/logout")
+        CLIENT.post("/login", data={"username": "hk-viewer", "password": "viewerpass123"})
+
+        response = CLIENT.post(
+            "/homekit/settings",
+            data={"camera_ids": [str(self.camera_id)]},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertFalse(database.get_homekit_settings(main.SETTINGS.database_path)["enabled"])
+        _login()
+
+    def test_admin_saves_settings_and_starts_the_bridge(self):
+        with patch.object(main.HOMEKIT_MANAGER, "start") as start, patch.object(main.HOMEKIT_MANAGER, "stop"):
+            response = CLIENT.post(
+                "/homekit/settings",
+                data={"enabled": "on", "camera_ids": [str(self.camera_id)]},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/homekit")
+        settings = database.get_homekit_settings(main.SETTINGS.database_path)
+        self.assertTrue(settings["enabled"])
+        aids = database.get_homekit_camera_aids(main.SETTINGS.database_path)
+        self.assertEqual(list(aids.keys()), [self.camera_id])
+        start.assert_called_once()
+        configs, pincode = start.call_args.args
+        self.assertEqual(configs[0]["stream_uri"], "rtsp://203.0.113.30:554/live")
+        self.assertEqual(pincode, settings["pincode"])
+
+    def test_disabling_stops_without_starting(self):
+        database.set_homekit_enabled(main.SETTINGS.database_path, True)
+        database.set_homekit_camera_ids(main.SETTINGS.database_path, [self.camera_id])
+
+        with patch.object(main.HOMEKIT_MANAGER, "start") as start, patch.object(main.HOMEKIT_MANAGER, "stop") as stop:
+            response = CLIENT.post(
+                "/homekit/settings",
+                data={"camera_ids": []},
+                follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        stop.assert_called_once()
+        start.assert_not_called()
+        self.assertFalse(database.get_homekit_settings(main.SETTINGS.database_path)["enabled"])
+
+    def test_start_failure_is_surfaced_as_a_flash_instead_of_a_500(self):
+        with patch.object(main.HOMEKIT_MANAGER, "start", side_effect=RuntimeError("ffmpeg is not installed")):
+            with patch.object(main.HOMEKIT_MANAGER, "stop"):
+                response = CLIENT.post(
+                    "/homekit/settings",
+                    data={"enabled": "on", "camera_ids": [str(self.camera_id)]},
+                    follow_redirects=False,
+                )
+
+        self.assertEqual(response.status_code, 303)
+        page = CLIENT.get("/homekit")
+        self.assertIn("ffmpeg is not installed", page.text)
+
+    def test_reset_pairing_stops_resets_and_restarts(self):
+        database.set_homekit_enabled(main.SETTINGS.database_path, True)
+        database.set_homekit_camera_ids(main.SETTINGS.database_path, [self.camera_id])
+
+        with patch.object(main.HOMEKIT_MANAGER, "stop") as stop, patch.object(
+            main.HOMEKIT_MANAGER, "reset_pairing"
+        ) as reset_pairing, patch.object(main.HOMEKIT_MANAGER, "start") as start:
+            response = CLIENT.post("/homekit/reset-pairing", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 303)
+        reset_pairing.assert_called_once()
+        stop.assert_called_once()
+        start.assert_called_once()
+
+    def test_page_renders_for_admin(self):
+        with patch.object(main.HOMEKIT_MANAGER, "pairing_info", return_value={"paired": False, "pincode": None, "xhm_uri": None}):
+            response = CLIENT.get("/homekit")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("HomeKit camera", response.text)
+
+
 class DebugLogExportTests(unittest.TestCase):
     def setUp(self):
         _reset_database()

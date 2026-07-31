@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="homekit.eyebrow">Apple Home app</p>
+    <h1 data-i18n="homekit.title">HomeKit</h1>
+  </div>
+  {% if status in ['running', 'starting', 'failed'] %}
+  <div class="button-row live-toolbar">
+    <span class="status-pill status-{{ 'active' if status == 'running' else 'error' if status == 'failed' else 'warning' }}" data-i18n="status.{{ status }}">{{ status }}</span>
+  </div>
+  {% endif %}
+</section>
+
+<p class="quiet-box" data-i18n="homekit.explanation">
+  Exposes selected cameras to the Apple Home app as live-view-only HomeKit accessories (no
+  HomeKit Secure Video / encrypted event recording). Streams are started on demand by the Home
+  app, the same way Live view starts a camera's stream when its tile is opened.
+</p>
+
+<div class="quiet-box" data-i18n="homekit.network_requirement">
+  HomeKit accessory discovery uses mDNS/Bonjour multicast, which does not work through Docker's
+  default bridge networking. A standalone Docker/Docker Compose deployment must be switched to
+  <code>network_mode: host</code> for pairing to work - see the deployment documentation. This is
+  not currently supported through the Home Assistant add-on.
+</div>
+
+{% if status == 'failed' and message %}
+<details class="live-card-error-details">
+  <summary data-i18n="live.error_details">Technical error details</summary>
+  <pre>{{ message }}</pre>
+</details>
+{% endif %}
+
+{% if settings.enabled and pairing.paired %}
+<section class="empty-state">
+  <h2 data-i18n="homekit.already_paired">Already paired with a Home app.</h2>
+</section>
+{% elif settings.enabled and qr_svg %}
+<section class="storage-grid">
+  <div class="storage-list">
+    <div class="section-title">
+      <h2 data-i18n="homekit.pairing_title">Pair with the Home app</h2>
+    </div>
+    <div class="quiet-box">{{ qr_svg | safe }}</div>
+    <p><strong data-i18n="homekit.pairing_code_label">Pairing code</strong>: {{ pairing.pincode }}</p>
+  </div>
+</section>
+{% elif no_usable_cameras %}
+<section class="empty-state">
+  <h2 data-i18n="homekit.no_usable_cameras">None of the selected cameras currently have a known live stream.</h2>
+</section>
+{% elif settings.enabled %}
+<section class="empty-state">
+  <h2 data-i18n="homekit.starting">Starting…</h2>
+</section>
+{% else %}
+<section class="empty-state">
+  <h2 data-i18n="homekit.disabled">HomeKit is turned off.</h2>
+</section>
+{% endif %}
+
+<form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/homekit/settings">
+  <div class="section-title">
+    <h2 data-i18n="homekit.settings">Settings</h2>
+    <span data-i18n="common.admin">Admin</span>
+  </div>
+  <div class="form-grid">
+    <label class="check-row">
+      <input type="checkbox" name="enabled" {% if settings.enabled %}checked{% endif %}>
+      <span data-i18n="homekit.enabled">Enable HomeKit</span>
+    </label>
+  </div>
+  <fieldset class="span-2 checkbox-field">
+    <legend data-i18n="homekit.camera_selection">Cameras exposed to HomeKit</legend>
+    <div class="checkbox-grid">
+      {% for camera in cameras %}
+      <label class="check-row">
+        <input name="camera_ids" type="checkbox" value="{{ camera.id }}" {% if camera.id in selected_camera_ids %}checked{% endif %}>
+        <span>{{ camera.name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <div class="quiet-box" data-i18n="homekit.camera_selection_hint" data-i18n-params='{{ {"max": max_cameras} | tojson }}'>
+    Each exposed camera starts its own ffmpeg process only while a Home app is actually viewing
+    it. Limited to {{ max_cameras }} cameras.
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+  </div>
+</form>
+
+<form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/homekit/reset-pairing">
+  <div class="section-title">
+    <h2 data-i18n="homekit.reset_pairing">Reset pairing</h2>
+  </div>
+  <p class="quiet-box" data-i18n="homekit.reset_pairing_hint">
+    Forgets every paired Home app and generates a fresh accessory identity. Use this if pairing is
+    stuck or broken; every Home app that had this bridge added will need to add it again.
+  </p>
+  <div class="form-actions">
+    <button class="secondary-button" type="submit" data-i18n="homekit.reset_pairing">Reset pairing</button>
+  </div>
+</form>
+{% endblock %}

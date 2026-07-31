@@ -11,6 +11,11 @@ onvif-zeep==0.2.12
 aiohttp>=3.14.3,<4
 boto3>=1.43.56,<2
 paho-mqtt==2.1.0
+# [QRCode] extra is required for pyhap.Accessory.xhm_uri() to work at all (it
+# unconditionally calls the `base36` module, only imported if both `base36`
+# and `pyqrcode` are importable) - the actual QR *rendering* still goes
+# through the existing segno dependency below, not pyqrcode.
+HAP-python[QRCode]==5.0.0
 packaging>=26.2
 # Capped below 2.3: numpy dropped the manylinux2014 (x86-64-v1 baseline) wheel
 # there in favor of manylinux_2_28 only, which requires x86-64-v2 (SSE4.2/POPCNT)

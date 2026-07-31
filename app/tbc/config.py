@@ -36,6 +36,8 @@ class Settings:
     # audio detection stays off until an admin configures one.
     audio_model_url: str = ""
     audio_default_confidence_threshold: float = 0.5
+    homekit_path: str = "/data/homekit"
+    homekit_port: int = 51826
 
 
 def load_settings() -> Settings:
@@ -70,4 +72,6 @@ def load_settings() -> Settings:
         audio_default_confidence_threshold=min(
             1.0, max(0.05, float(os.getenv("TBC_AUDIO_CONFIDENCE_THRESHOLD", "0.5")))
         ),
+        homekit_path=os.getenv("TBC_HOMEKIT_PATH", "/data/homekit"),
+        homekit_port=int(os.getenv("TBC_HOMEKIT_PORT", "51826")),
     )

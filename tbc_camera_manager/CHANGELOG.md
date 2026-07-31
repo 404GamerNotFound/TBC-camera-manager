@@ -1,6 +1,14 @@
 # Changelog
 
 ## Unreleased
+- Added optional Apple HomeKit integration (live view only, no HomeKit Secure Video/encrypted
+  event recording), via the HAP-python library rather than a hand-rolled HAP protocol
+  implementation. Exposed cameras get a stable accessory ID across restarts, streams start on
+  demand the same way Live view does, and pairing uses a QR code/pincode shown on the new
+  **Operations → HomeKit** page. Requires switching a standalone Docker/Docker Compose deployment
+  to `network_mode: host` for mDNS pairing discovery to work at all - not currently supported
+  through the Home Assistant OS add-on, which runs without host networking. Pairing itself has
+  not yet been verified against real Apple hardware.
 - Added Birdseye, an optional single server-composited mosaic stream combining several cameras
   into one ffmpeg output (via the xstack filter), for embedding as a single video widget - a
   Home Assistant dashboard card, a TV/HDMI stick, or an NVR wall input - where the existing

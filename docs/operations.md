@@ -47,6 +47,33 @@ The separate TBC Home Assistant integration uses the external API. Create a dedi
 and grant control scope only when the integration needs to change settings or start streams. See
 [api.md](api.md).
 
+## HomeKit
+
+**Operations → HomeKit** exposes selected cameras to Apple's Home app as HomeKit accessories,
+live view only - there is no HomeKit Secure Video (encrypted event recording synced through
+iCloud); that HAP extension is a separate, far less documented undertaking and out of scope here.
+Streams start on demand when the Home app actually views a camera, the same way Live view starts
+a stream when its tile is opened.
+
+Enable it, select which cameras to expose (capped at 32), and save. A QR code and numeric pairing
+code appear once the bridge is running and not yet paired - scan it (or enter the code manually)
+from the Home app's **Add Accessory** flow. Each exposed camera keeps a stable HomeKit accessory
+ID across restarts so Home app room/automation assignments don't break; changing the enabled
+toggle or the camera selection restarts the bridge. **Reset pairing** forgets every paired Home
+app and generates a fresh accessory identity - use it if pairing gets stuck, but every Home app
+that already added this bridge will need to add it again afterward.
+
+**Networking is the part most likely to trip you up.** HomeKit discovery is mDNS/Bonjour
+multicast, which does not work through Docker's default bridge networking - a standalone
+Docker/Docker Compose deployment needs `network_mode: host` (see
+[deployment.md](deployment.md#ports-and-network-access)) for pairing to succeed at all. This
+integration is **not currently supported through the Home Assistant OS add-on**, which runs
+without host networking (`tbc_camera_manager/DOCS.md`).
+
+Audio and two-way talk are not implemented - only video. Pairing itself has not been verified
+against real Apple hardware as part of building this feature; treat it as unverified until
+confirmed against an actual iPhone/iPad.
+
 ## Health monitoring and debug log
 
 **Operations → Performance** shows CPU and memory usage plus health states and state-change events

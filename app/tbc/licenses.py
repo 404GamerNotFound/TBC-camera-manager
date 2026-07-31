@@ -31,6 +31,13 @@ THIRD_PARTY_LICENSES: list[dict[str, str]] = [
     {"category": "Camera & cloud integrations", "name": "paho-mqtt", "license": "EPL-2.0 / EDL-1.0", "url": "https://github.com/eclipse-paho/paho.mqtt.python"},
     {"category": "Camera & cloud integrations", "name": "boto3", "license": "Apache-2.0", "url": "https://github.com/boto/boto3"},
     {"category": "Camera & cloud integrations", "name": "go2rtc", "license": "MIT", "url": "https://github.com/AlexxIT/go2rtc"},
+    {"category": "Camera & cloud integrations", "name": "HAP-python", "license": "Apache-2.0", "url": "https://github.com/ikalchev/HAP-python"},
+    {"category": "Camera & cloud integrations", "name": "zeroconf", "license": "LGPL-2.1-or-later", "url": "https://github.com/python-zeroconf/python-zeroconf"},
+    {"category": "Camera & cloud integrations", "name": "orjson", "license": "Apache-2.0 / MIT", "url": "https://github.com/ijl/orjson"},
+    {"category": "Camera & cloud integrations", "name": "chacha20poly1305-reuseable", "license": "Apache-2.0 / BSD-3-Clause", "url": "https://github.com/bdraco/chacha20poly1305-reuseable"},
+    {"category": "Camera & cloud integrations", "name": "ifaddr", "license": "MIT", "url": "https://github.com/pydron/ifaddr"},
+    {"category": "Camera & cloud integrations", "name": "base36", "license": "MIT", "url": "https://github.com/tonyseek/python-base36"},
+    {"category": "Camera & cloud integrations", "name": "PyQRCode", "license": "BSD-3-Clause", "url": "https://github.com/mnooner256/pyqrcode"},
 
     # AI detection & recognition
     {"category": "AI detection & recognition", "name": "NumPy", "license": "BSD-3-Clause", "url": "https://github.com/numpy/numpy"},

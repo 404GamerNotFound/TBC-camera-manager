@@ -81,6 +81,7 @@ from .detection.backend import Detection
 from .detection.supervisor import detection_supervisor
 from .health import run_health_checks
 from .go2rtc import Go2rtcManager
+from .homekit import MAX_HOMEKIT_CAMERAS, HomeKitManager
 from .live import LiveManager, redact_rtsp_credentials, stream_uri_for
 from .maintenance import apply_cleanup
 from .mcp_server import build_mcp_app
@@ -303,6 +304,7 @@ RECORDING_MANAGER = RecordingManager(SETTINGS.database_path)
 CONTINUOUS_RECORDING_MANAGER = ContinuousRecordingManager(SETTINGS.database_path)
 LIVE_MANAGER = LiveManager(SETTINGS.live_path)
 GO2RTC_MANAGER = Go2rtcManager(str(Path(SETTINGS.live_path) / "go2rtc"))
+HOMEKIT_MANAGER = HomeKitManager(SETTINGS.homekit_path, SETTINGS.homekit_port)
 SNAPSHOT_MANAGER = DashboardSnapshotManager(
     SETTINGS.dashboard_snapshots_path,
     interval_seconds=SETTINGS.dashboard_snapshot_interval_seconds,
@@ -481,6 +483,42 @@ def _start_go2rtc() -> None:
         LOGGER.warning("WebRTC live view is enabled but could not start go2rtc: %s", exc)
 
 
+def _homekit_camera_configs(camera_aids: dict[int, int]) -> list[dict[str, Any]]:
+    """Resolves the persisted (camera_id -> AID) selection into the flat
+    config list HomeKitManager.start()/the worker subprocess need - shared by
+    the boot-time _start_homekit() below and routers/homekit.py's settings
+    POST handler, which is why it lives here rather than in that router."""
+    configs: list[dict[str, Any]] = []
+    for camera_id, aid in camera_aids.items():
+        camera = database.get_camera(SETTINGS.database_path, camera_id)
+        if not camera or not _camera_supports(camera, CameraCapability.LIVE):
+            continue
+        uri = stream_uri_for(camera)
+        if not uri:
+            continue
+        snapshot_path = SNAPSHOT_MANAGER.path_for(camera_id)
+        configs.append(
+            {
+                "aid": aid,
+                "name": str(camera["name"]),
+                "stream_uri": uri,
+                "snapshot_path": str(snapshot_path) if snapshot_path.exists() else None,
+            }
+        )
+    return configs[:MAX_HOMEKIT_CAMERAS]
+
+
+def _start_homekit() -> None:
+    settings = database.get_homekit_settings(SETTINGS.database_path)
+    configs = _homekit_camera_configs(database.get_homekit_camera_aids(SETTINGS.database_path))
+    if not configs:
+        return
+    try:
+        HOMEKIT_MANAGER.start(configs, settings["pincode"])
+    except RuntimeError as exc:
+        LOGGER.warning("HomeKit is enabled but the bridge could not start: %s", exc)
+
+
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
     # Manual enter/exit (rather than nesting the whole lifespan inside
@@ -538,11 +576,14 @@ async def _lifespan(_app: FastAPI):
     asyncio.create_task(_audio_detection_supervisor_loop())
     if database.get_live_wall_settings(SETTINGS.database_path).get("webrtc_enabled"):
         asyncio.create_task(asyncio.to_thread(_start_go2rtc))
+    if database.get_homekit_settings(SETTINGS.database_path).get("enabled"):
+        asyncio.create_task(asyncio.to_thread(_start_homekit))
 
     yield
 
     await MCP_SESSION_MANAGER_CM.__aexit__(None, None, None)
     await asyncio.to_thread(GO2RTC_MANAGER.stop)
+    await asyncio.to_thread(HOMEKIT_MANAGER.stop)
 
 
 app.router.lifespan_context = _lifespan
@@ -2348,6 +2389,7 @@ from .routers import (  # noqa: E402 - deliberately last, see comment above
     cloud_accounts,
     detection_recognition,
     docs_health,
+    homekit,
     live,
     mqtt as mqtt_router,  # `mqtt` itself is already bound above (paho-mqtt control listener module)
     network_accounts,
@@ -2369,6 +2411,7 @@ app.include_router(cameras.router)
 app.include_router(cloud_accounts.router)
 app.include_router(detection_recognition.router)
 app.include_router(docs_health.router)
+app.include_router(homekit.router)
 app.include_router(live.router)
 app.include_router(mqtt_router.router)
 app.include_router(network_accounts.router)

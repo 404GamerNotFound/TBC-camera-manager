@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -435,6 +436,11 @@ CREATE TABLE IF NOT EXISTS birdseye_cameras (
     sort_order INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS homekit_cameras (
+    camera_id INTEGER PRIMARY KEY REFERENCES cameras(id) ON DELETE CASCADE,
+    aid INTEGER NOT NULL UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS cloud_accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     module_key TEXT NOT NULL,
@@ -656,6 +662,8 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE ui_settings ADD COLUMN birdseye_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE ui_settings ADD COLUMN birdseye_columns INTEGER NOT NULL DEFAULT 3",
     "ALTER TABLE ui_settings ADD COLUMN birdseye_fps INTEGER NOT NULL DEFAULT 5",
+    "ALTER TABLE ui_settings ADD COLUMN homekit_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN homekit_pincode TEXT",
 )
 
 
@@ -3502,6 +3510,58 @@ def set_birdseye_camera_ids(database_path: str, camera_ids: list[int]) -> None:
             "INSERT INTO birdseye_cameras (camera_id, sort_order) VALUES (?, ?)",
             [(camera_id, index) for index, camera_id in enumerate(unique_camera_ids)],
         )
+
+
+def _generate_homekit_pincode() -> str:
+    digits = [str(secrets.randbelow(10)) for _ in range(8)]
+    return f"{''.join(digits[:3])}-{''.join(digits[3:5])}-{''.join(digits[5:])}"
+
+
+def get_homekit_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+        row = db.execute("SELECT homekit_enabled, homekit_pincode FROM ui_settings WHERE id = 1").fetchone()
+        pincode = row["homekit_pincode"]
+        if not pincode:
+            pincode = _generate_homekit_pincode()
+            db.execute("UPDATE ui_settings SET homekit_pincode = ? WHERE id = 1", (pincode,))
+    return {"enabled": bool(row["homekit_enabled"]), "pincode": pincode}
+
+
+def set_homekit_enabled(database_path: str, enabled: bool) -> None:
+    with connect(database_path) as db:
+        db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+        db.execute("UPDATE ui_settings SET homekit_enabled = ? WHERE id = 1", (1 if enabled else 0,))
+
+
+def get_homekit_camera_aids(database_path: str) -> dict[int, int]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT camera_id, aid FROM homekit_cameras").fetchall()
+    return {int(row["camera_id"]): int(row["aid"]) for row in rows}
+
+
+def set_homekit_camera_ids(database_path: str, camera_ids: list[int]) -> None:
+    """Replaces the exposed-camera selection, preserving each still-selected
+    camera's existing HAP accessory ID (AID) and assigning a new, never
+    previously used AID to any newly added camera. AIDs must stay stable
+    across restarts - the Home app keys room/automation assignments on them -
+    so this is deliberately not a delete-and-reinsert like
+    set_birdseye_camera_ids, whose per-item state (grid sort order) has no
+    such stability requirement."""
+    unique_camera_ids = list(dict.fromkeys(camera_ids))
+    with connect(database_path) as db:
+        existing = db.execute("SELECT camera_id, aid FROM homekit_cameras").fetchall()
+        existing_aids = {int(row["camera_id"]): int(row["aid"]) for row in existing}
+        next_aid = max([*existing_aids.values(), 1]) + 1
+        db.execute("DELETE FROM homekit_cameras")
+        rows_to_insert: list[tuple[int, int]] = []
+        for camera_id in unique_camera_ids:
+            aid = existing_aids.get(camera_id)
+            if aid is None:
+                aid = next_aid
+                next_aid += 1
+            rows_to_insert.append((camera_id, aid))
+        db.executemany("INSERT INTO homekit_cameras (camera_id, aid) VALUES (?, ?)", rows_to_insert)
 
 
 def _valid_role(role: str) -> str:

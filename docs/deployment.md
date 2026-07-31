@@ -38,6 +38,7 @@ in `tbc_camera_manager/DOCS.md` in the repository.
 | `/data/design-themes` | Imported design themes |
 | `/data/detection-models` | Downloaded default, recognition, and plugin-specific models |
 | `/data/dashboard-snapshots` | Periodic dashboard previews |
+| `/data/homekit` | HomeKit accessory pairing state (keys, paired clients) - see [operations.md](operations.md#homekit) |
 | `/tmp/tbc-live` | Temporary HLS output; safe to recreate after restart |
 
 Persist `/data` and recording paths. The live directory is transient and should not be backed up.
@@ -73,6 +74,7 @@ stored credentials.
 | `TBC_DETECTION_CONFIDENCE_THRESHOLD` | `0.5` | Default local-AI confidence threshold |
 | `TBC_AUDIO_MODEL_URL` | empty | Download URL for a local-audio-AI ONNX model (bark/glass-break/smoke-alarm detection). No default model ships - see [Local audio detection](#local-audio-detection) below |
 | `TBC_AUDIO_CONFIDENCE_THRESHOLD` | `0.5` | Default local-audio-AI confidence threshold |
+| `TBC_HOMEKIT_PORT` | `51826` | Port the HomeKit accessory bridge listens on when enabled |
 
 ### Storage paths - matched to the volume/bind mounts in `docker-compose.yml`
 
@@ -92,16 +94,29 @@ non-persistent place.
 | `TBC_THEME_MODULES_PATH` | `/data/design-themes` | External theme directory |
 | `TBC_DETECTION_MODELS_PATH` | `/data/detection-models` | Model cache directory |
 | `TBC_DASHBOARD_SNAPSHOTS_PATH` | `/data/dashboard-snapshots` | Dashboard preview directory |
+| `TBC_HOMEKIT_PATH` | `/data/homekit` | HomeKit accessory pairing state directory |
 
 ## Ports and network access
 
 - `8732/tcp`: web UI, API, MCP, HLS playlists, and HLS segments.
 - `8555/tcp` and `8555/udp`: go2rtc WebRTC media when WebRTC is enabled.
+- `51826/tcp` (configurable via `TBC_HOMEKIT_PORT`) and UDP `5353` (mDNS/Bonjour): HomeKit
+  accessory bridge, when HomeKit is enabled - see below, this one needs more than a forwarded
+  port.
 - Outbound access: camera HTTP/ONVIF/RTSP ports, cloud-provider APIs, MQTT, S3-compatible storage,
   GitHub for plugin/update checks, and model/vendor downloads when those features are used.
 
 WebRTC clients outside the container network must be able to reach port `8555`. If this is not
 possible, disable WebRTC or use HLS.
+
+HomeKit pairing discovery is mDNS/Bonjour **multicast**, which a published/forwarded port cannot
+provide - unlike WebRTC's single fixed port, Docker's default bridge networking cannot make the
+container appear to be on the LAN. A standalone Docker/Docker Compose deployment must add
+`network_mode: host` (replacing the `ports:` mappings) for HomeKit to be discoverable and
+pairable; this is the same requirement Homebridge's own Docker image has. **This is not currently
+supported through the Home Assistant OS add-on** - see `tbc_camera_manager/DOCS.md`, which
+documents that packaging as running without host networking. If HomeKit isn't enabled, none of
+this applies.
 
 ## CPU, CUDA, and Coral images
 
