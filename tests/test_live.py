@@ -122,6 +122,26 @@ class CompositeFfmpegCommandTests(unittest.TestCase):
 
         self.assertEqual(command.count("-rtsp_transport"), 1)
 
+    def test_rtsp_sources_get_a_bounded_socket_timeout(self):
+        # Regression coverage: ffmpeg's rtsp -timeout defaults to 0 (wait
+        # forever). xstack needs every input to deliver frames before
+        # producing any output, so without a bounded timeout here, one
+        # unreachable camera hangs the entire composite indefinitely instead
+        # of failing within a bounded time.
+        command = _composite_ffmpeg_command(
+            ["rtsp://cam1/stream", "http://cam2/stream"],
+            Path("/tmp/birdseye/segment%03d.ts"),
+            Path("/tmp/birdseye/index.m3u8"),
+            columns=2,
+            tile_width=320,
+            tile_height=180,
+            fps=5,
+        )
+
+        self.assertEqual(command.count("-timeout"), 1)
+        timeout_index = command.index("-timeout") + 1
+        self.assertEqual(command[timeout_index], "10000000")
+
     def test_filter_complex_stacks_every_source(self):
         command = _composite_ffmpeg_command(
             ["rtsp://cam1/stream", "rtsp://cam2/stream", "rtsp://cam3/stream"],

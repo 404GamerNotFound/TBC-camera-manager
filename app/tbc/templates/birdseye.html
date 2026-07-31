@@ -10,6 +10,7 @@
     {% if is_active %}
     <span class="status-pill status-{{ 'active' if status == 'running' else 'error' if status in ['failed', 'missing'] else 'warning' }}" data-i18n="status.{{ status }}">{{ status }}</span>
     {% endif %}
+    <button class="secondary-button" type="button" data-birdseye-refresh data-i18n="common.refresh">Refresh</button>
     <button class="secondary-button" type="button" data-birdseye-fullscreen data-i18n="live.full_screen">Full screen</button>
     {% if role == 'admin' %}
     <button class="secondary-button" type="button" data-birdseye-settings-toggle aria-expanded="false" data-i18n="birdseye.settings">Settings</button>
@@ -74,13 +75,13 @@
 {% endif %}
 
 {% if is_active %}
-<section class="live-grid" data-birdseye-stage style="--live-columns: 1;">
+<section class="live-grid" data-birdseye-stage data-status="{{ status }}" style="--live-columns: 1;">
   <article class="camera-card live-card">
     <div class="live-card-overlay">
       <div class="live-card-overlay-row">
         <span class="live-card-name" data-i18n="birdseye.title">Birdseye</span>
       </div>
-      <details class="live-card-error-details" {% if status not in ['failed', 'missing'] or not message %}hidden{% endif %}>
+      <details class="live-card-error-details" {% if not message %}hidden{% endif %}>
         <summary data-i18n="live.error_details">Technical error details</summary>
         <pre>{{ message }}</pre>
       </details>

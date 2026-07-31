@@ -349,9 +349,14 @@ def _composite_ffmpeg_command(
     since a filter graph can't operate on compressed packets."""
     command: list[str] = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "warning"]
     for stream_uri in sources:
-        rtsp_only_options = (
-            ["-rtsp_transport", "tcp"] if urlsplit(stream_uri).scheme.lower() in ("rtsp", "rtsps") else []
-        )
+        # xstack needs every input to deliver frames before it produces any
+        # output - unlike a single-camera live tile (where a slow/unreachable
+        # camera only stalls that one tile), one bad camera here blocks the
+        # entire mosaic. ffmpeg's rtsp demuxer -timeout otherwise defaults to
+        # 0 (wait forever), so without this a single dead camera hangs
+        # Birdseye indefinitely instead of failing within a bounded time.
+        is_rtsp = urlsplit(stream_uri).scheme.lower() in ("rtsp", "rtsps")
+        rtsp_only_options = ["-rtsp_transport", "tcp", "-timeout", "10000000"] if is_rtsp else []
         command += [
             "-fflags",
             "+genpts+discardcorrupt",
