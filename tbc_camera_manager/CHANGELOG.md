@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0 - "Redesigned & connected"
 - Gave `.clip-card` (the recording/snapshot tile used by both the camera detail page's "Recent
   clips" strip and the main Recordings gallery) the same hover lift and subtle media zoom as the
   redesigned dashboard camera card, instead of leaving it static while every card around it picked
