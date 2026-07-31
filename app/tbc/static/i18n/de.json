@@ -1178,7 +1178,7 @@
   "backup.status_error": "Fehlgeschlagen",
   "backup.schedule_save": "Speichern Sie die Einstellungen für die automatische Sicherung",
   "backup.schedule_saved": "Automatische Backup-Einstellungen wurden gespeichert.",
-  "backup.schedule_failed": "Automatische Sicherungseinstellungen konnten nicht gespeichert werden: {Fehler}",
+  "backup.schedule_failed": "Automatische Sicherungseinstellungen konnten nicht gespeichert werden: {error}",
   "camera.apply": "Anwenden",
   "camera.apply_image_adjustments": "Anwenden",
   "camera.brightness": "Helligkeit",

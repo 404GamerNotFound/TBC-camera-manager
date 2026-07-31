@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import time
 from pathlib import Path
 from urllib.parse import urlencode
@@ -22,6 +23,34 @@ LOCALE_DIR = ROOT / "app" / "tbc" / "static" / "i18n"
 SOURCE_PATH = LOCALE_DIR / "en.json"
 SEPARATOR = "\n␞\n"
 MAX_BATCH_CHARS = 4_400
+
+# Google Translate has no notion of "do not translate this span" over the
+# plain-text endpoint used below, so a literal {error} placeholder is fair
+# game for translation and regularly comes back as e.g. {erreur} (French) or
+# {خطأ} (Arabic) - silently breaking the app/tbc/static/i18n.js runtime
+# substitution for that string. Numeric placeholders like {0} survive
+# translation untouched (verified empirically across Latin, Cyrillic,
+# Arabic, Devanagari, CJK, and Thai scripts, including when a language
+# reorders the surrounding clauses), so every value is protected before
+# sending and restored by index - not by position - afterwards.
+PLACEHOLDER_RE = re.compile(r"\{(\w+)\}")
+
+
+def protect_placeholders(text: str) -> tuple[str, list[str]]:
+    names: list[str] = []
+
+    def replace(match: "re.Match[str]") -> str:
+        names.append(match.group(1))
+        return f"{{{len(names) - 1}}}"
+
+    return PLACEHOLDER_RE.sub(replace, text), names
+
+
+def restore_placeholders(text: str, names: list[str]) -> str:
+    def replace(match: "re.Match[str]") -> str:
+        return f"{{{names[int(match.group(1))]}}}"
+
+    return re.sub(r"\{(\d+)\}", replace, text)
 
 # Twenty additional high-speaker languages. Existing locales are deliberately
 # skipped, as requested; the list therefore extends beyond the first 20 where
@@ -88,7 +117,8 @@ def translate_batch(text: str, target: str) -> str:
 
 def translate_locale(source: dict[str, str], target: str) -> dict[str, str]:
     translated: dict[str, str] = {}
-    work = batches(list(source.items()))
+    protected_source = {key: protect_placeholders(value) for key, value in source.items()}
+    work = batches([(key, protected) for key, (protected, _names) in protected_source.items()])
     for index, batch in enumerate(work, 1):
         original_values = [value for _, value in batch]
         result = translate_batch(SEPARATOR.join(original_values), target)
@@ -97,7 +127,9 @@ def translate_locale(source: dict[str, str], target: str) -> dict[str, str]:
             raise RuntimeError(
                 f"Google Translate changed the batch separator in chunk {index}/{len(work)} for {target}"
             )
-        translated.update(dict(zip((key for key, _ in batch), values, strict=True)))
+        for (key, _protected), value in zip(batch, values, strict=True):
+            _protected_value, names = protected_source[key]
+            translated[key] = restore_placeholders(value, names)
         print(f"  {target}: {index}/{len(work)}", flush=True)
         time.sleep(0.15)
     if translated.keys() != source.keys():
