@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "ایس ڈی کارڈ",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "وائی فائی سگنل",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "کیمرے شامل ہیں۔",
+  "birdseye.camera_selection_hint": "Birdseye ہر منتخب کیمرہ کو مسلسل ڈی کوڈ اور دوبارہ انکوڈ کرتا ہے، لہذا اس فہرست کو رکھیں کہ دیوار کے ڈسپلے یا ایمبیڈڈ ویجیٹ کو درحقیقت کیا ضرورت ہے۔ {max} کیمروں تک محدود۔",
+  "birdseye.disabled": "برڈسی آف ہے۔",
+  "birdseye.enabled": "برڈسی کو فعال کریں۔",
+  "birdseye.explanation": "ایک واحد مشترکہ ویڈیو سٹریم جو ہر منتخب کیمرے کو ایک موزیک امیج میں ٹائل کرتا ہے، ایک واحد ویڈیو ویجیٹ کے طور پر سرایت کرنے کے لیے (ایک ہوم اسسٹنٹ ڈیش بورڈ کارڈ، ایک ٹی وی، ایک NVR وال ان پٹ) - لائیو صفحہ کے برعکس، جو ہر کیمرے کو اس کے الگ سے چلنے کے قابل ٹائل کے طور پر دکھاتا ہے۔",
+  "birdseye.eyebrow": "جامع موزیک",
+  "birdseye.fps": "فریم فی سیکنڈ",
+  "birdseye.no_usable_cameras": "فی الحال منتخب کردہ کیمروں میں سے کسی کا بھی معروف لائیو سلسلہ نہیں ہے۔",
+  "birdseye.settings": "ترتیبات",
+  "birdseye.settings_saved": "برڈسی کی ترتیبات محفوظ ہو گئیں۔",
+  "birdseye.stop": "رک جاؤ",
+  "birdseye.title": "برڈسی"
 }

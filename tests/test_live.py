@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from app.tbc.live import (
     LiveManager,
+    _composite_ffmpeg_command,
     _is_nonfatal_hls_warning,
     _live_ffmpeg_command,
     diagnose_stream_open_failure,
@@ -90,6 +91,132 @@ class LiveTests(unittest.TestCase):
             ]
 
             self.assertEqual(manager.message("camera-1"), "Starting live stream camera-1")
+
+
+class CompositeFfmpegCommandTests(unittest.TestCase):
+    def test_includes_one_input_per_source(self):
+        command = _composite_ffmpeg_command(
+            ["rtsp://cam1/stream", "http://cam2/stream"],
+            Path("/tmp/birdseye/segment%03d.ts"),
+            Path("/tmp/birdseye/index.m3u8"),
+            columns=2,
+            tile_width=320,
+            tile_height=180,
+            fps=5,
+        )
+
+        self.assertEqual(command.count("-i"), 2)
+        self.assertIn("rtsp://cam1/stream", command)
+        self.assertIn("http://cam2/stream", command)
+
+    def test_rtsp_transport_is_only_added_for_rtsp_sources(self):
+        command = _composite_ffmpeg_command(
+            ["rtsp://cam1/stream", "http://cam2/stream"],
+            Path("/tmp/birdseye/segment%03d.ts"),
+            Path("/tmp/birdseye/index.m3u8"),
+            columns=2,
+            tile_width=320,
+            tile_height=180,
+            fps=5,
+        )
+
+        self.assertEqual(command.count("-rtsp_transport"), 1)
+
+    def test_filter_complex_stacks_every_source(self):
+        command = _composite_ffmpeg_command(
+            ["rtsp://cam1/stream", "rtsp://cam2/stream", "rtsp://cam3/stream"],
+            Path("/tmp/birdseye/segment%03d.ts"),
+            Path("/tmp/birdseye/index.m3u8"),
+            columns=2,
+            tile_width=320,
+            tile_height=180,
+            fps=5,
+        )
+
+        filter_index = command.index("-filter_complex") + 1
+        filter_complex = command[filter_index]
+        self.assertIn("xstack=inputs=3", filter_complex)
+        self.assertIn("[v0][v1][v2]", filter_complex)
+        # Third source (index 2) wraps to the next row at 2 columns.
+        self.assertIn("0_180", filter_complex)
+
+    def test_transcodes_instead_of_copying_the_codec(self):
+        command = _composite_ffmpeg_command(
+            ["rtsp://cam1/stream"],
+            Path("/tmp/birdseye/segment%03d.ts"),
+            Path("/tmp/birdseye/index.m3u8"),
+            columns=1,
+            tile_width=320,
+            tile_height=180,
+            fps=5,
+        )
+
+        self.assertIn("libx264", command)
+        self.assertNotIn("copy", command)
+
+
+class _FakeStoppableProcess:
+    """Unlike _FakeRunningProcess, also supports terminate() - needed because
+    start_composite's restart path runs stop() on the previously running
+    process before launching the replacement."""
+
+    def poll(self):
+        return None
+
+    def terminate(self):
+        pass
+
+
+class StartCompositeTests(unittest.TestCase):
+    def test_is_idempotent_for_an_unchanged_signature(self):
+        with TemporaryDirectory() as temp_dir:
+            manager = LiveManager(temp_dir)
+            manager._processes["birdseye"] = _FakeStoppableProcess()
+            manager.playlist_path("birdseye").parent.mkdir(parents=True, exist_ok=True)
+            manager.playlist_path("birdseye").write_text("#EXTM3U\n")
+            manager._signatures["birdseye"] = "sig-1"
+
+            with patch("app.tbc.live.shutil.which", return_value="/usr/bin/ffmpeg"), patch(
+                "app.tbc.live.subprocess.Popen"
+            ) as popen_mock:
+                manager.start_composite(
+                    "birdseye",
+                    ["rtsp://cam1/stream"],
+                    columns=1,
+                    tile_width=320,
+                    tile_height=180,
+                    fps=5,
+                    signature="sig-1",
+                )
+
+            popen_mock.assert_not_called()
+
+    def test_restarts_when_the_signature_changes(self):
+        with TemporaryDirectory() as temp_dir:
+            manager = LiveManager(temp_dir)
+            manager._processes["birdseye"] = _FakeStoppableProcess()
+            manager.playlist_path("birdseye").parent.mkdir(parents=True, exist_ok=True)
+            manager.playlist_path("birdseye").write_text("#EXTM3U\n")
+            manager._signatures["birdseye"] = "sig-1"
+
+            with patch("app.tbc.live.shutil.which", return_value="/usr/bin/ffmpeg"), patch(
+                "app.tbc.live.subprocess.Popen", return_value=_FakeFfmpegProcess([], 0)
+            ) as popen_mock:
+                manager.start_composite(
+                    "birdseye",
+                    ["rtsp://cam1/stream"],
+                    columns=1,
+                    tile_width=320,
+                    tile_height=180,
+                    fps=5,
+                    signature="sig-2",
+                )
+                # The background stderr-tail thread reads process.wait() -
+                # give it a moment to finish before the temp dir is removed.
+                time.sleep(0.05)
+
+            popen_mock.assert_called_once()
+            self.assertEqual(manager._signatures["birdseye"], "sig-2")
 
 
 class DiagnoseStreamOpenFailureTests(unittest.TestCase):

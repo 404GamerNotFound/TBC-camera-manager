@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD 카드",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi 신호",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "카메라 포함",
+  "birdseye.camera_selection_hint": "Birdseye는 선택한 모든 카메라를 지속적으로 디코딩하고 다시 인코딩하므로 벽면 디스플레이나 내장 위젯에 실제로 필요한 항목에 대한 목록을 유지하세요. {max} 대의 카메라로 제한됩니다.",
+  "birdseye.disabled": "Birdseye가 꺼졌습니다.",
+  "birdseye.enabled": "Birdseye 활성화",
+  "birdseye.explanation": "단일 비디오 위젯(홈어시스턴트 대시보드 카드, TV, NVR 벽면 입력)으로 삽입하기 위해 선택한 모든 카메라를 하나의 모자이크 이미지로 타일링하는 단일 결합 비디오 스트림 - 각 카메라를 별도로 재생 가능한 타일로 표시하는 라이브 페이지와는 다릅니다.",
+  "birdseye.eyebrow": "복합 모자이크",
+  "birdseye.fps": "초당 프레임",
+  "birdseye.no_usable_cameras": "선택한 카메라 중 현재 알려진 라이브 스트림이 없습니다.",
+  "birdseye.settings": "설정",
+  "birdseye.settings_saved": "Birdseye 설정이 저장되었습니다.",
+  "birdseye.stop": "중지",
+  "birdseye.title": "버즈아이"
 }

@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "Kartu SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "Sinyal WiFi",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Termasuk kamera",
+  "birdseye.camera_selection_hint": "Birdseye terus-menerus mendekode dan mengkodekan ulang setiap kamera yang dipilih, jadi simpanlah daftar sesuai kebutuhan tampilan dinding atau widget tertanam. Terbatas untuk kamera {max}.",
+  "birdseye.disabled": "Mata Burung dimatikan.",
+  "birdseye.enabled": "Aktifkan Birdseye",
+  "birdseye.explanation": "Aliran video gabungan tunggal yang menyusun setiap kamera yang dipilih menjadi satu gambar mosaik, untuk disematkan sebagai widget video tunggal (kartu dasbor Home Assistant, TV, input dinding NVR) - tidak seperti halaman Live, yang menampilkan setiap kamera sebagai ubinnya sendiri yang dapat diputar secara terpisah.",
+  "birdseye.eyebrow": "Mosaik komposit",
+  "birdseye.fps": "Bingkai per detik",
+  "birdseye.no_usable_cameras": "Saat ini, tidak satu pun kamera yang dipilih memiliki streaming langsung yang diketahui.",
+  "birdseye.settings": "Pengaturan",
+  "birdseye.settings_saved": "Pengaturan Birdseye telah disimpan.",
+  "birdseye.stop": "Berhenti",
+  "birdseye.title": "mata burung"
 }

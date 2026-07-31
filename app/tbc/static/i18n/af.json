@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD-kaart",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi-sein",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Cameras included",
+  "birdseye.camera_selection_hint": "Birdseye dekodeer en herkodeer deurlopend elke geselekteerde kamera, so hou die lys by wat 'n muurskerm of ingebedde legstuk eintlik nodig het. Beperk tot {maks} kameras.",
+  "birdseye.disabled": "Birdseye is afgeskakel.",
+  "birdseye.enabled": "Aktiveer Birdseye",
+  "birdseye.explanation": "'n Enkele gekombineerde videostroom wat elke geselekteerde kamera in een mosaïekbeeld teël, vir inbedding as 'n enkele video-legstuk ('n Home Assistant-paneelbordkaart, 'n TV, 'n NVR-muurtoevoer) - anders as die Regstreekse bladsy, wat elke kamera as sy eie afsonderlik speelbare teël wys.",
+  "birdseye.eyebrow": "Saamgestelde mosaïek",
+  "birdseye.fps": "Rame per sekonde",
+  "birdseye.no_usable_cameras": "Geen van die geselekteerde kameras het tans 'n bekende regstreekse stroom nie.",
+  "birdseye.settings": "Instellings",
+  "birdseye.settings_saved": "Birdseye-instellings is gestoor.",
+  "birdseye.stop": "Stop",
+  "birdseye.title": "Birdseye"
 }

@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- Added Birdseye, an optional single server-composited mosaic stream combining several cameras
+  into one ffmpeg output (via the xstack filter), for embedding as a single video widget - a
+  Home Assistant dashboard card, a TV/HDMI stick, or an NVR wall input - where the existing
+  per-tile Live wall doesn't fit. Off by default and capped at 16 cameras, since it continuously
+  transcodes every included camera instead of passing codecs through unchanged like Live view.
 - Restyled the shared `.table-section` grouping used across the camera detail tabs (Controls,
   Recording, AI detection) and the Performance, License, AI detection, Network mappings,
   Recognition, SD card, and Storage explorer pages: each grouped section now renders as a

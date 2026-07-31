@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD карта",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi сигнал",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Включени камери",
+  "birdseye.camera_selection_hint": "Birdseye непрекъснато декодира и прекодира всяка избрана камера, така че поддържайте списъка до това, от което всъщност се нуждае стенен дисплей или вградена джаджа. Ограничено до {макс.} камери.",
+  "birdseye.disabled": "Birdseye е изключен.",
+  "birdseye.enabled": "Активирайте Birdseye",
+  "birdseye.explanation": "Единичен комбиниран видео поток, който подрежда всяка избрана камера в едно мозаечно изображение, за вграждане като единичен видео уиджет (карта на таблото за управление на Home Assistant, телевизор, стенен вход за NVR) - за разлика от страницата на живо, която показва всяка камера като отделна плочка за възпроизвеждане.",
+  "birdseye.eyebrow": "Композитна мозайка",
+  "birdseye.fps": "Кадри в секунда",
+  "birdseye.no_usable_cameras": "Нито една от избраните камери в момента няма известен поток на живо.",
+  "birdseye.settings": "Настройки",
+  "birdseye.settings_saved": "Настройките за Birdseye бяха запазени.",
+  "birdseye.stop": "Спрете",
+  "birdseye.title": "Птичи очи"
 }

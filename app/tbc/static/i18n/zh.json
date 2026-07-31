@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD 卡",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi 信号",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "包含相机",
+  "birdseye.camera_selection_hint": "Birdseye 不断解码和重新编码每个选定的摄像头，因此请保留墙壁显示器或嵌入式小部件实际需要的列表。仅限 {max} 个摄像头。",
+  "birdseye.disabled": "Birdseye 已关闭。",
+  "birdseye.enabled": "启用鸟瞰",
+  "birdseye.explanation": "单个组合视频流，将每个选定的摄像机平铺到一个马赛克图像中，作为单个视频小部件（Home Assistant 仪表板卡、电视、NVR 墙壁输入）嵌入 - 与实时页面不同，实时页面将每个摄像机显示为其自己的可单独播放的图块。",
+  "birdseye.eyebrow": "复合马赛克",
+  "birdseye.fps": "每秒帧数",
+  "birdseye.no_usable_cameras": "当前所选摄像机均没有已知的直播流。",
+  "birdseye.settings": "设置",
+  "birdseye.settings_saved": "鸟瞰设置已保存。",
+  "birdseye.stop": "停止",
+  "birdseye.title": "鸟眼"
 }

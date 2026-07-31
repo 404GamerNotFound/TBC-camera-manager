@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD-карта",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "Сигнал Wi-Fi",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Камеры включены",
+  "birdseye.camera_selection_hint": "Birdseye постоянно декодирует и перекодирует каждую выбранную камеру, поэтому составьте список только того, что действительно нужно настенному дисплею или встроенному виджету. Ограничено {max} камерами.",
+  "birdseye.disabled": "Birdseye выключен.",
+  "birdseye.enabled": "Включить птичий глаз",
+  "birdseye.explanation": "Единый комбинированный видеопоток, который объединяет каждую выбранную камеру в одно мозаичное изображение для встраивания в виде единого видеовиджета (карта приборной панели Home Assistant, телевизор, настенный вход NVR) — в отличие от страницы Live, на которой каждая камера отображается как отдельная отдельно воспроизводимая плитка.",
+  "birdseye.eyebrow": "Композитная мозаика",
+  "birdseye.fps": "Кадров в секунду",
+  "birdseye.no_usable_cameras": "Ни одна из выбранных камер в настоящее время не ведет прямую трансляцию.",
+  "birdseye.settings": "Настройки",
+  "birdseye.settings_saved": "Настройки Birdseye были сохранены.",
+  "birdseye.stop": "Стоп",
+  "birdseye.title": "птичий глаз"
 }

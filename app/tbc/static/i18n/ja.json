@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SDカード",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "Wi-Fi電波強度",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "カメラが付属",
+  "birdseye.camera_selection_hint": "Birdseye は、選択したすべてのカメラを継続的にデコードおよび再エンコードするため、ウォール ディスプレイまたは埋め込みウィジェットが実際に必要とするものをリストに記録しておきます。 {max} 台のカメラに制限されています。",
+  "birdseye.disabled": "鳥瞰図はオフになっています。",
+  "birdseye.enabled": "鳥瞰図を有効にする",
+  "birdseye.explanation": "各カメラを個別に再生可能なタイルとして表示するライブ ページとは異なり、単一のビデオ ウィジェット (ホーム アシスタント ダッシュボード カード、テレビ、NVR 壁入力) として埋め込むために、選択したすべてのカメラを 1 つのモザイク画像に並べて表示する単一の結合ビデオ ストリーム。",
+  "birdseye.eyebrow": "複合モザイク",
+  "birdseye.fps": "1 秒あたりのフレーム数",
+  "birdseye.no_usable_cameras": "現在、選択したカメラには既知のライブ ストリームがありません。",
+  "birdseye.settings": "設定",
+  "birdseye.settings_saved": "鳥瞰設定が保存されました。",
+  "birdseye.stop": "停止",
+  "birdseye.title": "鳥瞰図"
 }

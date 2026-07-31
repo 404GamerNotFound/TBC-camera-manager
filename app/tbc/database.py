@@ -430,6 +430,11 @@ CREATE TABLE IF NOT EXISTS live_layout (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS birdseye_cameras (
+    camera_id INTEGER PRIMARY KEY REFERENCES cameras(id) ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS cloud_accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     module_key TEXT NOT NULL,
@@ -648,6 +653,9 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE ui_settings ADD COLUMN show_seconds INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE ui_settings ADD COLUMN compact_mode INTEGER NOT NULL DEFAULT 1",
     "ALTER TABLE ui_settings ADD COLUMN dashboard_refresh_seconds INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN birdseye_enabled INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE ui_settings ADD COLUMN birdseye_columns INTEGER NOT NULL DEFAULT 3",
+    "ALTER TABLE ui_settings ADD COLUMN birdseye_fps INTEGER NOT NULL DEFAULT 5",
 )
 
 
@@ -3444,6 +3452,55 @@ def set_live_layout_item(
                 updated_at = CURRENT_TIMESTAMP
             """,
             (live_key, column_span, row_span, sort_order),
+        )
+
+
+def get_birdseye_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT birdseye_enabled, birdseye_columns, birdseye_fps FROM ui_settings WHERE id = 1"
+        ).fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO ui_settings (id) VALUES (1)")
+            return {"enabled": False, "columns": 3, "fps": 5}
+    return {
+        "enabled": bool(row["birdseye_enabled"]),
+        "columns": int(row["birdseye_columns"]),
+        "fps": int(row["birdseye_fps"]),
+    }
+
+
+def set_birdseye_settings(database_path: str, *, enabled: bool, columns: int, fps: int) -> None:
+    columns = max(1, min(6, columns))
+    fps = max(1, min(10, fps))
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO ui_settings (id, birdseye_enabled, birdseye_columns, birdseye_fps)
+            VALUES (1, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                birdseye_enabled = excluded.birdseye_enabled,
+                birdseye_columns = excluded.birdseye_columns,
+                birdseye_fps = excluded.birdseye_fps,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if enabled else 0, columns, fps),
+        )
+
+
+def get_birdseye_camera_ids(database_path: str) -> list[int]:
+    with connect(database_path) as db:
+        rows = db.execute("SELECT camera_id FROM birdseye_cameras ORDER BY sort_order").fetchall()
+    return [int(row["camera_id"]) for row in rows]
+
+
+def set_birdseye_camera_ids(database_path: str, camera_ids: list[int]) -> None:
+    unique_camera_ids = list(dict.fromkeys(camera_ids))
+    with connect(database_path) as db:
+        db.execute("DELETE FROM birdseye_cameras")
+        db.executemany(
+            "INSERT INTO birdseye_cameras (camera_id, sort_order) VALUES (?, ?)",
+            [(camera_id, index) for index, camera_id in enumerate(unique_camera_ids)],
         )
 
 

@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "بطاقة SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "إشارة واي فاي",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "الكاميرات متضمنة",
+  "birdseye.camera_selection_hint": "تقوم Birdseye بفك تشفير كل كاميرا محددة وإعادة تشفيرها بشكل مستمر، لذا احتفظ بالقائمة بما تحتاجه شاشة الحائط أو الأداة المضمنة بالفعل. يقتصر على {max} من الكاميرات.",
+  "birdseye.disabled": "تم إيقاف Birdseye.",
+  "birdseye.enabled": "تمكين عين الطيور",
+  "birdseye.explanation": "دفق فيديو مدمج واحد يجمع كل كاميرا محددة في صورة فسيفساء واحدة، لتضمينها كأداة فيديو واحدة (بطاقة لوحة معلومات Home Assistant، وجهاز تلفزيون، ومدخل جدار NVR) - على عكس الصفحة المباشرة، التي تعرض كل كاميرا كمربع خاص بها قابل للتشغيل بشكل منفصل.",
+  "birdseye.eyebrow": "فسيفساء مركبة",
+  "birdseye.fps": "إطارات في الثانية",
+  "birdseye.no_usable_cameras": "لا تحتوي أي من الكاميرات المحددة حاليًا على بث مباشر معروف.",
+  "birdseye.settings": "الإعدادات",
+  "birdseye.settings_saved": "تم حفظ إعدادات Birdseye.",
+  "birdseye.stop": "توقف",
+  "birdseye.title": "عين الطير"
 }

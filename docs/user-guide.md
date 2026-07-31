@@ -72,6 +72,19 @@ Two transports can be available:
 Transport selection is remembered per tile in the browser. Full-screen mode hides the normal
 application chrome and can be left with Escape or the on-screen exit button.
 
+## Birdseye
+
+Birdseye is a single, server-composited video stream that tiles several cameras into one mosaic
+image, unlike Live view's per-camera tiles. It is meant for places a single stream is needed - a
+Home Assistant dashboard card, a TV or HDMI stick without a browser, or an NVR wall input - not for
+per-camera detail.
+
+An administrator selects which cameras are included (up to 16), the grid column count, and a low
+frame rate, then enables it under **Birdseye → Settings**. Because compositing continuously decodes
+and re-encodes every included camera instead of passing codecs through unchanged like Live view
+does, it is off by default and should only include the cameras actually needed on the target
+display. Full-screen mode works the same way as Live view.
+
 ## Recording and archives
 
 TBC supports two local recording modes:

@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD card",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi signal",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Kasama ang mga camera",
+  "birdseye.camera_selection_hint": "Ang Birdseye ay patuloy na nagde-decode at muling nag-encode sa bawat napiling camera, kaya panatilihin ang listahan sa kung ano talaga ang kailangan ng isang display sa dingding o naka-embed na widget. Limitado sa {max} (na) camera.",
+  "birdseye.disabled": "Naka-off ang Birdseye.",
+  "birdseye.enabled": "Paganahin ang Birdseye",
+  "birdseye.explanation": "Isang pinagsama-samang video stream na naglalagay ng tile sa bawat napiling camera sa isang mosaic na larawan, para sa pag-embed bilang iisang video widget (isang Home Assistant dashboard card, isang TV, isang NVR wall input) - hindi tulad ng Live page, na nagpapakita sa bawat camera bilang sarili nitong hiwalay na nape-play na tile.",
+  "birdseye.eyebrow": "Composite mosaic",
+  "birdseye.fps": "Mga frame sa bawat segundo",
+  "birdseye.no_usable_cameras": "Wala sa mga napiling camera ang kasalukuyang may alam na live stream.",
+  "birdseye.settings": "Mga setting",
+  "birdseye.settings_saved": "Na-save ang mga setting ng Birdseye.",
+  "birdseye.stop": "Tumigil ka",
+  "birdseye.title": "Birdseye"
 }

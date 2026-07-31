@@ -38,6 +38,9 @@ class LiveManager:
         # Each thread captures its own generation once and checks it before
         # every append, rather than racing on shared mutable state.
         self._generation: dict[str, int] = {}
+        # Tracks what a running composite (Birdseye) stream was last built from -
+        # see start_composite()'s docstring.
+        self._signatures: dict[str, str] = {}
 
     def start(self, key: str, stream_uri: str) -> Path:
         if shutil.which("ffmpeg") is None:
@@ -46,19 +49,63 @@ class LiveManager:
         process = self._processes.get(key)
         if process and process.poll() is None and playlist.exists():
             return playlist
+        command = _live_ffmpeg_command(stream_uri, self._segment_pattern(key), playlist)
+        safe_stream_uri = redact_rtsp_credentials(stream_uri)
+        self._launch(key, command, f"Starting live stream {key}: {safe_stream_uri}", stream_uri)
+        return playlist
+
+    def start_composite(
+        self,
+        key: str,
+        sources: list[str],
+        *,
+        columns: int,
+        tile_width: int,
+        tile_height: int,
+        fps: int,
+        signature: str,
+    ) -> Path:
+        """Like start(), but for a single ffmpeg process compositing several
+        sources into one mosaic output (Birdseye) instead of passing one
+        camera's codec through unchanged. Idempotency additionally depends on
+        `signature` (e.g. derived from the selected cameras/columns/fps): a
+        settings change that keeps the process alive but changes what it
+        should show must still force a restart, unlike a plain re-view of an
+        unchanged stream."""
+        if shutil.which("ffmpeg") is None:
+            raise RuntimeError("ffmpeg is not installed")
+        playlist = self.playlist_path(key)
+        process = self._processes.get(key)
+        if process and process.poll() is None and playlist.exists() and self._signatures.get(key) == signature:
+            return playlist
+        command = _composite_ffmpeg_command(
+            sources,
+            self._segment_pattern(key),
+            playlist,
+            columns=columns,
+            tile_width=tile_width,
+            tile_height=tile_height,
+            fps=fps,
+        )
+        self._signatures[key] = signature
+        self._launch(key, command, f"Starting composite stream {key} from {len(sources)} source(s)", None)
+        return playlist
+
+    def _segment_pattern(self, key: str) -> Path:
+        return self.live_path / key / "segment%03d.ts"
+
+    def _launch(self, key: str, command: list[str], start_message: str, stream_uri: str | None) -> None:
         self.stop(key)
         self._stopping.discard(key)
         self._last_start_attempt[key] = time.monotonic()
         generation = self._generation.get(key, 0) + 1
         self._generation[key] = generation
+        playlist = self.playlist_path(key)
         out_dir = self.live_path / key
         shutil.rmtree(out_dir, ignore_errors=True)
         out_dir.mkdir(parents=True, exist_ok=True)
-        segment_pattern = out_dir / "segment%03d.ts"
-        command = _live_ffmpeg_command(stream_uri, segment_pattern, playlist)
-        safe_stream_uri = redact_rtsp_credentials(stream_uri)
-        self._messages[key] = [f"Starting live stream {key}: {safe_stream_uri}"]
-        LOGGER.info("Starting live stream %s with %s", key, safe_stream_uri)
+        self._messages[key] = [start_message]
+        LOGGER.info(start_message)
         process = subprocess.Popen(
             command,
             stdout=subprocess.DEVNULL,
@@ -70,7 +117,6 @@ class LiveManager:
         threading.Thread(
             target=self._read_stderr, args=(key, process, stream_uri, playlist, generation), daemon=True
         ).start()
-        return playlist
 
     def should_retry(self, key: str) -> bool:
         """True if this stream crashed on its own (status()=="failed") and the
@@ -139,7 +185,7 @@ class LiveManager:
         return True
 
     def _read_stderr(
-        self, key: str, process: subprocess.Popen, stream_uri: str, playlist: Path, generation: int
+        self, key: str, process: subprocess.Popen, stream_uri: str | None, playlist: Path, generation: int
     ) -> None:
         if process.stderr is None:
             return
@@ -171,7 +217,7 @@ class LiveManager:
                 # up to a few seconds, which is exactly why every append above
                 # goes through the generation check: a newer start() can and
                 # does happen while this is still running.
-                if not playlist.exists():
+                if stream_uri and not playlist.exists():
                     diagnosis = diagnose_stream_open_failure(stream_uri)
                     if diagnosis and self._append_message(key, generation, diagnosis):
                         LOGGER.error("Live diagnosis for %s: %s", key, diagnosis)
@@ -276,3 +322,84 @@ def _live_ffmpeg_command(stream_uri: str, segment_pattern: Path, playlist: Path)
         str(segment_pattern),
         str(playlist),
     ]
+
+
+# Compositing decodes and re-encodes every source continuously (unlike the
+# -c:v copy passthrough used everywhere else in this module), so the source
+# count is capped independently of how many cameras a deployment has - this
+# bounds the CPU/bandwidth cost of the optional Birdseye view regardless of
+# fleet size.
+MAX_BIRDSEYE_CAMERAS = 16
+
+
+def _composite_ffmpeg_command(
+    sources: list[str],
+    segment_pattern: Path,
+    playlist: Path,
+    *,
+    columns: int,
+    tile_width: int,
+    tile_height: int,
+    fps: int,
+) -> list[str]:
+    """Builds a single ffmpeg process that decodes every source in `sources`,
+    scales/letterboxes each into a `tile_width`x`tile_height` cell, and tiles
+    them into one mosaic frame (`columns` per row) via the xstack filter -
+    the Birdseye view. Every input is transcoded (libx264, not -c:v copy),
+    since a filter graph can't operate on compressed packets."""
+    command: list[str] = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "warning"]
+    for stream_uri in sources:
+        rtsp_only_options = (
+            ["-rtsp_transport", "tcp"] if urlsplit(stream_uri).scheme.lower() in ("rtsp", "rtsps") else []
+        )
+        command += [
+            "-fflags",
+            "+genpts+discardcorrupt",
+            *rtsp_only_options,
+            "-use_wallclock_as_timestamps",
+            "1",
+            "-i",
+            stream_uri,
+        ]
+
+    scale_filters = []
+    for index in range(len(sources)):
+        scale_filters.append(
+            f"[{index}:v]scale={tile_width}:{tile_height}:force_original_aspect_ratio=decrease,"
+            f"pad={tile_width}:{tile_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps={fps}[v{index}]"
+        )
+    layout = "|".join(
+        f"{(index % columns) * tile_width}_{(index // columns) * tile_height}" for index in range(len(sources))
+    )
+    stack_inputs = "".join(f"[v{index}]" for index in range(len(sources)))
+    filter_complex = ";".join(scale_filters) + f";{stack_inputs}xstack=inputs={len(sources)}:layout={layout}:fill=black[out]"
+
+    command += [
+        "-filter_complex",
+        filter_complex,
+        "-map",
+        "[out]",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-tune",
+        "zerolatency",
+        "-crf",
+        "30",
+        "-g",
+        str(fps * 2),
+        "-f",
+        "hls",
+        "-hls_time",
+        "2",
+        "-hls_list_size",
+        "5",
+        "-hls_flags",
+        "delete_segments+omit_endlist",
+        "-hls_segment_filename",
+        str(segment_pattern),
+        str(playlist),
+    ]
+    return command

@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "Cartão SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "Sinal WiFi",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Câmeras incluídas",
+  "birdseye.camera_selection_hint": "A Birdseye decodifica e recodifica continuamente cada câmera selecionada, portanto, mantenha a lista do que um display de parede ou widget incorporado realmente precisa. Limitado a {max} câmeras.",
+  "birdseye.disabled": "O Birdseye está desligado.",
+  "birdseye.enabled": "Habilitar Birdseye",
+  "birdseye.explanation": "Um único fluxo de vídeo combinado que agrupa cada câmera selecionada em uma imagem de mosaico, para incorporação como um único widget de vídeo (um cartão de painel do Home Assistant, uma TV, uma entrada de parede NVR) - ao contrário da página Live, que mostra cada câmera como seu próprio bloco reproduzível separadamente.",
+  "birdseye.eyebrow": "Mosaico composto",
+  "birdseye.fps": "Quadros por segundo",
+  "birdseye.no_usable_cameras": "Nenhuma das câmeras selecionadas possui atualmente uma transmissão ao vivo conhecida.",
+  "birdseye.settings": "Configurações",
+  "birdseye.settings_saved": "As configurações do Birdseye foram salvas.",
+  "birdseye.stop": "Pare",
+  "birdseye.title": "Olho de pássaro"
 }

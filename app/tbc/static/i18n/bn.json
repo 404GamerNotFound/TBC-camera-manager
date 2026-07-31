@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "এসডি কার্ড",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "ওয়াইফাই সিগন্যাল",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "ক্যামেরা অন্তর্ভুক্ত",
+  "birdseye.camera_selection_hint": "Birdseye ক্রমাগত প্রতিটি নির্বাচিত ক্যামেরা ডিকোড এবং পুনরায় এনকোড করে, তাই একটি ওয়াল ডিসপ্লে বা এমবেডেড উইজেট আসলে কী প্রয়োজন তার তালিকাটি রাখুন। সীমাবদ্ধ {max} ক্যামেরা।",
+  "birdseye.disabled": "বার্ডসেই বন্ধ করা হয়েছে।",
+  "birdseye.enabled": "Birdseye সক্ষম করুন",
+  "birdseye.explanation": "একটি একক সম্মিলিত ভিডিও স্ট্রীম যা প্রতিটি নির্বাচিত ক্যামেরাকে একটি মোজাইক ছবিতে টাইল করে, একটি একক ভিডিও উইজেট (একটি হোম অ্যাসিস্ট্যান্ট ড্যাশবোর্ড কার্ড, একটি টিভি, একটি NVR ওয়াল ইনপুট) হিসাবে এম্বেড করার জন্য - লাইভ পৃষ্ঠার বিপরীতে, যা প্রতিটি ক্যামেরাকে তার নিজস্ব আলাদাভাবে প্লেযোগ্য টাইল হিসাবে দেখায়৷",
+  "birdseye.eyebrow": "যৌগিক মোজাইক",
+  "birdseye.fps": "প্রতি সেকেন্ডে ফ্রেম",
+  "birdseye.no_usable_cameras": "নির্বাচিত ক্যামেরাগুলির কোনোটিরই বর্তমানে পরিচিত লাইভ স্ট্রিম নেই।",
+  "birdseye.settings": "সেটিংস",
+  "birdseye.settings_saved": "Birdseye সেটিংস সংরক্ষণ করা হয়েছে.",
+  "birdseye.stop": "থামো",
+  "birdseye.title": "বার্ডসেই"
 }

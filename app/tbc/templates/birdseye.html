@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="birdseye.eyebrow">Composite mosaic</p>
+    <h1 data-i18n="birdseye.title">Birdseye</h1>
+  </div>
+  <div class="button-row live-toolbar">
+    {% if is_active %}
+    <span class="status-pill status-{{ 'active' if status == 'running' else 'error' if status in ['failed', 'missing'] else 'warning' }}" data-i18n="status.{{ status }}">{{ status }}</span>
+    {% endif %}
+    <button class="secondary-button" type="button" data-birdseye-fullscreen data-i18n="live.full_screen">Full screen</button>
+    {% if role == 'admin' %}
+    <button class="secondary-button" type="button" data-birdseye-settings-toggle aria-expanded="false" data-i18n="birdseye.settings">Settings</button>
+    {% endif %}
+  </div>
+</section>
+
+<p class="quiet-box" data-i18n="birdseye.explanation">
+  A single combined video stream that tiles every selected camera into one mosaic image, for
+  embedding as a single video widget (a Home Assistant dashboard card, a TV, an NVR wall input) -
+  unlike the Live page, which shows each camera as its own separately playable tile.
+</p>
+
+{% if role == 'admin' %}
+<form class="editor-form compact-form" method="post" action="{{ ingress_prefix }}/birdseye/settings" data-birdseye-settings-form hidden>
+  <div class="section-title">
+    <h2 data-i18n="birdseye.settings">Settings</h2>
+    <span data-i18n="common.admin">Admin</span>
+  </div>
+  <div class="form-grid">
+    <label class="check-row">
+      <input type="checkbox" name="enabled" {% if settings.enabled %}checked{% endif %}>
+      <span data-i18n="birdseye.enabled">Enable Birdseye</span>
+    </label>
+    <label>
+      <span data-i18n="live.grid_columns">Grid columns</span>
+      <select name="columns">
+        {% for n in [2, 3, 4, 5, 6] %}
+        <option value="{{ n }}" {% if settings.columns == n %}selected{% endif %} data-i18n="live.columns" data-i18n-params='{{ {"count": n} | tojson }}'>{{ n }} columns</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span data-i18n="birdseye.fps">Frames per second</span>
+      <select name="fps">
+        {% for n in [2, 5, 10] %}
+        <option value="{{ n }}" {% if settings.fps == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <fieldset class="span-2 checkbox-field">
+    <legend data-i18n="birdseye.camera_selection">Cameras included</legend>
+    <div class="checkbox-grid">
+      {% for camera in cameras %}
+      <label class="check-row">
+        <input name="camera_ids" type="checkbox" value="{{ camera.id }}" {% if camera.id in selected_camera_ids %}checked{% endif %}>
+        <span>{{ camera.name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <div class="quiet-box" data-i18n="birdseye.camera_selection_hint" data-i18n-params='{{ {"max": max_cameras} | tojson }}'>
+    Birdseye continuously decodes and re-encodes every selected camera, so keep the list to what a
+    wall display or embedded widget actually needs. Limited to {{ max_cameras }} cameras.
+  </div>
+  <div class="form-actions">
+    <button class="primary-button" type="submit" data-i18n="api_access.save">Save</button>
+    <button class="secondary-button" type="submit" formaction="{{ ingress_prefix }}/birdseye/stop" data-i18n="birdseye.stop">Stop</button>
+  </div>
+</form>
+{% endif %}
+
+{% if is_active %}
+<section class="live-grid" data-birdseye-stage style="--live-columns: 1;">
+  <article class="camera-card live-card">
+    <div class="live-card-overlay">
+      <div class="live-card-overlay-row">
+        <span class="live-card-name" data-i18n="birdseye.title">Birdseye</span>
+      </div>
+      <details class="live-card-error-details" {% if status not in ['failed', 'missing'] or not message %}hidden{% endif %}>
+        <summary data-i18n="live.error_details">Technical error details</summary>
+        <pre>{{ message }}</pre>
+      </details>
+    </div>
+    {% if status == 'running' %}
+    <div class="live-player-shell" data-birdseye-player data-src="{{ ingress_prefix }}/birdseye/stream/index.m3u8">
+      <div class="live-placeholder" data-i18n="live.stream_starting">Stream is starting</div>
+    </div>
+    {% else %}
+    <div class="live-player-shell">
+      <div class="live-placeholder" data-i18n="{{ 'live.stream_starting' if status == 'starting' else 'live.waiting' }}">Stream is starting</div>
+    </div>
+    {% endif %}
+  </article>
+</section>
+{% else %}
+<section class="empty-state">
+  <h2 data-i18n="{{ 'birdseye.no_usable_cameras' if no_usable_cameras else 'birdseye.disabled' }}">Birdseye is turned off.</h2>
+</section>
+{% endif %}
+
+<button class="secondary-button live-kiosk-exit" type="button" data-birdseye-kiosk-exit hidden data-i18n="live.exit_full_screen_esc">Exit full screen (Esc)</button>
+
+<script src="{{ ingress_prefix }}/static/vendor/hls.min.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/birdseye.js?v={{ asset_version }}" defer></script>
+{% endblock %}

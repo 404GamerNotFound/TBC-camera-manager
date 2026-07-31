@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "Scheda SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "Segnale WiFi",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Fotocamere incluse",
+  "birdseye.camera_selection_hint": "Birdseye decodifica e ricodifica continuamente ogni telecamera selezionata, quindi mantieni l'elenco in base a ciò di cui ha effettivamente bisogno un display a muro o un widget incorporato. Limitato a {max} fotocamere.",
+  "birdseye.disabled": "Birdseye è disattivato.",
+  "birdseye.enabled": "Abilita Birdseye",
+  "birdseye.explanation": "Un singolo flusso video combinato che affianca ogni telecamera selezionata in un'unica immagine a mosaico, da incorporare come un singolo widget video (una scheda dashboard Home Assistant, una TV, un ingresso a muro NVR), a differenza della pagina Live, che mostra ciascuna telecamera come un proprio riquadro riproducibile separatamente.",
+  "birdseye.eyebrow": "Mosaico composito",
+  "birdseye.fps": "Fotogrammi al secondo",
+  "birdseye.no_usable_cameras": "Nessuna delle telecamere selezionate ha attualmente uno streaming live noto.",
+  "birdseye.settings": "Impostazioni",
+  "birdseye.settings_saved": "Le impostazioni Birdseye sono state salvate.",
+  "birdseye.stop": "Fermare",
+  "birdseye.title": "Occhio di uccello"
 }

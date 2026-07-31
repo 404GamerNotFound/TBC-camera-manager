@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD-kaart",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi-signaal",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Camera's inbegrepen",
+  "birdseye.camera_selection_hint": "Birdseye decodeert en hercodeert voortdurend elke geselecteerde camera, dus houd de lijst bij wat een wanddisplay of ingebouwde widget daadwerkelijk nodig heeft. Beperkt tot {max} camera's.",
+  "birdseye.disabled": "Birdseye is uitgeschakeld.",
+  "birdseye.enabled": "Schakel Birdseye in",
+  "birdseye.explanation": "Een enkele gecombineerde videostream die elke geselecteerde camera in één mozaïekafbeelding plaatst, om in te sluiten als een enkele videowidget (een Home Assistant-dashboardkaart, een tv, een NVR-muurinvoer) - in tegenstelling tot de Live-pagina, die elke camera als zijn eigen afzonderlijk afspeelbare tegel toont.",
+  "birdseye.eyebrow": "Samengesteld mozaïek",
+  "birdseye.fps": "Frames per seconde",
+  "birdseye.no_usable_cameras": "Geen van de geselecteerde camera's heeft momenteel een bekende livestream.",
+  "birdseye.settings": "Instellingen",
+  "birdseye.settings_saved": "Birdseye-instellingen zijn opgeslagen.",
+  "birdseye.stop": "Stop",
+  "birdseye.title": "Vogeloog"
 }

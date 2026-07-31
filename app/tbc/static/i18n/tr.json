@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "SD kart",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "WiFi sinyali",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Kameralar dahil",
+  "birdseye.camera_selection_hint": "Birdseye seçilen her kameranın kodunu sürekli olarak çözer ve yeniden kodlar; bu nedenle listeyi bir duvar ekranının veya yerleşik widget'ın gerçekte neye ihtiyacı olduğuna göre tutun. {max} kamerayla sınırlıdır.",
+  "birdseye.disabled": "Kuşgözü kapalı.",
+  "birdseye.enabled": "Kuş Bakışını Etkinleştir",
+  "birdseye.explanation": "Her kamerayı kendi ayrı oynatılabilir döşemesi olarak gösteren Canlı sayfasından farklı olarak, seçilen her kamerayı tek bir video widget'ı (Ev Asistanı kontrol paneli kartı, bir TV, bir NVR duvar girişi) olarak gömmek için tek bir mozaik görüntüye yerleştiren tek bir birleştirilmiş video akışı.",
+  "birdseye.eyebrow": "Kompozit mozaik",
+  "birdseye.fps": "Saniye başına kare sayısı",
+  "birdseye.no_usable_cameras": "Seçilen kameralardan hiçbirinin şu anda bilinen bir canlı akışı yok.",
+  "birdseye.settings": "Ayarlar",
+  "birdseye.settings_saved": "Kuşgözü ayarları kaydedildi.",
+  "birdseye.stop": "Durdur",
+  "birdseye.title": "Kuş bakışı"
 }

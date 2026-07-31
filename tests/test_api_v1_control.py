@@ -1156,6 +1156,113 @@ class LiveWallServerStartTests(unittest.TestCase):
         self.assertIn('data-live-initial-items', response.text)
 
 
+class BirdseyeRouteTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_ids = []
+        for index in range(2):
+            camera_id = database.create_camera(
+                main.SETTINGS.database_path,
+                name=f"Birdseye camera {index}",
+                host=f"203.0.113.{20 + index}",
+                onvif_port=8000,
+                http_port=80,
+                username="admin",
+                password="secret",
+            )
+            database.update_camera_probe(
+                main.SETTINGS.database_path,
+                camera_id,
+                status="ok",
+                message="ready",
+                stream_uri=f"rtsp://203.0.113.{20 + index}:554/live",
+            )
+            self.camera_ids.append(camera_id)
+
+    def test_unauthenticated_request_is_redirected_to_login(self):
+        CLIENT.post("/logout")
+
+        response = CLIENT.get("/birdseye", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/login")
+        _login()
+
+    def test_viewer_cannot_change_settings(self):
+        database.create_user(main.SETTINGS.database_path, username="bs-viewer", password="viewerpass123", role="viewer")
+        CLIENT.post("/logout")
+        CLIENT.post("/login", data={"username": "bs-viewer", "password": "viewerpass123"})
+
+        response = CLIENT.post(
+            "/birdseye/settings",
+            data={"columns": "3", "fps": "5", "camera_ids": [str(self.camera_ids[0])]},
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertFalse(database.get_birdseye_settings(main.SETTINGS.database_path)["enabled"])
+        _login()
+
+    def test_admin_saves_settings_and_selected_cameras(self):
+        response = CLIENT.post(
+            "/birdseye/settings",
+            data={
+                "enabled": "on",
+                "columns": "2",
+                "fps": "5",
+                "camera_ids": [str(camera_id) for camera_id in self.camera_ids],
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/birdseye")
+        settings = database.get_birdseye_settings(main.SETTINGS.database_path)
+        self.assertTrue(settings["enabled"])
+        self.assertEqual(settings["columns"], 2)
+        self.assertEqual(database.get_birdseye_camera_ids(main.SETTINGS.database_path), self.camera_ids)
+
+    def test_more_than_the_camera_cap_is_truncated(self):
+        many_ids = [str(camera_id) for camera_id in self.camera_ids] * 10
+
+        CLIENT.post(
+            "/birdseye/settings",
+            data={"enabled": "on", "columns": "3", "fps": "5", "camera_ids": many_ids},
+        )
+
+        from app.tbc.live import MAX_BIRDSEYE_CAMERAS
+
+        self.assertLessEqual(len(database.get_birdseye_camera_ids(main.SETTINGS.database_path)), MAX_BIRDSEYE_CAMERAS)
+
+    def test_page_starts_the_composite_stream_when_enabled(self):
+        database.set_birdseye_settings(main.SETTINGS.database_path, enabled=True, columns=2, fps=5)
+        database.set_birdseye_camera_ids(main.SETTINGS.database_path, self.camera_ids)
+
+        with patch.object(main.LIVE_MANAGER, "start_composite") as start_composite, patch.object(
+            main.LIVE_MANAGER, "wait_until_ready", return_value=(True, "ready")
+        ), patch.object(main.LIVE_MANAGER, "status", return_value="running"):
+            response = CLIENT.get("/birdseye")
+
+        self.assertEqual(response.status_code, 200)
+        start_composite.assert_called_once()
+        called_sources = start_composite.call_args.args[1]
+        self.assertEqual(len(called_sources), 2)
+        self.assertIn("/birdseye/stream/index.m3u8", response.text)
+
+    def test_disabled_birdseye_does_not_start_a_stream(self):
+        with patch.object(main.LIVE_MANAGER, "start_composite") as start_composite:
+            response = CLIENT.get("/birdseye")
+
+        self.assertEqual(response.status_code, 200)
+        start_composite.assert_not_called()
+
+    def test_stream_playlist_404s_when_nothing_is_running(self):
+        response = CLIENT.get("/birdseye/stream/index.m3u8")
+
+        self.assertEqual(response.status_code, 404)
+
+
 class DebugLogExportTests(unittest.TestCase):
     def setUp(self):
         _reset_database()

@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "ਐੱਸਡੀ ਕਾਰਡ",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "ਵਾਈ-ਫਾਈ ਸਿਗਨਲ",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "ਕੈਮਰੇ ਸ਼ਾਮਲ ਹਨ",
+  "birdseye.camera_selection_hint": "Birdseye ਹਰ ਚੁਣੇ ਹੋਏ ਕੈਮਰੇ ਨੂੰ ਲਗਾਤਾਰ ਡੀਕੋਡ ਅਤੇ ਮੁੜ-ਏਨਕੋਡ ਕਰਦਾ ਹੈ, ਇਸਲਈ ਸੂਚੀ ਨੂੰ ਉਹੀ ਰੱਖੋ ਜੋ ਕੰਧ ਡਿਸਪਲੇ ਜਾਂ ਏਮਬੈਡਡ ਵਿਜੇਟ ਨੂੰ ਅਸਲ ਵਿੱਚ ਲੋੜੀਂਦਾ ਹੈ। {max} ਕੈਮਰਿਆਂ ਤੱਕ ਸੀਮਿਤ।",
+  "birdseye.disabled": "ਬਰਡਸੀ ਬੰਦ ਹੈ।",
+  "birdseye.enabled": "ਬਰਡਸੀ ਨੂੰ ਸਮਰੱਥ ਬਣਾਓ",
+  "birdseye.explanation": "ਇੱਕ ਸਿੰਗਲ ਸੰਯੁਕਤ ਵੀਡੀਓ ਸਟ੍ਰੀਮ ਜੋ ਹਰੇਕ ਚੁਣੇ ਹੋਏ ਕੈਮਰੇ ਨੂੰ ਇੱਕ ਮੋਜ਼ੇਕ ਚਿੱਤਰ ਵਿੱਚ ਟਾਈਲ ਕਰਦੀ ਹੈ, ਇੱਕ ਸਿੰਗਲ ਵੀਡੀਓ ਵਿਜੇਟ (ਇੱਕ ਹੋਮ ਅਸਿਸਟੈਂਟ ਡੈਸ਼ਬੋਰਡ ਕਾਰਡ, ਇੱਕ ਟੀਵੀ, ਇੱਕ NVR ਵਾਲ ਇਨਪੁੱਟ) ਦੇ ਰੂਪ ਵਿੱਚ ਏਮਬੈਡ ਕਰਨ ਲਈ - ਲਾਈਵ ਪੰਨੇ ਦੇ ਉਲਟ, ਜੋ ਹਰੇਕ ਕੈਮਰੇ ਨੂੰ ਆਪਣੀ ਵੱਖਰੀ ਤੌਰ 'ਤੇ ਚਲਾਉਣ ਯੋਗ ਟਾਈਲ ਦੇ ਰੂਪ ਵਿੱਚ ਦਿਖਾਉਂਦਾ ਹੈ।",
+  "birdseye.eyebrow": "ਮਿਸ਼ਰਿਤ ਮੋਜ਼ੇਕ",
+  "birdseye.fps": "ਫਰੇਮ ਪ੍ਰਤੀ ਸਕਿੰਟ",
+  "birdseye.no_usable_cameras": "ਚੁਣੇ ਗਏ ਕਿਸੇ ਵੀ ਕੈਮਰੇ ਵਿੱਚ ਵਰਤਮਾਨ ਵਿੱਚ ਕੋਈ ਜਾਣਿਆ-ਪਛਾਣਿਆ ਲਾਈਵ ਸਟ੍ਰੀਮ ਨਹੀਂ ਹੈ।",
+  "birdseye.settings": "ਸੈਟਿੰਗਾਂ",
+  "birdseye.settings_saved": "ਬਰਡਸੀ ਸੈਟਿੰਗਾਂ ਨੂੰ ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਗਿਆ ਸੀ।",
+  "birdseye.stop": "ਰੁਕੋ",
+  "birdseye.title": "ਬਰਡਸੇਏ"
 }

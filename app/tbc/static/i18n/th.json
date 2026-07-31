@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "การ์ด SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "สัญญาณ WiFi",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "รวมกล้อง",
+  "birdseye.camera_selection_hint": "Birdseye ถอดรหัสและเข้ารหัสกล้องทุกตัวที่เลือกอย่างต่อเนื่อง ดังนั้นให้เก็บรายการสิ่งที่จอแสดงผลติดผนังหรือวิดเจ็ตแบบฝังต้องการจริงๆ จำกัดกล้องไว้ {max} ตัว",
+  "birdseye.disabled": "Birdseye ปิดอยู่",
+  "birdseye.enabled": "เปิดใช้งาน Birdseye",
+  "birdseye.explanation": "สตรีมวิดีโอแบบรวมรายการเดียวที่เรียงกล้องทุกตัวที่เลือกไว้เป็นภาพโมเสกเดียว เพื่อฝังเป็นวิดเจ็ตวิดีโอเดียว (การ์ดแดชบอร์ด Home Assistant, ทีวี, อินพุต NVR ติดผนัง) - ต่างจากหน้า Live ซึ่งจะแสดงกล้องแต่ละตัวเป็นไทล์ที่สามารถเล่นแยกกันได้",
+  "birdseye.eyebrow": "โมเสกคอมโพสิต",
+  "birdseye.fps": "เฟรมต่อวินาที",
+  "birdseye.no_usable_cameras": "ไม่มีกล้องตัวใดที่เลือกในขณะนี้ที่มีการสตรีมสดที่รู้จัก",
+  "birdseye.settings": "การตั้งค่า",
+  "birdseye.settings_saved": "บันทึกการตั้งค่า Birdseye แล้ว",
+  "birdseye.stop": "หยุด",
+  "birdseye.title": "ตานก"
 }

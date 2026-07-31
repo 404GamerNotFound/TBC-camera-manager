@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "Karta SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "Sygnał WiFi",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "Kamery w zestawie",
+  "birdseye.camera_selection_hint": "Birdseye stale dekoduje i ponownie koduje każdą wybraną kamerę, więc przechowuj listę tego, czego faktycznie potrzebuje wyświetlacz ścienny lub wbudowany widget. Ograniczone do {max} kamer.",
+  "birdseye.disabled": "Funkcja Birdseye jest wyłączona.",
+  "birdseye.enabled": "Włącz Birdseye",
+  "birdseye.explanation": "Pojedynczy połączony strumień wideo, który łączy każdą wybraną kamerę w jeden obraz mozaikowy do osadzenia jako pojedynczy widżet wideo (karta na desce rozdzielczej Home Assistant, telewizor, wejście ścienne NVR) – w przeciwieństwie do strony Na żywo, która pokazuje każdą kamerę jako osobny, odtwarzalny kafelek.",
+  "birdseye.eyebrow": "Mozaika kompozytowa",
+  "birdseye.fps": "Klatki na sekundę",
+  "birdseye.no_usable_cameras": "Żadna z wybranych kamer nie ma obecnie znanej transmisji na żywo.",
+  "birdseye.settings": "Ustawienia",
+  "birdseye.settings_saved": "Ustawienia Birdseye zostały zapisane.",
+  "birdseye.stop": "Zatrzymaj się",
+  "birdseye.title": "Ptasie oko"
 }

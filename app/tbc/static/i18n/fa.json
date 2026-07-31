@@ -1201,5 +1201,17 @@
   "camera.sdcard_status": "کارت SD",
   "camera.sdcard_usage": "{free} / {capacity} MB",
   "camera.wifi_signal": "سیگنال وای‌فای",
-  "camera.ntp_status": "NTP"
+  "camera.ntp_status": "NTP",
+  "birdseye.camera_selection": "دوربین ها گنجانده شده است",
+  "birdseye.camera_selection_hint": "Birdseye به طور مداوم هر دوربین انتخابی را رمزگشایی و رمزگذاری مجدد می کند، بنابراین لیست را به آنچه که یک صفحه نمایش دیواری یا ویجت تعبیه شده واقعاً نیاز دارد، نگه دارید. محدود به {حداکثر} دوربین.",
+  "birdseye.disabled": "Birdseye خاموش است.",
+  "birdseye.enabled": "Birdseye را فعال کنید",
+  "birdseye.explanation": "یک جریان ویدیوی ترکیبی واحد که هر دوربین انتخابی را در یک تصویر موزاییک کاشی می‌کند، برای جاسازی به عنوان یک ویجت ویدیویی (یک کارت داشبورد دستیار خانگی، یک تلویزیون، یک ورودی دیواری NVR) - بر خلاف صفحه Live، که هر دوربین را به‌عنوان کاشی قابل پخش جداگانه نشان می‌دهد.",
+  "birdseye.eyebrow": "موزاییک کامپوزیت",
+  "birdseye.fps": "فریم در ثانیه",
+  "birdseye.no_usable_cameras": "هیچ یک از دوربین های انتخابی در حال حاضر پخش زنده شناخته شده ندارند.",
+  "birdseye.settings": "تنظیمات",
+  "birdseye.settings_saved": "تنظیمات Birdseye ذخیره شد.",
+  "birdseye.stop": "توقف کنید",
+  "birdseye.title": "Birdseye"
 }

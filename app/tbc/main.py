@@ -2343,6 +2343,7 @@ from .routers import (  # noqa: E402 - deliberately last, see comment above
     api_v1,
     auth,
     automation as automation_router,
+    birdseye,
     cameras,
     cloud_accounts,
     detection_recognition,
@@ -2363,6 +2364,7 @@ app.include_router(api_internal.router)
 app.include_router(api_v1.router)
 app.include_router(auth.router)
 app.include_router(automation_router.router)
+app.include_router(birdseye.router)
 app.include_router(cameras.router)
 app.include_router(cloud_accounts.router)
 app.include_router(detection_recognition.router)
