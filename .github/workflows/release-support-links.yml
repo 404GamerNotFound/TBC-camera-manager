@@ -26,6 +26,7 @@ jobs:
       - name: Append support links if missing
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
           body="$(gh release view "$TAG" --json body -q .body)"
