@@ -1234,5 +1234,9 @@
   "homekit.starting": "시작 중…",
   "homekit.title": "홈킷",
   "homekit.network_detected_address": "감지된 아웃바운드 주소: {address}. 호스트의 실제 LAN IP가 아닌 경우 페어링이 실패할 가능성이 높습니다.",
-  "homekit.network_warning_detected": "TBC는 network_mode: 호스트(Docker의 기본 브리지 범위 내에서 감지된 주소 {address}) 없이 실행 중인 것으로 보입니다. - HomeKit 페어링은 \"장치를 찾을 수 없음\"으로 인해 실패할 가능성이 높습니다. 호스트 네트워킹으로 전환하려면 배포 설명서를 참조하세요."
+  "homekit.network_warning_detected": "TBC는 network_mode: 호스트(Docker의 기본 브리지 범위 내에서 감지된 주소 {address}) 없이 실행 중인 것으로 보입니다. - HomeKit 페어링은 \"장치를 찾을 수 없음\"으로 인해 실패할 가능성이 높습니다. 호스트 네트워킹으로 전환하려면 배포 설명서를 참조하세요.",
+  "dashboard.fleet_offline": "오프라인",
+  "dashboard.fleet_online": "온라인",
+  "dashboard.fleet_recording": "녹음",
+  "dashboard.fleet_warnings": "경고"
 }

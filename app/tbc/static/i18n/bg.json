@@ -1234,5 +1234,9 @@
   "homekit.starting": "Стартира се...",
   "homekit.title": "HomeKit",
   "homekit.network_detected_address": "Открит изходящ адрес: {address}. Ако това не е действителният LAN IP адрес на вашия хост, сдвояването вероятно ще се провали.",
-  "homekit.network_warning_detected": "TBC изглежда работи без network_mode: хост (открит адрес {address}, в рамките на мостовия диапазон по подразбиране на Docker) – сдвояването на HomeKit вероятно ще се провали с „Устройството не е намерено“. Вижте документацията за внедряване, за да превключите към хост мрежа."
+  "homekit.network_warning_detected": "TBC изглежда работи без network_mode: хост (открит адрес {address}, в рамките на мостовия диапазон по подразбиране на Docker) – сдвояването на HomeKit вероятно ще се провали с „Устройството не е намерено“. Вижте документацията за внедряване, за да превключите към хост мрежа.",
+  "dashboard.fleet_offline": "Офлайн",
+  "dashboard.fleet_online": "Онлайн",
+  "dashboard.fleet_recording": "Записване",
+  "dashboard.fleet_warnings": "Warnings"
 }

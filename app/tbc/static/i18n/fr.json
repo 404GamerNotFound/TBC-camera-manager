@@ -1234,5 +1234,9 @@
   "homekit.starting": "Commencer…",
   "homekit.title": "AccueilKit",
   "homekit.network_detected_address": "Adresse sortante détectée : {address}. S'il ne s'agit pas de l'adresse IP LAN réelle de votre hôte, le couplage échouera probablement.",
-  "homekit.network_warning_detected": "TBC semble fonctionner sans network_mode: host (adresse détectée {address}, dans la plage de pont par défaut de Docker) - Le couplage HomeKit échouera probablement avec \"Périphérique introuvable\". Consultez la documentation de déploiement pour passer au réseau hôte."
+  "homekit.network_warning_detected": "TBC semble fonctionner sans network_mode: host (adresse détectée {address}, dans la plage de pont par défaut de Docker) - Le couplage HomeKit échouera probablement avec \"Périphérique introuvable\". Consultez la documentation de déploiement pour passer au réseau hôte.",
+  "dashboard.fleet_offline": "Hors ligne",
+  "dashboard.fleet_online": "En ligne",
+  "dashboard.fleet_recording": "Enregistrement",
+  "dashboard.fleet_warnings": "Avertissements"
 }

@@ -1234,5 +1234,9 @@
   "homekit.starting": "Empezando…",
   "homekit.title": "Kit de hogar",
   "homekit.network_detected_address": "Dirección de salida detectada: {address}. Si esta no es la IP LAN real de su host, es probable que el emparejamiento falle.",
-  "homekit.network_warning_detected": "TBC parece estar ejecutándose sin network_mode: host (dirección detectada {address}, dentro del rango de puente predeterminado de Docker): el emparejamiento de HomeKit probablemente fallará con \"Dispositivo no encontrado\". Consulte la documentación de implementación para cambiar a la red de host."
+  "homekit.network_warning_detected": "TBC parece estar ejecutándose sin network_mode: host (dirección detectada {address}, dentro del rango de puente predeterminado de Docker): el emparejamiento de HomeKit probablemente fallará con \"Dispositivo no encontrado\". Consulte la documentación de implementación para cambiar a la red de host.",
+  "dashboard.fleet_offline": "Sin conexión",
+  "dashboard.fleet_online": "En línea",
+  "dashboard.fleet_recording": "Grabación",
+  "dashboard.fleet_warnings": "Advertencias"
 }

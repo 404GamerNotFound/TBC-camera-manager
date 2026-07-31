@@ -1234,5 +1234,9 @@
   "homekit.starting": "A partire…",
   "homekit.title": "HomeKit",
   "homekit.network_detected_address": "Indirizzo in uscita rilevato: {address}. Se questo non è l'effettivo IP LAN del tuo host, è probabile che l'accoppiamento fallisca.",
-  "homekit.network_warning_detected": "Sembra che TBC sia in esecuzione senza network_mode: host (indirizzo rilevato {address}, all'interno dell'intervallo bridge predefinito di Docker) - L'associazione di HomeKit probabilmente fallirà con \"Dispositivo non trovato\". Consulta la documentazione di distribuzione per passare alla rete host."
+  "homekit.network_warning_detected": "Sembra che TBC sia in esecuzione senza network_mode: host (indirizzo rilevato {address}, all'interno dell'intervallo bridge predefinito di Docker) - L'associazione di HomeKit probabilmente fallirà con \"Dispositivo non trovato\". Consulta la documentazione di distribuzione per passare alla rete host.",
+  "dashboard.fleet_offline": "Non in linea",
+  "dashboard.fleet_online": "In linea",
+  "dashboard.fleet_recording": "Registrazione",
+  "dashboard.fleet_warnings": "Avvertenze"
 }

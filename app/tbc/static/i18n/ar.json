@@ -1234,5 +1234,9 @@
   "homekit.starting": "جارٍ البدء…",
   "homekit.title": "هومكيت",
   "homekit.network_detected_address": "تم اكتشاف عنوان صادر: {address}. إذا لم يكن هذا هو عنوان IP الفعلي لشبكة LAN الخاصة بمضيفك، فمن المحتمل أن يفشل الاقتران.",
-  "homekit.network_warning_detected": "يبدو أن TBC يعمل بدون وضع الشبكة: المضيف (العنوان المكتشف {address}، داخل نطاق الجسر الافتراضي لـ Docker) - من المحتمل أن يفشل اقتران HomeKit مع ظهور \"لم يتم العثور على الجهاز\". راجع وثائق النشر للتبديل إلى شبكة المضيف."
+  "homekit.network_warning_detected": "يبدو أن TBC يعمل بدون وضع الشبكة: المضيف (العنوان المكتشف {address}، داخل نطاق الجسر الافتراضي لـ Docker) - من المحتمل أن يفشل اقتران HomeKit مع ظهور \"لم يتم العثور على الجهاز\". راجع وثائق النشر للتبديل إلى شبكة المضيف.",
+  "dashboard.fleet_offline": "غير متصل",
+  "dashboard.fleet_online": "على الانترنت",
+  "dashboard.fleet_recording": "التسجيل",
+  "dashboard.fleet_warnings": "تحذيرات"
 }

@@ -1234,5 +1234,9 @@
   "homekit.starting": "Beginnen…",
   "homekit.title": "HomeKit",
   "homekit.network_detected_address": "Gedetecteerd uitgaand adres: {address}. Als dit niet het werkelijke LAN-IP-adres van uw host is, zal het koppelen waarschijnlijk mislukken.",
-  "homekit.network_warning_detected": "TBC lijkt te werken zonder netwerkmodus: host (gedetecteerd adres {address}, binnen het standaard brugbereik van Docker) - HomeKit-koppeling zal waarschijnlijk mislukken met \"Apparaat niet gevonden\". Zie de implementatiedocumentatie om over te schakelen naar hostnetwerken."
+  "homekit.network_warning_detected": "TBC lijkt te werken zonder netwerkmodus: host (gedetecteerd adres {address}, binnen het standaard brugbereik van Docker) - HomeKit-koppeling zal waarschijnlijk mislukken met \"Apparaat niet gevonden\". Zie de implementatiedocumentatie om over te schakelen naar hostnetwerken.",
+  "dashboard.fleet_offline": "Offline",
+  "dashboard.fleet_online": "Online",
+  "dashboard.fleet_recording": "Opname",
+  "dashboard.fleet_warnings": "Waarschuwingen"
 }

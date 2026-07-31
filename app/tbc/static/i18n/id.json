@@ -1234,5 +1234,9 @@
   "homekit.starting": "Mulai…",
   "homekit.title": "RumahKit",
   "homekit.network_detected_address": "Alamat keluar terdeteksi: {address}. Jika ini bukan IP LAN host Anda yang sebenarnya, kemungkinan besar penyandingan akan gagal.",
-  "homekit.network_warning_detected": "TBC tampaknya berjalan tanpa network_mode: host (alamat {address} terdeteksi, di dalam rentang jembatan default Docker) - Pemasangan HomeKit kemungkinan akan gagal dengan \"Perangkat tidak ditemukan\". Lihat dokumentasi penerapan untuk beralih ke jaringan host."
+  "homekit.network_warning_detected": "TBC tampaknya berjalan tanpa network_mode: host (alamat {address} terdeteksi, di dalam rentang jembatan default Docker) - Pemasangan HomeKit kemungkinan akan gagal dengan \"Perangkat tidak ditemukan\". Lihat dokumentasi penerapan untuk beralih ke jaringan host.",
+  "dashboard.fleet_offline": "Luring",
+  "dashboard.fleet_online": "Daring",
+  "dashboard.fleet_recording": "Rekaman",
+  "dashboard.fleet_warnings": "Peringatan"
 }

@@ -1234,5 +1234,9 @@
   "homekit.starting": "開始…",
   "homekit.title": "家庭套件",
   "homekit.network_detected_address": "偵測到的出站位址：{address}。如果這不是您主機的實際 LAN IP，則配對可能會失敗。",
-  "homekit.network_warning_detected": "TBC 似乎在沒有網路模式的情況下運作：主機（偵測到的位址 {address}，在 Docker 的預設網橋範圍內） - HomeKit 配對可能會失敗，並顯示「找不到裝置」。請參閱部署文件以切換到主機網路。"
+  "homekit.network_warning_detected": "TBC 似乎在沒有網路模式的情況下運作：主機（偵測到的位址 {address}，在 Docker 的預設網橋範圍內） - HomeKit 配對可能會失敗，並顯示「找不到裝置」。請參閱部署文件以切換到主機網路。",
+  "dashboard.fleet_offline": "離線",
+  "dashboard.fleet_online": "網路",
+  "dashboard.fleet_recording": "錄音",
+  "dashboard.fleet_warnings": "警告"
 }

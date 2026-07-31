@@ -1234,5 +1234,9 @@
   "homekit.starting": "شروع…",
   "homekit.title": "HomeKit",
   "homekit.network_detected_address": "آدرس خروجی شناسایی شده: {address}. اگر این IP LAN واقعی میزبان شما نباشد، جفت شدن احتمالاً با شکست مواجه خواهد شد.",
-  "homekit.network_warning_detected": "به نظر می‌رسد TBC بدون network_mode: میزبان اجرا می‌شود (آدرس شناسایی شده {address}، در محدوده پل پیش‌فرض Docker) - جفت‌سازی HomeKit احتمالاً با «دستگاه یافت نشد» ناموفق خواهد بود. برای تغییر به شبکه میزبان به مستندات استقرار مراجعه کنید."
+  "homekit.network_warning_detected": "به نظر می‌رسد TBC بدون network_mode: میزبان اجرا می‌شود (آدرس شناسایی شده {address}، در محدوده پل پیش‌فرض Docker) - جفت‌سازی HomeKit احتمالاً با «دستگاه یافت نشد» ناموفق خواهد بود. برای تغییر به شبکه میزبان به مستندات استقرار مراجعه کنید.",
+  "dashboard.fleet_offline": "آفلاین",
+  "dashboard.fleet_online": "آنلاین",
+  "dashboard.fleet_recording": "در حال ضبط",
+  "dashboard.fleet_warnings": "هشدارها"
 }

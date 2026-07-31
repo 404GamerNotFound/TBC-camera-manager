@@ -1234,5 +1234,9 @@
   "homekit.starting": "Begin tans …",
   "homekit.title": "HomeKit",
   "homekit.network_detected_address": "Bespeur uitgaande adres: {address}. As dit nie jou gasheer se werklike LAN-IP is nie, sal paring waarskynlik misluk.",
-  "homekit.network_warning_detected": "Dit lyk asof TBC sonder netwerk_modus: gasheer loop (bespeur adres {address}, binne Docker se verstekbrugreeks) - HomeKit-paring sal waarskynlik misluk met \"Toestel nie gevind nie\". Sien die ontplooiingsdokumentasie om na gasheernetwerk oor te skakel."
+  "homekit.network_warning_detected": "Dit lyk asof TBC sonder netwerk_modus: gasheer loop (bespeur adres {address}, binne Docker se verstekbrugreeks) - HomeKit-paring sal waarskynlik misluk met \"Toestel nie gevind nie\". Sien die ontplooiingsdokumentasie om na gasheernetwerk oor te skakel.",
+  "dashboard.fleet_offline": "Vanlyn",
+  "dashboard.fleet_online": "Aanlyn",
+  "dashboard.fleet_recording": "Opname",
+  "dashboard.fleet_warnings": "Waarskuwings"
 }

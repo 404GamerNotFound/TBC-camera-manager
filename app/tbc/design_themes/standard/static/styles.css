@@ -716,7 +716,7 @@ button,
   color: white;
   background: var(--brand);
   border-color: var(--brand);
-  box-shadow: 0 10px 24px rgba(17, 97, 92, 0.16);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand) 16%, transparent);
 }
 
 .primary-button:hover,
@@ -724,6 +724,7 @@ button,
   color: white;
   background: var(--brand-strong);
   border-color: var(--brand-strong);
+  transform: translateY(-1px);
 }
 
 .secondary-button {
@@ -735,8 +736,9 @@ button,
 .secondary-button:hover,
 .secondary-button:focus {
   color: var(--brand-strong);
-  background: #dfece7;
-  border-color: rgba(17, 97, 92, 0.22);
+  background: color-mix(in srgb, var(--brand) 12%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
+  transform: translateY(-1px);
 }
 
 .danger-button {
@@ -786,7 +788,7 @@ button,
 .icon-button:focus {
   color: var(--brand-strong);
   background: var(--surface-soft);
-  border-color: rgba(17, 97, 92, 0.22);
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--line));
 }
 
 .primary-button:focus-visible,
@@ -795,7 +797,7 @@ button,
 .icon-button:focus-visible,
 button:focus-visible {
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(17, 97, 92, 0.18);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--brand) 18%, transparent);
 }
 
 .page-heading {
@@ -829,89 +831,148 @@ button:focus-visible {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.camera-card:has(.probe-indicator:hover),
-.camera-card:has(.probe-indicator:focus-visible) {
-  position: relative;
-  z-index: 3;
+/* ---------- Dashboard camera card (image-forward hero snapshot with
+   overlaid status/name, replacing the old header+snapshot+boxed-stat
+   layout). Scoped to .cam-card, a modifier class added alongside
+   .camera-card only in dashboard.html - live.html/birdseye.html's
+   ".camera-card live-card" tiles and storage_explorer.html's bare
+   ".camera-card" shell are untouched by everything below. ---------- */
+.cam-card {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: cam-card-rise 0.45s ease forwards;
 }
 
-.probe-status-list {
+.cam-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+}
+
+@keyframes cam-card-rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cam-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .cam-card:hover {
+    transform: none;
+  }
+}
+
+.cam-media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--surface-soft);
+}
+
+.cam-media img,
+.cam-media-empty {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cam-media img {
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.cam-card:hover .cam-media img {
+  transform: scale(1.035);
+}
+
+.cam-media-empty {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.cam-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.62) 100%);
+  pointer-events: none;
+}
+
+.cam-badges-top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
   display: flex;
-  align-items: center;
-  min-height: 30px;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.probe-indicator {
+.cam-glyphs {
+  display: flex;
+  gap: 6px;
+}
+
+.cam-glyph {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
-  border: 1px solid currentColor;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1;
+  background: rgba(15, 20, 18, 0.55);
+  color: #fff;
   cursor: help;
   outline: none;
 }
 
-.probe-indicator-ok {
-  color: var(--ok);
-  border-color: rgba(30, 123, 77, 0.3);
-  background: #e4f5ea;
+.cam-glyph svg {
+  width: 13px;
+  height: 13px;
 }
 
-.probe-indicator-error {
-  color: var(--danger);
-  border-color: rgba(167, 55, 55, 0.3);
-  background: #ffe8e8;
+.cam-glyph.is-bad {
+  color: #ff9d9d;
 }
 
-.recording-glyph {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
+.cam-glyph.is-good {
+  color: #8de8b3;
 }
 
-.recording-glyph::before {
-  content: "";
-  width: 0;
-  height: 0;
-  margin-left: 2px;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-left: 10px solid currentColor;
+.cam-glyph.is-rec {
+  color: #ff8a8a;
 }
 
-.recording-indicator-inactive .recording-glyph::after {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  transform: rotate(-45deg);
-}
-
-.probe-indicator::after {
+.cam-glyph::after {
   content: attr(data-tooltip);
   position: absolute;
   z-index: 20;
-  top: calc(100% + 9px);
+  top: calc(100% + 8px);
   left: 0;
   width: max-content;
-  max-width: min(290px, calc(100vw - 48px));
-  padding: 9px 11px;
+  max-width: min(260px, calc(100vw - 48px));
+  padding: 8px 10px;
   border-radius: 7px;
   color: white;
   background: #17211e;
-  box-shadow: 0 10px 26px rgba(20, 32, 28, 0.22);
-  font-size: 0.78rem;
+  box-shadow: 0 10px 26px rgba(20, 32, 28, 0.3);
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.4;
   text-align: left;
@@ -924,48 +985,44 @@ button:focus-visible {
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
 }
 
-.probe-indicator:hover::after,
-.probe-indicator:focus-visible::after {
+.cam-glyph:hover::after,
+.cam-glyph:focus-visible::after {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
 
-.probe-indicator:focus-visible {
-  box-shadow: 0 0 0 0.2rem rgba(17, 97, 92, 0.18);
+.cam-glyph:focus-visible {
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
-.camera-snapshot {
-  display: grid;
-  gap: 7px;
+.cam-caption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  z-index: 2;
+  color: #fff;
+}
+
+.cam-caption h2 {
   margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
 }
 
-.camera-snapshot img,
-.camera-snapshot-empty {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
+.cam-caption h2 a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.camera-snapshot img {
-  display: block;
-  object-fit: cover;
-}
-
-.camera-snapshot figcaption {
-  color: var(--muted);
-  font-size: 0.76rem;
-}
-
-.camera-snapshot-empty {
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  color: var(--muted);
-  text-align: center;
+.cam-caption p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-variant-numeric: tabular-nums;
 }
 
 .live-card {
@@ -1044,62 +1101,127 @@ dt {
   background: var(--surface-soft);
 }
 
-.camera-metrics {
-  gap: 8px;
-  overflow: visible;
-  padding: 8px;
-  border-color: rgba(17, 97, 92, 0.12);
-  background: linear-gradient(135deg, #f3f7f4, #edf3f0);
+.cam-body {
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 14px;
 }
 
-.camera-metrics .camera-metric {
+.cam-stats {
   display: flex;
-  min-width: 0;
-  min-height: 76px;
-  padding: 10px 6px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(17, 97, 92, 0.1);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.72);
-  text-align: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 
-.camera-metrics dt {
-  width: 100%;
-  max-width: 100%;
+.cam-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
   color: var(--muted);
-  font-size: clamp(0.58rem, 0.65vw, 0.68rem);
-  letter-spacing: 0.045em;
-  line-height: 1.2;
+  cursor: default;
+}
+
+.cam-stat svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.cam-stat b {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cam-stat.stat-supported svg {
+  color: var(--brand);
+}
+
+.cam-stat.stat-active svg {
+  color: var(--ok);
+}
+
+.cam-stat.stat-features svg {
+  color: var(--accent);
+}
+
+.cam-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cam-model {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.camera-metrics dd {
-  order: -1;
-  margin: 0 0 5px;
+.cam-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.cam-open svg {
+  width: 12px;
+  height: 12px;
+}
+
+.fleet-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.fleet-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.fleet-stat .n {
   color: var(--text);
-  font-size: 1.65rem;
+  font-size: 1.6rem;
+  font-weight: 800;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.camera-metric-supported dd {
-  color: var(--brand);
+.fleet-stat .l {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
 }
 
-.camera-metric-active dd {
+.fleet-stat.is-ok .n {
   color: var(--ok);
 }
 
-.camera-metric-active.is-empty dd {
-  color: var(--muted);
+.fleet-stat.is-warn .n {
+  color: var(--warn);
 }
 
-.camera-metric-features dd {
-  color: var(--warn);
+.fleet-stat.is-danger .n {
+  color: var(--danger);
 }
 
 dt {
@@ -1117,8 +1239,9 @@ dd {
 .status-pill {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 28px;
-  padding: 5px 9px;
+  padding: 5px 10px;
   border-radius: 999px;
   color: var(--muted);
   background: var(--surface-soft);
@@ -1127,27 +1250,36 @@ dd {
   white-space: nowrap;
 }
 
+.status-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .status-ok,
 .status-active {
   color: var(--ok);
-  background: #e4f5ea;
+  background: color-mix(in srgb, var(--ok) 16%, var(--surface));
 }
 
 .status-error {
   color: var(--danger);
-  background: #ffe8e8;
+  background: color-mix(in srgb, var(--danger) 16%, var(--surface));
 }
 
 .status-warn,
 .status-warning {
   color: var(--warn);
-  background: #fff1d9;
+  background: color-mix(in srgb, var(--warn) 16%, var(--surface));
 }
 
 .status-idle,
 .status-unknown {
-  color: #5d6570;
-  background: #eef0f2;
+  color: var(--muted);
+  background: var(--surface-soft);
 }
 
 .empty-state {

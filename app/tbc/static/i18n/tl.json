@@ -1234,5 +1234,9 @@
   "homekit.starting": "Nagsisimula…",
   "homekit.title": "HomeKit",
   "homekit.network_detected_address": "Natukoy na papalabas na address: {address}. Kung hindi ito ang aktwal na LAN IP ng iyong host, malamang na mabigo ang pagpapares.",
-  "homekit.network_warning_detected": "Lumilitaw na tumatakbo ang TBC nang walang network_mode: host (natukoy na address {address}, sa loob ng default na hanay ng tulay ng Docker) - Malamang na mabigo ang pagpapares ng HomeKit sa \"Hindi nahanap ang device.\" Tingnan ang dokumentasyon ng deployment upang lumipat sa host networking."
+  "homekit.network_warning_detected": "Lumilitaw na tumatakbo ang TBC nang walang network_mode: host (natukoy na address {address}, sa loob ng default na hanay ng tulay ng Docker) - Malamang na mabigo ang pagpapares ng HomeKit sa \"Hindi nahanap ang device.\" Tingnan ang dokumentasyon ng deployment upang lumipat sa host networking.",
+  "dashboard.fleet_offline": "Offline",
+  "dashboard.fleet_online": "Online",
+  "dashboard.fleet_recording": "Pagre-record",
+  "dashboard.fleet_warnings": "Mga babala"
 }

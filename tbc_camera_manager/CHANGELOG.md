@@ -1,6 +1,15 @@
 # Changelog
 
 ## Unreleased
+- Redesigned the camera dashboard card: a full-bleed snapshot image now carries the camera name,
+  connection status, and connectivity/recording indicators as overlays, replacing the previous
+  stacked header/thumbnail/boxed-stat layout - the boxed stat labels were also the source of a
+  truncation bug for longer translations. Per-camera stats are now a compact icon+number row
+  instead of boxed text labels, and a new fleet-summary strip (online/warnings/offline/recording
+  counts) sits above the grid. Also modernized `.status-pill` and button hover states across the
+  whole app (theme-derived tints via `color-mix()` instead of hardcoded per-theme colors, a status
+  dot, subtle hover lift) - CSS-only changes that apply everywhere those shared components are
+  already used, without needing per-page template changes.
 - Fixed 478 mistranslated or dropped `{placeholder}` tokens (e.g. `{error}`, `{count}`,
   `{min}`/`{max}`) across 22 of the 27 non-English locale files, spanning 82 distinct
   translation keys. The auto-translation pipeline (`scripts/translate_locales.py`) did not

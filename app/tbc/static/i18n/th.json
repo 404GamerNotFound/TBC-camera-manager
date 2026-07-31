@@ -1234,5 +1234,9 @@
   "homekit.starting": "กำลังเริ่ม...",
   "homekit.title": "โฮมคิท",
   "homekit.network_detected_address": "ตรวจพบที่อยู่ขาออก: {address} หากนี่ไม่ใช่ LAN IP ที่แท้จริงของโฮสต์ การจับคู่อาจล้มเหลว",
-  "homekit.network_warning_detected": "ดูเหมือนว่า TBC จะทำงานโดยไม่มี network_mode: โฮสต์ (ตรวจพบที่อยู่ {address} ภายในช่วงบริดจ์เริ่มต้นของ Docker) - การจับคู่ HomeKit อาจล้มเหลวเนื่องจาก \"ไม่พบอุปกรณ์\" ดูเอกสารประกอบการใช้งานเพื่อสลับไปใช้เครือข่ายโฮสต์"
+  "homekit.network_warning_detected": "ดูเหมือนว่า TBC จะทำงานโดยไม่มี network_mode: โฮสต์ (ตรวจพบที่อยู่ {address} ภายในช่วงบริดจ์เริ่มต้นของ Docker) - การจับคู่ HomeKit อาจล้มเหลวเนื่องจาก \"ไม่พบอุปกรณ์\" ดูเอกสารประกอบการใช้งานเพื่อสลับไปใช้เครือข่ายโฮสต์",
+  "dashboard.fleet_offline": "ออฟไลน์",
+  "dashboard.fleet_online": "ออนไลน์",
+  "dashboard.fleet_recording": "การบันทึก",
+  "dashboard.fleet_warnings": "คำเตือน"
 }

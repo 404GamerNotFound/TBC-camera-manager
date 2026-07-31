@@ -1234,5 +1234,9 @@
   "homekit.starting": "Zaczynam…",
   "homekit.title": "Zestaw domowy",
   "homekit.network_detected_address": "Wykryty adres wychodzący: {address}. Jeśli nie jest to rzeczywisty adres IP sieci LAN Twojego hosta, parowanie prawdopodobnie się nie powiedzie.",
-  "homekit.network_warning_detected": "Wygląda na to, że TBC działa bez network_mode: host (wykryto adres {address}, w domyślnym zakresie mostka Dockera) – parowanie HomeKit prawdopodobnie nie powiedzie się i wyświetli się komunikat „Nie znaleziono urządzenia”. Zapoznaj się z dokumentacją wdrażania, aby przejść do sieci hosta."
+  "homekit.network_warning_detected": "Wygląda na to, że TBC działa bez network_mode: host (wykryto adres {address}, w domyślnym zakresie mostka Dockera) – parowanie HomeKit prawdopodobnie nie powiedzie się i wyświetli się komunikat „Nie znaleziono urządzenia”. Zapoznaj się z dokumentacją wdrażania, aby przejść do sieci hosta.",
+  "dashboard.fleet_offline": "Nieaktywny",
+  "dashboard.fleet_online": "W Internecie",
+  "dashboard.fleet_recording": "Nagrywanie",
+  "dashboard.fleet_warnings": "Ostrzeżenia"
 }
