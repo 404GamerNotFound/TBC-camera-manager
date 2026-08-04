@@ -22,6 +22,7 @@ from fastapi import APIRouter
 
 from ..main import (
     DETECTION_CORAL_MODEL_PATH,
+    DETECTION_HAILO_MODEL_PATH,
     DETECTION_MODEL_PATH,
     RECOGNITION_EVENTS_PAGE_SIZE,
     RECOGNITION_MODELS_DIR,
@@ -43,6 +44,7 @@ async def detection_overview_page(request: Request):
         return guard
     model_ready = DETECTION_MODEL_PATH.exists() and DETECTION_MODEL_PATH.stat().st_size > 0
     coral_model_ready = DETECTION_CORAL_MODEL_PATH.exists() and DETECTION_CORAL_MODEL_PATH.stat().st_size > 0
+    hailo_model_ready = DETECTION_HAILO_MODEL_PATH.exists() and DETECTION_HAILO_MODEL_PATH.stat().st_size > 0
     return templates.TemplateResponse(
         request,
         "detection.html",
@@ -58,6 +60,9 @@ async def detection_overview_page(request: Request):
             "coral_model_ready": coral_model_ready,
             "coral_model_size_mb": round(DETECTION_CORAL_MODEL_PATH.stat().st_size / (1024 * 1024), 1) if coral_model_ready else None,
             "coral_model_path": str(DETECTION_CORAL_MODEL_PATH),
+            "hailo_model_ready": hailo_model_ready,
+            "hailo_model_size_mb": round(DETECTION_HAILO_MODEL_PATH.stat().st_size / (1024 * 1024), 1) if hailo_model_ready else None,
+            "hailo_model_path": str(DETECTION_HAILO_MODEL_PATH),
             "default_sample_fps": SETTINGS.detection_default_sample_fps,
             "default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
             "cameras": database.list_enabled_camera_detection_settings(SETTINGS.database_path),

@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+- Added Slack, Discord, Matrix, and Signal notification channels (Signal via a self-hosted
+  [signal-cli-rest-api](https://github.com/bbernhard/signal-cli-rest-api) instance, since there
+  is no official Signal bot API). Slack/Discord attach a linked snapshot image via their
+  webhook's block/embed format when "Attach snapshot" is enabled and `TBC_PUBLIC_BASE_URL` is
+  set; Matrix sends via the Client-Server API with an access token and room ID; Signal needs the
+  sender's own signal-cli-registered number in addition to the recipient.
+- Added a WebDAV storage destination (server URL, username, password) alongside the existing
+  local and S3-compatible kinds, for recordings, continuous recording segments, and automated
+  backups. Implemented directly over `urllib` (PUT/GET/DELETE/PROPFIND, no new dependency) rather
+  than a third-party WebDAV client library. Unlike S3, plain WebDAV has no presigned-URL concept,
+  so playback/downloads are proxied through the app instead of redirected. SMB/CIFS and NFS
+  network shares remain covered by the existing "Local or mounted path" kind - mount the share
+  into the container (see the storage documentation for a `docker-compose.yml` example) rather
+  than through a separate in-app protocol client, since the OS/Docker volume layer already
+  handles both more robustly than a hand-rolled client could.
+- Added an experimental Hailo-8/8L local AI detection backend (`app/tbc/detection/hailo_backend.py`,
+  `Dockerfile.hailo`) alongside the existing CPU/GPU and Coral backends. Needs the account-gated
+  HailoRT Python wheel (not on public PyPI) built into the image yourself, a connected Hailo
+  device, and - unlike the CPU/GPU and Coral defaults - a manually supplied `.hef` model plus
+  metadata JSON, since no single public URL works across Hailo device generations/toolchain
+  versions the way the bundled Coral default does. Implemented independently but could not be
+  tested against real Hailo hardware in this development environment; verify it on your own
+  device before production use, exactly like the existing Coral backend's own caveat.
+
 ## 0.11.0 - "Redesigned & connected"
 - Fixed three redesign follow-up issues on the camera dashboard: the fleet-summary "Warnings"
   count now matches statuses tolerantly (`warn`/`warning`) instead of only one exact string some

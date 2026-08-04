@@ -4,6 +4,7 @@ import json
 import smtplib
 import urllib.parse
 import urllib.request
+import uuid
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any
@@ -71,6 +72,14 @@ def _send(channel: dict[str, Any], title: str, message: str, recording: dict[str
         _ntfy(channel, title, message, recording, public_base_url)
     elif kind == "gotify":
         _gotify(channel, title, message, recording, public_base_url)
+    elif kind == "slack":
+        _slack(channel, title, message, recording, public_base_url)
+    elif kind == "discord":
+        _discord(channel, title, message, recording, public_base_url)
+    elif kind == "matrix":
+        _matrix(channel, title, message)
+    elif kind == "signal":
+        _signal(channel, title, message)
     else:
         _webhook(channel, title, message, recording, public_base_url)
 
@@ -186,6 +195,73 @@ def _gotify(channel: dict[str, Any], title: str, message: str, recording: dict[s
         method="POST",
     )
     urllib.request.urlopen(request, timeout=10).read()
+
+
+def _slack(channel: dict[str, Any], title: str, message: str, recording: dict[str, Any] | None, public_base_url: str) -> None:
+    """Posts to a Slack incoming webhook. `url` is the full webhook URL - see
+    https://api.slack.com/messaging/webhooks. Incoming webhooks cannot upload files, so a
+    snapshot is only linked (via an image block), not attached, and only when public_base_url
+    is configured."""
+    url = channel.get("url")
+    if not url:
+        return
+    payload: dict[str, Any] = {"text": f"*{title}*\n{message}"}
+    if recording and public_base_url and int(channel.get("include_snapshot") or 0) == 1:
+        payload["blocks"] = [
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"*{title}*\n{message}"}},
+            {"type": "image", "image_url": f"{public_base_url}/recordings/{recording['id']}/snapshot", "alt_text": "snapshot"},
+        ]
+    _post_json(url, payload)
+
+
+def _discord(channel: dict[str, Any], title: str, message: str, recording: dict[str, Any] | None, public_base_url: str) -> None:
+    """Posts to a Discord incoming webhook. `url` is the full webhook URL - see
+    https://discord.com/developers/docs/resources/webhook#execute-webhook. Like Slack, a
+    snapshot is only embedded by URL, not uploaded as a file."""
+    url = channel.get("url")
+    if not url:
+        return
+    payload: dict[str, Any] = {"content": f"**{title}**\n{message}"}
+    if recording and public_base_url and int(channel.get("include_snapshot") or 0) == 1:
+        payload["embeds"] = [{"title": title, "description": message, "image": {"url": f"{public_base_url}/recordings/{recording['id']}/snapshot"}}]
+    _post_json(url, payload)
+
+
+def _matrix(channel: dict[str, Any], title: str, message: str) -> None:
+    """Sends an m.room.message event via the Matrix Client-Server API. `url` is the
+    homeserver base URL (e.g. https://matrix.example.com), `token` is an access token for
+    the sending account, `chat_id` is the target room ID (e.g. !abc123:example.com) - see
+    https://spec.matrix.org/latest/client-server-api/#put_matrixclientv3roomsroomidsendeventtypetxnid."""
+    base_url = (channel.get("url") or "").rstrip("/")
+    token = channel.get("token")
+    room_id = channel.get("chat_id")
+    if not base_url or not token or not room_id:
+        return
+    text = f"{title}\n{message}"
+    transaction_id = uuid.uuid4().hex
+    path = f"/_matrix/client/v3/rooms/{urllib.parse.quote(room_id, safe='')}/send/m.room.message/{transaction_id}"
+    request = urllib.request.Request(
+        f"{base_url}{path}",
+        data=json.dumps({"msgtype": "m.text", "body": text}).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+        method="PUT",
+    )
+    urllib.request.urlopen(request, timeout=10).read()
+
+
+def _signal(channel: dict[str, Any], title: str, message: str) -> None:
+    """Sends through a self-hosted signal-cli REST API instance (there is no official Signal
+    bot API) - see https://github.com/bbernhard/signal-cli-rest-api. `url` is the API base URL,
+    `sender_id` is the sender's own number registered with signal-cli, `chat_id` is the
+    recipient number or group ID, `token` is an optional bearer token for a reverse proxy in
+    front of the API."""
+    base_url = (channel.get("url") or "").rstrip("/")
+    sender = channel.get("sender_id")
+    recipient = channel.get("chat_id")
+    if not base_url or not sender or not recipient:
+        return
+    payload = {"message": f"{title}\n{message}", "number": sender, "recipients": [recipient]}
+    _post_json(f"{base_url}/v2/send", payload, token=channel.get("token"))
 
 
 def _post_json(url: str, payload: dict[str, Any], token: str | None = None) -> None:

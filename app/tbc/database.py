@@ -163,6 +163,9 @@ CREATE TABLE IF NOT EXISTS storage_targets (
     s3_prefix TEXT,
     s3_access_key_id TEXT,
     s3_secret_access_key TEXT,
+    webdav_url TEXT,
+    webdav_username TEXT,
+    webdav_password TEXT,
     retention_days INTEGER,
     retention_max_gb REAL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -314,6 +317,7 @@ CREATE TABLE IF NOT EXISTS notification_channels (
     url TEXT,
     token TEXT,
     chat_id TEXT,
+    sender_id TEXT,
     email_to TEXT,
     email_from TEXT,
     smtp_host TEXT,
@@ -664,6 +668,10 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE ui_settings ADD COLUMN birdseye_fps INTEGER NOT NULL DEFAULT 5",
     "ALTER TABLE ui_settings ADD COLUMN homekit_enabled INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE ui_settings ADD COLUMN homekit_pincode TEXT",
+    "ALTER TABLE notification_channels ADD COLUMN sender_id TEXT",
+    "ALTER TABLE storage_targets ADD COLUMN webdav_url TEXT",
+    "ALTER TABLE storage_targets ADD COLUMN webdav_username TEXT",
+    "ALTER TABLE storage_targets ADD COLUMN webdav_password TEXT",
 )
 
 
@@ -751,7 +759,7 @@ def _encrypt_plaintext_secrets_in_place(database_path: str) -> None:
             ("cameras", "id", ("password",)),
             ("cloud_accounts", "id", ("secret",)),
             ("network_accounts", "id", ("secret",)),
-            ("storage_targets", "id", ("s3_secret_access_key",)),
+            ("storage_targets", "id", ("s3_secret_access_key", "webdav_password")),
             ("mqtt_config", "id", ("password",)),
             ("notification_channels", "id", ("token", "smtp_password")),
         ):
@@ -1547,7 +1555,7 @@ def delete_plugin_source(database_path: str, source_id: int) -> None:
 def get_storage_target(database_path: str, storage_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute("SELECT * FROM storage_targets WHERE id = ?", (storage_id,)).fetchone()
-    return _decrypt_row(dict(row), ("s3_secret_access_key",)) if row else None
+    return _decrypt_row(dict(row), ("s3_secret_access_key", "webdav_password")) if row else None
 
 
 def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
@@ -1555,7 +1563,7 @@ def list_storage_targets(database_path: str) -> list[dict[str, Any]]:
         rows = db.execute(
             "SELECT * FROM storage_targets ORDER BY name COLLATE NOCASE"
         ).fetchall()
-    return [_decrypt_row(dict(row), ("s3_secret_access_key",)) for row in rows]
+    return [_decrypt_row(dict(row), ("s3_secret_access_key", "webdav_password")) for row in rows]
 
 
 def get_backup_schedule(database_path: str) -> dict[str, Any]:
@@ -1636,15 +1644,19 @@ def create_storage_target(
     s3_prefix: str | None = None,
     s3_access_key_id: str | None = None,
     s3_secret_access_key: str | None = None,
+    webdav_url: str | None = None,
+    webdav_username: str | None = None,
+    webdav_password: str | None = None,
 ) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
             """
             INSERT INTO storage_targets (
                 name, kind, local_path, s3_endpoint_url, s3_region, s3_bucket,
-                s3_prefix, s3_access_key_id, s3_secret_access_key
+                s3_prefix, s3_access_key_id, s3_secret_access_key,
+                webdav_url, webdav_username, webdav_password
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -1656,6 +1668,9 @@ def create_storage_target(
                 s3_prefix,
                 s3_access_key_id,
                 _encrypt_field(s3_secret_access_key),
+                webdav_url,
+                webdav_username,
+                _encrypt_field(webdav_password),
             ),
         )
         return int(cursor.lastrowid)
@@ -1674,6 +1689,9 @@ def update_storage_target(
     s3_prefix: str | None = None,
     s3_access_key_id: str | None = None,
     s3_secret_access_key: str | None = None,
+    webdav_url: str | None = None,
+    webdav_username: str | None = None,
+    webdav_password: str | None = None,
     retention_days: int | None = None,
     retention_max_gb: float | None = None,
 ) -> None:
@@ -1690,6 +1708,9 @@ def update_storage_target(
                    s3_prefix = ?,
                    s3_access_key_id = ?,
                    s3_secret_access_key = ?,
+                   webdav_url = ?,
+                   webdav_username = ?,
+                   webdav_password = ?,
                    retention_days = ?,
                    retention_max_gb = ?,
                    updated_at = CURRENT_TIMESTAMP
@@ -1705,6 +1726,9 @@ def update_storage_target(
                 s3_prefix,
                 s3_access_key_id,
                 _encrypt_field(s3_secret_access_key),
+                webdav_url,
+                webdav_username,
+                _encrypt_field(webdav_password),
                 retention_days,
                 retention_max_gb,
                 storage_id,
@@ -2363,7 +2387,8 @@ def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | Non
             """
             SELECT r.*, c.name AS camera_name, s.kind AS target_kind,
                    s.s3_endpoint_url, s.s3_region, s.s3_bucket, s.s3_prefix,
-                   s.s3_access_key_id, s.s3_secret_access_key
+                   s.s3_access_key_id, s.s3_secret_access_key,
+                   s.webdav_url, s.webdav_username, s.webdav_password
               FROM recordings r
               JOIN cameras c ON c.id = r.camera_id
               LEFT JOIN storage_targets s ON s.id = r.storage_id
@@ -2371,7 +2396,7 @@ def get_recording(database_path: str, recording_id: int) -> dict[str, Any] | Non
             """,
             (recording_id,),
         ).fetchone()
-    return _decrypt_row(dict(row), ("s3_secret_access_key",)) if row else None
+    return _decrypt_row(dict(row), ("s3_secret_access_key", "webdav_password")) if row else None
 
 
 def _recording_filters(
@@ -2732,10 +2757,10 @@ def create_notification_channel(database_path: str, **values: Any) -> int:
         cursor = db.execute(
             """
             INSERT INTO notification_channels (
-                name, kind, enabled, event_filter, url, token, chat_id, email_to, email_from,
+                name, kind, enabled, event_filter, url, token, chat_id, sender_id, email_to, email_from,
                 smtp_host, smtp_port, smtp_username, smtp_password, ha_service, include_snapshot
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             _notification_values(values),
         )
@@ -2756,6 +2781,7 @@ def update_notification_channel(database_path: str, channel_id: int, **values: A
                    url = ?,
                    token = ?,
                    chat_id = ?,
+                   sender_id = ?,
                    email_to = ?,
                    email_from = ?,
                    smtp_host = ?,
@@ -3577,6 +3603,7 @@ def _notification_values(values: dict[str, Any]) -> tuple[Any, ...]:
         values.get("url"),
         _encrypt_field(values.get("token")),
         values.get("chat_id"),
+        values.get("sender_id"),
         values.get("email_to"),
         values.get("email_from"),
         values.get("smtp_host"),

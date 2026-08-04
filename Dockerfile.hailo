@@ -1,0 +1,83 @@
+# Build for Hailo-8/8L-accelerated local AI detection (HailoRT's Python bindings,
+# imported as "hailo_platform" - see app/tbc/detection/hailo_backend.py).
+#   docker build -f Dockerfile.hailo -t tbc-camera-manager:hailo .
+#   docker run --device /dev/hailo0 ... tbc-camera-manager:hailo   (PCIe/M.2 module)
+#
+# Unlike Dockerfile.coral's "ai-edge-litert", HailoRT's Python package is NOT on
+# public PyPI (verified: https://pypi.org/pypi/hailort/json returns 404) - Hailo
+# distributes it as an account-gated .whl from their Developer Zone
+# (https://hailo.ai/developer-zone/), matched to a HailoRT runtime/driver version
+# and your target Python/CPU architecture. This Dockerfile therefore cannot fetch
+# it automatically the way Coral's apt repo is fetched below; you must:
+#   1. Register at the Hailo Developer Zone and download the matching HailoRT
+#      Python wheel (e.g. hailort-<version>-cp313-cp313-linux_x86_64.whl) for this
+#      image's Python version (3.13) and target architecture.
+#   2. Place it at ./hailort-wheel/*.whl relative to this Dockerfile before building.
+#   3. Also install the matching HailoRT PCIe driver/firmware on the HOST (outside
+#      this container - see Hailo's own installation guide), and pass the resulting
+#      device node through with --device /dev/hailo0.
+#
+# None of this has been built or run against real Hailo hardware in TBC's own
+# development environment - there is none available there, and the account-gated
+# wheel cannot be fetched here either. Treat this Dockerfile as a documented
+# starting point, not a verified recipe; adjust the wheel filename/path and the
+# HailoRT driver install step for your actual Hailo Developer Zone download.
+FROM python:3.13-slim
+
+ARG BUILD_VERSION=dev
+ARG TARGETARCH
+ARG BUILD_ARCH=${TARGETARCH}
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TBC_DATABASE_PATH=/data/tbc.sqlite3 \
+    TBC_PLUGIN_SITE_PACKAGES_PATH=/data/plugin-site-packages \
+    TBC_RECORDINGS_PATH=/recordings \
+    TBC_CAMERA_MODULES_PATH=/data/camera-modules \
+    TBC_DASHBOARD_SNAPSHOTS_PATH=/data/dashboard-snapshots \
+    TBC_DETECTION_MODELS_PATH=/data/detection-models \
+    TBC_PORT=8732
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg gcc libxml2-dev libxslt1-dev curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# go2rtc powers the optional WebRTC live-view mode - see app/tbc/go2rtc.py.
+ARG GO2RTC_VERSION=1.9.14
+RUN curl -fsSL -o /usr/local/bin/go2rtc \
+        "https://github.com/AlexxIT/go2rtc/releases/download/v${GO2RTC_VERSION}/go2rtc_linux_${TARGETARCH}" \
+    && chmod +x /usr/local/bin/go2rtc
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# See the header comment: this is the account-gated HailoRT wheel you must
+# download yourself and place under ./hailort-wheel/ before building.
+COPY hailort-wheel/*.whl /tmp/hailort-wheel/
+RUN pip install --no-cache-dir /tmp/hailort-wheel/*.whl \
+    && rm -rf /tmp/hailort-wheel
+
+COPY app ./app
+
+RUN useradd --create-home --uid 10001 tbc \
+    && mkdir -p /data /recordings /recordings/tbc-camera-manager \
+    && chown -R tbc:tbc /data /recordings /app
+
+LABEL io.hass.version="${BUILD_VERSION}" \
+    io.hass.type="app" \
+    io.hass.arch="${BUILD_ARCH}" \
+    org.opencontainers.image.title="TBC Camera Manager (Hailo)" \
+    org.opencontainers.image.description="Modular camera manager for ONVIF and RTSP cameras, with Hailo-8/8L acceleration" \
+    org.opencontainers.image.source="https://github.com/404GamerNotFound/TBC-camera-manager"
+
+# Mirrors the root Dockerfile / Dockerfile.coral: container_launcher.py prepares
+# Home Assistant bind mounts as root, then drops to the unprivileged tbc user -
+# see app/tbc/container_launcher.py.
+USER root
+
+EXPOSE 8732
+EXPOSE 8555/tcp
+EXPOSE 8555/udp
+CMD ["python3", "/app/app/tbc/container_launcher.py"]

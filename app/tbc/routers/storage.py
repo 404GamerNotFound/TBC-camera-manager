@@ -57,6 +57,9 @@ async def create_storage_target(
     s3_prefix: str = Form(""),
     s3_access_key_id: str = Form(""),
     s3_secret_access_key: str = Form(""),
+    webdav_url: str = Form(""),
+    webdav_username: str = Form(""),
+    webdav_password: str = Form(""),
 ):
     guard = _require_admin(request)
     if guard:
@@ -73,6 +76,9 @@ async def create_storage_target(
             s3_prefix=_none_if_blank(s3_prefix),
             s3_access_key_id=_none_if_blank(s3_access_key_id),
             s3_secret_access_key=_none_if_blank(s3_secret_access_key),
+            webdav_url=_none_if_blank(webdav_url),
+            webdav_username=_none_if_blank(webdav_username),
+            webdav_password=_none_if_blank(webdav_password),
         )
         audit.log_event(request, SETTINGS.database_path, "storage.created", target_type="storage", detail={"name": name.strip(), "kind": kind})
         _set_flash(request, "storage.created")
@@ -102,6 +108,9 @@ async def update_storage_target(
     s3_prefix: str = Form(""),
     s3_access_key_id: str = Form(""),
     s3_secret_access_key: str = Form(""),
+    webdav_url: str = Form(""),
+    webdav_username: str = Form(""),
+    webdav_password: str = Form(""),
     retention_days: str = Form(""),
     retention_max_gb: str = Form(""),
 ):
@@ -120,6 +129,9 @@ async def update_storage_target(
         s3_prefix=_none_if_blank(s3_prefix),
         s3_access_key_id=_none_if_blank(s3_access_key_id),
         s3_secret_access_key=_none_if_blank(s3_secret_access_key),
+        webdav_url=_none_if_blank(webdav_url),
+        webdav_username=_none_if_blank(webdav_username),
+        webdav_password=_none_if_blank(webdav_password),
         retention_days=int(retention_days) if retention_days else None,
         retention_max_gb=float(retention_max_gb) if retention_max_gb else None,
     )

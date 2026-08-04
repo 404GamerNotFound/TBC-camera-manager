@@ -108,6 +108,21 @@ def download_model_if_missing(url: str, model_path: Path) -> bool:
         return False
 
 
+def ensure_hailo_model(model_path: Path, metadata_path: Path) -> bool:
+    """Checks for an admin-supplied Hailo model; never downloads one.
+
+    Unlike ensure_default_coral_model above, there is no bundled default here: a
+    Hailo ``.hef`` is compiled per Hailo device generation/DFC toolchain version, so
+    no single public URL would work across installs the way the Coral default does.
+    Same reasoning as ensure_audio_model - place ``default_hailo.hef`` and a matching
+    ``default_hailo.json`` (see detection/hailo_backend.py:HailoModelMetadata) in the
+    detection models directory yourself, e.g. a HEF from the public
+    https://github.com/hailo-ai/hailo_model_zoo. Returns False (and local detection
+    for the Hailo backend simply never starts) until both files are present.
+    """
+    return model_path.exists() and metadata_path.exists()
+
+
 def ensure_audio_model(model_path: Path, metadata_path: Path, *, model_url: str | None) -> bool:
     """Provisions the local-audio-AI model, if the admin has configured one.
 

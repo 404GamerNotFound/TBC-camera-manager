@@ -20,7 +20,7 @@ from ..camera_modules import (
     get_camera_module,
 )
 from ..camera_modules.registry import UnknownCameraModuleError
-from ..recording import delete_recording_files, presigned_url
+from ..recording import delete_recording_files, presigned_url, webdav_download
 from fastapi import APIRouter
 
 from ..main import (
@@ -349,6 +349,19 @@ async def sd_card_media(
     }
     return StreamingResponse(download_stream.chunks(), media_type="video/mp4", headers=headers)
 
+def _webdav_stream_response(recording: dict[str, Any], *, snapshot: bool = False, disposition: str = "inline") -> StreamingResponse | None:
+    """Proxies a WebDAV-backed recording/snapshot through the app - WebDAV has no
+    presigned-URL concept to redirect the browser to (see recording.webdav_download)."""
+    result = webdav_download(recording, snapshot=snapshot)
+    if not result:
+        return None
+    chunks, content_length, content_type = result
+    default_name = "snapshot.jpg" if snapshot else (recording.get("file_name") or "clip.mp4")
+    headers = {"Content-Disposition": f'{disposition}; filename="{_safe_header_filename(default_name)}"'}
+    if content_length is not None:
+        headers["Content-Length"] = str(content_length)
+    return StreamingResponse(chunks, media_type=content_type, headers=headers)
+
 @router.get("/recordings/{recording_id}/media")
 async def recording_media(request: Request, recording_id: int):
     recording = _authorized_recording(request, recording_id)
@@ -371,6 +384,9 @@ async def recording_media(request: Request, recording_id: int):
     url = presigned_url(recording)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    webdav_response = _webdav_stream_response(recording, disposition="inline")
+    if webdav_response:
+        return webdav_response
     return JSONResponse({"error": "media not available"}, status_code=status.HTTP_404_NOT_FOUND)
 
 @router.get("/recordings/{recording_id}/snapshot")
@@ -384,6 +400,9 @@ async def recording_snapshot(request: Request, recording_id: int):
     url = presigned_url(recording, snapshot=True)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    webdav_response = _webdav_stream_response(recording, snapshot=True, disposition="inline")
+    if webdav_response:
+        return webdav_response
     return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
 
 @router.get("/recordings/{recording_id}/download")
@@ -397,6 +416,9 @@ async def recording_download(request: Request, recording_id: int):
     url = presigned_url(recording)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    webdav_response = _webdav_stream_response(recording, disposition="attachment")
+    if webdav_response:
+        return webdav_response
     return JSONResponse({"error": "download not available"}, status_code=status.HTTP_404_NOT_FOUND)
 
 @router.post("/recordings/{recording_id}/delete")

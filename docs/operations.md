@@ -9,9 +9,31 @@ Recording destinations are configured under **Storage → Destinations**.
 
 - **Local or mounted path:** a directory visible inside the TBC container. The standard Docker
   deployment mounts `/recordings`; Home Assistant uses `/recordings/tbc-camera-manager` inside the
-  app for its media directory.
+  app for its media directory. This also covers SMB/CIFS and NFS network shares: mount the share
+  into the container (or the host, then bind-mount it through) and point a "Local or mounted path"
+  destination at the mount point - TBC has no separate SMB/NFS storage kind because both are
+  filesystem-level protocols the OS/Docker volume layer already handles more robustly than an
+  in-app client could. For example, in `docker-compose.yml`:
+  ```yaml
+  volumes:
+    nas-recordings:
+      driver_opts:
+        type: cifs
+        # or: type: nfs
+        device: "//nas.example.com/recordings"   # NFS: "nas.example.com:/export/recordings"
+        o: "username=tbc,password=secret,uid=1000,gid=1000"
+  services:
+    tbc:
+      volumes:
+        - nas-recordings:/mnt/nas-recordings
+  ```
+  then create a destination with local path `/mnt/nas-recordings`.
 - **S3-compatible storage:** endpoint, region, bucket, prefix, access key, and secret key. Secrets
-  are encrypted at rest and never returned by the external API.
+  are encrypted at rest and never returned by the external API. The endpoint field also covers any
+  S3-compatible provider (MinIO, Backblaze B2, Wasabi, ...), not only AWS.
+- **WebDAV:** server URL (pointing at the target folder, which must already exist), username, and
+  password. Secrets are encrypted at rest. Unlike S3, WebDAV has no presigned-URL concept, so
+  playback and downloads are proxied through the app rather than redirected.
 
 A camera can select a destination for continuous and event recording. “First available
 destination” follows the configured destination order. Removing a destination does not delete
@@ -29,8 +51,11 @@ recording archive itself must be preserved.
 ## Notifications
 
 Notification channels can be filtered by event name and may attach a snapshot. Supported channel
-types include generic webhooks, Telegram, email/SMTP, Pushover, Home Assistant Notify, ntfy, and
-Gotify. Required URL, token, chat, service, or SMTP fields depend on the selected type.
+types include generic webhooks, Telegram, email/SMTP, Pushover, Home Assistant Notify, ntfy,
+Gotify, Slack, Discord, Matrix, and Signal (via a self-hosted
+[signal-cli-rest-api](https://github.com/bbernhard/signal-cli-rest-api) instance - there is no
+official Signal bot API). Required URL, token, chat/room/sender ID, or SMTP fields depend on the
+selected type.
 
 Set `TBC_PUBLIC_BASE_URL` when notification payloads must contain externally reachable links.
 Keep channel tokens and SMTP passwords restricted; they are encrypted in the database but a

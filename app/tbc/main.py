@@ -68,7 +68,7 @@ from .detection import factory as detection_factory
 from .detection.classes import AUDIO_KEY_LABELS, DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection import audio_factory as audio_detection_factory
 from .detection.audio_supervisor import audio_detection_supervisor
-from .detection.model_provisioning import ensure_audio_model, ensure_default_coral_model, ensure_default_model
+from .detection.model_provisioning import ensure_audio_model, ensure_default_coral_model, ensure_default_model, ensure_hailo_model
 from .detection.plugin_models import resolve_plugin_model
 from .detection.recognition import (
     FACE_TRIGGER_DETECTION_KEYS,
@@ -386,6 +386,8 @@ DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"
 DETECTION_CORAL_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.tflite"
 DETECTION_CORAL_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default_edgetpu.json"
+DETECTION_HAILO_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default_hailo.hef"
+DETECTION_HAILO_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default_hailo.json"
 RECOGNITION_MODELS_DIR = Path(SETTINGS.detection_models_path)
 RECOGNITION_SNAPSHOT_DIR = Path(SETTINGS.recordings_path) / "recognition-events"
 AUDIO_MODEL_PATH = Path(SETTINGS.detection_models_path) / "audio_default.onnx"
@@ -406,6 +408,14 @@ def _detection_backend_factory(settings: dict[str, Any], module_key: str | None 
             settings,
             model_path=str(DETECTION_CORAL_MODEL_PATH),
             metadata_path=str(DETECTION_CORAL_MODEL_METADATA_PATH),
+        )
+    if backend_key == "hailo":
+        # No auto-download - see model_provisioning.ensure_hailo_model for why.
+        ensure_hailo_model(DETECTION_HAILO_MODEL_PATH, DETECTION_HAILO_MODEL_METADATA_PATH)
+        return detection_factory.build_backend(
+            settings,
+            model_path=str(DETECTION_HAILO_MODEL_PATH),
+            metadata_path=str(DETECTION_HAILO_MODEL_METADATA_PATH),
         )
     return detection_factory.build_backend(
         settings,
@@ -2297,7 +2307,7 @@ def _safe_header_filename(value: str) -> str:
 
 
 def _validated_storage_kind(kind: str) -> str:
-    return "s3" if kind == "s3" else "local"
+    return kind if kind in {"s3", "webdav"} else "local"
 
 
 def _notification_form_values(
@@ -2309,6 +2319,7 @@ def _notification_form_values(
     url: str,
     token: str,
     chat_id: str,
+    sender_id: str,
     email_to: str,
     email_from: str,
     smtp_host: str,
@@ -2319,13 +2330,14 @@ def _notification_form_values(
 ) -> dict[str, Any]:
     return {
         "name": name.strip(),
-        "kind": kind if kind in {"telegram", "email", "webhook", "pushover", "home_assistant", "ntfy", "gotify"} else "webhook",
+        "kind": kind if kind in {"telegram", "email", "webhook", "pushover", "home_assistant", "ntfy", "gotify", "slack", "discord", "matrix", "signal"} else "webhook",
         "enabled": enabled == "on",
         "include_snapshot": include_snapshot == "on",
         "event_filter": _none_if_blank(event_filter),
         "url": _none_if_blank(url),
         "token": _none_if_blank(token),
         "chat_id": _none_if_blank(chat_id),
+        "sender_id": _none_if_blank(sender_id),
         "email_to": _none_if_blank(email_to),
         "email_from": _none_if_blank(email_from),
         "smtp_host": _none_if_blank(smtp_host),

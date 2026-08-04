@@ -10,6 +10,10 @@
     <option value="home_assistant" {% if kind == 'home_assistant' %}selected{% endif %} data-i18n="notification.ha_notify">Home Assistant Notify</option>
     <option value="ntfy" {% if kind == 'ntfy' %}selected{% endif %} data-i18n="notification.ntfy_self_hosted_push">ntfy (self-hosted push)</option>
     <option value="gotify" {% if kind == 'gotify' %}selected{% endif %} data-i18n="notification.gotify_self_hosted_push">Gotify (self-hosted push)</option>
+    <option value="slack" {% if kind == 'slack' %}selected{% endif %} data-i18n="notification.slack">Slack</option>
+    <option value="discord" {% if kind == 'discord' %}selected{% endif %} data-i18n="notification.discord">Discord</option>
+    <option value="matrix" {% if kind == 'matrix' %}selected{% endif %} data-i18n="notification.matrix">Matrix</option>
+    <option value="signal" {% if kind == 'signal' %}selected{% endif %} data-i18n="notification.signal_self_hosted">Signal (self-hosted signal-cli)</option>
   </select></label>
   <label class="check-row"><input name="enabled" type="checkbox" {% if values is not defined or values.enabled %}checked{% endif %}><span data-i18n="camera.active">active</span></label>
 
@@ -32,6 +36,19 @@
   <label data-notification-fields="gotify"{% if kind != 'gotify' %} hidden{% endif %}><span data-i18n="notification.gotify_server_url">Gotify server URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://gotify.example.com"></label>
   <label data-notification-fields="gotify"{% if kind != 'gotify' %} hidden{% endif %}><span data-i18n="notification.gotify_token">Gotify application token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
 
+  <label data-notification-fields="slack"{% if kind != 'slack' %} hidden{% endif %} class="span-2"><span data-i18n="notification.slack_webhook_url">Slack incoming webhook URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://hooks.slack.com/services/…"></label>
+
+  <label data-notification-fields="discord"{% if kind != 'discord' %} hidden{% endif %} class="span-2"><span data-i18n="notification.discord_webhook_url">Discord webhook URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://discord.com/api/webhooks/…"></label>
+
+  <label data-notification-fields="matrix"{% if kind != 'matrix' %} hidden{% endif %} class="span-2"><span data-i18n="notification.matrix_homeserver_url">Matrix homeserver URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="https://matrix.example.com"></label>
+  <label data-notification-fields="matrix"{% if kind != 'matrix' %} hidden{% endif %}><span data-i18n="notification.matrix_access_token">Access token</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+  <label data-notification-fields="matrix"{% if kind != 'matrix' %} hidden{% endif %}><span data-i18n="notification.matrix_room_id">Room ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}" placeholder="!abc123:example.com"></label>
+
+  <label data-notification-fields="signal"{% if kind != 'signal' %} hidden{% endif %} class="span-2"><span data-i18n="notification.signal_api_url">signal-cli REST API URL</span><input name="url" value="{{ values.url if values is defined and values.url else '' }}" type="url" placeholder="http://signal-cli-rest-api:8080"></label>
+  <label data-notification-fields="signal"{% if kind != 'signal' %} hidden{% endif %}><span data-i18n="notification.signal_sender_number">Sender number</span><input name="sender_id" value="{{ values.sender_id if values is defined and values.sender_id else '' }}" placeholder="+491234567890"></label>
+  <label data-notification-fields="signal"{% if kind != 'signal' %} hidden{% endif %}><span data-i18n="notification.signal_recipient">Recipient number or group ID</span><input name="chat_id" value="{{ values.chat_id if values is defined and values.chat_id else '' }}"></label>
+  <label data-notification-fields="signal"{% if kind != 'signal' %} hidden{% endif %}><span data-i18n="notification.signal_token_optional">Bearer token (optional, if the API sits behind an authenticating proxy)</span><input name="token" type="password" value="{{ values.token if values is defined and values.token else '' }}"></label>
+
   <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.email">Email to</span><input name="email_to" type="email" value="{{ values.email_to if values is defined and values.email_to else '' }}"></label>
   <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.email_from">Email from</span><input name="email_from" type="email" value="{{ values.email_from if values is defined and values.email_from else '' }}"></label>
   <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_host">SMTP Host</span><input name="smtp_host" value="{{ values.smtp_host if values is defined and values.smtp_host else '' }}"></label>
@@ -39,7 +56,7 @@
   <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_username">SMTP username</span><input name="smtp_username" value="{{ values.smtp_username if values is defined and values.smtp_username else '' }}"></label>
   <label data-notification-fields="email"{% if kind != 'email' %} hidden{% endif %}><span data-i18n="notification.smtp_password">SMTP password</span><input name="smtp_password" type="password" value="{{ values.smtp_password if values is defined and values.smtp_password else '' }}"></label>
 
-  <label class="check-row" data-notification-fields="telegram,email,ntfy"{% if kind not in ['telegram', 'email', 'ntfy'] %} hidden{% endif %}><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span data-i18n="notification.attach_snapshot">Attach snapshot</span></label>
+  <label class="check-row" data-notification-fields="telegram,email,ntfy,slack,discord"{% if kind not in ['telegram', 'email', 'ntfy', 'slack', 'discord'] %} hidden{% endif %}><input name="include_snapshot" type="checkbox" {% if values is not defined or values.include_snapshot %}checked{% endif %}><span data-i18n="notification.attach_snapshot">Attach snapshot</span></label>
 
   <section class="notification-events span-2" aria-labelledby="notification-events-title">
     <div class="notification-events-heading">

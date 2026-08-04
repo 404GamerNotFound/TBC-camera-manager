@@ -6,3 +6,4 @@ __pycache__/
 data/
 .coverage
 htmlcov/
+hailort-wheel/*.whl

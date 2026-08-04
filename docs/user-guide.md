@@ -112,7 +112,8 @@ them into TBC's local recording database. Availability and metadata depend on th
 
 Local AI processes sampled frames on the TBC host independently of camera-generated events. Each
 camera can select a backend, sampling rate, and confidence threshold. CPU is always the default;
-CUDA and Coral require their respective image/runtime and compatible hardware.
+CUDA, Coral, and Hailo require their respective image/runtime and compatible hardware - Hailo also
+needs a manually-supplied model (see [deployment.md](deployment.md)).
 
 Zones refine which detections count:
 

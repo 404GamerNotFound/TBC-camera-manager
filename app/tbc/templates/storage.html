@@ -24,11 +24,13 @@
         <select name="kind">
           <option value="local" data-i18n="storage.local_or_mounted_path">Local or mounted path</option>
           <option value="s3" data-i18n="storage.s3_compatible_cloud_storage">S3-compatible cloud storage</option>
+          <option value="webdav" data-i18n="storage.webdav">WebDAV</option>
         </select>
       </label>
       <label class="span-2">
         <span data-i18n="storage.local_path_container">Local path in the container</span>
         <input name="local_path" value="{{ defaults.local_path }}">
+        <small class="hint-text" data-i18n="storage.local_path_mount_hint">Also used for SMB/CIFS or NFS network shares - mount the share into the container (or host) and point this at the mounted path. See the storage documentation for a docker-compose example.</small>
       </label>
       <label>
         <span data-i18n="storage.s3_endpoint_url">S3 Endpoint URL</span>
@@ -54,6 +56,18 @@
         <span data-i18n="storage.secret_key">Secret key</span>
         <input name="s3_secret_access_key" type="password" autocomplete="new-password">
       </label>
+      <label class="span-2">
+        <span data-i18n="storage.webdav_url">WebDAV URL</span>
+        <input name="webdav_url" placeholder="https://cloud.example.com/remote.php/dav/files/user/tbc-recordings">
+      </label>
+      <label>
+        <span data-i18n="storage.webdav_username">WebDAV username</span>
+        <input name="webdav_username" autocomplete="off">
+      </label>
+      <label>
+        <span data-i18n="storage.webdav_password">WebDAV password</span>
+        <input name="webdav_password" type="password" autocomplete="new-password">
+      </label>
     </div>
     <div class="form-actions">
       <button class="primary-button" type="submit" data-i18n="notifications.create">Create</button>
@@ -78,6 +92,7 @@
             <select name="kind">
               <option value="local" {% if target.kind == 'local' %}selected{% endif %} data-i18n="storage.local_mounted_path">Local/mounted path</option>
               <option value="s3" {% if target.kind == 's3' %}selected{% endif %} data-i18n="storage.s3_cloud">S3 Cloud</option>
+              <option value="webdav" {% if target.kind == 'webdav' %}selected{% endif %} data-i18n="storage.webdav">WebDAV</option>
             </select>
           </label>
           <label class="span-2">
@@ -107,6 +122,18 @@
           <label>
             <span data-i18n="storage.secret_key">Secret key</span>
             <input name="s3_secret_access_key" type="password" value="{{ target.s3_secret_access_key or '' }}" autocomplete="new-password">
+          </label>
+          <label class="span-2">
+            <span data-i18n="storage.webdav_url">WebDAV URL</span>
+            <input name="webdav_url" value="{{ target.webdav_url or '' }}">
+          </label>
+          <label>
+            <span data-i18n="storage.webdav_username">WebDAV username</span>
+            <input name="webdav_username" value="{{ target.webdav_username or '' }}" autocomplete="off">
+          </label>
+          <label>
+            <span data-i18n="storage.webdav_password">WebDAV password</span>
+            <input name="webdav_password" type="password" value="{{ target.webdav_password or '' }}" autocomplete="new-password">
           </label>
           <label>
             <span data-i18n="storage.retention_days">Retention days</span>

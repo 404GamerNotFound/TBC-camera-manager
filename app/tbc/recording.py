@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from . import automation, database, mqtt
+from . import automation, database, mqtt, webdav_client
 from .config import load_settings
 from .notifications import notify_event
 
@@ -478,13 +478,16 @@ class ContinuousRecordingManager:
         duration_seconds = _probe_duration(segment_path) or max(1, int(default_duration or 300))
         size_bytes = segment_path.stat().st_size
         ended_at = started_at + timedelta(seconds=duration_seconds)
-        target_is_s3 = storage_target["kind"] == "s3"
+        target_kind = storage_target["kind"]
         local_path: str | None = None
         remote_key: str | None = None
 
         try:
-            if target_is_s3:
+            if target_kind == "s3":
                 remote_key = _upload_to_s3(segment_path, storage_target)
+                segment_path.unlink(missing_ok=True)
+            elif target_kind == "webdav":
+                remote_key = _upload_to_webdav(segment_path, storage_target)
                 segment_path.unlink(missing_ok=True)
             else:
                 local_base = Path(storage_target.get("local_path") or "/recordings") / "continuous" / str(camera_id)
@@ -589,8 +592,8 @@ def _record_clip(job: RecordingJob, active: ActiveRecording) -> dict[str, Any]:
         raise RuntimeError("ffmpeg is not installed in the container")
 
     target = job.storage_target
-    target_is_s3 = target["kind"] == "s3"
-    local_base_path = Path("/tmp/tbc-recordings") if target_is_s3 else Path(target.get("local_path") or "/recordings")
+    target_kind = target["kind"]
+    local_base_path = Path("/tmp/tbc-recordings") if target_kind != "local" else Path(target.get("local_path") or "/recordings")
     local_base_path.mkdir(parents=True, exist_ok=True)
     work_dir = Path(tempfile.mkdtemp(prefix=f"tbc-{job.camera_id}-"))
 
@@ -617,10 +620,18 @@ def _record_clip(job: RecordingJob, active: ActiveRecording) -> dict[str, Any]:
             "size_bytes": size_bytes,
             "ended_at": ended_at.isoformat(timespec="seconds"),
         }
-        if target_is_s3:
+        if target_kind == "s3":
             result["remote_key"] = _upload_to_s3(output_file, target)
             if snapshot_path:
                 result["snapshot_remote_key"] = _upload_to_s3(snapshot_path, target)
+                snapshot_path.unlink(missing_ok=True)
+            output_file.unlink(missing_ok=True)
+            result["local_path"] = None
+            result["snapshot_path"] = None
+        elif target_kind == "webdav":
+            result["remote_key"] = _upload_to_webdav(output_file, target)
+            if snapshot_path:
+                result["snapshot_remote_key"] = _upload_to_webdav(snapshot_path, target)
                 snapshot_path.unlink(missing_ok=True)
             output_file.unlink(missing_ok=True)
             result["local_path"] = None
@@ -796,15 +807,22 @@ def delete_recording_files(recording: dict[str, Any]) -> None:
         path = recording.get(key)
         if path:
             Path(path).unlink(missing_ok=True)
+    target_kind = recording.get("target_kind")
     for key in ("remote_key", "snapshot_remote_key"):
         remote_key = recording.get(key)
-        if remote_key:
+        if not remote_key:
+            continue
+        if target_kind == "webdav":
+            _delete_webdav_object(remote_key, recording)
+        else:
             _delete_s3_object(remote_key, recording)
 
 
 def presigned_url(recording: dict[str, Any], *, snapshot: bool = False) -> str | None:
+    """S3 only - WebDAV (plain HTTP Basic Auth) has no presigned-URL concept, so a
+    WebDAV-backed recording is proxied through webdav_download() instead."""
     key = recording.get("snapshot_remote_key" if snapshot else "remote_key")
-    if not key:
+    if not key or recording.get("target_kind") != "s3":
         return None
     client = _s3_client(recording)
     bucket = recording.get("s3_bucket")
@@ -815,6 +833,15 @@ def presigned_url(recording: dict[str, Any], *, snapshot: bool = False) -> str |
         Params={"Bucket": bucket, "Key": key},
         ExpiresIn=3600,
     )
+
+
+def webdav_download(recording: dict[str, Any], *, snapshot: bool = False):
+    """Returns (chunk_iterator, content_length, content_type) for a WebDAV-backed
+    recording/snapshot, or None if not applicable - see webdav_client.download_stream."""
+    key = recording.get("snapshot_remote_key" if snapshot else "remote_key")
+    if not key or recording.get("target_kind") != "webdav":
+        return None
+    return webdav_client.download_stream(recording, key)
 
 
 def _upload_to_s3(local_file: Path, target: dict[str, Any]) -> str:
@@ -832,6 +859,16 @@ def _delete_s3_object(remote_key: str, target: dict[str, Any]) -> None:
     if not bucket:
         return
     _s3_client(target).delete_object(Bucket=bucket, Key=remote_key)
+
+
+def _upload_to_webdav(local_file: Path, target: dict[str, Any]) -> str:
+    key = local_file.name
+    webdav_client.upload(target, local_file, key)
+    return key
+
+
+def _delete_webdav_object(remote_key: str, target: dict[str, Any]) -> None:
+    webdav_client.delete(target, remote_key)
 
 
 def _s3_client(target: dict[str, Any]):

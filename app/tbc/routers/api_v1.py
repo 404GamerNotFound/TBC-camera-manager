@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Query, Request, status
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 
 from .. import __version__, audit, database
 from ..api_common import (
@@ -24,7 +24,7 @@ from ..api_common import (
 from ..detection import factory as detection_factory
 from ..health import current_system_usage
 from ..live import stream_uri_for
-from ..recording import presigned_url
+from ..recording import presigned_url, webdav_download
 from fastapi import APIRouter
 
 from ..main import (
@@ -42,6 +42,7 @@ from ..main import (
     _require_api_key_stream,
     _resolve_api_stream_uri,
     _rewrite_playlist_with_auth,
+    _safe_header_filename,
 )
 
 router = APIRouter()
@@ -330,6 +331,19 @@ async def api_v1_recording_detail(request: Request, recording_id: int):
         return JSONResponse({"error": "not found"}, status_code=status.HTTP_404_NOT_FOUND)
     return _recording_public_dict(recording)
 
+def _webdav_stream_response(recording: dict[str, Any], *, snapshot: bool = False, disposition: str = "inline") -> StreamingResponse | None:
+    """Proxies a WebDAV-backed recording/snapshot through the app - see the identical
+    helper in routers/recordings.py and recording.webdav_download for why."""
+    result = webdav_download(recording, snapshot=snapshot)
+    if not result:
+        return None
+    chunks, content_length, content_type = result
+    default_name = "snapshot.jpg" if snapshot else (recording.get("file_name") or "clip.mp4")
+    headers = {"Content-Disposition": f'{disposition}; filename="{_safe_header_filename(default_name)}"'}
+    if content_length is not None:
+        headers["Content-Length"] = str(content_length)
+    return StreamingResponse(chunks, media_type=content_type, headers=headers)
+
 @router.get("/api/v1/recordings/{recording_id}/media")
 async def api_v1_recording_media(request: Request, recording_id: int):
     guard = _require_api_key(request)
@@ -353,6 +367,9 @@ async def api_v1_recording_media(request: Request, recording_id: int):
     url = presigned_url(recording)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    webdav_response = _webdav_stream_response(recording, disposition="inline")
+    if webdav_response:
+        return webdav_response
     return JSONResponse({"error": "media not available"}, status_code=status.HTTP_404_NOT_FOUND)
 
 @router.get("/api/v1/recordings/{recording_id}/snapshot")
@@ -369,6 +386,9 @@ async def api_v1_recording_snapshot(request: Request, recording_id: int):
     url = presigned_url(recording, snapshot=True)
     if url:
         return RedirectResponse(url, status_code=status.HTTP_303_SEE_OTHER)
+    webdav_response = _webdav_stream_response(recording, snapshot=True, disposition="inline")
+    if webdav_response:
+        return webdav_response
     return JSONResponse({"error": "snapshot not available"}, status_code=status.HTTP_404_NOT_FOUND)
 
 @router.get("/api/v1/activity")

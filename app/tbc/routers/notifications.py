@@ -53,13 +53,13 @@ async def notifications_page(request: Request):
     )
 
 @router.post("/notifications")
-async def create_notification(request: Request, name: str = Form(...), kind: str = Form("webhook"), enabled: str | None = Form(None), include_snapshot: str | None = Form(None), event_filter: str = Form(""), url: str = Form(""), token: str = Form(""), chat_id: str = Form(""), email_to: str = Form(""), email_from: str = Form(""), smtp_host: str = Form(""), smtp_port: str = Form(""), smtp_username: str = Form(""), smtp_password: str = Form(""), ha_service: str = Form("")):
+async def create_notification(request: Request, name: str = Form(...), kind: str = Form("webhook"), enabled: str | None = Form(None), include_snapshot: str | None = Form(None), event_filter: str = Form(""), url: str = Form(""), token: str = Form(""), chat_id: str = Form(""), sender_id: str = Form(""), email_to: str = Form(""), email_from: str = Form(""), smtp_host: str = Form(""), smtp_port: str = Form(""), smtp_username: str = Form(""), smtp_password: str = Form(""), ha_service: str = Form("")):
     guard = _require_admin(request)
     if guard:
         return guard
     form = await request.form()
     event_templates = _notification_event_templates_from_form(form)
-    values = _notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service)
+    values = _notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, sender_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service)
     values["event_filter"] = _notification_event_filter(event_templates)
     values["event_templates"] = event_templates
     database.create_notification_channel(SETTINGS.database_path, **values)
@@ -67,13 +67,13 @@ async def create_notification(request: Request, name: str = Form(...), kind: str
     return _redirect("/notifications")
 
 @router.post("/notifications/{channel_id}")
-async def update_notification(request: Request, channel_id: int, name: str = Form(...), kind: str = Form("webhook"), enabled: str | None = Form(None), include_snapshot: str | None = Form(None), event_filter: str = Form(""), url: str = Form(""), token: str = Form(""), chat_id: str = Form(""), email_to: str = Form(""), email_from: str = Form(""), smtp_host: str = Form(""), smtp_port: str = Form(""), smtp_username: str = Form(""), smtp_password: str = Form(""), ha_service: str = Form("")):
+async def update_notification(request: Request, channel_id: int, name: str = Form(...), kind: str = Form("webhook"), enabled: str | None = Form(None), include_snapshot: str | None = Form(None), event_filter: str = Form(""), url: str = Form(""), token: str = Form(""), chat_id: str = Form(""), sender_id: str = Form(""), email_to: str = Form(""), email_from: str = Form(""), smtp_host: str = Form(""), smtp_port: str = Form(""), smtp_username: str = Form(""), smtp_password: str = Form(""), ha_service: str = Form("")):
     guard = _require_admin(request)
     if guard:
         return guard
     form = await request.form()
     event_templates = _notification_event_templates_from_form(form)
-    values = _notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service)
+    values = _notification_form_values(name, kind, enabled, include_snapshot, event_filter, url, token, chat_id, sender_id, email_to, email_from, smtp_host, smtp_port, smtp_username, smtp_password, ha_service)
     values["event_filter"] = _notification_event_filter(event_templates)
     values["event_templates"] = event_templates
     database.update_notification_channel(SETTINGS.database_path, channel_id, **values)

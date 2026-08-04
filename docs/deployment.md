@@ -118,19 +118,30 @@ supported through the Home Assistant OS add-on** - see `tbc_camera_manager/DOCS.
 documents that packaging as running without host networking. If HomeKit isn't enabled, none of
 this applies.
 
-## CPU, CUDA, and Coral images
+## CPU, CUDA, Coral, and Hailo images
 
 The standard image includes ONNX Runtime for CPU inference. `Dockerfile.gpu` replaces it with
 `onnxruntime-gpu` and requires a compatible NVIDIA runtime. `Dockerfile.coral` installs the Coral
-runtime and expects a connected Edge TPU device. Hardware availability is reported on the AI
-detection page; verify optional backends on the target host before production use.
+runtime and expects a connected Edge TPU device. `Dockerfile.hailo` builds against a HailoRT
+Python wheel you download yourself from the Hailo Developer Zone (it is not on public PyPI - see
+that Dockerfile's header comment) and expects a connected Hailo-8/8L device; unlike the other
+backends it also has no bundled default model - see "Local AI detection" below. Hardware
+availability is reported on the AI detection page; verify optional backends on the target host
+before production use.
 
-## Local audio detection
+## Local AI detection: model provisioning
 
-Local video AI ships with a bundled default model, downloaded automatically on first start. Local
-audio detection (barking, glass breaking, smoke/fire alarm sounds) does not: there is no
-raw-waveform-in, AudioSet-class-out ONNX model with a stable public URL that TBC can point to by
-default, so this feature stays off until you configure one yourself.
+Local video AI ships with a bundled default model for the CPU/CUDA and Coral backends, downloaded
+automatically on first start (or first switch to Coral). The Hailo backend does not: a `.hef` is
+compiled per Hailo device generation and toolchain version, so no single public URL would work
+across installs. Place a compiled `.hef` (e.g. from the public
+[Hailo Model Zoo](https://github.com/hailo-ai/hailo_model_zoo)) and a matching metadata JSON at
+`default_hailo.hef`/`default_hailo.json` under `TBC_DETECTION_MODELS_PATH` yourself; the Hailo
+backend otherwise stays unavailable, exactly like local audio detection below.
+
+Local audio detection (barking, glass breaking, smoke/fire alarm sounds) has the same limitation:
+there is no raw-waveform-in, AudioSet-class-out ONNX model with a stable public URL that TBC can
+point to by default, so this feature stays off until you configure one yourself.
 
 To enable it:
 

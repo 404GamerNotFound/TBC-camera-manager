@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import __version__
+from . import __version__, webdav_client
 from .security import SecretDecryptionError, decrypt_bytes, encrypt_bytes
 
 MANIFEST_APP = "tbc-camera-manager"
@@ -222,6 +222,10 @@ def _copy_to_external_target(local_file: Path, target: dict[str, Any]) -> str:
         key = _s3_backup_prefix(target) + "/" + local_file.name
         _s3_client(target).upload_file(str(local_file), bucket, key)
         return f"s3://{bucket}/{key}"
+    if kind == "webdav":
+        key = _webdav_backup_prefix() + "/" + local_file.name
+        webdav_client.upload(target, local_file, key)
+        return webdav_client.object_url(target, key)
     raise RuntimeError("The selected storage target is not supported for backups.")
 
 
@@ -233,6 +237,14 @@ def _prune_external_target(target: dict[str, Any], retain_count: int) -> int:
         if not base_path:
             raise RuntimeError("The selected local storage target has no path.")
         return prune_backup_files(str(Path(str(base_path)) / "tbc-backups"), keep)
+    if kind == "webdav":
+        prefix = _webdav_backup_prefix()
+        entries = webdav_client.list_files(target, prefix)
+        entries = [entry for entry in entries if entry.name.endswith(BACKUP_EXTENSION)]
+        entries.sort(key=lambda entry: entry.last_modified or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+        for entry in entries[keep:]:
+            webdav_client.delete(target, f"{prefix}/{entry.name}")
+        return max(0, len(entries) - keep)
     if kind != "s3":
         raise RuntimeError("The selected storage target is not supported for backups.")
     bucket = target.get("s3_bucket")
@@ -266,6 +278,10 @@ def _prune_external_target(target: dict[str, Any], retain_count: int) -> int:
 def _s3_backup_prefix(target: dict[str, Any]) -> str:
     prefix = str(target.get("s3_prefix") or "").strip("/")
     return f"{prefix}/tbc-backups" if prefix else "tbc-backups"
+
+
+def _webdav_backup_prefix() -> str:
+    return "tbc-backups"
 
 
 def _s3_client(target: dict[str, Any]):

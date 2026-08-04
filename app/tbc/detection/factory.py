@@ -4,20 +4,23 @@ from typing import Any
 
 from .backend import DetectionBackend
 from .coral_backend import CoralEdgeTpuBackend
+from .hailo_backend import HailoBackend
 from .onnx_backend import OnnxCpuBackend, OnnxGpuBackend
 
-BACKEND_CHOICES: tuple[str, ...] = ("cpu", "cuda", "coral")
+BACKEND_CHOICES: tuple[str, ...] = ("cpu", "cuda", "coral", "hailo")
 
 BACKEND_LABELS: dict[str, str] = {
     "cpu": "CPU",
     "cuda": "GPU (CUDA)",
     "coral": "Coral (Edge TPU)",
+    "hailo": "Hailo (8/8L)",
 }
 
 _BACKEND_CLASSES: dict[str, type[DetectionBackend]] = {
     "cpu": OnnxCpuBackend,
     "cuda": OnnxGpuBackend,
     "coral": CoralEdgeTpuBackend,
+    "hailo": HailoBackend,
 }
 
 
