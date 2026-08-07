@@ -9,8 +9,9 @@ from typing import Any, Callable
 
 from .. import database
 from .backend import Detection, DetectionBackend
-from .classes import DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
+from .classes import DETECTION_KEY_LABELS, LINE_CROSSING_KEY_LABELS, LOITERING_KEY_LABELS
 from .frame_source import FrameGrabber
+from .line_crossing import LineCrossingTracker
 from .loitering import LoiterTracker
 from .tracking import ObjectTracker, TrackedDetection
 from .zones import filter_detections_by_zones
@@ -90,6 +91,23 @@ def _loitering_rows(loiter_tracker: LoiterTracker, zones: list[dict[str, Any]]) 
     ]
 
 
+def _line_crossing_rows(line_crossing_tracker: LineCrossingTracker) -> list[dict[str, Any]]:
+    active_keys = line_crossing_tracker.active_trigger_keys()
+    return [
+        {
+            "key": key,
+            "label": label,
+            "category": "ai",
+            "channel": None,
+            "supported": True,
+            "active": key in active_keys,
+            "source": "local_ai",
+            "raw_value": None,
+        }
+        for key, label in LINE_CROSSING_KEY_LABELS.items()
+    ]
+
+
 async def run_camera_detection_worker(
     database_path: str,
     camera_id: int,
@@ -138,6 +156,7 @@ async def _run_worker_once(
     tracker = ActiveObjectTracker(active_timeout_seconds=max(3.0, 3.0 / sample_fps))
     object_tracker = ObjectTracker()
     loiter_tracker = LoiterTracker()
+    line_crossing_tracker = LineCrossingTracker()
     # A plugin-bundled model may need downloading on first use - keep that (and the
     # rest of backend construction) off the event loop so it doesn't stall other
     # cameras' workers.
@@ -160,12 +179,18 @@ async def _run_worker_once(
             # a track is only returned here once it has matched min_hits times in a row,
             # which is what filters out single-frame false-positive flicker.
             tracked_detections = object_tracker.update(detections)
-            # Loitering uses the raw, pre-zone-filter tracked detections - it is its own
-            # zone type independent of include/exclude filtering below.
+            # Loitering and line-crossing both use the raw, pre-zone-filter tracked detections -
+            # each is its own zone type independent of include/exclude filtering below.
             loiter_tracker.update(tracked_detections, zones)
+            for zone_id, detection_key, direction in line_crossing_tracker.update(tracked_detections, zones):
+                database.increment_zone_crossing_count(database_path, zone_id, direction)
             filtered_detections = filter_detections_by_zones(tracked_detections, zones)
             tracker.update(filtered_detections)
-            rows = tracker.detection_rows() + _loitering_rows(loiter_tracker, zones)
+            rows = (
+                tracker.detection_rows()
+                + _loitering_rows(loiter_tracker, zones)
+                + _line_crossing_rows(line_crossing_tracker)
+            )
             on_detections(camera_id, rows)
             if on_frame_detections is not None and filtered_detections:
                 on_frame_detections(camera_id, frame, filtered_detections)

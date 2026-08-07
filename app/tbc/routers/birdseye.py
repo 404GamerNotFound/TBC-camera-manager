@@ -8,8 +8,10 @@ despite looking circular.
 from __future__ import annotations
 
 import asyncio
+from datetime import date, timedelta
+from typing import Any
 
-from fastapi import Form, Request, status
+from fastapi import Form, Query, Request, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from .. import audit, database
@@ -22,11 +24,13 @@ from ..main import (
     SETTINGS,
     _camera_supports,
     _current_user,
+    _parse_date,
     _pop_flash,
     _redirect,
     _require_admin,
     _require_login,
     _set_flash,
+    _timeline_payload,
     templates,
 )
 
@@ -36,6 +40,10 @@ router = APIRouter()
 # continuous transcode cost bounded - Birdseye is meant for a glance, not
 # per-camera detail (that's what /live is for).
 BIRDSEYE_CANVAS_WIDTH = 1280
+
+# VOD decode of N independent players client-side is heavier than Birdseye's single composited
+# live stream, so Playback mode caps lower than MAX_BIRDSEYE_CAMERAS.
+MAX_PLAYBACK_CAMERAS = 9
 
 
 def _birdseye_sources(camera_ids: list[int]) -> list[str]:
@@ -101,6 +109,67 @@ async def birdseye_view(request: Request):
             "message": message,
             "no_usable_cameras": no_usable_cameras,
             "max_cameras": MAX_BIRDSEYE_CAMERAS,
+            "flash": _pop_flash(request),
+        },
+    )
+
+
+@router.get("/birdseye/playback", response_class=HTMLResponse)
+async def birdseye_playback_view(request: Request, day: str | None = Query(None)):
+    guard = _require_login(request)
+    if guard:
+        return guard
+    user = _current_user(request)
+    accessible_camera_ids = {
+        int(camera["id"])
+        for camera in database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
+    }
+    selected_camera_ids = [
+        camera_id
+        for camera_id in database.get_birdseye_camera_ids(SETTINGS.database_path)
+        if camera_id in accessible_camera_ids
+    ][:MAX_PLAYBACK_CAMERAS]
+
+    selected_day = _parse_date(day, date.today())
+    start_at = f"{selected_day.isoformat()}T00:00:00"
+    end_at = f"{(selected_day + timedelta(days=1)).isoformat()}T00:00:00"
+
+    rows = database.list_recordings_for_cameras_range(
+        SETTINGS.database_path, camera_ids=selected_camera_ids, start_at=start_at, end_at=end_at
+    )
+    rows_by_camera: dict[int, list[dict[str, Any]]] = {camera_id: [] for camera_id in selected_camera_ids}
+    for row in rows:
+        rows_by_camera.setdefault(int(row["camera_id"]), []).append(row)
+
+    cameras: list[dict[str, Any]] = []
+    timeline_data_by_camera: dict[int, dict[str, Any]] = {}
+    for camera_id in selected_camera_ids:
+        camera = database.get_camera(SETTINGS.database_path, camera_id)
+        if not camera:
+            continue
+        cameras.append(camera)
+        camera_rows = rows_by_camera.get(camera_id, [])
+        timeline_data_by_camera[camera_id] = {
+            "segments": _timeline_payload(request, (row for row in camera_rows if row["detection_key"] == "continuous")),
+            "events": _timeline_payload(request, (row for row in camera_rows if row["detection_key"] != "continuous")),
+        }
+
+    return templates.TemplateResponse(
+        request,
+        "birdseye_playback.html",
+        {
+            "app_name": SETTINGS.app_name,
+            "username": request.session.get("username"),
+            "role": user["role"],
+            "cameras": cameras,
+            "timeline_data_by_camera": timeline_data_by_camera,
+            "columns": database.get_birdseye_settings(SETTINGS.database_path)["columns"],
+            "selected_day": selected_day.isoformat(),
+            "prev_day": (selected_day - timedelta(days=1)).isoformat(),
+            "next_day": (selected_day + timedelta(days=1)).isoformat(),
+            "today": date.today().isoformat(),
+            "is_today": selected_day == date.today(),
+            "max_cameras": MAX_PLAYBACK_CAMERAS,
             "flash": _pop_flash(request),
         },
     )

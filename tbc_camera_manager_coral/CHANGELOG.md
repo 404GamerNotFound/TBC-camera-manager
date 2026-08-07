@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0 - "Search, store & detect"
+
+- Kept the Coral Home Assistant app in version lockstep with the standard
+  0.12.0 release, including semantic clip search, richer local-AI clip metadata,
+  WebDAV storage, additional notification channels, and the experimental Hailo
+  backend for standalone deployments.
+
 ## 0.11.0 - "Redesigned & connected"
 
 - Kept the Coral Home Assistant app in version lockstep with the standard

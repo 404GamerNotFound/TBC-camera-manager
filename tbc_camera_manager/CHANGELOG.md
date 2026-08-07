@@ -1,6 +1,23 @@
 # Changelog
 
 ## Unreleased
+- Added a synchronized multi-camera playback timeline ("Playback" on the Birdseye page): scrubs
+  recordings from Birdseye's selected cameras (up to 9) together on one shared timeline for a
+  chosen day, reusing the same camera selection as the live mosaic but giving each camera its own
+  independently playable recording instead of one composited stream. Synchronization
+  (`app/tbc/static/birdseye-playback.js`) is best-effort - driven by a playing reference camera's
+  real progress and periodically corrected - rather than frame-accurate, since browsers can't
+  genlock independently loaded video files.
+- Added a "counting line" detection zone mode: a two-point line (separate "Draw counting line"
+  tool alongside the existing polygon zone tool) tallies how many tracked people/vehicles/animals
+  cross it in each direction, with a per-zone running total (shown next to the zone, resettable
+  independently of deleting it) and a momentary `..._line_in`/`..._line_out` trigger key per
+  crossing that flows through the existing recording-trigger/notification/MQTT pipeline exactly
+  like loitering zones already do. Crossing detection (`app/tbc/detection/line_crossing.py`) is
+  pure geometry (2D line-segment intersection test against each track's motion since the last
+  frame) - no new model or dependency.
+
+## 0.12.0 - "Search, store & detect"
 - Added semantic (CLIP-based) search for recordings, disabled by default. A visual/textual ONNX
   model pair (`app/tbc/detection/clip_backend.py`, immich-app's Hugging Face CLIP exports,
   ~600 MB for the default `ViT-B-32__openai`) is downloaded on first use; each recording's

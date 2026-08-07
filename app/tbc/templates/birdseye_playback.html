@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="eyebrow" data-i18n="birdseye.eyebrow">Composite mosaic</p>
+    <h1 data-i18n="birdseye.playback_title">Birdseye Playback</h1>
+  </div>
+  <div class="button-row live-toolbar">
+    <a class="secondary-button" href="{{ ingress_prefix }}/birdseye" data-i18n="birdseye.back_to_live">Back to live</a>
+  </div>
+</section>
+
+<p class="quiet-box" data-i18n="birdseye.playback_explanation">
+  Scrubs recordings from every camera selected in Birdseye's settings together on one shared
+  timeline, for reviewing what happened across cameras at the same moment - unlike Birdseye's
+  live mosaic, each tile here is its own independently playable recording, kept in sync on a
+  best-effort basis rather than frame-for-frame.
+</p>
+
+<form class="filter-bar" method="get" action="{{ ingress_prefix }}/birdseye/playback">
+  <label>
+    <span data-i18n="activity.day">Day</span>
+    <input name="day" type="date" value="{{ selected_day }}" max="{{ today }}">
+  </label>
+  <button class="primary-button" type="submit" data-i18n="activity.show">Show</button>
+  <div class="button-row timeline-day-nav">
+    <a class="secondary-button" href="{{ ingress_prefix }}/birdseye/playback?day={{ prev_day }}" data-i18n="activity.previous_day">‹ Previous day</a>
+    <a class="secondary-button{% if is_today %} is-disabled{% endif %}" href="{{ ingress_prefix }}/birdseye/playback?day={{ next_day }}" data-i18n="activity.next_day">Next day ›</a>
+  </div>
+</form>
+
+{% if not cameras %}
+<section class="empty-state">
+  <h2 data-i18n="birdseye.playback_no_cameras_selected">No cameras are selected for Birdseye yet</h2>
+</section>
+{% else %}
+<section class="live-grid" data-sync-grid style="--live-columns: {{ columns }};">
+  {% for camera in cameras %}
+  <article class="camera-card live-card">
+    <div class="live-card-overlay">
+      <div class="live-card-overlay-row">
+        <span class="live-card-name">{{ camera.name }}</span>
+      </div>
+    </div>
+    <div class="live-player-shell">
+      <video class="live-video" data-sync-player data-camera-id="{{ camera.id }}" data-camera-name="{{ camera.name }}" preload="metadata" muted></video>
+      <div class="live-placeholder" data-sync-placeholder data-i18n="birdseye.playback_no_footage">No recording at this time</div>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="timeline-scrubber" data-sync-root data-day="{{ selected_day }}">
+  <script type="application/json" data-sync-json>{{ timeline_data_by_camera | tojson }}</script>
+
+  <div class="timeline-controls-row">
+    <div class="timeline-layers">
+      <button type="button" class="icon-button" data-sync-play-pause aria-label="Play/Pause" data-i18n-aria-label="player.play_pause">▶</button>
+      <span data-sync-time>00:00:00</span>
+    </div>
+    <div class="timeline-zoom-controls">
+      <span data-sync-status></span>
+    </div>
+  </div>
+
+  <div class="timeline-scroll">
+    <div class="timeline-inner" data-sync-inner>
+      <div class="timeline-hours" data-sync-hours aria-hidden="true"></div>
+      <div data-sync-lanes></div>
+      <div class="timeline-cursor" data-sync-cursor></div>
+    </div>
+  </div>
+  <p class="timeline-hint" data-sync-empty hidden data-i18n="timeline.no_recordings_available_day">No recordings are available for this day.</p>
+</section>
+{% endif %}
+
+<script src="{{ ingress_prefix }}/static/video-player.js?v={{ asset_version }}" defer></script>
+<script src="{{ ingress_prefix }}/static/birdseye-playback.js?v={{ asset_version }}" defer></script>
+{% endblock %}

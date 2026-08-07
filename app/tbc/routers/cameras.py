@@ -956,11 +956,17 @@ async def create_camera_detection_zone_route(request: Request, camera_id: int):
         return JSONResponse({"ok": False, "message": "Camera was not found"}, status_code=status.HTTP_404_NOT_FOUND)
     payload = await request.json()
     name = str(payload.get("name") or "").strip() or "Zone"
-    mode = payload.get("mode") if payload.get("mode") in {"exclude", "loiter"} else "include"
+    mode = payload.get("mode") if payload.get("mode") in {"exclude", "loiter", "line"} else "include"
     classes = payload.get("classes")
     classes = [key for key in classes if key in DETECTION_KEY_LABELS] if isinstance(classes, list) else None
     raw_points = payload.get("points")
-    if not isinstance(raw_points, list) or len(raw_points) < 3:
+    if mode == "line":
+        if not isinstance(raw_points, list) or len(raw_points) != 2:
+            return JSONResponse(
+                {"ok": False, "message": "A counting line needs exactly two points"},
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+    elif not isinstance(raw_points, list) or len(raw_points) < 3:
         return JSONResponse({"ok": False, "message": "Eine Zone braucht mindestens drei Punkte"}, status_code=status.HTTP_400_BAD_REQUEST)
     try:
         points = [
@@ -992,6 +998,17 @@ async def delete_camera_detection_zone_route(request: Request, camera_id: int, z
         return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
     database.delete_camera_detection_zone(SETTINGS.database_path, camera_id, zone_id)
     return {"ok": True}
+
+@router.post("/cameras/{camera_id}/detection/zones/{zone_id}/reset-count")
+async def reset_camera_detection_zone_count_route(request: Request, camera_id: int, zone_id: int):
+    guard = _require_admin(request)
+    if guard:
+        return JSONResponse({"error": "forbidden"}, status_code=status.HTTP_403_FORBIDDEN)
+    zone = database.get_camera_detection_zone(SETTINGS.database_path, zone_id)
+    if not zone or int(zone["camera_id"]) != camera_id:
+        return JSONResponse({"ok": False, "message": "Zone was not found"}, status_code=status.HTTP_404_NOT_FOUND)
+    database.reset_zone_crossing_counts(SETTINGS.database_path, zone_id)
+    return {"ok": True, "zone": database.get_camera_detection_zone(SETTINGS.database_path, zone_id)}
 
 @router.post("/cameras/{camera_id}/continuous-recording")
 async def update_camera_continuous_recording(

@@ -65,7 +65,7 @@ from .documentation import (
     resolve_documentation_file as _resolve_documentation_file,
 )
 from .detection import factory as detection_factory
-from .detection.classes import AUDIO_KEY_LABELS, DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
+from .detection.classes import AUDIO_KEY_LABELS, DETECTION_KEY_LABELS, LINE_CROSSING_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection import audio_factory as audio_detection_factory
 from .detection.audio_supervisor import audio_detection_supervisor
 from .detection.clip_backend import embedding_backfill_supervisor
@@ -381,7 +381,12 @@ app.mount("/mcp", MCP_APP)
 
 LOCAL_AI_TRIGGER_DEFINITIONS = tuple(
     DetectionDefinition(key=key, label=label, category="ai")
-    for key, label in {**DETECTION_KEY_LABELS, **LOITERING_KEY_LABELS, **AUDIO_KEY_LABELS}.items()
+    for key, label in {
+        **DETECTION_KEY_LABELS,
+        **LOITERING_KEY_LABELS,
+        **LINE_CROSSING_KEY_LABELS,
+        **AUDIO_KEY_LABELS,
+    }.items()
 )
 DETECTION_MODEL_PATH = Path(SETTINGS.detection_models_path) / "default.onnx"
 DETECTION_MODEL_METADATA_PATH = Path(SETTINGS.detection_models_path) / "default.json"

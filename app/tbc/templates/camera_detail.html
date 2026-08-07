@@ -701,9 +701,10 @@
     </div>
     <p class="hint-text" data-i18n="camera.zones_hint">
       Draw areas on the latest camera image. Exclusion zones ignore detections inside them (for example, a road in the background),
-      inclusion zones count a class only inside the zone (for example, the driveway), and loitering zones trigger only when a class
-      remains inside continuously for at least the configured duration (for example, a person waiting at the door). Without zones,
-      local AI detection evaluates the entire image.
+      inclusion zones count a class only inside the zone (for example, the driveway), loitering zones trigger only when a class
+      remains inside continuously for at least the configured duration (for example, a person waiting at the door), and a counting
+      line tallies how many crossings happen in each direction (for example, an entrance). Without zones, local AI detection
+      evaluates the entire image.
     </p>
     <div class="zone-editor-canvas-wrap">
       <img class="zone-editor-image" data-zone-image src="{{ ingress_prefix }}/cameras/{{ camera.id }}/snapshot.jpg" alt="Latest camera image" data-i18n-alt="camera.latest_camera_image">
@@ -711,6 +712,7 @@
     </div>
     <div class="zone-editor-toolbar">
       <button class="secondary-button" type="button" data-zone-start-draw data-i18n="camera.draw_new_zone">Draw new zone</button>
+      <button class="secondary-button" type="button" data-zone-start-draw-line data-i18n="zones.draw_counting_line">Draw counting line</button>
       <button class="text-button" type="button" data-zone-cancel-draw hidden data-i18n="camera.cancel_drawing">Cancel drawing</button>
       <span class="hint-text" data-zone-hint hidden data-i18n="camera.zone_points_hint">Select points in the image (at least 3). Double-click to close the zone.</span>
     </div>
@@ -726,6 +728,7 @@
             <option value="include" data-i18n="zones.mode_include_hint">Include (count only here)</option>
             <option value="exclude" data-i18n="zones.mode_exclude_hint">Exclude (ignore here)</option>
             <option value="loiter" data-i18n="zones.mode_loiter_hint">Loitering zone (after X seconds)</option>
+            <option value="line" data-i18n="zones.mode_line_hint">Counting line (in/out)</option>
           </select>
         </label>
         <label data-zone-dwell-field hidden>
@@ -754,13 +757,17 @@
       <li data-zone-id="{{ zone.id }}">
         <div class="zone-list-heading">
           <strong>{{ zone.name }}</strong>
-          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}" data-i18n="{% if zone.mode == 'exclude' %}zones.mode_exclude{% elif zone.mode == 'loiter' %}zones.mode_loiter{% else %}zones.mode_include{% endif %}" data-i18n-params='{{ {"seconds": zone.min_dwell_seconds} | tojson }}'>
-            {% if zone.mode == 'exclude' %}Exclude{% elif zone.mode == 'loiter' %}Loitering zone ({{ zone.min_dwell_seconds }}s){% else %}Include{% endif %}
+          <span class="status-pill {% if zone.mode == 'exclude' %}status-idle{% elif zone.mode == 'loiter' %}status-warning{% else %}status-active{% endif %}" data-i18n="{% if zone.mode == 'exclude' %}zones.mode_exclude{% elif zone.mode == 'loiter' %}zones.mode_loiter{% elif zone.mode == 'line' %}zones.mode_line{% else %}zones.mode_include{% endif %}" data-i18n-params='{{ {"seconds": zone.min_dwell_seconds} | tojson }}'>
+            {% if zone.mode == 'exclude' %}Exclude{% elif zone.mode == 'loiter' %}Loitering zone ({{ zone.min_dwell_seconds }}s){% elif zone.mode == 'line' %}Counting line{% else %}Include{% endif %}
           </span>
         </div>
         <span>
           {% if zone.classes %}{% for key in zone.classes %}{{ detection_key_labels.get(key, key) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}<span data-i18n="common.all_classes">All classes</span>{% endif %}
         </span>
+        {% if zone.mode == 'line' %}
+        <span class="zone-crossing-counts" data-i18n="zones.crossing_counts" data-i18n-params='{{ {"in": zone.crossing_in, "out": zone.crossing_out} | tojson }}'>In: {{ zone.crossing_in }} · Out: {{ zone.crossing_out }}</span>
+        <button class="text-button" type="button" data-zone-reset-count="{{ zone.id }}" data-i18n="zones.reset_count">Reset count</button>
+        {% endif %}
         <button class="text-button" type="button" data-zone-delete="{{ zone.id }}" data-i18n="common.delete">Delete</button>
       </li>
       {% else %}

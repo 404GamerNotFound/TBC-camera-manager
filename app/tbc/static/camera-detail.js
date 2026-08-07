@@ -329,6 +329,7 @@
   const image = editor.querySelector("[data-zone-image]");
   const canvas = editor.querySelector("[data-zone-canvas]");
   const startButton = editor.querySelector("[data-zone-start-draw]");
+  const startLineButton = editor.querySelector("[data-zone-start-draw-line]");
   const cancelDrawButton = editor.querySelector("[data-zone-cancel-draw]");
   const hint = editor.querySelector("[data-zone-hint]");
   const form = editor.querySelector("[data-zone-form]");
@@ -356,6 +357,7 @@
   }
   let drawingPoints = null;
   let pendingPoints = null;
+  let drawingLineMode = false;
 
   function resizeCanvas() {
     canvas.width = canvas.clientWidth;
@@ -390,16 +392,62 @@
     });
   }
 
+  function drawLine(points, color) {
+    if (points.length < 2) return;
+    const [x1, y1] = points[0];
+    const [x2, y2] = points[1];
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    points.forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+    // Direction arrow at the midpoint, perpendicular to the line - rotated the same way
+    // crossing_side() computes its sign server-side, so the arrow always points toward
+    // whichever side actually gets counted as "in".
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.hypot(dx, dy) || 1;
+    const normX = -dy / length;
+    const normY = dx / length;
+    const arrowLength = 22;
+    const tipX = midX + normX * arrowLength;
+    const tipY = midY + normY * arrowLength;
+    ctx.beginPath();
+    ctx.moveTo(midX, midY);
+    ctx.lineTo(tipX, tipY);
+    ctx.stroke();
+    const headSize = 7;
+    const angle = Math.atan2(tipY - midY, tipX - midX);
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - headSize * Math.cos(angle - Math.PI / 6), tipY - headSize * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(tipX - headSize * Math.cos(angle + Math.PI / 6), tipY - headSize * Math.sin(angle + Math.PI / 6));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
   function zoneColor(mode) {
     const styles = getComputedStyle(document.documentElement);
     if (mode === "exclude") return styles.getPropertyValue("--danger").trim();
     if (mode === "loiter") return styles.getPropertyValue("--warn").trim();
+    if (mode === "line") return styles.getPropertyValue("--brand").trim();
     return styles.getPropertyValue("--accent").trim();
   }
 
   function zoneModeLabel(zone) {
     if (zone.mode === "exclude") return t("zones.mode_exclude");
     if (zone.mode === "loiter") return t("zones.mode_loiter", {seconds: zone.min_dwell_seconds});
+    if (zone.mode === "line") return t("zones.mode_line");
     return t("zones.mode_include");
   }
 
@@ -415,9 +463,21 @@
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    zones.forEach((zone) => drawPolygon(toCanvasPoints(zone.points), zoneColor(zone.mode), true));
+    zones.forEach((zone) => {
+      const canvasPoints = toCanvasPoints(zone.points);
+      if (zone.mode === "line") {
+        drawLine(canvasPoints, zoneColor(zone.mode));
+      } else {
+        drawPolygon(canvasPoints, zoneColor(zone.mode), true);
+      }
+    });
     if (drawingPoints && drawingPoints.length) {
-      drawPolygon(toCanvasPoints(drawingPoints), zoneColor(modeInput.value), false);
+      const canvasDrawing = toCanvasPoints(drawingPoints);
+      if (drawingLineMode) {
+        drawLine(canvasDrawing, zoneColor("line"));
+      } else {
+        drawPolygon(canvasDrawing, zoneColor(modeInput.value), false);
+      }
     }
   }
 
@@ -436,17 +496,28 @@
       const classText = zone.classes && zone.classes.length
         ? zone.classes.map((key) => classLabels[key] || key).join(", ")
         : t("common.all_classes");
+      const countsHtml = zone.mode === "line"
+        ? `<span class="zone-crossing-counts"></span><button class="text-button" type="button" data-zone-reset-count="${zone.id}"></button>`
+        : "";
       item.innerHTML = `
         <div class="zone-list-heading">
           <strong></strong>
           <span class="status-pill ${zoneStatusClass(zone.mode)}"></span>
         </div>
         <span class="zone-classes"></span>
+        ${countsHtml}
         <button class="text-button" type="button" data-zone-delete="${zone.id}"></button>
       `;
       item.querySelector(".zone-list-heading strong").textContent = zone.name;
       item.querySelector(".status-pill").textContent = zoneModeLabel(zone);
       item.querySelector(".zone-classes").textContent = classText;
+      if (zone.mode === "line") {
+        item.querySelector(".zone-crossing-counts").textContent = t("zones.crossing_counts", {
+          in: zone.crossing_in || 0,
+          out: zone.crossing_out || 0,
+        });
+        item.querySelector("[data-zone-reset-count]").textContent = t("zones.reset_count");
+      }
       item.querySelector("[data-zone-delete]").textContent = t("common.delete");
       list.appendChild(item);
     });
@@ -455,21 +526,55 @@
   function resetForm() {
     form.hidden = true;
     form.reset();
+    modeInput.disabled = false;
     pendingPoints = null;
   }
 
   function stopDrawing() {
     drawingPoints = null;
+    drawingLineMode = false;
     cancelDrawButton.hidden = true;
     hint.hidden = true;
     startButton.hidden = false;
+    startLineButton.hidden = false;
     draw();
+  }
+
+  function finishDrawing(points) {
+    pendingPoints = points;
+    drawingPoints = null;
+    drawingLineMode = false;
+    cancelDrawButton.hidden = true;
+    hint.hidden = true;
+    startButton.hidden = false;
+    startLineButton.hidden = false;
+    form.hidden = false;
+    if (pendingPoints.length === 2) {
+      modeInput.value = "line";
+      modeInput.disabled = true;
+    } else {
+      modeInput.disabled = false;
+    }
+    updateDwellFieldVisibility();
+    nameInput.focus();
   }
 
   startButton.addEventListener("click", () => {
     resetForm();
     drawingPoints = [];
+    drawingLineMode = false;
     startButton.hidden = true;
+    startLineButton.hidden = true;
+    cancelDrawButton.hidden = false;
+    hint.hidden = false;
+  });
+
+  startLineButton.addEventListener("click", () => {
+    resetForm();
+    drawingPoints = [];
+    drawingLineMode = true;
+    startButton.hidden = true;
+    startLineButton.hidden = true;
     cancelDrawButton.hidden = false;
     hint.hidden = false;
   });
@@ -482,20 +587,17 @@
     const x = (event.clientX - rect.left) / rect.width;
     const y = (event.clientY - rect.top) / rect.height;
     drawingPoints.push([Math.max(0, Math.min(1, x)), Math.max(0, Math.min(1, y))]);
+    if (drawingLineMode && drawingPoints.length === 2) {
+      finishDrawing(drawingPoints);
+      return;
+    }
     draw();
   });
 
   canvas.addEventListener("dblclick", (event) => {
     event.preventDefault();
-    if (!drawingPoints || drawingPoints.length < 3) return;
-    pendingPoints = drawingPoints;
-    drawingPoints = null;
-    cancelDrawButton.hidden = true;
-    hint.hidden = true;
-    startButton.hidden = false;
-    form.hidden = false;
-    updateDwellFieldVisibility();
-    nameInput.focus();
+    if (!drawingPoints || drawingLineMode || drawingPoints.length < 3) return;
+    finishDrawing(drawingPoints);
   });
 
   modeInput.addEventListener("change", updateDwellFieldVisibility);
@@ -507,7 +609,8 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!pendingPoints || pendingPoints.length < 3) return;
+    const isLine = modeInput.value === "line";
+    if (!pendingPoints || (isLine ? pendingPoints.length !== 2 : pendingPoints.length < 3)) return;
     const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     try {
@@ -540,6 +643,34 @@
   });
 
   list.addEventListener("click", async (event) => {
+    const resetButton = event.target.closest("[data-zone-reset-count]");
+    if (resetButton) {
+      const zoneId = resetButton.dataset.zoneResetCount;
+      resetButton.disabled = true;
+      try {
+        const response = await fetch(tbcUrl(`/cameras/${cameraId}/detection/zones/${zoneId}/reset-count`), {
+          method: "POST",
+          credentials: "same-origin",
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data || !data.ok) {
+          window.alert(t("zones.reset_count_failed"));
+          return;
+        }
+        const zone = zones.find((item) => String(item.id) === String(zoneId));
+        if (zone && data.zone) {
+          zone.crossing_in = data.zone.crossing_in;
+          zone.crossing_out = data.zone.crossing_out;
+        }
+        renderList();
+      } catch (error) {
+        window.alert(t("zones.reset_count_network_failed"));
+      } finally {
+        resetButton.disabled = false;
+      }
+      return;
+    }
+
     const button = event.target.closest("[data-zone-delete]");
     if (!button) return;
     const zoneId = button.dataset.zoneDelete;

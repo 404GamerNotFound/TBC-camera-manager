@@ -559,6 +559,15 @@ CREATE TABLE IF NOT EXISTS recording_embeddings (
     FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS camera_zone_crossing_counts (
+    zone_id INTEGER NOT NULL,
+    direction TEXT NOT NULL CHECK (direction IN ('in', 'out')),
+    count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (zone_id, direction),
+    FOREIGN KEY(zone_id) REFERENCES camera_detection_zones(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS automation_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -2136,13 +2145,22 @@ def list_camera_detection_zones(database_path: str, camera_id: int) -> list[dict
             "SELECT * FROM camera_detection_zones WHERE camera_id = ? ORDER BY id",
             (camera_id,),
         ).fetchall()
-    return [_detection_zone_row(row) for row in rows]
+    zones = [_detection_zone_row(row) for row in rows]
+    for zone in zones:
+        if zone["mode"] == "line":
+            zone.update(_zone_crossing_counts_dict(database_path, zone["id"]))
+    return zones
 
 
 def get_camera_detection_zone(database_path: str, zone_id: int) -> dict[str, Any] | None:
     with connect(database_path) as db:
         row = db.execute("SELECT * FROM camera_detection_zones WHERE id = ?", (zone_id,)).fetchone()
-    return _detection_zone_row(row) if row is not None else None
+    if row is None:
+        return None
+    zone = _detection_zone_row(row)
+    if zone["mode"] == "line":
+        zone.update(_zone_crossing_counts_dict(database_path, zone["id"]))
+    return zone
 
 
 def create_camera_detection_zone(
@@ -2189,9 +2207,47 @@ def _detection_zone_row(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def _valid_zone_mode(mode: str) -> str:
-    if mode in {"exclude", "loiter"}:
+    if mode in {"exclude", "loiter", "line"}:
         return mode
     return "include"
+
+
+def increment_zone_crossing_count(database_path: str, zone_id: int, direction: str) -> None:
+    if direction not in ("in", "out"):
+        return
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO camera_zone_crossing_counts (zone_id, direction, count)
+            VALUES (?, ?, 1)
+            ON CONFLICT(zone_id, direction) DO UPDATE SET
+                count = count + 1,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (zone_id, direction),
+        )
+
+
+def get_zone_crossing_counts(database_path: str, zone_id: int) -> dict[str, int]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT direction, count FROM camera_zone_crossing_counts WHERE zone_id = ?",
+            (zone_id,),
+        ).fetchall()
+    counts = {"in": 0, "out": 0}
+    for row in rows:
+        counts[row["direction"]] = int(row["count"])
+    return counts
+
+
+def _zone_crossing_counts_dict(database_path: str, zone_id: int) -> dict[str, int]:
+    counts = get_zone_crossing_counts(database_path, zone_id)
+    return {"crossing_in": counts["in"], "crossing_out": counts["out"]}
+
+
+def reset_zone_crossing_counts(database_path: str, zone_id: int) -> None:
+    with connect(database_path) as db:
+        db.execute("DELETE FROM camera_zone_crossing_counts WHERE zone_id = ?", (zone_id,))
 
 
 def mark_recording_started(database_path: str, camera_id: int) -> None:
@@ -2396,6 +2452,37 @@ def list_event_recordings_for_cameras_range(
               FROM recordings r
               JOIN cameras c ON c.id = r.camera_id
              WHERE r.camera_id IN ({placeholders}) AND r.status = 'ready' AND r.detection_key != 'continuous'
+               AND r.started_at >= ? AND r.started_at < ?
+             ORDER BY r.started_at ASC, r.id ASC
+            """,
+            (*camera_ids, start_at, end_at),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_recordings_for_cameras_range(
+    database_path: str,
+    *,
+    camera_ids: list[int],
+    start_at: str,
+    end_at: str,
+) -> list[dict[str, Any]]:
+    """Continuous segments and event recordings across several cameras at once, for a
+    synchronized multi-camera playback timeline - unlike list_event_recordings_for_cameras_range
+    above, this does not exclude 24/7 continuous footage, since a synced timeline needs it as the
+    backbone to scrub through. Kept as a separate function rather than adding a flag to the
+    existing one so the Activity page's events-only contract stays untouched.
+    """
+    if not camera_ids:
+        return []
+    with connect(database_path) as db:
+        placeholders = ",".join("?" for _ in camera_ids)
+        rows = db.execute(
+            f"""
+            SELECT r.*, c.name AS camera_name
+              FROM recordings r
+              JOIN cameras c ON c.id = r.camera_id
+             WHERE r.camera_id IN ({placeholders}) AND r.status = 'ready'
                AND r.started_at >= ? AND r.started_at < ?
              ORDER BY r.started_at ASC, r.id ASC
             """,

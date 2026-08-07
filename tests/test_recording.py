@@ -618,5 +618,57 @@ class RecordingSubLabelAndColorFilterTests(unittest.TestCase):
         self.assertEqual(database.list_recording_sub_colors(self.db_path), ["red", "silver"])
 
 
+class ListRecordingsForCamerasRangeTests(unittest.TestCase):
+    def setUp(self):
+        self._tempfile = tempfile.NamedTemporaryFile(suffix=".sqlite3")
+        self.db_path = self._tempfile.name
+        database.initialize(self.db_path)
+        self.camera_a = database.create_camera(
+            self.db_path, name="A", host="192.0.2.10", onvif_port=8000, http_port=80, username="a", password="b"
+        )
+        self.camera_b = database.create_camera(
+            self.db_path, name="B", host="192.0.2.11", onvif_port=8000, http_port=80, username="a", password="b"
+        )
+        self.continuous_id = database.create_recording(
+            self.db_path, camera_id=self.camera_a, storage_id=1, detection_key="continuous",
+            event_label="Continuous", storage_kind="local", started_at="2026-01-01T10:00:00",
+        )
+        database.update_recording_finished(self.db_path, self.continuous_id, status="ready", duration_seconds=300)
+        self.event_id = database.create_recording(
+            self.db_path, camera_id=self.camera_b, storage_id=1, detection_key="ai_person",
+            event_label="Person", storage_kind="local", started_at="2026-01-01T10:02:00",
+        )
+        database.update_recording_finished(self.db_path, self.event_id, status="ready", duration_seconds=15)
+        # Outside the requested day - must never appear in results below.
+        outside_id = database.create_recording(
+            self.db_path, camera_id=self.camera_a, storage_id=1, detection_key="continuous",
+            event_label="Continuous", storage_kind="local", started_at="2026-01-02T10:00:00",
+        )
+        database.update_recording_finished(self.db_path, outside_id, status="ready", duration_seconds=300)
+
+    def tearDown(self):
+        self._tempfile.close()
+
+    def test_includes_both_continuous_and_event_recordings(self):
+        rows = database.list_recordings_for_cameras_range(
+            self.db_path, camera_ids=[self.camera_a, self.camera_b],
+            start_at="2026-01-01T00:00:00", end_at="2026-01-02T00:00:00",
+        )
+        self.assertEqual({row["id"] for row in rows}, {self.continuous_id, self.event_id})
+
+    def test_empty_camera_ids_short_circuits_without_a_query(self):
+        rows = database.list_recordings_for_cameras_range(
+            self.db_path, camera_ids=[], start_at="2026-01-01T00:00:00", end_at="2026-01-02T00:00:00"
+        )
+        self.assertEqual(rows, [])
+
+    def test_only_requested_cameras_are_included(self):
+        rows = database.list_recordings_for_cameras_range(
+            self.db_path, camera_ids=[self.camera_a],
+            start_at="2026-01-01T00:00:00", end_at="2026-01-02T00:00:00",
+        )
+        self.assertEqual([row["id"] for row in rows], [self.continuous_id])
+
+
 if __name__ == "__main__":
     unittest.main()

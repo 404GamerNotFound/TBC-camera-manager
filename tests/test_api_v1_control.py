@@ -1795,5 +1795,123 @@ class EmptyCameraIdFilterTests(unittest.TestCase):
         self.assertIn("Front camera event", response.text)
         self.assertNotIn("Other camera event", response.text)
 
+
+class LineCrossingZoneRouteTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = _create_camera()
+
+    def test_line_mode_with_exactly_two_points_succeeds(self):
+        response = CLIENT.post(
+            f"/cameras/{self.camera_id}/detection/zones",
+            json={"name": "Tuer", "mode": "line", "classes": [], "points": [[0.2, 0.5], [0.8, 0.5]]},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["zone"]["mode"], "line")
+        self.assertEqual(data["zone"]["crossing_in"], 0)
+        self.assertEqual(data["zone"]["crossing_out"], 0)
+
+    def test_line_mode_with_three_points_is_rejected(self):
+        response = CLIENT.post(
+            f"/cameras/{self.camera_id}/detection/zones",
+            json={"name": "Tuer", "mode": "line", "classes": [], "points": [[0.2, 0.5], [0.8, 0.5], [0.5, 0.8]]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_line_mode_with_one_point_is_rejected(self):
+        response = CLIENT.post(
+            f"/cameras/{self.camera_id}/detection/zones",
+            json={"name": "Tuer", "mode": "line", "classes": [], "points": [[0.2, 0.5]]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_reset_count_route_zeroes_an_existing_zones_counts(self):
+        create_response = CLIENT.post(
+            f"/cameras/{self.camera_id}/detection/zones",
+            json={"name": "Tuer", "mode": "line", "classes": [], "points": [[0.2, 0.5], [0.8, 0.5]]},
+        )
+        zone_id = create_response.json()["zone"]["id"]
+        database.increment_zone_crossing_count(main.SETTINGS.database_path, zone_id, "in")
+        database.increment_zone_crossing_count(main.SETTINGS.database_path, zone_id, "out")
+
+        response = CLIENT.post(f"/cameras/{self.camera_id}/detection/zones/{zone_id}/reset-count")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["zone"]["crossing_in"], 0)
+        self.assertEqual(data["zone"]["crossing_out"], 0)
+
+    def test_reset_count_route_requires_admin(self):
+        database.create_user(main.SETTINGS.database_path, username="viewer1", password="viewerpass123", role="viewer")
+        create_response = CLIENT.post(
+            f"/cameras/{self.camera_id}/detection/zones",
+            json={"name": "Tuer", "mode": "line", "classes": [], "points": [[0.2, 0.5], [0.8, 0.5]]},
+        )
+        zone_id = create_response.json()["zone"]["id"]
+        CLIENT.post("/logout")
+        CLIENT.post("/login", data={"username": "viewer1", "password": "viewerpass123"})
+        try:
+            response = CLIENT.post(f"/cameras/{self.camera_id}/detection/zones/{zone_id}/reset-count")
+            self.assertEqual(response.status_code, 403)
+        finally:
+            CLIENT.post("/logout")
+            _login()
+
+
+class BirdseyePlaybackRouteTests(unittest.TestCase):
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_a = database.create_camera(
+            main.SETTINGS.database_path, name="Front", host="203.0.113.10",
+            onvif_port=8000, http_port=80, username="admin", password="secret",
+        )
+        self.camera_b = database.create_camera(
+            main.SETTINGS.database_path, name="Back", host="203.0.113.11",
+            onvif_port=8000, http_port=80, username="admin", password="secret",
+        )
+        database.set_birdseye_camera_ids(main.SETTINGS.database_path, [self.camera_a, self.camera_b])
+
+    def test_playback_page_returns_200_and_lists_selected_cameras(self):
+        response = CLIENT.get("/birdseye/playback")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Front", response.text)
+        self.assertIn("Back", response.text)
+
+    def test_non_admin_only_sees_cameras_they_have_access_to(self):
+        user_id = database.create_user(main.SETTINGS.database_path, username="viewer1", password="viewerpass123", role="viewer")
+        database.set_user_camera_access(main.SETTINGS.database_path, user_id, [self.camera_a])
+        CLIENT.post("/logout")
+        CLIENT.post("/login", data={"username": "viewer1", "password": "viewerpass123"})
+        try:
+            response = CLIENT.get("/birdseye/playback")
+            self.assertEqual(response.status_code, 200)
+            # Not a plain "Back" substring check - the page's own "Back to live" link would
+            # give a false positive there. Checking the camera tile's own name attribute instead.
+            self.assertIn('data-camera-name="Front"', response.text)
+            self.assertNotIn('data-camera-name="Back"', response.text)
+        finally:
+            CLIENT.post("/logout")
+            _login()
+
+    def test_camera_selection_is_capped_at_max_playback_cameras(self):
+        from app.tbc.routers.birdseye import MAX_PLAYBACK_CAMERAS
+
+        extra_camera_ids = [self.camera_a, self.camera_b]
+        for index in range(MAX_PLAYBACK_CAMERAS + 3):
+            camera_id = database.create_camera(
+                main.SETTINGS.database_path, name=f"Extra{index}", host=f"203.0.114.{index}",
+                onvif_port=8000, http_port=80, username="admin", password="secret",
+            )
+            extra_camera_ids.append(camera_id)
+        database.set_birdseye_camera_ids(main.SETTINGS.database_path, extra_camera_ids)
+
+        response = CLIENT.get("/birdseye/playback")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.text.count('data-sync-player'), MAX_PLAYBACK_CAMERAS)
+
 if __name__ == "__main__":
     unittest.main()

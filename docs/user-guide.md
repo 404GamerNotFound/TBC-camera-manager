@@ -85,6 +85,13 @@ and re-encodes every included camera instead of passing codecs through unchanged
 does, it is off by default and should only include the cameras actually needed on the target
 display. Full-screen mode works the same way as Live view.
 
+**Playback** (reached via the "Playback" button on the Birdseye page) scrubs recordings from the
+same selected cameras (up to 9) together on one shared timeline for a chosen day, instead of the
+live mosaic - useful for reviewing what happened across several cameras at the same moment. Unlike
+the live mosaic, each tile is its own independently playable recording; synchronization is
+best-effort (periodically corrected while playing) rather than frame-accurate, since browsers
+cannot genlock independently loaded video files.
+
 ## Recording and archives
 
 TBC supports two local recording modes:
@@ -123,6 +130,12 @@ Zones refine which detections count:
 - **Inclusion zone:** a selected class only counts inside the polygon.
 - **Exclusion zone:** detections inside the polygon are ignored.
 - **Loitering zone:** triggers after a class remains inside continuously for the configured time.
+- **Counting line:** a two-point line (drawn with its own "Draw counting line" tool instead of
+  the polygon tool) tallies how many tracked people/vehicles/animals cross it in each direction -
+  useful for entrances, driveways, or aisles. The direction arrow shown while drawing marks which
+  side counts as "in". Running totals are shown next to the zone and can be reset independently
+  of deleting the zone; each crossing also briefly triggers its own recording/notification key
+  (`ai_person_line_in`, `ai_vehicle_line_out`, etc.), the same way loitering zones do.
 
 Without zones, the full image is evaluated. Local-AI detections can be selected as recording
 triggers and are also available to MQTT/Home Assistant and the external API.

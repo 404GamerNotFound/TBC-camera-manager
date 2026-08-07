@@ -66,6 +66,18 @@ AUDIO_KEY_LABELS: dict[str, str] = {
     "ai_smoke_alarm": "Rauchmelder (lokale KI)",
 }
 
+# Momentary trigger keys for a "line" zone crossing, one pair per class/direction. Separate from
+# LOITERING_KEY_LABELS above (a continuous "still present" state) - these fire briefly once per
+# crossing, like a doorbell press rather than a held switch.
+LINE_CROSSING_KEY_LABELS: dict[str, str] = {
+    "ai_person_line_in": "Person kreuzt Linie rein (lokale KI)",
+    "ai_person_line_out": "Person kreuzt Linie raus (lokale KI)",
+    "ai_vehicle_line_in": "Fahrzeug kreuzt Linie rein (lokale KI)",
+    "ai_vehicle_line_out": "Fahrzeug kreuzt Linie raus (lokale KI)",
+    "ai_animal_line_in": "Tier kreuzt Linie rein (lokale KI)",
+    "ai_animal_line_out": "Tier kreuzt Linie raus (lokale KI)",
+}
+
 
 def canonical_detection_key(label: str) -> str | None:
     return COCO_LABEL_TO_DETECTION_KEY.get(label.strip().lower())
@@ -77,3 +89,9 @@ def canonical_audio_detection_key(label: str) -> str | None:
 
 def loitering_key_for(detection_key: str) -> str | None:
     return f"{detection_key}_loitering" if detection_key in DETECTION_KEY_LABELS else None
+
+
+def line_crossing_key_for(detection_key: str, direction: str) -> str | None:
+    if direction not in ("in", "out") or detection_key not in DETECTION_KEY_LABELS:
+        return None
+    return f"{detection_key}_line_{direction}"
