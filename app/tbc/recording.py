@@ -37,6 +37,7 @@ class RecordingJob:
     snapshot_enabled: bool
     storage_target: dict[str, Any]
     bbox: tuple[float, float, float, float] | None = None
+    sub_label: str | None = None
 
 
 @dataclass
@@ -115,6 +116,7 @@ class RecordingManager:
                 min_until=now + timedelta(seconds=duration_seconds),
                 active_until=now + timedelta(seconds=post_seconds),
             )
+            sub_label = _sub_label_for_active_event(detections, detection_key)
             recording_id = database.create_recording(
                 self.database_path,
                 camera_id=camera_id,
@@ -123,6 +125,7 @@ class RecordingManager:
                 event_label=event_label,
                 storage_kind=str(storage_target["kind"]),
                 started_at=now.isoformat(timespec="seconds"),
+                sub_label=sub_label,
             )
             job = RecordingJob(
                 recording_id=recording_id,
@@ -137,6 +140,7 @@ class RecordingManager:
                 snapshot_enabled=bool(int(camera.get("snapshot_enabled") or 0)),
                 storage_target=storage_target,
                 bbox=_bbox_for_active_event(detections, detection_key),
+                sub_label=sub_label,
             )
             self._active[active_key] = active
             self._last_started[active_key] = now
@@ -181,6 +185,8 @@ class RecordingManager:
             recording = database.get_recording(self.database_path, job.recording_id)
             if result.get("snapshot_path"):
                 await asyncio.to_thread(_run_snapshot_recognition, self.database_path, job, result["snapshot_path"])
+                await asyncio.to_thread(_run_snapshot_color_analysis, self.database_path, job, result["snapshot_path"])
+                await asyncio.to_thread(_run_snapshot_embedding, self.database_path, job, result["snapshot_path"])
             notify_event(
                 self.database_path,
                 event_type="recording_finished",
@@ -928,6 +934,30 @@ def _bbox_for_active_event(detections: list[dict[str, Any]], detection_key: str)
     return None
 
 
+def _sub_label_for_active_event(detections: list[dict[str, Any]], detection_key: str) -> str | None:
+    """Extracts the raw local-AI class label (e.g. "truck", "cat") for the detection that
+    triggered this event, if any - same lookup as _bbox_for_active_event above, just reading
+    "sub_label" out of the same raw_value payload instead of "box"."""
+    for detection in detections:
+        raw_key = str(detection.get("key") or "")
+        base_key = raw_key.split(":", 1)[-1]
+        if base_key != detection_key or not detection.get("active"):
+            continue
+        if detection.get("source") != "local_ai":
+            continue
+        raw_value = detection.get("raw_value")
+        if not raw_value:
+            continue
+        try:
+            payload = json.loads(raw_value)
+        except (TypeError, ValueError):
+            continue
+        sub_label = payload.get("sub_label")
+        if isinstance(sub_label, str) and sub_label:
+            return sub_label
+    return None
+
+
 def _first_storage_target(database_path: str) -> dict[str, Any] | None:
     targets = database.list_storage_targets(database_path)
     return targets[0] if targets else None
@@ -965,6 +995,65 @@ def _run_snapshot_recognition(database_path: str, job: RecordingJob, snapshot_pa
         )
     except Exception:
         LOGGER.exception("Snapshot-Erkennung für Aufnahme %s fehlgeschlagen", job.recording_id)
+
+
+def _run_snapshot_color_analysis(database_path: str, job: RecordingJob, snapshot_path: str) -> None:
+    """Determines the dominant color of a just-finished vehicle recording's snapshot crop.
+
+    Only runs for the local-AI vehicle bucket, which is the only case a box (job.bbox) is
+    available to crop to - same best-effort try/except discipline as _run_snapshot_recognition
+    above, since this must never break the recording job itself.
+    """
+    if job.detection_key != "ai_vehicle" or job.bbox is None:
+        return
+    try:
+        import cv2
+
+        from .detection.color import dominant_color
+        from .detection.recognition import crop_with_padding
+
+        image = cv2.imread(snapshot_path)
+        if image is None:
+            return
+        crop = crop_with_padding(image, job.bbox)
+        color = dominant_color(crop)
+        if color:
+            database.update_recording_sub_color(database_path, job.recording_id, color)
+    except Exception:
+        LOGGER.exception("Farberkennung für Aufnahme %s fehlgeschlagen", job.recording_id)
+
+
+def _run_snapshot_embedding(database_path: str, job: RecordingJob, snapshot_path: str) -> None:
+    """Computes and stores the CLIP image embedding for a just-finished recording's snapshot,
+    if semantic search is enabled - same best-effort try/except discipline as the recognition
+    and color-analysis hooks above, must never break the recording job itself.
+
+    New recordings are embedded here as they complete; embedding_backfill_supervisor (see
+    detection/clip_backend.py) separately catches up on recordings that predate this hook or
+    predate semantic search being turned on at all.
+    """
+    try:
+        settings = database.get_search_settings(database_path)
+        if not settings.get("enabled"):
+            return
+
+        import cv2
+
+        from .detection.clip_backend import get_clip_encoders
+
+        image = cv2.imread(snapshot_path)
+        if image is None:
+            return
+        model_name = str(settings["model_name"])
+        app_settings = load_settings()
+        encoders = get_clip_encoders(Path(app_settings.detection_models_path), model_name)
+        if encoders is None:
+            return
+        image_encoder, _ = encoders
+        embedding = image_encoder.encode_image(image)
+        database.upsert_recording_embedding(database_path, job.recording_id, model_name, embedding.tolist())
+    except Exception:
+        LOGGER.exception("Embedding-Berechnung für Aufnahme %s fehlgeschlagen", job.recording_id)
 
 
 def _record_and_publish_event(

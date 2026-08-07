@@ -35,12 +35,38 @@
     <span data-i18n="recordings.to">To</span>
     <input name="date_to" type="date" value="{{ filters.date_to }}">
   </label>
+  <label>
+    <span data-i18n="recordings.type">Type</span>
+    <select name="sub_label">
+      <option value="" data-i18n="recordings.all">All</option>
+      {% for value in sub_labels %}
+      <option value="{{ value }}" {% if filters.sub_label == value %}selected{% endif %}>{{ value }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    <span data-i18n="recordings.color">Color</span>
+    <select name="sub_color">
+      <option value="" data-i18n="recordings.all">All</option>
+      {% for value in sub_colors %}
+      <option value="{{ value }}" {% if filters.sub_color == value %}selected{% endif %}>{{ value }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <label class="span-2">
     <span data-i18n="recordings.search">Search</span>
     <input name="search" type="search" value="{{ filters.search }}" placeholder="Event label, message, camera name…" data-i18n-placeholder="recordings.event_label_message_camera_name">
   </label>
+  <label class="check-row">
+    <input type="checkbox" name="smart_search" value="1" {% if filters.smart_search %}checked{% endif %} {% if not search_enabled %}disabled{% endif %}>
+    <span data-i18n="recordings.smart_search">Semantic search</span>
+  </label>
   <button class="primary-button" type="submit" data-i18n="recordings.filter">Filter</button>
 </form>
+
+{% if smart_search_unavailable %}
+<p class="hint-text" data-i18n="recordings.smart_search_unavailable">Semantic search is not enabled.</p>
+{% endif %}
 
 {% if recordings %}
 <p class="hint-text" data-i18n="recordings.count_page" data-i18n-params='{{ {"total": total, "page": page, "total_pages": total_pages} | tojson }}'>{{ total }} clips found · page {{ page }} of {{ total_pages }}</p>
@@ -64,6 +90,12 @@
         <div>
           <h2{% if clip.detection_key == 'continuous' %} data-i18n="timeline.continuous"{% endif %}>{{ 'Continuous' if clip.detection_key == 'continuous' else clip.event_label }}</h2>
           <p>{{ clip.camera_name }} · {{ clip.started_at | format_timestamp(ui_preferences) }}</p>
+          {% if clip.sub_label or clip.sub_color %}
+          <p class="clip-attributes">{{ [clip.sub_label, clip.sub_color] | select | join(' · ') }}</p>
+          {% endif %}
+          {% if clip.similarity is defined %}
+          <p class="clip-attributes" data-i18n="recordings.similarity" data-i18n-params='{{ {"score": (clip.similarity * 100) | round | int} | tojson }}'>Match: {{ (clip.similarity * 100) | round | int }}%</p>
+          {% endif %}
         </div>
         <span class="status-pill status-{{ 'active' if clip.status == 'ready' else 'warning' }}">{{ clip.status }}</span>
         {% if clip.locked %}
@@ -102,7 +134,10 @@
 {% if filters.detection_key %}{% set _ = qs_parts.append('detection_key=' ~ (filters.detection_key | urlencode)) %}{% endif %}
 {% if filters.date_from %}{% set _ = qs_parts.append('date_from=' ~ filters.date_from) %}{% endif %}
 {% if filters.date_to %}{% set _ = qs_parts.append('date_to=' ~ filters.date_to) %}{% endif %}
+{% if filters.sub_label %}{% set _ = qs_parts.append('sub_label=' ~ (filters.sub_label | urlencode)) %}{% endif %}
+{% if filters.sub_color %}{% set _ = qs_parts.append('sub_color=' ~ (filters.sub_color | urlencode)) %}{% endif %}
 {% if filters.search %}{% set _ = qs_parts.append('search=' ~ (filters.search | urlencode)) %}{% endif %}
+{% if filters.smart_search %}{% set _ = qs_parts.append('smart_search=1') %}{% endif %}
 <div class="button-row timeline-day-nav">
   <a class="secondary-button{% if page <= 1 %} is-disabled{% endif %}" href="{{ ingress_prefix }}/recordings?{{ (qs_parts + ['page=' ~ (page - 1)]) | join('&') }}" data-i18n="recordings.previous_page">‹ Previous page</a>
   <span data-i18n="recordings.page_indicator" data-i18n-params='{{ {"page": page, "total_pages": total_pages} | tojson }}'>Page {{ page }} / {{ total_pages }}</span>

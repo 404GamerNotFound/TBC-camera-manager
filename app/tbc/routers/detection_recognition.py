@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from .. import automation, database
 from ..detection import factory as detection_factory
+from ..detection.clip_backend import clip_models_ready
 from ..detection.recognition import (
     get_face_recognizer,
 )
@@ -27,6 +28,7 @@ from ..main import (
     RECOGNITION_EVENTS_PAGE_SIZE,
     RECOGNITION_MODELS_DIR,
     SETTINGS,
+    _parse_optional_int,
     _pop_flash,
     _redirect,
     _require_admin,
@@ -45,6 +47,8 @@ async def detection_overview_page(request: Request):
     model_ready = DETECTION_MODEL_PATH.exists() and DETECTION_MODEL_PATH.stat().st_size > 0
     coral_model_ready = DETECTION_CORAL_MODEL_PATH.exists() and DETECTION_CORAL_MODEL_PATH.stat().st_size > 0
     hailo_model_ready = DETECTION_HAILO_MODEL_PATH.exists() and DETECTION_HAILO_MODEL_PATH.stat().st_size > 0
+    search_settings = database.get_search_settings(SETTINGS.database_path)
+    search_model_name = str(search_settings["model_name"])
     return templates.TemplateResponse(
         request,
         "detection.html",
@@ -65,6 +69,11 @@ async def detection_overview_page(request: Request):
             "hailo_model_path": str(DETECTION_HAILO_MODEL_PATH),
             "default_sample_fps": SETTINGS.detection_default_sample_fps,
             "default_confidence_threshold": SETTINGS.detection_default_confidence_threshold,
+            "search_settings": search_settings,
+            "search_model_ready": clip_models_ready(RECOGNITION_MODELS_DIR, search_model_name),
+            "search_model_path": str(RECOGNITION_MODELS_DIR / "clip" / search_model_name),
+            "search_embedded_count": database.count_recording_embeddings(SETTINGS.database_path, search_model_name),
+            "search_missing_count": database.count_recordings_missing_embedding(SETTINGS.database_path, search_model_name),
             "cameras": database.list_enabled_camera_detection_settings(SETTINGS.database_path),
             "flash": _pop_flash(request),
         },
@@ -73,7 +82,7 @@ async def detection_overview_page(request: Request):
 @router.get("/recognition", response_class=HTMLResponse)
 async def recognition_page(
     request: Request,
-    camera_id: int | None = Query(None),
+    camera_id: str | None = Query(None),
     kind: str | None = Query(None),
     identity: str | None = Query(None),
     date_from: str | None = Query(None),
@@ -83,6 +92,7 @@ async def recognition_page(
     guard = _require_admin(request)
     if guard:
         return guard
+    camera_id = _parse_optional_int(camera_id)
     matched_face_id, matched_plate_id, unknown_only = automation.parse_identity_filter(identity)
     common_filters = {
         "camera_id": camera_id,
@@ -168,6 +178,23 @@ async def update_recognition_settings_route(
     )
     _set_flash(request, "recognition.settings_saved")
     return _redirect("/recognition")
+
+@router.post("/search/settings")
+async def update_search_settings_route(
+    request: Request,
+    enabled: str | None = Form(None),
+    model_name: str = Form(...),
+):
+    guard = _require_admin(request)
+    if guard:
+        return guard
+    database.update_search_settings(
+        SETTINGS.database_path,
+        enabled=bool(enabled),
+        model_name=model_name.strip() or "ViT-B-32__openai",
+    )
+    _set_flash(request, "search.settings_saved")
+    return _redirect("/detection")
 
 @router.post("/recognition/faces")
 async def create_known_face_route(request: Request, name: str = Form(...), photo: UploadFile = File(...)):

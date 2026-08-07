@@ -49,7 +49,11 @@ class ActiveObjectTracker:
             detection = self._last_detection.get(key) if active else None
             raw_value = None
             if detection is not None:
-                payload: dict[str, Any] = {"confidence": round(detection.confidence, 3), "box": list(detection.box)}
+                payload: dict[str, Any] = {
+                    "confidence": round(detection.confidence, 3),
+                    "box": list(detection.box),
+                    "sub_label": detection.label,
+                }
                 track_id = getattr(detection, "track_id", None)
                 if track_id is not None:
                     payload["track_id"] = track_id

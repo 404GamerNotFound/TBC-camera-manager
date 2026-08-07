@@ -68,6 +68,7 @@ from .detection import factory as detection_factory
 from .detection.classes import AUDIO_KEY_LABELS, DETECTION_KEY_LABELS, LOITERING_KEY_LABELS
 from .detection import audio_factory as audio_detection_factory
 from .detection.audio_supervisor import audio_detection_supervisor
+from .detection.clip_backend import embedding_backfill_supervisor
 from .detection.model_provisioning import ensure_audio_model, ensure_default_coral_model, ensure_default_model, ensure_hailo_model
 from .detection.plugin_models import resolve_plugin_model
 from .detection.recognition import (
@@ -486,6 +487,10 @@ async def _audio_detection_supervisor_loop() -> None:
     )
 
 
+async def _embedding_backfill_loop() -> None:
+    await embedding_backfill_supervisor(SETTINGS.database_path, RECOGNITION_MODELS_DIR)
+
+
 def _start_go2rtc() -> None:
     try:
         GO2RTC_MANAGER.start()
@@ -584,6 +589,7 @@ async def _lifespan(_app: FastAPI):
         )
     asyncio.create_task(_detection_supervisor_loop())
     asyncio.create_task(_audio_detection_supervisor_loop())
+    asyncio.create_task(_embedding_backfill_loop())
     if database.get_live_wall_settings(SETTINGS.database_path).get("webrtc_enabled"):
         asyncio.create_task(asyncio.to_thread(_start_go2rtc))
     if database.get_homekit_settings(SETTINGS.database_path).get("enabled"):
@@ -2300,6 +2306,26 @@ def _parse_date(value: str | None, fallback: date) -> date:
         return date.fromisoformat(value)
     except ValueError:
         return fallback
+
+
+def _parse_optional_int(value: str | None) -> int | None:
+    """Coerces a query param to int, treating an empty string as absent.
+
+    A `<select name="camera_id">` "All cameras" option is typically `<option value="">`, which
+    browsers submit as `camera_id=` (present but empty) rather than omitting the param - plain
+    `int | None = Query(None)` typing rejects that with a 422 instead of falling back to None, so
+    route handlers with such a filter take `camera_id: str | None = Query(None)` and convert it
+    through this helper instead.
+    """
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def _safe_header_filename(value: str) -> str:

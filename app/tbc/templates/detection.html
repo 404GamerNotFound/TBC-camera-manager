@@ -78,6 +78,36 @@
 
 <section class="table-section">
   <div class="section-title">
+    <h2 data-i18n="search.title">Semantic search (AI)</h2>
+  </div>
+  <p class="hint-text" data-i18n="search.intro">
+    Finds recordings by free text (e.g. "silver van in the driveway") instead of only camera/event/date,
+    using a CLIP image+text model. Off by default; downloads on first use (~600 MB for the default
+    model) and existing recordings are backfilled gradually in the background once enabled.
+  </p>
+  <form class="editor-form" method="post" action="{{ ingress_prefix }}/search/settings">
+    <div class="form-grid">
+      <label class="check-row"><input name="enabled" type="checkbox" {% if search_settings.enabled %}checked{% endif %}><span data-i18n="search.enable">Enable semantic search</span></label>
+      <label><span data-i18n="search.model_name">Model name</span><input name="model_name" value="{{ search_settings.model_name }}" placeholder="ViT-B-32__openai"></label>
+    </div>
+    <div class="form-actions"><button class="primary-button" type="submit" data-i18n="api_access.save">Save</button></div>
+  </form>
+  <div class="quiet-box" data-i18n="{{ 'search.model_ready' if search_model_ready else 'search.model_missing' }}" data-i18n-params='{{ {"path": search_model_path} | tojson }}'>
+    {% if search_model_ready %}
+    The CLIP model is ready at <code>{{ search_model_path }}</code>.
+    {% else %}
+    The CLIP model has not been downloaded yet (<code>{{ search_model_path }}</code>). It downloads automatically once semantic search is enabled.
+    {% endif %}
+  </div>
+  {% if search_settings.enabled %}
+  <p class="hint-text" data-i18n="search.backfill_progress" data-i18n-params='{{ {"done": search_embedded_count, "missing": search_missing_count} | tojson }}'>
+    {{ search_embedded_count }} recordings embedded so far, {{ search_missing_count }} still pending in the background.
+  </p>
+  {% endif %}
+</section>
+
+<section class="table-section">
+  <div class="section-title">
     <h2 data-i18n="detection.cameras_with_ai">Cameras with local AI detection</h2>
     <span>{{ cameras | length }}</span>
   </div>

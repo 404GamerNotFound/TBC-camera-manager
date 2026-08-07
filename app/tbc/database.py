@@ -544,6 +544,21 @@ CREATE TABLE IF NOT EXISTS recognition_events (
     FOREIGN KEY(matched_plate_id) REFERENCES known_plates(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS search_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled INTEGER NOT NULL DEFAULT 0,
+    model_name TEXT NOT NULL DEFAULT 'ViT-B-32__openai',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS recording_embeddings (
+    recording_id INTEGER PRIMARY KEY,
+    model_name TEXT NOT NULL,
+    embedding TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(recording_id) REFERENCES recordings(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS automation_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -672,6 +687,8 @@ MIGRATIONS: tuple[str, ...] = (
     "ALTER TABLE storage_targets ADD COLUMN webdav_url TEXT",
     "ALTER TABLE storage_targets ADD COLUMN webdav_username TEXT",
     "ALTER TABLE storage_targets ADD COLUMN webdav_password TEXT",
+    "ALTER TABLE recordings ADD COLUMN sub_label TEXT",
+    "ALTER TABLE recordings ADD COLUMN sub_color TEXT",
 )
 
 
@@ -2214,18 +2231,24 @@ def create_recording(
     event_label: str,
     storage_kind: str,
     started_at: str,
+    sub_label: str | None = None,
 ) -> int:
     with connect(database_path) as db:
         cursor = db.execute(
             """
             INSERT INTO recordings (
-                camera_id, storage_id, detection_key, event_label, storage_kind, status, started_at
+                camera_id, storage_id, detection_key, event_label, storage_kind, status, started_at, sub_label
             )
-            VALUES (?, ?, ?, ?, ?, 'recording', ?)
+            VALUES (?, ?, ?, ?, ?, 'recording', ?, ?)
             """,
-            (camera_id, storage_id, detection_key, event_label, storage_kind, started_at),
+            (camera_id, storage_id, detection_key, event_label, storage_kind, started_at, sub_label),
         )
         return int(cursor.lastrowid)
+
+
+def update_recording_sub_color(database_path: str, recording_id: int, sub_color: str) -> None:
+    with connect(database_path) as db:
+        db.execute("UPDATE recordings SET sub_color = ? WHERE id = ?", (sub_color, recording_id))
 
 
 def update_recording_finished(
@@ -2408,6 +2431,8 @@ def _recording_filters(
     search: str | None,
     user_id: int | None,
     role: str,
+    sub_label: str | None = None,
+    sub_color: str | None = None,
 ) -> tuple[str, str, list[Any]]:
     filters = []
     params: list[Any] = []
@@ -2425,6 +2450,12 @@ def _recording_filters(
     if date_to:
         filters.append("r.started_at <= ?")
         params.append(date_to)
+    if sub_label:
+        filters.append("r.sub_label = ?")
+        params.append(sub_label)
+    if sub_color:
+        filters.append("r.sub_color = ?")
+        params.append(sub_color)
     if search:
         escaped = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         needle = f"%{escaped}%"
@@ -2448,6 +2479,8 @@ def list_recordings(
     search: str | None = None,
     user_id: int | None = None,
     role: str = "admin",
+    sub_label: str | None = None,
+    sub_color: str | None = None,
     limit: int = 60,
     offset: int = 0,
 ) -> list[dict[str, Any]]:
@@ -2459,6 +2492,8 @@ def list_recordings(
         search=search,
         user_id=user_id,
         role=role,
+        sub_label=sub_label,
+        sub_color=sub_color,
     )
     sql = f"""
         SELECT r.*, c.name AS camera_name
@@ -2485,6 +2520,8 @@ def count_recordings(
     search: str | None = None,
     user_id: int | None = None,
     role: str = "admin",
+    sub_label: str | None = None,
+    sub_color: str | None = None,
 ) -> int:
     join_access, where, params = _recording_filters(
         camera_id=camera_id,
@@ -2494,6 +2531,8 @@ def count_recordings(
         search=search,
         user_id=user_id,
         role=role,
+        sub_label=sub_label,
+        sub_color=sub_color,
     )
     sql = f"""
         SELECT COUNT(*) AS total
@@ -2518,6 +2557,22 @@ def list_recording_event_keys(database_path: str) -> list[str]:
             "SELECT DISTINCT detection_key FROM recordings ORDER BY detection_key"
         ).fetchall()
     return [str(row["detection_key"]) for row in rows]
+
+
+def list_recording_sub_labels(database_path: str) -> list[str]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT DISTINCT sub_label FROM recordings WHERE sub_label IS NOT NULL ORDER BY sub_label"
+        ).fetchall()
+    return [str(row["sub_label"]) for row in rows]
+
+
+def list_recording_sub_colors(database_path: str) -> list[str]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            "SELECT DISTINCT sub_color FROM recordings WHERE sub_color IS NOT NULL ORDER BY sub_color"
+        ).fetchall()
+    return [str(row["sub_color"]) for row in rows]
 
 
 def list_recording_sizes_by_camera_event(database_path: str) -> list[dict[str, Any]]:
@@ -3650,6 +3705,135 @@ def update_recognition_settings(
             """,
             (1 if face_enabled else 0, face_mode, face_match_threshold, 1 if plate_enabled else 0, plate_mode),
         )
+
+
+def get_search_settings(database_path: str) -> dict[str, Any]:
+    with connect(database_path) as db:
+        row = db.execute("SELECT * FROM search_settings WHERE id = 1").fetchone()
+        if row is None:
+            db.execute("INSERT OR IGNORE INTO search_settings (id) VALUES (1)")
+            row = db.execute("SELECT * FROM search_settings WHERE id = 1").fetchone()
+    return dict(row)
+
+
+def update_search_settings(database_path: str, *, enabled: bool, model_name: str) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO search_settings (id, enabled, model_name)
+            VALUES (1, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                enabled = excluded.enabled,
+                model_name = excluded.model_name,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (1 if enabled else 0, model_name),
+        )
+
+
+def upsert_recording_embedding(
+    database_path: str, recording_id: int, model_name: str, embedding: list[float]
+) -> None:
+    with connect(database_path) as db:
+        db.execute(
+            """
+            INSERT INTO recording_embeddings (recording_id, model_name, embedding)
+            VALUES (?, ?, ?)
+            ON CONFLICT(recording_id) DO UPDATE SET
+                model_name = excluded.model_name,
+                embedding = excluded.embedding,
+                created_at = CURRENT_TIMESTAMP
+            """,
+            (recording_id, model_name, json.dumps(embedding)),
+        )
+
+
+def list_recording_embeddings(
+    database_path: str,
+    *,
+    model_name: str,
+    camera_id: int | None = None,
+    detection_key: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    user_id: int | None = None,
+    role: str = "admin",
+) -> list[dict[str, Any]]:
+    """Embeddings for recordings matching the given filters, for ranking against a query
+    embedding (see detection.clip_backend.rank_by_similarity). Deliberately excludes the
+    free-text `search` filter recordings.py's other listing functions take - semantic search
+    ranking replaces that text match rather than combining with it.
+
+    user_id/role apply the same per-camera access restriction as _recording_filters, so a
+    non-admin user can never rank/see a recording from a camera they don't have access to.
+    """
+    filters = ["e.model_name = ?"]
+    params: list[Any] = [model_name]
+    if camera_id:
+        filters.append("r.camera_id = ?")
+        params.append(camera_id)
+    if detection_key:
+        filters.append("r.detection_key = ?")
+        params.append(detection_key)
+    if date_from:
+        filters.append("r.started_at >= ?")
+        params.append(date_from)
+    if date_to:
+        filters.append("r.started_at <= ?")
+        params.append(date_to)
+    join_access = ""
+    if role != "admin":
+        join_access = "JOIN user_camera_access a ON a.camera_id = r.camera_id AND a.user_id = ?"
+        params.insert(0, user_id)
+    where = f"WHERE {' AND '.join(filters)}"
+    sql = f"""
+        SELECT e.recording_id AS recording_id, e.embedding AS embedding
+          FROM recording_embeddings e
+          JOIN recordings r ON r.id = e.recording_id
+          {join_access}
+          {where}
+    """
+    with connect(database_path) as db:
+        rows = db.execute(sql, params).fetchall()
+    return [{"recording_id": int(row["recording_id"]), "embedding": json.loads(row["embedding"])} for row in rows]
+
+
+def list_recordings_missing_embedding(database_path: str, model_name: str, limit: int = 5) -> list[dict[str, Any]]:
+    with connect(database_path) as db:
+        rows = db.execute(
+            """
+            SELECT r.id AS id, r.snapshot_path AS snapshot_path
+              FROM recordings r
+              LEFT JOIN recording_embeddings e ON e.recording_id = r.id AND e.model_name = ?
+             WHERE r.status = 'ready' AND r.snapshot_path IS NOT NULL AND e.recording_id IS NULL
+             ORDER BY r.started_at DESC
+             LIMIT ?
+            """,
+            (model_name, limit),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def count_recordings_missing_embedding(database_path: str, model_name: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            """
+            SELECT COUNT(*) AS total
+              FROM recordings r
+              LEFT JOIN recording_embeddings e ON e.recording_id = r.id AND e.model_name = ?
+             WHERE r.status = 'ready' AND r.snapshot_path IS NOT NULL AND e.recording_id IS NULL
+            """,
+            (model_name,),
+        ).fetchone()
+    return int(row["total"]) if row else 0
+
+
+def count_recording_embeddings(database_path: str, model_name: str) -> int:
+    with connect(database_path) as db:
+        row = db.execute(
+            "SELECT COUNT(*) AS total FROM recording_embeddings WHERE model_name = ?", (model_name,)
+        ).fetchone()
+    return int(row["total"]) if row else 0
 
 
 def list_known_faces(database_path: str) -> list[dict[str, Any]]:

@@ -93,9 +93,12 @@ TBC supports two local recording modes:
 - **Event recording** writes clips for selected camera or local-AI triggers, with configurable
   minimum duration, pre-roll, post-roll, cooldown, and optional snapshot.
 
-The **Clips** page filters recordings by camera, event, date range, and text. Clips can be played,
-downloaded, locked, unlocked, or deleted. A locked recording is protected from manual deletion and
-retention cleanup.
+The **Clips** page filters recordings by camera, event, date range, and text. When local AI
+detection produced the event, clips also carry the specific vehicle/animal type it detected
+(e.g. "truck" or "cat" rather than just "vehicle") and, for vehicles, a best-effort dominant
+color read from the snapshot; both are filterable and shown on the clip card. Clips can be
+played, downloaded, locked, unlocked, or deleted. A locked recording is protected from manual
+deletion and retention cleanup.
 
 The **Timeline** combines continuous segments, event clips, and optional camera SD-card recordings
 for one camera and day. Zooming changes the time scale; selecting a segment starts playback near
@@ -133,6 +136,17 @@ higher CPU usage.
 Administrators can enroll known faces from a clear front-facing photo and maintain known license
 plates with labels. Recognition events record the camera, result, confidence, and time. Models are
 downloaded into the detection-model volume on first use.
+
+## Semantic search
+
+Disabled by default. When enabled (**Admin → AI detection**), TBC computes a CLIP image embedding
+for each recording's snapshot and lets the **Clips** page rank recordings by free-text similarity
+("silver van in the driveway") instead of only literal camera/event/date filters - check the
+"Semantic search" box next to the search field to switch a query from literal text matching to
+similarity ranking. The image/text model (~600 MB for the default `ViT-B-32__openai`) downloads on
+first use into the detection-model volume, and an admin-configurable model name lets you swap in a
+smaller or larger CLIP derivative. Existing recordings are backfilled with embeddings gradually in
+the background after enabling; the settings page shows how many are still pending.
 
 ## Camera controls and firmware
 

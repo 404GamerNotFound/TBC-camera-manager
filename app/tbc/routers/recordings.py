@@ -6,6 +6,7 @@ despite looking circular.
 """
 from __future__ import annotations
 
+import asyncio
 import math
 from datetime import date, timedelta
 from pathlib import Path
@@ -20,6 +21,7 @@ from ..camera_modules import (
     get_camera_module,
 )
 from ..camera_modules.registry import UnknownCameraModuleError
+from ..detection.clip_backend import get_clip_encoders, rank_by_similarity
 from ..recording import delete_recording_files, presigned_url, webdav_download
 from fastapi import APIRouter
 
@@ -30,6 +32,7 @@ from ..main import (
     _camera_supports,
     _current_user,
     _parse_date,
+    _parse_optional_int,
     _pop_flash,
     _redirect,
     _require_admin,
@@ -44,20 +47,59 @@ from ..main import (
 
 router = APIRouter()
 
+# Brute-force cosine ranking is cheap at self-hosted recording volumes, but still needs a cap so
+# a huge archive can't blow up the response - ranked results are paginated the same way as the
+# normal listing, just sliced out of this capped, pre-sorted list instead of a SQL LIMIT/OFFSET.
+SMART_SEARCH_MAX_RESULTS = 200
+
+
+def _smart_search_results(
+    *, database_path: str, user: dict[str, Any], query: str, common_filters: dict[str, Any]
+) -> list[dict[str, Any]] | None:
+    """Returns recordings ranked by CLIP similarity to `query`, or None if semantic search
+    isn't available right now (feature disabled, or the model isn't ready yet) - callers should
+    fall back to the normal listing in that case."""
+    settings = database.get_search_settings(database_path)
+    if not settings.get("enabled"):
+        return None
+    encoders = get_clip_encoders(Path(SETTINGS.detection_models_path), str(settings["model_name"]))
+    if encoders is None:
+        return None
+    _, text_encoder = encoders
+    query_embedding = text_encoder.encode_text(query)
+    rows = database.list_recording_embeddings(
+        database_path,
+        model_name=str(settings["model_name"]),
+        camera_id=common_filters["camera_id"],
+        detection_key=common_filters["detection_key"],
+        date_from=common_filters["date_from"],
+        date_to=common_filters["date_to"],
+        user_id=int(user["id"]),
+        role=str(user["role"]),
+    )
+    return [
+        {"recording_id": recording_id, "similarity": score}
+        for recording_id, score in rank_by_similarity(query_embedding, rows, limit=SMART_SEARCH_MAX_RESULTS)
+    ]
+
 
 @router.get("/recordings", response_class=HTMLResponse)
 async def recordings(
     request: Request,
-    camera_id: int | None = Query(None),
+    camera_id: str | None = Query(None),
     detection_key: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     search: str | None = Query(None),
+    sub_label: str | None = Query(None),
+    sub_color: str | None = Query(None),
+    smart_search: bool = Query(False),
     page: int = Query(1),
 ):
     guard = _require_login(request)
     if guard:
         return guard
+    camera_id = _parse_optional_int(camera_id)
     user = _current_user(request)
     current_page = max(1, page)
     common_filters = {
@@ -66,18 +108,47 @@ async def recordings(
         "date_from": date_from or None,
         "date_to": date_to or None,
         "search": search or None,
+        "sub_label": sub_label or None,
+        "sub_color": sub_color or None,
         "user_id": int(user["id"]),
         "role": str(user["role"]),
     }
-    total = database.count_recordings(SETTINGS.database_path, **common_filters)
-    total_pages = max(1, math.ceil(total / RECORDINGS_PAGE_SIZE))
-    current_page = min(current_page, total_pages)
-    rows = database.list_recordings(
-        SETTINGS.database_path,
-        **common_filters,
-        limit=RECORDINGS_PAGE_SIZE,
-        offset=(current_page - 1) * RECORDINGS_PAGE_SIZE,
-    )
+
+    smart_search_unavailable = False
+    ranked: list[dict[str, Any]] | None = None
+    if smart_search and search:
+        ranked = await asyncio.to_thread(
+            _smart_search_results,
+            database_path=SETTINGS.database_path,
+            user=user,
+            query=search,
+            common_filters=common_filters,
+        )
+        smart_search_unavailable = ranked is None
+
+    if ranked is not None:
+        total = len(ranked)
+        total_pages = max(1, math.ceil(total / RECORDINGS_PAGE_SIZE))
+        current_page = min(current_page, total_pages)
+        page_slice = ranked[(current_page - 1) * RECORDINGS_PAGE_SIZE : current_page * RECORDINGS_PAGE_SIZE]
+        similarity_by_id = {item["recording_id"]: item["similarity"] for item in page_slice}
+        rows = []
+        for item in page_slice:
+            row = database.get_recording(SETTINGS.database_path, item["recording_id"])
+            if row is not None:
+                row = {**row, "similarity": similarity_by_id[item["recording_id"]]}
+                rows.append(row)
+    else:
+        total = database.count_recordings(SETTINGS.database_path, **common_filters)
+        total_pages = max(1, math.ceil(total / RECORDINGS_PAGE_SIZE))
+        current_page = min(current_page, total_pages)
+        rows = database.list_recordings(
+            SETTINGS.database_path,
+            **common_filters,
+            limit=RECORDINGS_PAGE_SIZE,
+            offset=(current_page - 1) * RECORDINGS_PAGE_SIZE,
+        )
+
     cameras_for_user = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
     return templates.TemplateResponse(
         request,
@@ -89,12 +160,19 @@ async def recordings(
             "recordings": rows,
             "cameras": cameras_for_user,
             "event_keys": database.list_recording_event_keys(SETTINGS.database_path),
+            "sub_labels": database.list_recording_sub_labels(SETTINGS.database_path),
+            "sub_colors": database.list_recording_sub_colors(SETTINGS.database_path),
+            "search_enabled": bool(database.get_search_settings(SETTINGS.database_path).get("enabled")),
+            "smart_search_unavailable": smart_search_unavailable,
             "filters": {
                 "camera_id": camera_id,
                 "detection_key": detection_key or "",
                 "date_from": date_from or "",
                 "date_to": date_to or "",
                 "search": search or "",
+                "sub_label": sub_label or "",
+                "sub_color": sub_color or "",
+                "smart_search": smart_search,
             },
             "total": total,
             "page": current_page,
@@ -107,12 +185,13 @@ async def recordings(
 @router.get("/timeline", response_class=HTMLResponse)
 async def timeline_view(
     request: Request,
-    camera_id: int | None = Query(None),
+    camera_id: str | None = Query(None),
     day: str | None = Query(None),
 ):
     guard = _require_login(request)
     if guard:
         return guard
+    camera_id = _parse_optional_int(camera_id)
     user = _current_user(request)
     cameras = database.list_cameras_for_user(SETTINGS.database_path, int(user["id"]), str(user["role"]))
     available_camera_ids = {int(camera["id"]) for camera in cameras}
@@ -228,7 +307,7 @@ async def activity_view(request: Request, day: str | None = Query(None)):
 @router.get("/sd-card", response_class=HTMLResponse)
 async def sd_card(
     request: Request,
-    camera_id: int | None = Query(None),
+    camera_id: str | None = Query(None),
     channel: int | None = Query(None),
     stream: str = Query("main"),
     date_from: str | None = Query(None),
@@ -237,6 +316,7 @@ async def sd_card(
     guard = _require_login(request)
     if guard:
         return guard
+    camera_id = _parse_optional_int(camera_id)
     user = _current_user(request)
     cameras = [
         camera

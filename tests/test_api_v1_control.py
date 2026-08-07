@@ -1675,5 +1675,125 @@ class InvalidSessionRecoveryTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303)
         self.assertEqual(response.headers["location"], "/cameras")
 
+
+class SmartSearchFallbackTests(unittest.TestCase):
+    """The /recordings "smart_search" checkbox must never crash or silently reach the network
+    (see clip_backend.get_clip_encoders' own model-download side effect) - it degrades to the
+    plain text-search listing whenever semantic search isn't enabled or its model isn't ready,
+    which this exercises through the full route rather than just the unit-level ranking helper.
+    """
+
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = _create_camera()
+        self.recording_id = database.create_recording(
+            main.SETTINGS.database_path,
+            camera_id=self.camera_id,
+            storage_id=1,
+            detection_key="ai_vehicle",
+            event_label="Fahrzeug erkannt",
+            storage_kind="local",
+            started_at="2000-06-01T12:00:00",
+        )
+
+    def test_falls_back_to_normal_listing_when_feature_disabled(self):
+        # "Fahrzeug" (not the smart-search-only "a red van" phrasing) so that the fallback's
+        # plain LIKE search - the behavior actually being verified here - still matches it.
+        response = CLIENT.get("/recordings", params={"search": "Fahrzeug", "smart_search": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("recordings.smart_search_unavailable", response.text)
+        self.assertIn("Fahrzeug erkannt", response.text)
+
+    def test_falls_back_to_normal_listing_when_model_not_ready(self):
+        database.update_search_settings(main.SETTINGS.database_path, enabled=True, model_name="ViT-B-32__openai")
+        with patch("app.tbc.routers.recordings.get_clip_encoders", return_value=None) as mock_get_encoders:
+            response = CLIENT.get("/recordings", params={"search": "Fahrzeug", "smart_search": "1"})
+        mock_get_encoders.assert_called_once()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("recordings.smart_search_unavailable", response.text)
+        self.assertIn("Fahrzeug erkannt", response.text)
+
+    def test_ranks_by_similarity_when_model_available(self):
+        other_id = database.create_recording(
+            main.SETTINGS.database_path,
+            camera_id=self.camera_id,
+            storage_id=1,
+            detection_key="ai_vehicle",
+            event_label="Anderes Fahrzeug",
+            storage_kind="local",
+            started_at="2000-06-01T13:00:00",
+        )
+        database.update_search_settings(main.SETTINGS.database_path, enabled=True, model_name="ViT-B-32__openai")
+        database.upsert_recording_embedding(main.SETTINGS.database_path, self.recording_id, "ViT-B-32__openai", [1.0, 0.0])
+        database.upsert_recording_embedding(main.SETTINGS.database_path, other_id, "ViT-B-32__openai", [0.0, 1.0])
+
+        fake_text_encoder = type("FakeTextEncoder", (), {"encode_text": staticmethod(lambda text: [1.0, 0.0])})()
+        with patch(
+            "app.tbc.routers.recordings.get_clip_encoders",
+            return_value=(None, fake_text_encoder),
+        ):
+            response = CLIENT.get("/recordings", params={"search": "a red van", "smart_search": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("recordings.smart_search_unavailable", response.text)
+        body = response.text
+        self.assertLess(body.index("Fahrzeug erkannt"), body.index("Anderes Fahrzeug"))
+
+
+class EmptyCameraIdFilterTests(unittest.TestCase):
+    """A "Camera: All" <select> submits camera_id=<empty string>, not an omitted param - every
+    page with such a dropdown must treat that the same as "no camera filter" (None) rather than
+    raise. Regression test for a 422 that used to reach the user as a raw JSON error page whenever
+    the filter form's Camera dropdown was left on its default "All" option (see _parse_optional_int
+    in app/tbc/main.py) - not a hypothetical edge case, it's the default value of the dropdown.
+    """
+
+    def setUp(self):
+        _reset_database()
+        _login()
+        self.camera_id = _create_camera()
+
+    def test_recordings_page_treats_empty_camera_id_as_no_filter(self):
+        response = CLIENT.get("/recordings", params={"camera_id": ""})
+        self.assertEqual(response.status_code, 200)
+
+    def test_timeline_page_treats_empty_camera_id_as_no_filter(self):
+        response = CLIENT.get("/timeline", params={"camera_id": ""})
+        self.assertEqual(response.status_code, 200)
+
+    def test_sd_card_page_treats_empty_camera_id_as_no_filter(self):
+        response = CLIENT.get("/sd-card", params={"camera_id": ""})
+        self.assertEqual(response.status_code, 200)
+
+    def test_recognition_page_treats_empty_camera_id_as_no_filter(self):
+        response = CLIENT.get("/recognition", params={"camera_id": ""})
+        self.assertEqual(response.status_code, 200)
+
+    def test_api_v1_recordings_treats_empty_camera_id_as_no_filter(self):
+        token = _create_token("empty-camera-id", can_control=False)
+        response = CLIENT.get("/api/v1/recordings", params={"camera_id": ""}, headers=_auth(token))
+        self.assertEqual(response.status_code, 200)
+
+    def test_recordings_page_still_filters_on_a_real_camera_id(self):
+        other_camera_id = database.create_camera(
+            main.SETTINGS.database_path, name="Other", host="203.0.113.6",
+            onvif_port=8000, http_port=80, username="admin", password="secret",
+        )
+        database.create_recording(
+            main.SETTINGS.database_path, camera_id=self.camera_id, storage_id=1,
+            detection_key="person", event_label="Front camera event", storage_kind="local",
+            started_at="2000-06-01T12:00:00",
+        )
+        database.create_recording(
+            main.SETTINGS.database_path, camera_id=other_camera_id, storage_id=1,
+            detection_key="person", event_label="Other camera event", storage_kind="local",
+            started_at="2000-06-01T12:00:00",
+        )
+        response = CLIENT.get("/recordings", params={"camera_id": str(self.camera_id)})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Front camera event", response.text)
+        self.assertNotIn("Other camera event", response.text)
+
 if __name__ == "__main__":
     unittest.main()

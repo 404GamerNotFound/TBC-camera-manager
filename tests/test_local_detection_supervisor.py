@@ -28,6 +28,15 @@ class ActiveObjectTrackerTests(unittest.TestCase):
         self.assertIsInstance(rows["ai_person"]["raw_value"], str)
         self.assertEqual(json.loads(rows["ai_person"]["raw_value"])["confidence"], 0.87)
 
+    def test_raw_value_carries_the_specific_class_label_as_sub_label(self):
+        tracker = ActiveObjectTracker(active_timeout_seconds=3.0)
+        tracker.update(
+            [Detection(label="truck", detection_key="ai_vehicle", confidence=0.9, box=(0.1, 0.1, 0.4, 0.4))],
+            now=10.0,
+        )
+        rows = {row["key"]: row for row in tracker.detection_rows(now=10.0)}
+        self.assertEqual(json.loads(rows["ai_vehicle"]["raw_value"])["sub_label"], "truck")
+
     def test_stays_active_within_timeout_after_last_sighting(self):
         tracker = ActiveObjectTracker(active_timeout_seconds=3.0)
         tracker.update([_detection("ai_person")], now=10.0)

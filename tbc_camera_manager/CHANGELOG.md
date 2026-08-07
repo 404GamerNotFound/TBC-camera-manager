@@ -1,6 +1,17 @@
 # Changelog
 
 ## Unreleased
+- Added semantic (CLIP-based) search for recordings, disabled by default. A visual/textual ONNX
+  model pair (`app/tbc/detection/clip_backend.py`, immich-app's Hugging Face CLIP exports,
+  ~600 MB for the default `ViT-B-32__openai`) is downloaded on first use; each recording's
+  snapshot is embedded when the clip finishes, existing recordings are backfilled gradually in
+  the background, and the **Clips** page can rank results by free-text similarity instead of
+  literal camera/event/date filters. Adds a single new dependency, `tokenizers` (Rust-backed,
+  no torch/transformers), for CLIP's text tokenizer.
+- Local AI detections now keep their specific vehicle/animal class (e.g. "truck", "cat") instead
+  of only the coarse vehicle/animal bucket, plus a best-effort dominant color for vehicles read
+  from the recording's snapshot (`app/tbc/detection/color.py`, pure OpenCV/numpy, no new model).
+  Both are stored on the recording and filterable/shown on the **Clips** page.
 - Added Slack, Discord, Matrix, and Signal notification channels (Signal via a self-hosted
   [signal-cli-rest-api](https://github.com/bbernhard/signal-cli-rest-api) instance, since there
   is no official Signal bot API). Slack/Discord attach a linked snapshot image via their

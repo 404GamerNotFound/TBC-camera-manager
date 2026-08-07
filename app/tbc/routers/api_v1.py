@@ -37,6 +37,7 @@ from ..main import (
     _api_token_username,
     _detection_settings_public_dict,
     _parse_date,
+    _parse_optional_int,
     _require_api_key,
     _require_api_key_control,
     _require_api_key_stream,
@@ -301,7 +302,7 @@ async def api_v1_camera_stream_stop(request: Request, camera_id: int):
 @router.get("/api/v1/recordings")
 async def api_v1_recordings(
     request: Request,
-    camera_id: int | None = Query(None),
+    camera_id: str | None = Query(None),
     detection_key: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
@@ -312,7 +313,7 @@ async def api_v1_recordings(
         return guard
     recordings = database.list_recordings(
         SETTINGS.database_path,
-        camera_id=camera_id,
+        camera_id=_parse_optional_int(camera_id),
         detection_key=detection_key,
         date_from=date_from,
         date_to=date_to,

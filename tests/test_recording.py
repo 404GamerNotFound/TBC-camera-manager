@@ -13,6 +13,7 @@ from app.tbc.recording import (
     _hevc_tag_args,
     _motion_is_active,
     _probe_video_codec,
+    _sub_label_for_active_event,
 )
 
 
@@ -434,6 +435,40 @@ class BboxForActiveEventTests(unittest.TestCase):
         self.assertEqual(_bbox_for_active_event(detections, "ai_person"), (0.0, 0.0, 1.0, 1.0))
 
 
+class SubLabelForActiveEventTests(unittest.TestCase):
+    def test_extracts_sub_label_for_matching_active_local_ai_detection(self):
+        detections = [
+            {
+                "key": "ai_vehicle",
+                "active": True,
+                "source": "local_ai",
+                "raw_value": '{"confidence": 0.9, "box": [0.1, 0.2, 0.5, 0.6], "sub_label": "truck"}',
+            }
+        ]
+        self.assertEqual(_sub_label_for_active_event(detections, "ai_vehicle"), "truck")
+
+    def test_ignores_camera_native_detections_without_local_ai_source(self):
+        detections = [{"key": "vehicle", "active": True, "source": "onvif", "raw_value": None}]
+        self.assertIsNone(_sub_label_for_active_event(detections, "vehicle"))
+
+    def test_handles_missing_or_malformed_raw_value(self):
+        detections = [{"key": "ai_vehicle", "active": True, "source": "local_ai", "raw_value": None}]
+        self.assertIsNone(_sub_label_for_active_event(detections, "ai_vehicle"))
+        detections = [{"key": "ai_vehicle", "active": True, "source": "local_ai", "raw_value": "not json"}]
+        self.assertIsNone(_sub_label_for_active_event(detections, "ai_vehicle"))
+
+    def test_handles_raw_value_without_sub_label(self):
+        detections = [
+            {
+                "key": "ai_vehicle",
+                "active": True,
+                "source": "local_ai",
+                "raw_value": '{"confidence": 0.9, "box": [0.1, 0.2, 0.5, 0.6]}',
+            }
+        ]
+        self.assertIsNone(_sub_label_for_active_event(detections, "ai_vehicle"))
+
+
 class DrawboxFilterTests(unittest.TestCase):
     def test_returns_none_without_a_box(self):
         self.assertIsNone(_drawbox_filter(None))
@@ -516,6 +551,71 @@ class HevcTagArgsTests(unittest.TestCase):
                 called_args = mock_run_rtsp.call_args[0][0]
                 self.assertIn("-rtsp_transport", called_args)
                 self.assertIn("tcp", called_args)
+
+
+class RecordingSubLabelAndColorFilterTests(unittest.TestCase):
+    def setUp(self):
+        self._tempfile = tempfile.NamedTemporaryFile(suffix=".sqlite3")
+        self.db_path = self._tempfile.name
+        database.initialize(self.db_path)
+        self.camera_id = database.create_camera(
+            self.db_path,
+            name="Einfahrt",
+            host="192.0.2.10",
+            onvif_port=8000,
+            http_port=80,
+            username="admin",
+            password="secret",
+        )
+        self.truck_id = database.create_recording(
+            self.db_path,
+            camera_id=self.camera_id,
+            storage_id=1,
+            detection_key="ai_vehicle",
+            event_label="Fahrzeug",
+            storage_kind="local",
+            started_at="2000-06-01T12:00:00",
+            sub_label="truck",
+        )
+        database.update_recording_sub_color(self.db_path, self.truck_id, "silver")
+        self.car_id = database.create_recording(
+            self.db_path,
+            camera_id=self.camera_id,
+            storage_id=1,
+            detection_key="ai_vehicle",
+            event_label="Fahrzeug",
+            storage_kind="local",
+            started_at="2000-06-01T13:00:00",
+            sub_label="car",
+        )
+        database.update_recording_sub_color(self.db_path, self.car_id, "red")
+
+    def tearDown(self):
+        self._tempfile.close()
+
+    def test_sub_label_is_stored_on_create(self):
+        recording = database.get_recording(self.db_path, self.truck_id)
+        self.assertEqual(recording["sub_label"], "truck")
+
+    def test_sub_color_is_stored_after_update(self):
+        recording = database.get_recording(self.db_path, self.truck_id)
+        self.assertEqual(recording["sub_color"], "silver")
+
+    def test_list_recordings_filters_by_sub_label(self):
+        rows = database.list_recordings(self.db_path, sub_label="truck")
+        self.assertEqual([row["id"] for row in rows], [self.truck_id])
+
+    def test_list_recordings_filters_by_sub_color(self):
+        rows = database.list_recordings(self.db_path, sub_color="red")
+        self.assertEqual([row["id"] for row in rows], [self.car_id])
+
+    def test_count_recordings_respects_sub_label_filter(self):
+        self.assertEqual(database.count_recordings(self.db_path, sub_label="car"), 1)
+        self.assertEqual(database.count_recordings(self.db_path), 2)
+
+    def test_list_recording_sub_labels_and_colors_are_distinct_and_sorted(self):
+        self.assertEqual(database.list_recording_sub_labels(self.db_path), ["car", "truck"])
+        self.assertEqual(database.list_recording_sub_colors(self.db_path), ["red", "silver"])
 
 
 if __name__ == "__main__":
