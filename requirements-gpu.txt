@@ -4,8 +4,8 @@
 # working even on this image - only CUDAExecutionProvider becomes additionally
 # available (and only once a matching CUDA/cuDNN runtime is actually present, which
 # is why Dockerfile.gpu starts from an NVIDIA CUDA base image instead of python:slim).
-fastapi==0.140.0
-uvicorn[standard]==0.51.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.0
 jinja2==3.1.6
 Markdown>=3.10.2,<4
 python-multipart==0.0.32
