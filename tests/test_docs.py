@@ -22,6 +22,7 @@ EXPECTED_DOCUMENTS = {
     "network-accounts.md",
     "operations.md",
     "plugin-sources.md",
+    "release-notes-v0.12.0.md",
     "user-guide.md",
 }
 
