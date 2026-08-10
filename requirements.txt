@@ -36,4 +36,4 @@ segno>=1.6.6,<2
 # CLIP text tokenization for semantic recording search (app/tbc/detection/clip_backend.py).
 # Rust-backed with prebuilt manylinux2014 wheels for both x86_64 and aarch64 - no
 # torch/transformers pulled in, just the tokenizer itself.
-tokenizers>=0.23,<1
+tokenizers>=0.23.1,<1
