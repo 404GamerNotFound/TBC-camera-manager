@@ -5,7 +5,7 @@
 # available (and only once a matching CUDA/cuDNN runtime is actually present, which
 # is why Dockerfile.gpu starts from an NVIDIA CUDA base image instead of python:slim).
 fastapi==0.141.1
-uvicorn[standard]==0.52.1
+uvicorn[standard]==0.53.0
 jinja2==3.1.6
 Markdown>=3.10.3,<4
 python-multipart==0.0.32
