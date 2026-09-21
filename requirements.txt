@@ -24,7 +24,7 @@ packaging>=26.2
 # built with baseline optimizations: (X86_V2) but your machine doesn't support"
 # (GitHub issue #31). 2.2.x still ships the compatible wheel and satisfies
 # every other pinned package's numpy requirement here.
-numpy>=2.2.6,<2.3
+numpy>=2.5.2,<2.6
 Pillow>=12.3.0,<13
 onnxruntime>=1.28.0,<2
 opencv-python-headless==5.0.0.93
